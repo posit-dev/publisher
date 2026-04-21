@@ -106,7 +106,7 @@ Then ask: **"Would you like to set up E2E testing too? This requires Docker and 
 
 Only proceed if the developer wants this. E2E tests run the extension in a real VS Code environment (code-server in Docker) against a real Posit Connect server.
 
-### Step 10: Docker Desktop
+### Step 9: Docker Desktop
 
 - **Check:** `docker --version` and `docker info` (confirms the daemon is running).
 - **Act:** If missing, point to https://www.docker.com/products/docker-desktop/.
@@ -119,13 +119,13 @@ On Apple Silicon (`uname -m` shows `arm64`), the developer needs to configure Do
 
 Ask the developer to confirm these are set.
 
-### Step 11: uv and with-connect
+### Step 10: uv and with-connect
 
 - **Check:** `uv --version` and `which with-connect`
 - **Act:** If uv is missing: `brew install uv`. If with-connect is missing: `uv tool install git+https://github.com/posit-dev/with-connect.git`
 - **Verify:** `with-connect --help` produces usage output.
 
-### Step 12: Connect License
+### Step 11: Connect License
 
 The developer needs a Posit Connect license file to run E2E tests locally. This is not something that can be automated.
 
@@ -133,7 +133,7 @@ The developer needs a Posit Connect license file to run E2E tests locally. This 
 - **Act:** If they don't have one, let them know they can rely on GitHub CI for E2E tests, or ask a team member for help getting a license.
 - **Verify:** The file they specified exists on disk.
 
-### Step 13: Environment Variables
+### Step 12: Environment Variables
 
 The E2E tests need `CONNECT_LICENSE_FILE` and (on macOS) `DOCKER_HOST` set.
 
@@ -146,19 +146,17 @@ The E2E tests need `CONNECT_LICENSE_FILE` and (on macOS) `DOCKER_HOST` set.
   Then `direnv allow test/e2e/`. If the developer doesn't want direnv, they can export these manually before running E2E tests.
 - **Verify:** `direnv exec test/e2e env | grep CONNECT_LICENSE_FILE` shows the expected value, or the developer confirms they'll set the variables manually.
 
-### Step 14: Build for E2E
+### Step 13: Build for E2E
 
-E2E tests run in a Linux/amd64 Docker container, so the publisher binary needs to be cross-compiled.
-
-- **Check:** Check if a linux/amd64 binary and .vsix exist from a previous build.
-- **Act:** Run `USE_PLATFORM="linux/amd64" just` from the repo root. Then from `test/e2e/`, build Docker images:
+- **Check:** Check if a `.vsix` exists in `dist/` from a previous build and if Docker images exist: `docker images | grep publisher-e2e`
+- **Act:** Run `just` from the repo root to build the `.vsix`. Then from `test/e2e/`, build Docker images:
   ```bash
   just build-base
   just build-image code-server
   ```
-- **Verify:** Docker images exist: `docker images | grep publisher-e2e`
+- **Verify:** A `.vsix` exists in `dist/` and Docker images exist: `docker images | grep publisher-e2e`
 
-### Step 15: Install E2E Dependencies
+### Step 14: Install E2E Dependencies
 
 - **Check:** Check if `test/e2e/node_modules/` exists.
 - **Act:** From `test/e2e/`:
@@ -168,7 +166,7 @@ E2E tests run in a Linux/amd64 Docker container, so the publisher binary needs t
   ```
 - **Verify:** `npx cypress --version` succeeds from the `test/e2e/` directory.
 
-### Step 16: Verify E2E (skipping Connect Cloud tests)
+### Step 15: Verify E2E (skipping Connect Cloud tests)
 
 Run a quick smoke test excluding Connect Cloud tests (which need 1Password):
 
@@ -186,7 +184,7 @@ Then retry.
 
 After tests complete, clean up: `just stop`
 
-### Step 17: 1Password CLI (Optional, Connect Cloud only)
+### Step 16: 1Password CLI (Optional, Connect Cloud only)
 
 For Connect Cloud tests (tagged `@pcc`), credentials are fetched from 1Password.
 
@@ -210,10 +208,9 @@ Summarize what's available:
 
 If the developer hits issues at any point, here are common problems:
 
-| Symptom                           | Cause                                     | Fix                                                      |
-| --------------------------------- | ----------------------------------------- | -------------------------------------------------------- |
-| `just test` fails in `renv` tests | R or renv not installed                   | Install R (rig) + `R -e 'install.packages("renv")'`      |
-| "Run Extension" launch fails      | Missing esbuild-problem-matchers          | Install `connor4312.esbuild-problem-matchers` extension  |
-| Port 3939 already allocated       | Stale with-connect container              | `docker rm -f $(docker ps -aq --filter publish=3939)`    |
-| `op: command not found`           | 1Password CLI not installed system-wide   | `brew install 1password-cli`                             |
-| E2E container fails to start      | Docker Desktop not configured for Rosetta | Enable Apple Virtualization + Rosetta in Docker settings |
+| Symptom                      | Cause                                     | Fix                                                      |
+| ---------------------------- | ----------------------------------------- | -------------------------------------------------------- |
+| "Run Extension" launch fails | Missing esbuild-problem-matchers          | Install `connor4312.esbuild-problem-matchers` extension  |
+| Port 3939 already allocated  | Stale with-connect container              | `docker rm -f $(docker ps -aq --filter publish=3939)`    |
+| `op: command not found`      | 1Password CLI not installed system-wide   | `brew install 1password-cli`                             |
+| E2E container fails to start | Docker Desktop not configured for Rosetta | Enable Apple Virtualization + Rosetta in Docker settings |
