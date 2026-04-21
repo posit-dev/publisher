@@ -14,11 +14,8 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-          cache-dependency-path: "test/extension-contract-tests/package-lock.json"
+          cache-dependency-path: "package-lock.json"
       - run: npm ci
-        working-directory: packages/connect-cloud-api
-      - run: npm ci
-        working-directory: extensions/vscode
-      - run: npm ci
+        working-directory: ${{ github.workspace }}
       - run: npm test
       - run: npm run check:conformance
