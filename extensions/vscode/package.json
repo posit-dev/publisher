@@ -681,7 +681,7 @@
     "mocha": "^11.1.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.58.2",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.4"
   },
   "dependencies": {
     "@posit-dev/connect-api": "*",
