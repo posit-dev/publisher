@@ -7,7 +7,6 @@ import { PartialConfig } from "./types";
 const preferredNames = ["index", "main", "app", "streamlit_app"];
 
 // Lower values are preferred (sorted first).
-// Go uses ContentTypeQuarto ("quarto-static") as priority 1.
 const contentTypePriority: Partial<Record<ContentType, number>> = {
   [ContentType.QUARTO_STATIC]: 1,
   [ContentType.JUPYTER_NOTEBOOK]: 2,
@@ -23,7 +22,7 @@ function filenameStem(filename: string): string {
 }
 
 /**
- * Sort configs using the same ordering as Go's detectors/all.go:
+ * Sort configs by priority:
  * 1. Preferred entrypoint names come first (dir basename, index, main, app, streamlit_app)
  * 2. Same entrypoint: sort by content type priority, then alphabetically by type
  * 3. Different entrypoints: sort alphabetically by entrypoint

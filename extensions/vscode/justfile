@@ -12,25 +12,14 @@ _with_debug := if _debug == "true" {
     }
 
 # Quick start
-default os="$(just ../../os)" arch="$(just ../../arch)":
+default:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
     just clean
-    just configure {{ os }} {{ arch }}
-    just package {{ os }} {{ arch }}
-
-assert-binary-executable-exists:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-    echo "info: asserting binary executable exists..." 1>&2
-    if ! [ -f ./bin/publisher* ]; then
-        echo "error: binary executable not found!" 1>&2
-        echo "debug: did you run 'just configure'?" 1>&2
-        exit 1
-    fi
+    just configure
+    just package
 
 assert-command-installed command:
     #!/usr/bin/env bash
@@ -52,7 +41,6 @@ clean:
     {{ _with_debug }}
 
     rm -rf .vscode-test
-    rm -rf bin
     rm -rf dist
     rm -rf node_modules
     rm -rf out
@@ -79,37 +67,22 @@ deps:
     just ./webviews/homeView/deps
 
 
-configure os="$(just ../../os)" arch="$(just ../../arch)":
+configure:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
     just deps
 
-    echo "info: checking for compatible binary executable..." 1>&2
-    binary_executable=$(just ../../executable-path {{ os }} {{ arch }})
-    if ! [ -f "$binary_executable" ]; then
-        echo "warn: binary executable '"$binary_executable"' not found." 1>&2
-        echo "info: Did you run 'just ../../build'?" 1>&2
-        exit 0
-    fi
-
-    echo "info: writing binary executable to ./bin/publisher..." 1>&2
-    rm -rf ./bin
-    mkdir -p ./bin
-
-    cp "$binary_executable" ./bin/$(basename -- "$binary_executable")
-    just assert-binary-executable-exists
-
 # Installs the packaged extension on your configured editor using the editor's CLI. The editor CLI defaults to 'code'. Modify this value via the EDITOR environment variable.
-install os="$(just ../../os)" arch="$(just ../../arch)" editor="code":
+install editor="code":
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
     just assert-command-installed {{ editor }}
 
-    package=$(just package-name {{ os }} {{ arch }})
+    package=$(just package-name)
     package_path=$(just package-path)
 
     echo "info: installing extension using {{ editor }}..." 1>&2
@@ -124,35 +97,32 @@ lint:
     npm run lint
 
 # Packages the extension.
-package os="$(just ../../os)" arch="$(just ../../arch)":
+package:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
-    just assert-binary-executable-exists
-    echo "info: getting package target platform..." 1>&2
-    target_platform=$(just package-target-platform {{ os }} {{ arch }})
     echo "info: getting package output path..." 1>&2
     path="$(just package-path)"
     mkdir -p "$path"
     echo "info: getting output package name..." 1>&2
-    package="$path"/$(just package-name {{ os }} {{ arch }})
+    package="$path"/$(just package-name)
     echo "info: packaging..." 1>&2
     if [[ $(just ../../pre-release) == true ]]; then
         prerelease_flag="--pre-release"
     else
         prerelease_flag=""
     fi
-    npx --yes @vscode/vsce package -o "$package" -t "$target_platform" $prerelease_flag | sed 's/^/debug: /'
+    npx --yes @vscode/vsce package -o "$package" $prerelease_flag | sed 's/^/debug: /'
     echo "info: writing package to $package..." 1>&2
 
-package-name os="$(just ../../os)" arch="$(just ../../arch)":
+package-name:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
-    name="$(just ../../name)"
+    name="$(jq -r .name package.json)"
     version="$(just ../../version)"
-    echo "$name-$version-{{ os }}-{{ arch }}.vsix"
+    echo "$name-$version.vsix"
 
 package-path:
     #!/usr/bin/env bash
@@ -160,44 +130,6 @@ package-path:
     {{ _with_debug }}
 
     echo $(readlink -f ../../)/dist
-
-package-target-platform os="$(just ../../os)" arch="$(just ../../arch)":
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    echo "info: finding target operating system..." 1>&2
-    case {{ os }} in
-        darwin)
-            target_os="darwin"
-            ;;
-        linux)
-            target_os="linux"
-            ;;
-        windows)
-            target_os="win32"
-            ;;
-        *)
-            echo "error: target architecture '$os' not supported." 1>&2
-            exit 1
-            ;;
-    esac
-
-    echo "info: finding target architecture..." 1>&2
-    case {{ arch }} in
-        amd64)
-            target_arch="x64"
-            ;;
-        arm64)
-            target_arch="arm64"
-            ;;
-        *)
-            echo "error: target architecture '$arch' not supported." 1>&2
-            exit 1
-            ;;
-    esac
-
-    echo "$target_os-$target_arch"
 
 # Executes commands via `npm`. Equivalent to `npm run`.
 run *args:

@@ -32,14 +32,6 @@ describe("extension-settings contract", () => {
     expect(result).toBe(true);
   });
 
-  it("reads useKeyChainCredentialStorage from positPublisher config (default true)", () => {
-    mockGet.mockReturnValue(undefined);
-    const result = extensionSettings.useKeyChainCredentialStorage();
-    expect(workspace.getConfiguration).toHaveBeenCalledWith("positPublisher");
-    expect(mockGet).toHaveBeenCalledWith("useKeyChainCredentialStorage");
-    expect(result).toBe(true);
-  });
-
   it("reads defaultConnectServer from positPublisher config (default '')", async () => {
     mockGet.mockReturnValue(undefined);
     const result = await extensionSettings.defaultConnectServer();

@@ -1,11 +1,11 @@
 # Project Overview
 
-This is the Posit Publisher VSCode extension. It provides a sidebar UI for deploying Python and R projects to Posit Connect. The extension is in an active migration from a Go backend architecture to native TypeScript. Many operations now run directly in TypeScript, while some features still require the Go backend binary (`bin/publisher`) accessed via HTTP API and Server-Sent Events.
+This is the Posit Publisher VSCode extension — a pure TypeScript VSCode/Positron extension that provides a sidebar UI for deploying Python and R projects to Posit Connect and Connect Cloud.
 
 # Build Commands
 
 ```bash
-# Full build (install deps, configure binary, package .vsix)
+# Full build (install deps, configure, package .vsix)
 just
 
 # Install npm dependencies (also installs webview deps)
@@ -32,7 +32,6 @@ just uninstall
 1. Open this directory (`extensions/vscode/`) as the workspace in VSCode
 2. Run the "Run Extension" debug configuration (F5)
 
-If you modify Go backend code, run `just build` from the repo root first.
 If you modify webviews, run `npm run build --prefix webviews/homeView` first.
 
 ## Testing
@@ -54,35 +53,21 @@ Unit tests are in `src/**/*.test.ts` (excluding `src/test/`). Integration tests 
 
 ## Entry Point
 
-`src/extension.ts` - Activates on workspace open, starts the Go binary as a subprocess, initializes views and event streams.
+`src/extension.ts` — Activates on workspace open, initializes views, event stream, watchers, and state.
 
 ## Key Components
 
-### TypeScript-Native Operations (no Go backend needed)
-
-These modules run entirely in TypeScript and do not call the Go backend:
-
-- **Bundler** (`src/bundler/`) - Creates deployment bundles (tar.gz archives) with manifest generation, file collection, and .gitignore filtering. Migrated from Go `internal/bundles/`.
-- **TOML** (`src/toml/`) - Reads and writes configuration files (`.posit/publish/*.toml`) and deployment records (`.posit/publish/deployments/*.toml`) with JSON schema validation. Migrated from Go `internal/config/` and `internal/deployment/`.
-- **Config Files** (`src/configFiles/`) - Configuration file discovery and management.
-- **Interpreters** (`src/interpreters/`) - Detects Python/R versions via subprocess calls, scans Python packages (`pythonPackages.ts`) and R package lockfiles (`rPackages.ts`). Migrated from Go `internal/interpreters/`.
-- **Credentials** (`src/credentials/`) - Manages credential storage via filesystem (`~/.connect-credentials`) or VSCode keychain. Partially migrated from Go `internal/credentials/`.
-- **Dependencies** (`src/publish/dependencies.ts`) - Parses requirements.txt, pyproject.toml, renv.lock, DESCRIPTION for package dependencies. Migrated from Go `internal/bundles/`.
-- **Project Files** (`src/projectFiles/`) - File tree building and .gitignore-aware file matching.
-
-### Go Backend Integration (features still in Go)
-
-These modules communicate with the Go backend via HTTP:
-
-- **Service** (`src/services.ts`) - Manages the Go binary subprocess lifecycle
-- **Server** (`src/servers.ts`) - Spawns and monitors the Go binary process
-- **EventStream** (`src/events.ts`) - SSE client receiving real-time updates from Go backend
-- **API Client** (`src/api/`) - Axios-based HTTP client for Go backend communication
-  - `client.ts` - Axios instance with interceptors for error handling and logging
-  - `types/` - TypeScript types for API requests/responses
-  - `resources/` - Resource-specific API methods (deployment, inspection, Connect Cloud, Snowflake)
-
-Features still accessed via Go backend: publishing/deployment, content inspection, Connect Cloud OAuth, Snowflake connections, SSE streaming.
+- **Bundler** (`src/bundler/`) — Creates deployment bundles (tar.gz archives) with manifest generation, file collection, and .gitignore filtering.
+- **TOML** (`src/toml/`) — Reads and writes configuration files (`.posit/publish/*.toml`) and deployment records (`.posit/publish/deployments/*.toml`) with JSON schema validation.
+- **Config Files** (`src/configFiles/`) — Configuration file discovery and management.
+- **Inspect** (`src/inspect/`) — Content inspection/detection with detectors for Python, R, Quarto, HTML, notebooks, Plumber, and R Markdown.
+- **Interpreters** (`src/interpreters/`) — Detects Python/R versions via subprocess calls, scans Python packages and R package lockfiles.
+- **Credentials** (`src/credentials/`) — Manages credential storage via VSCode's `SecretStorage`.
+- **Publish** (`src/publish/`) — Publishing orchestration (`connectPublish.ts`) and dependency analysis for Python/R projects. Publishes to standard Connect via `@posit-dev/connect-api` and to Connect Cloud via `@posit-dev/connect-cloud-api`.
+- **Snowflake** (`src/snowflake/`) — Snowflake connection discovery, config parsing, and token providers.
+- **Project Files** (`src/projectFiles/`) — File tree building and .gitignore-aware file matching.
+- **EventStream** (`src/events.ts`) — In-process event emitter used to drive the logs view and deploy progress.
+- **API types** (`src/api/types/`) — Domain type definitions for Connect/Connect Cloud/credentials/deployments. The `src/api/` directory name is historical (it used to host a Go-backend HTTP client); today it holds type definitions only.
 
 ### UI and State
 
@@ -98,9 +83,7 @@ Features still accessed via Go backend: publishing/deployment, content inspectio
 
 ## Communication Flow
 
-1. Extension ↔ Go Backend: HTTP REST API (via axios in `src/api/`) — for features not yet migrated
-2. Go Backend → Extension: Server-Sent Events for real-time updates
-3. Extension ↔ Webview: VSCode postMessage API (typed messages in `src/types/messages/`)
+Extension ↔ Webview: VSCode postMessage API (typed messages in `src/types/messages/`).
 
 ## Error Handling
 
@@ -112,9 +95,9 @@ The extension uses layered error handling with type-safe error discrimination:
 - Factory function `mkErrorTypeGuard<T>()` creates type guards for each error type
 - Each error type has: type definition, predicate (`isErr<Name>()`), and message formatter (`err<Name>Message()`)
 
-**Go Backend Errors** (`src/api/types/error.ts`):
+**Structured Errors** (`src/api/types/error.ts`):
 
-- `AgentError` types with `code`, `msg`, `operation` fields
+- `AgentError` types with `code`, `msg`, `operation` fields (shared with event stream messages)
 - Type guards: `isAgentError()`, `isAgentErrorInvalidTOML()`, etc.
 
 **Error Utilities** (`src/utils/errors.ts`):
@@ -201,7 +184,6 @@ cat(x + y)
 
 # Debugging
 
-- "Run Extension" - Debug extension only (auto-launches Go binary)
-- "Run Extension using external API agent on 9001" - Debug both extension and Go backend simultaneously (requires launching Go debug session from repo root first)
+- "Run Extension" — Launch the extension in a VSCode Extension Development Host.
 
 Debug webviews using `Developer: Open Webview Developer Tools` command in the Extension Host window.

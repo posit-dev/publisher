@@ -1,16 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import {
-  ExtensionContext,
-  ExtensionMode,
-  Uri,
-  commands,
-  window,
-  workspace,
-} from "vscode";
+import { ExtensionContext, Uri, commands, window, workspace } from "vscode";
 
-import * as ports from "src/ports";
-import { Service } from "src/services";
 import { ProjectTreeDataProvider } from "src/views/project";
 import { LogsTreeDataProvider, LogsViewProvider } from "src/views/logs";
 import { EventStream } from "src/events";
@@ -62,9 +53,6 @@ const publisherStateReady = new Promise<PublisherState>((resolve) => {
   resolvePublisherState = resolve;
 });
 
-// Once the extension is activated, hang on to the service so that we can stop it on deactivation.
-let service: Service;
-
 function setStateContext(context: PositPublishState) {
   commands.executeCommand("setContext", STATE_CONTEXT, context);
 }
@@ -93,31 +81,12 @@ export function setSelectionIsPreContentRecord(
   );
 }
 
-async function initializeExtension(context: ExtensionContext) {
+function initializeExtension(context: ExtensionContext) {
   setStateContext(PositPublishState.uninitialized);
   setInitializationInProgressContext(InitializationInProgress.false);
 
-  const useExternalAgent =
-    context.extensionMode === ExtensionMode.Development &&
-    process.env.POSIT_PUBLISHER_USE_EXTERNAL_AGENT === "TRUE";
-  console.log(
-    "Starting Context in extension mode: %s, with useExternalAgent set to %s",
-    context.extensionMode,
-    useExternalAgent,
-  );
-
-  let port = 9001;
-  if (!useExternalAgent) {
-    port = await ports.acquire();
-  }
-
   const stream = new EventStream();
   context.subscriptions.push(stream);
-
-  const useKeyChain = extensionSettings.useKeyChainCredentialStorage();
-
-  service = new Service(context, port, useExternalAgent, useKeyChain);
-  service.start();
 
   const watchers = new WatcherManager();
   context.subscriptions.push(watchers);
@@ -154,9 +123,7 @@ async function initializeExtension(context: ExtensionContext) {
       await homeViewProvider.showNewDeploymentMultiStep(viewId);
       setInitializationInProgressContext(InitializationInProgress.false);
     }),
-    commands.registerCommand(Commands.ShowOutputChannel, () =>
-      service.showOutputChannel(),
-    ),
+    commands.registerCommand(Commands.ShowOutputChannel, () => logger.show()),
     commands.registerCommand(Commands.ShowPublishingLog, () => {
       commands.executeCommand(Commands.Logs.Focus);
     }),
@@ -230,11 +197,8 @@ export function activate(context: ExtensionContext) {
 }
 
 // This method is called when your extension is deactivated
-export async function deactivate() {
+export function deactivate() {
   console.log("Deactivating Posit Publisher extension");
-  if (service) {
-    await service.stop();
-  }
 }
 
 export const extensionSettings = {
@@ -243,14 +207,6 @@ export const extensionSettings = {
     const configuration = workspace.getConfiguration("positPublisher");
     const value: boolean | undefined =
       configuration.get<boolean>("verifyCertificates");
-    return value !== undefined ? value : true;
-  },
-  useKeyChainCredentialStorage(): boolean {
-    // get value from extension configuration - defaults to true
-    const configuration = workspace.getConfiguration("positPublisher");
-    const value: boolean | undefined = configuration.get<boolean>(
-      "useKeyChainCredentialStorage",
-    );
     return value !== undefined ? value : true;
   },
   async defaultConnectServer(): Promise<string> {

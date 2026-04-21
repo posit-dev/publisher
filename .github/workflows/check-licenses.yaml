@@ -23,9 +23,6 @@ jobs:
       # Install root npm dependencies
       - run: just npm-install
 
-      # Create vendor directory with Go dependencies
-      - run: go mod vendor
-
       # Create VSCode extension's node_modules directories
       - run: just extensions/vscode deps
 

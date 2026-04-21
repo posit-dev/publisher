@@ -78,9 +78,9 @@ export async function testCredentials(
   }
 
   // 2. Snowflake URLs don't expose the Connect API, so skip the
-  //    authentication / reachability probe. The Go backend never attempted
-  //    to call /__api__/v1/user on Snowflake servers either — it only
-  //    validated the URL format and credential structure.
+  //    authentication / reachability probe. The extension does not attempt
+  //    to call /__api__/v1/user on Snowflake servers — it only
+  //    validates the URL format and credential structure.
   if (st === ServerType.SNOWFLAKE) {
     return {
       user: null,
@@ -120,8 +120,7 @@ export async function testCredentials(
       lastUser = result.user;
     } catch (err) {
       // When no credentials are provided, treat HTTP 401 as success:
-      // the server is reachable but requires auth. This matches Go behavior
-      // at client_connect.go:132-140.
+      // the server is reachable but requires auth.
       if (
         !hasCredentials &&
         err instanceof ConnectAPIError &&

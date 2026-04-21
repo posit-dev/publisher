@@ -49,7 +49,6 @@ export interface NormalizedConfig {
 
 /**
  * Normalize a partial config by filling in interpreter info, file lists, and title.
- * Mirrors Go's initialize/initialize.go normalizeConfig().
  */
 export async function normalizeConfig(
   cfg: PartialConfig,
@@ -74,10 +73,9 @@ export async function normalizeConfig(
       : [`/${resolvedEntrypoint}`];
 
   // Python inspection
-  // Match Go behavior: only use inspection to find the package file for the
-  // files list. Leave the python config as an empty placeholder so that
-  // version/packageManager/etc. are determined at publish time via defaults,
-  // not baked into the configuration file.
+  // Only use inspection to find the package file for the files list. Leave
+  // the python config as an empty placeholder so that version/packageManager/etc.
+  // are determined at publish time via defaults, not baked into the configuration file.
   let pythonConfig: PythonConfig | undefined;
   if (cfg.python) {
     pythonConfig = { version: "", packageFile: "", packageManager: "" };
@@ -93,7 +91,7 @@ export async function normalizeConfig(
   // Check if R is explicitly needed (detector set cfg.r)
   let needR = cfg.r !== undefined;
 
-  // Additional R checks (matching Go logic)
+  // Additional R checks
   if (
     !needR &&
     cfg.type !== ContentType.HTML &&
@@ -117,9 +115,9 @@ export async function normalizeConfig(
     }
   }
 
-  // Match Go behavior: only use inspection to find the package file for the
-  // files list. Leave the R config as an empty placeholder so that
-  // version/packageManager/etc. are determined at publish time via defaults.
+  // Only use inspection to find the package file for the files list. Leave
+  // the R config as an empty placeholder so that version/packageManager/etc.
+  // are determined at publish time via defaults.
   if (needR) {
     rConfig = { version: "", packageFile: "", packageManager: "" };
     const result = await detectRInterpreter(baseDir, rPath);
@@ -142,9 +140,9 @@ export async function normalizeConfig(
     r: rConfig,
     quarto: cfg.quarto,
     comments,
-    // Pass alternatives through without normalization, matching Go behavior.
-    // The detector already sets the fields the UI needs (type, entrypoint,
-    // source, title, files). Alternatives are never written to TOML.
+    // Pass alternatives through without normalization. The detector already
+    // sets the fields the UI needs (type, entrypoint, source, title, files).
+    // Alternatives are never written to TOML.
     alternatives: cfg.alternatives,
   };
 }

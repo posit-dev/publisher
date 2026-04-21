@@ -1,8 +1,8 @@
 #!/bin/sh
 set -xeu
 
-# Get the latest linux-amd64 build
-VSIX_FILENAME=$(ls -Art /home/coder/vsix | grep linux-amd64 | tail -n 1)
+# Get the latest Publisher VSIX build
+VSIX_FILENAME=$(ls -Art /home/coder/vsix/*.vsix | xargs -n1 basename | tail -n 1)
 
 # Custom vscode User settings, avoid setup wizards
 # echo > /home/coder/.local/share/code-server/User/settings.json
@@ -16,8 +16,7 @@ cat <<EOF > /home/coder/.local/share/code-server/User/settings.json
   "workbench.welcomePage.walkthroughs.openOnInstall": false,
   "workbench.tips.enabled": false,
   "window.restoreWindows": "none",
-  "files.hotExit": "off",
-  "positPublisher.useKeyChainCredentialStorage": false
+  "files.hotExit": "off"
 }
 
 EOF

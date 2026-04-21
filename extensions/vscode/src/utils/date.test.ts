@@ -4,7 +4,7 @@ import { describe, expect, test } from "vitest";
 import { stripMilliseconds } from "./date";
 
 describe("stripMilliseconds", () => {
-  test("strips milliseconds from Go-style timestamp with offset", () => {
+  test("strips milliseconds from timestamp with offset", () => {
     expect(stripMilliseconds("2026-04-02T15:53:21.123-04:00")).toBe(
       "2026-04-02T15:53:21-04:00",
     );
@@ -16,7 +16,7 @@ describe("stripMilliseconds", () => {
     );
   });
 
-  test("returns Go-style timestamp without millis unchanged", () => {
+  test("returns timestamp without millis unchanged", () => {
     expect(stripMilliseconds("2026-04-02T15:53:21-04:00")).toBe(
       "2026-04-02T15:53:21-04:00",
     );

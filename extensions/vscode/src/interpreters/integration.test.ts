@@ -981,10 +981,10 @@ from scipy import stats
     );
 
     test.skipIf(!pythonAvailable)(
-      "parity: Go testdata fixtures produce expected imports",
+      "testdata fixtures produce expected imports",
       () =>
         withTempDir(async (dir) => {
-          // Recreate the Go testdata structure
+          // Recreate the testdata structure
           // example.py: imports numpy, scipy, and local lib.utils
           await writeFile(
             path.join(dir, "example.py"),
