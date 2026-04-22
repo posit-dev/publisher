@@ -55,12 +55,11 @@ function isQuartoYaml(entrypointBase: string): boolean {
 
 function isExpectedInspectFailure(err: unknown): boolean {
   if (typeof err === "object" && err !== null) {
-    const obj = err as Record<string, unknown>;
-    if (obj.code === "ENOENT") {
+    if ("code" in err && err.code === "ENOENT") {
       return true;
     }
-    if (typeof obj.stderr === "string") {
-      return obj.stderr.includes("is not a valid Quarto input document");
+    if ("stderr" in err && typeof err.stderr === "string") {
+      return err.stderr.includes("is not a valid Quarto input document");
     }
   }
   return false;
