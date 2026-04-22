@@ -8,5 +8,3 @@ export const logger = {
   warn: vi.fn(),
   error: vi.fn(),
 };
-
-export const logAgentOutput = vi.fn();

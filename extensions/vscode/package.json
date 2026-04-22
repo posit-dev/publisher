@@ -4,7 +4,7 @@
   "author": "Posit, PBC",
   "displayName": "Posit Publisher",
   "description": "Publish and share your Python and R content on Posit Connect",
-  "version": "1.37.19",
+  "version": "1.37.21",
   "license": "MIT",
   "icon": "assets/img/posit-publisher.png",
   "repository": {
@@ -34,6 +34,9 @@
     "onFileSystem:connect-content"
   ],
   "main": "./dist/extension.js",
+  "vsce": {
+    "dependencies": false
+  },
   "contributes": {
     "authentication": [
       {
@@ -47,11 +50,6 @@
         "properties": {
           "positPublisher.verifyCertificates": {
             "markdownDescription": "Verify TLS certificates for connections. Only **disable** this setting if you experience certificate verification errors and the Posit Connect server is using a self-signed, expired, or otherwise misconfigured certificate.",
-            "type": "boolean",
-            "default": true
-          },
-          "positPublisher.useKeyChainCredentialStorage": {
-            "markdownDescription": "Controls whether Posit Publisher will use the system keychain to store credentials. When disabled, or on a system without a keychain, `~/.connect-credentials` is used. After changing this setting, you must restart VS Code for it to go into effect.",
             "type": "boolean",
             "default": true
           },
@@ -646,7 +644,8 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run --prefix webviews/homeView build && npm run esbuild-base -- --minify && npm run build-font",
-    "esbuild-base": "tsc --noEmit --project tsconfig.json && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "copy-codicons": "node scripts/copy-codicons.mjs",
+    "esbuild-base": "npm run copy-codicons && tsc --noEmit --project tsconfig.json && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "tsc-watch": "tsc --noEmit --watch --project tsconfig.json",
@@ -682,11 +681,11 @@
     "mocha": "^11.1.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.58.2",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.4"
   },
   "dependencies": {
-    "@posit-dev/connect-api": "file:../../packages/connect-api",
-    "@posit-dev/connect-cloud-api": "file:../../packages/connect-cloud-api",
+    "@posit-dev/connect-api": "*",
+    "@posit-dev/connect-cloud-api": "*",
     "@vscode/codicons": "^0.0.45",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
@@ -695,7 +694,6 @@
     "debounce": "^3.0.0",
     "entities": "^8.0.0",
     "filenamify": "^7.0.1",
-    "get-port": "^7.2.0",
     "js-yaml": "^4.1.1",
     "jsonwebtoken": "^9.0.3",
     "picomatch": "^4.0.4",

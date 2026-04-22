@@ -10,7 +10,6 @@ import {
 
 // Builds a Connect manifest from a deployment configuration.
 // Pure data transformation — no I/O or side effects.
-// Port of Go's NewManifestFromConfig (internal/bundles/manifest.go).
 export function manifestFromConfig(cfg: ConfigurationDetails): Manifest {
   const appmode = appModeFromType(cfg.type);
 
@@ -27,7 +26,7 @@ export function manifestFromConfig(cfg: ConfigurationDetails): Manifest {
       entrypoint: cfg.entrypoint,
       ...primaryField(cfg.type, cfg.entrypoint),
       ...contentCategoryField(cfg),
-      // Matches Go's omitempty: false is omitted so it doesn't appear in manifest.json
+      // false is omitted so it doesn't appear in manifest.json
       has_parameters: cfg.hasParameters || undefined,
     },
     ...(cfg.python && {
@@ -134,8 +133,8 @@ function contentCategoryField(
   cfg: ConfigurationDetails,
 ): { content_category: string } | undefined {
   if (cfg.type === ContentType.HTML && cfg.entrypoint) {
-    const topDir = cfg.entrypoint.split("/")[0];
-    if (quartoSiteOutputDirs.has(topDir)) {
+    const parts = cfg.entrypoint.split("/");
+    if (parts.length > 1 && quartoSiteOutputDirs.has(parts[0]!)) {
       return { content_category: "site" };
     }
   }

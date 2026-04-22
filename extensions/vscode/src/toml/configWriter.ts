@@ -32,7 +32,7 @@ import { validate } from "./configValidate";
  * 1. Clone config (don't mutate input)
  * 2. Apply product-type compliance transformations
  * 3. Convert keys to snake_case
- * 4. Strip empty/undefined values to match Go's omitempty behavior
+ * 4. Strip empty/undefined values (omitempty behavior)
  * 5. Validate against JSON schema
  * 6. Write comment lines + TOML content
  * 7. Return the written Configuration with location metadata
@@ -83,9 +83,8 @@ export async function writeConfigToFile(
   }
   const snakeObj = snakeResult;
 
-  // Strip empty values to match Go's omitempty behavior.
-  // Go's TOML encoder with omitempty skips empty strings, nil pointers,
-  // and empty slices for fields tagged with omitempty.
+  // Strip empty values (omitempty behavior): skip empty strings,
+  // null values, and undefined fields.
   stripEmpty(snakeObj);
 
   // Handle type: "unknown" — the schema doesn't allow it, but we permit

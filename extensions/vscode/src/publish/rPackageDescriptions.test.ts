@@ -52,7 +52,6 @@ function assertPackageMatches(
     expected.Repository,
   );
   for (const [key, value] of Object.entries(expected.description)) {
-    // Go maps can't distinguish absent from empty string; treat "" as equivalent to undefined
     if (value === "") {
       expect(
         actual.description[key] ?? "",
@@ -88,7 +87,7 @@ describe("lockfileToManifestPackages", () => {
     }
   });
 
-  test("sample project (78-package golden file from Go)", async () => {
+  test("sample project (78-package golden file)", async () => {
     const { lockfile, expected } = await loadFixture("sample_project");
     const result = lockfileToManifestPackages(lockfile);
 

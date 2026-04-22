@@ -22,7 +22,7 @@ def create_test_structure(base_path: Path, packages: dict[str, dict[str, str]]) 
     Args:
         base_path: Root directory for the test structure
         packages: Dict mapping package paths to {filename: content} dicts
-                  e.g., {"vendor/foo": {"LICENSE": "MIT License..."}}
+                  e.g., {"node_modules/foo": {"LICENSE": "MIT License..."}}
     """
     for package_path, files in packages.items():
         pkg_dir = base_path / package_path
@@ -52,15 +52,19 @@ class TestForbiddenLicenses(unittest.TestCase):
             create_test_structure(
                 base,
                 {
-                    "vendor/mit-pkg": {"LICENSE": "MIT License\nCopyright..."},
-                    "vendor/apache-pkg": {
+                    "node_modules/mit-pkg": {
+                        "LICENSE": "MIT License\nCopyright..."
+                    },
+                    "node_modules/apache-pkg": {
                         "LICENSE": "Apache-2.0\nLicensed under Apache..."
                     },
-                    "vendor/isc-pkg": {"LICENSE": "ISC License\nCopyright..."},
-                    "extensions/vscode/node_modules/bsd-pkg": {
+                    "node_modules/isc-pkg": {
+                        "LICENSE": "ISC License\nCopyright..."
+                    },
+                    "node_modules/bsd-pkg": {
                         "LICENSE": "BSD-3-Clause\nRedistribution..."
                     },
-                    "extensions/vscode/webviews/homeView/node_modules/placeholder": {
+                    "node_modules/placeholder": {
                         "LICENSE": "MIT License"
                     },
                 },
@@ -77,13 +81,10 @@ class TestForbiddenLicenses(unittest.TestCase):
             create_test_structure(
                 base,
                 {
-                    "vendor/gpl-pkg": {
+                    "node_modules/gpl-pkg": {
                         "LICENSE": "GNU General Public License v3.0"
                     },
-                    "extensions/vscode/node_modules/placeholder": {
-                        "LICENSE": "MIT License"
-                    },
-                    "extensions/vscode/webviews/homeView/node_modules/placeholder": {
+                    "node_modules/placeholder": {
                         "LICENSE": "MIT License"
                     },
                 },
@@ -98,43 +99,16 @@ class TestForbiddenLicenses(unittest.TestCase):
 class TestMissingDirectories(unittest.TestCase):
     """Tests for missing directory handling."""
 
-    def test_missing_vendor_fails(self):
-        """Missing vendor directory should cause failure."""
-        with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp)
-
-            # Only create node_modules, not vendor
-            create_test_structure(
-                base,
-                {
-                    "extensions/vscode/node_modules/pkg": {"LICENSE": "MIT"},
-                    "extensions/vscode/webviews/homeView/node_modules/pkg": {
-                        "LICENSE": "MIT"
-                    },
-                },
-            )
-
-            result = run_licenses_script(base)
-            self.assertEqual(result.returncode, 1)
-            self.assertIn("Required directories are missing", result.stderr)
-            self.assertIn("vendor", result.stderr)
-
     def test_missing_node_modules_fails(self):
-        """Missing node_modules directory should cause failure."""
+        """Missing root node_modules directory should cause failure."""
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
 
-            # Only create vendor, not node_modules
-            create_test_structure(
-                base,
-                {
-                    "vendor/pkg": {"LICENSE": "MIT"},
-                },
-            )
-
+            # Do not create node_modules at base — script should fail.
             result = run_licenses_script(base)
             self.assertEqual(result.returncode, 1)
-            self.assertIn("Required directories are missing", result.stderr)
+            self.assertIn("Required directory is missing", result.stderr)
+            self.assertIn("node_modules", result.stderr)
 
 
 class TestLicenseFilePatterns(unittest.TestCase):
@@ -148,15 +122,12 @@ class TestLicenseFilePatterns(unittest.TestCase):
             create_test_structure(
                 base,
                 {
-                    "vendor/pkg1": {"LICENSE": "MIT License"},
-                    "vendor/pkg2": {"LICENSE.txt": "MIT License"},
-                    "vendor/pkg3": {"LICENSE.md": "MIT License"},
-                    "vendor/pkg4": {"COPYING": "MIT License"},
-                    "vendor/pkg5": {"NOTICE": "MIT License"},
-                    "extensions/vscode/node_modules/placeholder": {
-                        "LICENSE": "MIT License"
-                    },
-                    "extensions/vscode/webviews/homeView/node_modules/placeholder": {
+                    "node_modules/pkg1": {"LICENSE": "MIT License"},
+                    "node_modules/pkg2": {"LICENSE.txt": "MIT License"},
+                    "node_modules/pkg3": {"LICENSE.md": "MIT License"},
+                    "node_modules/pkg4": {"COPYING": "MIT License"},
+                    "node_modules/pkg5": {"NOTICE": "MIT License"},
+                    "node_modules/placeholder": {
                         "LICENSE": "MIT License"
                     },
                 },

@@ -5,12 +5,11 @@
 
 version: 2
 updates:
-  # npm
+  # npm — root workspace covers extensions/vscode, its homeView webview,
+  # packages/*, and test/{connect-api-contracts,extension-contract-tests}
+  # via the single root package-lock.json. test/e2e stays standalone.
   - package-ecosystem: "npm"
-    directories:
-      - "/"
-      - "/extensions/vscode"
-      - "/extensions/vscode/webviews/homeView"
+    directory: "/"
     schedule:
       interval: "weekly"
     groups:
@@ -33,27 +32,9 @@ updates:
           - "minor"
           - "patch"
 
-  # go
-  - package-ecosystem: "gomod"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    groups:
-      go-minor-and-patch:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-
   # python
   - package-ecosystem: "pip"
     directory: "/test/e2e"
-    schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "pip"
-    directory: "/test/setup"
     schedule:
       interval: "weekly"
 
@@ -106,15 +87,6 @@ updates:
 
   - package-ecosystem: "pip"
     directory: "/test/sample-content/gradio"
-    schedule:
-      interval: "monthly"
-    groups:
-      test-data-dependencies:
-        patterns:
-          - "*"
-
-  - package-ecosystem: "pip"
-    directory: "/internal/clients/connect/testdata/python-bundle"
     schedule:
       interval: "monthly"
     groups:

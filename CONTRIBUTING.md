@@ -11,7 +11,6 @@
   - [Architecture](#architecture)
   - [Testing](#testing)
     - [Unit Tests](#unit-tests)
-      - [Coverage Reporting](#coverage-reporting)
     - [End-to-End Tests](#end-to-end-tests)
   - [Development](#development)
     - [Build Tools](#build-tools)
@@ -25,7 +24,6 @@
     - [Before Releasing](#before-releasing)
     - [Instructions](#instructions)
   - [Updating Dependencies](#updating-dependencies)
-    - [Updating a Go dependency](#updating-a-go-dependency)
 
 ## Getting Started
 
@@ -34,10 +32,9 @@ local machine for development and testing purposes.
 
 ### Prerequisites
 
-- [Go](https://go.dev/dl/) (see `go.mod` for minimum version)
 - [Just](https://github.com/casey/just?tab=readme-ov-file#installation)
 - [Node.js](https://nodejs.org/en/download/) (LTS recommended; [nvm](https://github.com/nvm-sh/nvm) is a good version manager)
-- [R](https://www.r-project.org/) with the `renv` package — needed for full test suite. [rig](https://github.com/r-lib/rig) is a convenient installer. After installing R, run `R -e 'install.packages("renv")'`.
+- [R](https://www.r-project.org/) with the `renv` package — needed for R-related tests. [rig](https://github.com/r-lib/rig) is a convenient installer. After installing R, run `R -e 'install.packages("renv")'`.
 - [Visual Studio Code](https://code.visualstudio.com/download) with the recommended workspace extensions (see below)
 
 #### VS Code Extensions
@@ -56,8 +53,7 @@ To get your development environment up and running, invoke the default Just comm
 just
 ```
 
-This installs dependencies, builds and packages the Go binary and the VS Code
-extension.
+This installs dependencies and packages the VS Code extension.
 
 See the [Posit Publisher VS Code Extension CONTRIBUTING guide](./extensions/vscode/CONTRIBUTING.md)
 next for setting up your development workflow.
@@ -66,25 +62,25 @@ next for setting up your development workflow.
 
 The repo utilizes git hooks (through `husky`) to implement some standard formatting and linting.
 
-The tools invoked are expected to be installed as packages within the root of the repo, as well as within the subdirectory `test/e2e`.
-
-To commit one or more files, you must have first installed the npm package dependencies within both locations. This can be done from the root of the repo by:
+The hooks depend on the root workspace's npm packages, which cover every workspace member (extensions/vscode, webviews/homeView, packages/\*, and the TypeScript test packages). A single install at the repo root is enough:
 
 ```bash
 npm install
-npm install --prefix="test/e2e"
+```
+
+If you also work on the e2e Cypress suite, install its deps separately — that package is deliberately outside the workspace:
+
+```bash
+npm install --prefix=test/e2e
 ```
 
 ## Architecture
 
-Posit Publisher has three major sections to its codebase:
+Posit Publisher is a pure TypeScript project with two major sections:
 
-- A Go backend that handles all business logic and Connect / Connect Cloud
-  server communication.
-- A TypeScript Positron / VS Code extension that manages the IDE integration
-- A Vue webview that provides the sidebar UI in the IDE
-
-These three communicate using different methods at runtime.
+- A TypeScript Positron / VS Code extension that implements all publishing logic and
+  communicates with Connect / Connect Cloud servers directly.
+- A Vue webview that provides the sidebar UI in the IDE.
 
 ```
 ┌─────────────────────────────────────┐  ┌─────────────────────────────────────┐
@@ -106,70 +102,40 @@ These three communicate using different methods at runtime.
              HTTPS │                                        │  reads/writes
                    │                                        │
 ┌──────────────────┴────────────────────────────────────────┴──────────────────┐
-│  Go Backend                                                                  │
-│  `cmd/publisher/` + `internal/`                                              │
-│                                                                              │
-│  Standalone HTTP server started via the `publisher ui` CLI command.          │
-│  Exposes an HTTP API and an event stream (server-sent events).               │
+│  VSCode Extension Host (TypeScript)                                          │
+│  `extensions/vscode/src/`                                                    │
 │                                                                              │
 │  Owns all business logic:                                                    │
 │  - Project inspection (Python/R/Quarto)                                      │
 │  - Configuration & deployment record I/O                                     │
 │  - Credential storage (keyring or file)                                      │
 │  - Bundle creation (file packaging)                                          │
-│  - Publishing orchestration and progress streaming                           │
-│  - All communication with Connect servers                                    │
-└──────────────────────────────────────┬───────────────────────────────────────┘
-                                       │
-                         HTTP (Axios)  │  `GET/POST/PUT/PATCH/DELETE`
-                  to `localhost:PORT`  │  against `/api/*` endpoints
-                                       │
-                         Event stream  │  `GET /api/events?stream=messages`
-                       Go → Extension  │  Real-time deploy progress & logs
-                                       │
-┌──────────────────────────────────────┴───────────────────────────────────────┐
-│  VSCode Extension Host                                                       │
-│  `extensions/vscode/src/`                                                    │
+│  - Publishing orchestration                                                  │
+│  - All communication with Connect / Connect Cloud servers                    │
 │                                                                              │
-│  Runs in VSCode's Node.js process. Acts as the bridge between the webview    │
-│  and the Go backend:                                                         │
-│                                                                              │
-│  - Spawns the Go binary as a child process on activation                     │
-│  - Makes HTTP calls to Go on behalf of the webview                           │
-│    (`src/api/` — Axios client with typed resource classes)                   │
-│  - Listens to events from Go and pushes state updates to the webview         │
-│  - Watches `.posit/publish/` files for changes                               │
-└───────────────────────────┬─────────────────────────┬────────────────────────┘
-                            │                         │
-                            │                 used by │
-                            │                         │
-                postMessage │  ┌──────────────────────┴────────────────────────┐
-                     (JSON) │  │  Shared Types                                 │
-                            │  │  `src/types/messages/`                        │
-             Typed messages │  │  `src/api/types/`                             │
-              serialized by │  │                                               │
-                  "conduit" │  │  Message contracts:                           │
-                   classes: │  │  - `hostToWebviewMessages.ts`                 │
-           `WebviewConduit` │  │  - `webviewToHostMessages.ts`                 │
-              `HostConduit` │  │                                               │
-                            │  │  API data shapes:                             │
-                            │  │  - configurations, credentials, files,        │
-                            │  │    contentRecords, events, packages, errors   │
-                            │  └──────────────────────┬────────────────────────┘
-                            │                         │
-                            │             imports via │
-                            │           relative path │
-                            │           (`../../../`) │
-                            │                         │
-┌───────────────────────────┴─────────────────────────┴────────────────────────┐
+│  Uses the shared npm packages:                                               │
+│  - `@posit-dev/connect-api` — axios client for Posit Connect                 │
+│  - `@posit-dev/connect-cloud-api` — client + OAuth for Connect Cloud         │
+└───────────────────────────┬──────────────────────────────────────────────────┘
+                            │
+                postMessage │
+                     (JSON) │
+             Typed messages │
+              serialized by │
+                  "conduit" │
+                   classes: │
+           `WebviewConduit` │
+              `HostConduit` │
+                            │
+┌───────────────────────────┴──────────────────────────────────────────────────┐
 │  Vue Webview (Sidebar UI)                                                    │
 │  `webviews/homeView/`                                                        │
 │                                                                              │
 │  Vue + Pinia app rendered in a VSCode webview iframe. A webview gives us     │
 │  full control over the UI beyond what the IDE's APIs provide. Has no         │
-│  direct access to Node.js, the filesystem, the Go backend, or the            │
-│  VS Code API. Uses `postMessage` from VS Code's `WebviewApi` to              │
-│  communicate with the extension host.                                        │
+│  direct access to Node.js, the filesystem, or the VS Code API. Uses          │
+│  `postMessage` from VS Code's `WebviewApi` to communicate with the           │
+│  extension host.                                                             │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -177,11 +143,10 @@ These three communicate using different methods at runtime.
 
 1. User clicks Deploy
 2. Webview sends deploy message via `postMessage`
-3. Extension receives it, calls `POST /api/deployments/{name}`
-4. Go backend bundles project files, uploads to Connect, deploys
-5. Go backend streams progress via events
-6. Extension forwards status to webview via `postMessage`
-7. Webview updates UI reactively via Pinia stores
+3. Extension host receives it, inspects the project, bundles files, and uploads to Connect
+4. Deployment progress events flow through the extension's in-process `EventStream`
+5. Extension forwards status to webview via `postMessage`
+6. Webview updates UI reactively via Pinia stores
 
 ## Testing
 
@@ -189,23 +154,15 @@ This project follows the guidance written by _Ham Vocke_ in the _[The Practical 
 
 ### Unit Tests
 
-Unit tests are written in Go and utilize the [Testify](https://github.com/stretchr/testify) framework for assertions and mocking.
+The VSCode extension uses [Mocha](https://mochajs.org) for integration tests (under `extensions/vscode/src/test/`) and [Vitest](https://vitest.dev) for unit tests (`src/**/*.test.ts` alongside the source).
+
+From `extensions/vscode/`:
 
 ```console
 just test
 ```
 
-> **Note:** Some tests in `internal/inspect/dependencies/renv/` require R and the `renv` package. Without them, those tests will fail. All other tests will pass without R installed.
-
-#### Coverage Reporting
-
-Coverage reporting is captured by the [cover](https://pkg.go.dev/cmd/cover) standard library. To capture coverage, run the following Just command:
-
-```console
-just cover
-```
-
-Once complete, a coverage report will open in your default browser.
+TypeScript packages under `packages/` use Vitest.
 
 ### End-to-End Tests
 
@@ -243,17 +200,9 @@ This mode can be reproduced on your local machine by setting `CI=true`.
 
 ### Debugging in VS Code
 
-A `launch.json` can be found at the root in the `.vscode` directory for
-debugging the Go API code.
-
-The "Launch API" configuration will start the API at port 9001.
-To change the directory that the API is started in, update the `cwd` property
-to the directory you want the API to be launched at.
-
-When debugging alongside the
-[VS Code Extension](./extensions/vscode/CONTRIBUTING.md#debugging) the `cwd`
-will frequently be the workspace folder of the extension host development
-window.
+Debug configurations for the extension itself live at
+[`extensions/vscode/.vscode/launch.json`](./extensions/vscode/.vscode/launch.json).
+See the [extension CONTRIBUTING guide](./extensions/vscode/CONTRIBUTING.md#debugging) for details.
 
 ### Extension Development
 
@@ -261,14 +210,14 @@ See [the Contribution Guide for the VSCode Extension](./extensions/vscode/CONTRI
 
 ## Schema Updates
 
-Schemas can be found in the `extensions/vscode/src/toml/schemas` directory.
+Schemas live at `extensions/vscode/src/toml/schemas/`.
 
 Non-breaking or additive changes to the schema do not require a version bump. Breaking changes to the schema require a version bump.
 
 To update the schema:
 
 - Update the jsonschema file (`posit-publishing-schema-v3.json` or `posit-publishing-record-schema-v3.json` for the Configuration or Deployment schemas, respectively)
-- Update the corresponding example file (`example-config.toml` or `example-record.toml`).
+- Update the corresponding example file (`config.toml` or `record.toml`).
 - If you're using VSCode with the Even Better TOML extension, you can use the in-editor validation by putting the full local path to your updated schema in the `$schema` field in your TOML files.
 - Verify that the unit tests pass. They load the example files and validate them against the schemas.
 - The `draft` folder contains schemas that are a superset of the main schemas, and have ideas for the other settings we have considered adding. Usually we have added any new fields to those schemas and example files as well.
@@ -377,7 +326,6 @@ After review and approval, Dependabot PRs can be merged like regular code change
 - Configuration is maintained in `.github/dependabot.yml`
 - Multiple ecosystems are monitored:
   - npm packages (root, VSCode extension, and test directories)
-  - Go modules
   - Python dependencies
   - Docker images
   - GitHub Actions
@@ -388,27 +336,9 @@ After review and approval, Dependabot PRs can be merged like regular code change
 Dependencies can be manually adjusted at any time; the process of updating after a
 release keeps us proactive.
 
-This includes our JavaScript packages, Go version/packages, and tooling
-dependencies.
+This includes our JavaScript packages and tooling dependencies.
 
 Any significantly difficult dependency updates should have an issue created to
 track the work and can be triaged alongside our other issues.
 
 Updates to dependencies should be done in a separate PR.
-
-### Updating a Go dependency
-
-1. Run `go get <dependency>@<version>` to update the dependency. This will
-   update the `go.mod` file with the new version.
-   - `go get` has a `-u` option that will update all child dependencies as well.
-     This is generally not recommended as it can cause unexpected problems. Use
-     it with caution. `go get` will do the right thing on its own without `-u`.
-   - It is best to specify the version with the `@<version>` suffix. This may be
-     a semver string, a branch name, or a commit hash.
-
-2. Update any import statements for the new version of the dependency.
-
-3. Run `go mod vendor` to update the `vendor` directory with the new version of
-   the dependency.
-
-4. Make sure all files under vendor are included in the git commit.

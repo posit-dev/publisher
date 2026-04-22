@@ -97,7 +97,6 @@ export async function getLibPaths(
 
 /**
  * Build the R code for listing available packages from given repositories.
- * Mirrors Go's ListAvailablePackages().
  */
 export function buildAvailablePackagesCode(repos: Repository[]): string {
   const urls = repos
@@ -141,7 +140,6 @@ export function parseAvailablePackagesOutput(
 
 /**
  * List packages available in the given repositories.
- * Mirrors Go's ListAvailablePackages().
  */
 export async function listAvailablePackages(
   rPath: string,
@@ -155,7 +153,6 @@ export async function listAvailablePackages(
 
 /**
  * Discover Bioconductor repository URLs via R.
- * Mirrors Go's GetBioconductorRepos().
  */
 export async function getBioconductorRepos(
   rPath: string,
@@ -193,7 +190,7 @@ export function parseBioconductorReposOutput(output: string): Repository[] {
 }
 
 // ---------------------------------------------------------------------------
-// Package resolution helpers (ported from Go's manifest_packages.go)
+// Package resolution helpers
 // ---------------------------------------------------------------------------
 
 /** Fields whose continuation lines preserve original indentation. */
@@ -259,7 +256,6 @@ function remoteRepoURL(remoteType: string, pkgRef: string): string {
 
 /**
  * Determine the Source and Repository for a manifest package entry.
- * Mirrors Go's toManifestPackage().
  */
 export function toManifestPackage(
   pkg: RenvPackage,
@@ -267,13 +263,8 @@ export function toManifestPackage(
   availablePackages: AvailablePackage[],
   biocPackages: AvailablePackage[],
 ): { Source: string; Repository: string } {
-  let source = pkg.Source;
+  const source = pkg.Source;
   const repository = pkg.Repository ?? "";
-
-  if (!repository && pkg.RemoteRepos?.includes("bioconductor.org")) {
-    // Workaround for https://github.com/rstudio/renv/issues/1202
-    source = "Bioconductor";
-  }
 
   switch (source) {
     case "Repository": {
@@ -321,7 +312,6 @@ export function toManifestPackage(
 
 /**
  * Read a package's DESCRIPTION file from the first matching library path.
- * Mirrors Go's readPackageDescription().
  */
 export async function readPackageDescription(
   pkgName: string,
@@ -384,8 +374,6 @@ const defaultLister: PackageLister = {
  * Unlike the lockfile-only mapper, it reads each package's DESCRIPTION file
  * from the local R library and queries R for available packages to produce
  * richer manifest entries.
- *
- * Mirrors Go's defaultPackageMapper.GetManifestPackages().
  */
 export async function libraryToManifestPackages(
   projectDir: string,

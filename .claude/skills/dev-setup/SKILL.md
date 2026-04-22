@@ -35,33 +35,27 @@ Work through these steps in order.
 - **Act:** If missing, suggest installing Homebrew (https://brew.sh). Many later steps use brew for installing tools. On Linux, the system package manager is fine.
 - **Verify:** `brew --version` succeeds.
 
-### Step 2: Go
-
-- **Check:** `go version` — compare against the minimum version in `go.mod`.
-- **Act:** If missing or too old, point to https://go.dev/dl/ for installation.
-- **Verify:** `go version` shows a version >= the `go.mod` requirement.
-
-### Step 3: Node.js
+### Step 2: Node.js
 
 - **Check:** `node --version` and `npm --version`. The project needs a current LTS version.
 - **Act:** If missing, recommend nvm (https://github.com/nvm-sh/nvm) as the version manager. **Important: Do NOT install nvm via Homebrew — it is not compatible.** Follow the install script from the nvm README. Then: `nvm install --lts`.
 - **Verify:** `node --version` shows an LTS version and `npm --version` succeeds.
 
-### Step 4: Just
+### Step 3: Just
 
 - **Check:** `just --version`
 - **Act:** If missing: `brew install just` (macOS) or see https://github.com/casey/just for other platforms.
 - **Verify:** `just --version` succeeds.
 
-### Step 5: R and renv
+### Step 4: R and renv
 
 - **Check:** `R --version` to confirm R is installed. Then check renv: `R -e 'if (!requireNamespace("renv", quietly = TRUE)) quit(status = 1)' 2>/dev/null`
 - **Act:** If R is missing, suggest rig (https://github.com/r-lib/rig) as a convenient installer. If renv is missing: `R -e 'install.packages("renv")'`.
 - **Verify:** Both checks pass.
 
-**Why this matters:** Several Go tests in `internal/inspect/dependencies/renv/` require R with renv. Without them, `just test` will fail on those tests. Everything else passes without R.
+**Why this matters:** Some R-related extension tests invoke `R` directly and may fail if R is unavailable. R is also required to inspect and deploy R projects locally.
 
-### Step 6: VS Code Extensions
+### Step 5: VS Code Extensions
 
 - **Check:** Run `code --list-extensions` and look for:
   - `connor4312.esbuild-problem-matchers` — **Required** for debug launch configs
@@ -72,38 +66,37 @@ Work through these steps in order.
 
 **Why `esbuild-problem-matchers` is critical:** Without it, the "Run Extension" debug launch configuration fails. This is the single most commonly missed setup step. These extensions are listed in `extensions/vscode/.vscode/extensions.json` and VS Code should prompt to install them when the workspace is opened, but the prompt is easily dismissed.
 
-### Step 7: Install Dependencies
+### Step 6: Install Dependencies
 
 - **Check:** Check if `node_modules/` exists at the repo root and looks populated.
 - **Act:** Run `npm install` at the repo root. This installs Prettier, Husky (git hooks), and lint-staged. Also run `npm install --prefix="test/e2e"` so that git hooks work correctly when committing changes to E2E test files.
 - **Verify:** `node_modules/.package-lock.json` exists and `npx husky --version` works (git hooks are configured).
 
-### Step 8: Full Build
+### Step 7: Full Build
 
-- **Check:** Check if the Go binary exists at the expected location under `bin/`.
-- **Act:** Run `just` from the repo root. This builds the Go binary, installs extension + webview npm dependencies, and packages the VS Code extension (.vsix).
+- **Check:** Check if `dist/` contains a `.vsix` from a previous build.
+- **Act:** Run `just` from the repo root. This installs npm dependencies (extension + webview) and packages the VS Code extension (.vsix).
 - **Verify:** The build completes without errors and a `.vsix` file exists in `dist/`.
 
-### Step 9: Verify Tests
+### Step 8: Verify Tests
 
-Run all three test suites and check for failures:
+Run both test suites and check for failures:
 
-1. **Go tests:** `just test`
-   - **Check/Verify:** All tests pass. If tests fail only in `internal/inspect/dependencies/renv/`, that's the R/renv prerequisite — guide the developer back to Step 5.
+1. **Extension tests:** `cd extensions/vscode && just test`
+   - **Check/Verify:** Mocha integration tests pass (opens a VS Code window briefly) and all Vitest unit tests pass. If R-related suites fail, guide the developer back to Step 4 (R and renv).
 
-2. **Extension tests:** `cd extensions/vscode && just test`
-   - **Check/Verify:** Mocha integration tests pass (opens a VS Code window briefly) and all Vitest unit tests pass.
-
-3. **Webview tests:** `cd extensions/vscode/webviews/homeView && npm test`
+2. **Webview tests:** `cd extensions/vscode/webviews/homeView && npm test`
    - **Check/Verify:** All Vitest tests pass.
 
 ### Core Setup Complete
 
 Tell the developer their core environment is ready. Summarize what's set up and what they can do:
 
-- `just` — full rebuild
-- `just test` — Go tests
-- `just build` — Go binary only
+- `just` — full rebuild and package (.vsix)
+- `just vscode test` — extension tests (Mocha integration + Vitest unit)
+- `just format` / `just check-format` — formatting
+- `just test-extension-contracts` — extension contract tests
+- `just test-connect-contracts` — Connect API contract tests
 - F5 in VS Code (with `extensions/vscode/` open) — run the extension in debug mode
 - Point them to `CONTRIBUTING.md` and `extensions/vscode/CONTRIBUTING.md` for workflow details
 
@@ -113,7 +106,7 @@ Then ask: **"Would you like to set up E2E testing too? This requires Docker and 
 
 Only proceed if the developer wants this. E2E tests run the extension in a real VS Code environment (code-server in Docker) against a real Posit Connect server.
 
-### Step 10: Docker Desktop
+### Step 9: Docker Desktop
 
 - **Check:** `docker --version` and `docker info` (confirms the daemon is running).
 - **Act:** If missing, point to https://www.docker.com/products/docker-desktop/.
@@ -126,13 +119,13 @@ On Apple Silicon (`uname -m` shows `arm64`), the developer needs to configure Do
 
 Ask the developer to confirm these are set.
 
-### Step 11: uv and with-connect
+### Step 10: uv and with-connect
 
 - **Check:** `uv --version` and `which with-connect`
 - **Act:** If uv is missing: `brew install uv`. If with-connect is missing: `uv tool install git+https://github.com/posit-dev/with-connect.git`
 - **Verify:** `with-connect --help` produces usage output.
 
-### Step 12: Connect License
+### Step 11: Connect License
 
 The developer needs a Posit Connect license file to run E2E tests locally. This is not something that can be automated.
 
@@ -140,7 +133,7 @@ The developer needs a Posit Connect license file to run E2E tests locally. This 
 - **Act:** If they don't have one, let them know they can rely on GitHub CI for E2E tests, or ask a team member for help getting a license.
 - **Verify:** The file they specified exists on disk.
 
-### Step 13: Environment Variables
+### Step 12: Environment Variables
 
 The E2E tests need `CONNECT_LICENSE_FILE` and (on macOS) `DOCKER_HOST` set.
 
@@ -153,19 +146,17 @@ The E2E tests need `CONNECT_LICENSE_FILE` and (on macOS) `DOCKER_HOST` set.
   Then `direnv allow test/e2e/`. If the developer doesn't want direnv, they can export these manually before running E2E tests.
 - **Verify:** `direnv exec test/e2e env | grep CONNECT_LICENSE_FILE` shows the expected value, or the developer confirms they'll set the variables manually.
 
-### Step 14: Build for E2E
+### Step 13: Build for E2E
 
-E2E tests run in a Linux/amd64 Docker container, so the publisher binary needs to be cross-compiled.
-
-- **Check:** Check if a linux/amd64 binary and .vsix exist from a previous build.
-- **Act:** Run `USE_PLATFORM="linux/amd64" just` from the repo root. Then from `test/e2e/`, build Docker images:
+- **Check:** Check if a `.vsix` exists in `dist/` from a previous build and if Docker images exist: `docker images | grep publisher-e2e`
+- **Act:** Run `just` from the repo root to build the `.vsix`. Then from `test/e2e/`, build Docker images:
   ```bash
   just build-base
   just build-image code-server
   ```
-- **Verify:** Docker images exist: `docker images | grep publisher-e2e`
+- **Verify:** A `.vsix` exists in `dist/` and Docker images exist: `docker images | grep publisher-e2e`
 
-### Step 15: Install E2E Dependencies
+### Step 14: Install E2E Dependencies
 
 - **Check:** Check if `test/e2e/node_modules/` exists.
 - **Act:** From `test/e2e/`:
@@ -175,7 +166,7 @@ E2E tests run in a Linux/amd64 Docker container, so the publisher binary needs t
   ```
 - **Verify:** `npx cypress --version` succeeds from the `test/e2e/` directory.
 
-### Step 16: Verify E2E (skipping Connect Cloud tests)
+### Step 15: Verify E2E (skipping Connect Cloud tests)
 
 Run a quick smoke test excluding Connect Cloud tests (which need 1Password):
 
@@ -193,7 +184,7 @@ Then retry.
 
 After tests complete, clean up: `just stop`
 
-### Step 17: 1Password CLI (Optional, Connect Cloud only)
+### Step 16: 1Password CLI (Optional, Connect Cloud only)
 
 For Connect Cloud tests (tagged `@pcc`), credentials are fetched from 1Password.
 
@@ -217,10 +208,9 @@ Summarize what's available:
 
 If the developer hits issues at any point, here are common problems:
 
-| Symptom                           | Cause                                     | Fix                                                      |
-| --------------------------------- | ----------------------------------------- | -------------------------------------------------------- |
-| `just test` fails in `renv` tests | R or renv not installed                   | Install R (rig) + `R -e 'install.packages("renv")'`      |
-| "Run Extension" launch fails      | Missing esbuild-problem-matchers          | Install `connor4312.esbuild-problem-matchers` extension  |
-| Port 3939 already allocated       | Stale with-connect container              | `docker rm -f $(docker ps -aq --filter publish=3939)`    |
-| `op: command not found`           | 1Password CLI not installed system-wide   | `brew install 1password-cli`                             |
-| E2E container fails to start      | Docker Desktop not configured for Rosetta | Enable Apple Virtualization + Rosetta in Docker settings |
+| Symptom                      | Cause                                     | Fix                                                      |
+| ---------------------------- | ----------------------------------------- | -------------------------------------------------------- |
+| "Run Extension" launch fails | Missing esbuild-problem-matchers          | Install `connor4312.esbuild-problem-matchers` extension  |
+| Port 3939 already allocated  | Stale with-connect container              | `docker rm -f $(docker ps -aq --filter publish=3939)`    |
+| `op: command not found`      | 1Password CLI not installed system-wide   | `brew install 1password-cli`                             |
+| E2E container fails to start | Docker Desktop not configured for Rosetta | Enable Apple Virtualization + Rosetta in Docker settings |

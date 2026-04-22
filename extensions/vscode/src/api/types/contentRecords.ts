@@ -63,9 +63,8 @@ type ConnectCloud = {
 /**
  * Error recorded in a deployment record file.
  *
- * This is distinct from AgentError (which models the Go HTTP JSON API
- * and uses "msg"). Deployment records use "message" (matching the Go
- * toml tag and the deployment record JSON schema).
+ * This is distinct from AgentError (which uses "msg"). Deployment records
+ * use "message" (matching the deployment record JSON schema).
  */
 export type DeploymentRecordError = {
   code: string;

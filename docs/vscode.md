@@ -201,7 +201,7 @@ R Packages view runs `renv::snapshot()` for you.
 This view lists the credentials you have defined.
 You need a credential for each Connect server you want to deploy to;
 each credential includes the server URL and an API key.
-Credentials are securely stored in the OS keychain.
+Credentials are securely stored by VS Code.
 
 To add a credential for a new server, click the `+` button.
 To remove a credential, right-click on it and select `Delete`.
@@ -220,11 +220,6 @@ Posit Publisher makes this easy by prompting you to **Create a new Credential**
 when the selected deployment requires a credential you don't have.
 
 ![](https://cdn.posit.co/publisher/assets/img/publisher-missing-credential.png)
-
-#### via dotfile
-
-If your OS does not have a keychain the extension will manage your credentials
-in a file in your home directory - `.connect-credentials`.
 
 ### Help and Feedback
 

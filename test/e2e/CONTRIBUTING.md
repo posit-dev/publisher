@@ -63,7 +63,7 @@ npx playwright install chromium
 **2. Build the Publisher extension** (from repo root):
 
 ```bash
-USE_PLATFORM="linux/amd64" just
+just
 ```
 
 **3. Build Docker images:**

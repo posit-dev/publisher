@@ -8,13 +8,13 @@
     "check:conformance": "tsc --noEmit -p tsconfig.conformance.json"
   },
   "dependencies": {
-    "@posit-dev/connect-cloud-api": "file:../../packages/connect-cloud-api"
+    "@posit-dev/connect-cloud-api": "*"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/vscode": "^1.87.0",
     "js-yaml": "^4.1.1",
-    "typescript": "^5.7.0",
-    "vitest": "^4.1.0"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.4"
   }
 }

@@ -17,10 +17,10 @@ fi
 
 # Find the VSIX file directly from the mounted volume
 echo "Looking for VSIX file in container..."
-VSIX_FILENAME=$(docker exec publisher-e2e.workbench-$SERVICE bash -c "ls -Art /vsix-tmp | grep linux-amd64 | tail -n 1")
+VSIX_FILENAME=$(docker exec publisher-e2e.workbench-$SERVICE bash -c "ls -Art /vsix-tmp/*.vsix 2>/dev/null | xargs -n1 basename | tail -n 1")
 
 if [ -z "$VSIX_FILENAME" ]; then
-    echo "ERROR: No linux-amd64 Publisher VSIX found in container."
+    echo "ERROR: No Publisher VSIX found in container."
     echo "Contents of /vsix-tmp:"
     docker exec publisher-e2e.workbench-$SERVICE bash -c "ls -la /vsix-tmp"
     exit 1

@@ -79,7 +79,7 @@ jobs:
           yes | python3 ./scripts/prepare-release.py "$VERSION" || true
 
       - name: Install dependencies and sync lockfile
-        run: npm install --prefix extensions/vscode
+        run: npm install
 
       - name: Check for changes
         id: check-changes
@@ -94,7 +94,7 @@ jobs:
       - name: Commit changes
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
-          git add CHANGELOG.md extensions/vscode/CHANGELOG.md extensions/vscode/package.json extensions/vscode/package-lock.json
+          git add CHANGELOG.md extensions/vscode/CHANGELOG.md extensions/vscode/package.json package-lock.json
           git commit -m "Prepare release v$VERSION"
 
       - name: Push branch
