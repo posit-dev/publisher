@@ -395,6 +395,47 @@ describe("manifestFromConfig", () => {
     });
   });
 
+  describe("content_category", () => {
+    it("sets content_category to 'site' for HTML with entrypoint in a subdirectory", () => {
+      const m = manifestFromConfig(
+        minimalConfig({
+          type: ContentType.HTML,
+          entrypoint: "_site/index.html",
+        }),
+      );
+      expect(m.metadata.content_category).toBe("site");
+    });
+
+    it("does not set content_category for HTML with flat entrypoint", () => {
+      const m = manifestFromConfig(
+        minimalConfig({
+          type: ContentType.HTML,
+          entrypoint: "index.html",
+        }),
+      );
+      expect(m.metadata.content_category).toBeUndefined();
+    });
+
+    it("does not set content_category for non-HTML types with subdirectory entrypoint", () => {
+      const m = manifestFromConfig(
+        minimalConfig({
+          type: ContentType.QUARTO_STATIC,
+          entrypoint: "_site/index.html",
+        }),
+      );
+      expect(m.metadata.content_category).toBeUndefined();
+    });
+
+    it("does not set content_category when entrypoint is undefined", () => {
+      const m = manifestFromConfig(
+        minimalConfig({
+          type: ContentType.HTML,
+        }),
+      );
+      expect(m.metadata.content_category).toBeUndefined();
+    });
+  });
+
   describe("combined R and Python environment", () => {
     it("sets both environment.r and environment.python", () => {
       const m = manifestFromConfig(

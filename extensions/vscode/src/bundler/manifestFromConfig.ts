@@ -1,5 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import * as path from "path";
+
 import { ConfigurationDetails, ContentType } from "../api/types/configurations";
 import { appModeFromType } from "./appMode";
 import {
@@ -26,6 +28,7 @@ export function manifestFromConfig(cfg: ConfigurationDetails): Manifest {
       appmode,
       entrypoint: cfg.entrypoint,
       ...primaryField(cfg.type, cfg.entrypoint),
+      ...contentCategoryField(cfg),
       // Matches Go's omitempty: false is omitted so it doesn't appear in manifest.json
       has_parameters: cfg.hasParameters || undefined,
     },
@@ -115,4 +118,22 @@ function primaryField(
     default:
       return undefined;
   }
+}
+
+// Detect multi-page site content for the manifest's content_category field.
+// When an HTML deployment's entrypoint lives inside a subdirectory (e.g.
+// "_site/index.html"), the content is a pre-rendered multi-page site (typically
+// a Quarto website). Connect uses content_category="site" to serve all files
+// in the bundle rather than only the entrypoint.
+function contentCategoryField(
+  cfg: ConfigurationDetails,
+): { content_category: string } | undefined {
+  if (
+    cfg.type === ContentType.HTML &&
+    cfg.entrypoint &&
+    path.dirname(cfg.entrypoint) !== "."
+  ) {
+    return { content_category: "site" };
+  }
+  return undefined;
 }
