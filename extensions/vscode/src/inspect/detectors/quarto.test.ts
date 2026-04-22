@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { QuartoDetector } from "./quarto";
 import { ContentType } from "src/api/types/configurations";
+import { logger } from "src/logging";
 
 const { mockAccess, mockReadFile, mockReaddir, mockStat } = vi.hoisted(() => ({
   mockAccess: vi.fn(),
@@ -907,5 +908,86 @@ describe("QuartoDetector", () => {
     const configs = await detector.inferType("/project", "doc.QMD");
     expect(configs).toHaveLength(1);
     expect(configs[0]?.type).toBe(ContentType.QUARTO_STATIC);
+  });
+
+  describe("quarto inspect error logging (#4011)", () => {
+    test("expected rejection logs at debug, not warn", async () => {
+      setupGlobDir(["app.py"]);
+      mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+      const err = Object.assign(
+        new Error("Command failed: quarto inspect /project/app.py"),
+        {
+          stderr:
+            "ERROR: /project/app.py is not a valid Quarto input document\n",
+          code: 1,
+        },
+      );
+      mockExecFile.mockRejectedValue(err);
+
+      const configs = await detector.inferType("/project", "app.py");
+      expect(configs).toHaveLength(0);
+
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringContaining("quarto inspect failed"),
+      );
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    test("unexpected error logs at warn", async () => {
+      setupGlobDir(["script.py"]);
+      mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+      const err = Object.assign(new Error("Command failed: quarto inspect"), {
+        stderr: "quarto: permission denied\n",
+        code: 1,
+      });
+      mockExecFile.mockRejectedValue(err);
+
+      const configs = await detector.inferType("/project", "script.py");
+      expect(configs).toHaveLength(0);
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining("quarto inspect failed"),
+      );
+    });
+
+    test("ENOENT (quarto not installed) logs at debug, not warn", async () => {
+      setupGlobDir(["doc.qmd"]);
+      mockAccess.mockRejectedValue(new Error("ENOENT"));
+      mockReadFile.mockResolvedValue("# Content\n");
+
+      const err = Object.assign(new Error("spawn quarto ENOENT"), {
+        code: "ENOENT",
+      });
+      mockExecFile.mockRejectedValue(err);
+
+      const configs = await detector.inferType("/project", "doc.qmd");
+      expect(configs).toHaveLength(1);
+
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringContaining("quarto inspect failed"),
+      );
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    test("timeout error logs at warn", async () => {
+      setupGlobDir(["doc.qmd"]);
+      mockAccess.mockRejectedValue(new Error("ENOENT"));
+      mockReadFile.mockResolvedValue("# Content\n");
+
+      const err = Object.assign(new Error("quarto inspect timed out"), {
+        killed: true,
+        signal: "SIGTERM",
+      });
+      mockExecFile.mockRejectedValue(err);
+
+      const configs = await detector.inferType("/project", "doc.qmd");
+      expect(configs).toHaveLength(1);
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining("quarto inspect failed"),
+      );
+    });
   });
 });
