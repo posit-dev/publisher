@@ -27,13 +27,13 @@ jobs:
           GH_TOKEN: ${{ secrets.ORG_TEAM_READ_TOKEN }}
         run: |
           # Check if the author is a member of posit-dev/publisher
-          # The API returns 200 if they are a member, 404 if not
+          # The API returns 204 if they are a member, 404 if not
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/orgs/posit-dev/teams/publisher/members/$AUTHOR")
+            "https://api.github.com/orgs/posit-dev/teams/publisher-code-owners/members/$AUTHOR")
 
-          if [ "$HTTP_STATUS" = "200" ]; then
+          if [ "$HTTP_STATUS" = "204" ]; then
             echo "is_external=false" >> "$GITHUB_OUTPUT"
             echo "$AUTHOR is a publisher team member"
           else
@@ -50,9 +50,13 @@ jobs:
           COMMENT_URL: ${{ github.event.comment.html_url }}
         run: |
           if [ "$EVENT_NAME" = "issue_comment" ]; then
-            MESSAGE=":speech_balloon: *New external comment on Publisher issue*\n\n*<${COMMENT_URL}|#${ISSUE_NUMBER}: ${ISSUE_TITLE}>*\nComment by: <https://github.com/${AUTHOR}|@${AUTHOR}>"
+            MESSAGE=$(printf ':speech_balloon: *New external comment on Publisher issue*\n\n*<%s|#%s: %s>*\nComment by: <%s|@%s>' \
+              "$COMMENT_URL" "$ISSUE_NUMBER" "$ISSUE_TITLE" \
+              "https://github.com/${AUTHOR}" "$AUTHOR")
           else
-            MESSAGE=":rotating_light: *New external issue filed on Publisher*\n\n*<${ISSUE_URL}|#${ISSUE_NUMBER}: ${ISSUE_TITLE}>*\nFiled by: <https://github.com/${AUTHOR}|@${AUTHOR}>"
+            MESSAGE=$(printf ':rotating_light: *New external issue filed on Publisher*\n\n*<%s|#%s: %s>*\nFiled by: <%s|@%s>' \
+              "$ISSUE_URL" "$ISSUE_NUMBER" "$ISSUE_TITLE" \
+              "https://github.com/${AUTHOR}" "$AUTHOR")
           fi
 
           PAYLOAD=$(jq -n \
