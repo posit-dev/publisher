@@ -8,7 +8,10 @@ import * as zlib from "zlib";
 import { extract as tarExtract, Headers } from "tar-stream";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createBundle } from "./bundler";
+import { manifestFromConfig } from "./manifestFromConfig";
 import { newManifest } from "./manifest";
+import { ContentType } from "../api/types/configurations";
+import { ProductType } from "../api/types/contentRecords";
 import { Manifest, BundleProgressEvent } from "./types";
 
 let tmpDir: string;
@@ -412,5 +415,72 @@ describe("createBundle", () => {
     if (summary?.kind === "summary") {
       expect(summary.files).toBe(2); // app.py + requirements.txt
     }
+  });
+});
+
+describe("pre-rendered Quarto website bundle", () => {
+  it("sets content_category to 'site' in the archived manifest for HTML with subdirectory entrypoint", async () => {
+    // Simulate a pre-rendered Quarto website: output lives under _site/
+    makeFile("_site/index.html", "<html><body>Home</body></html>");
+    makeFile(
+      "_site/slides.html",
+      "<html><body>Slides (revealjs)</body></html>",
+    );
+    makeFile("_site/site_libs/revealjs/reveal.js", "/* reveal.js library */");
+
+    // Build manifest from config the same way connectPublish does
+    const manifest = manifestFromConfig({
+      $schema: "" as never,
+      productType: ProductType.CONNECT,
+      type: ContentType.HTML,
+      entrypoint: "_site/index.html",
+      validate: true,
+      files: ["/_site"],
+    });
+
+    const result = await createBundle({
+      projectPath: tmpDir,
+      manifest,
+      filePatterns: ["/_site"],
+    });
+
+    // The archived manifest.json should have content_category: "site"
+    const entries = await extractTarEntries(result.bundle);
+    const archivedManifest = JSON.parse(
+      entries.get("manifest.json")!.data.toString(),
+    );
+    expect(archivedManifest.metadata.content_category).toBe("site");
+    expect(archivedManifest.metadata.appmode).toBe("static");
+    expect(archivedManifest.metadata.primary_html).toBe("_site/index.html");
+
+    // All site files should be present in the bundle
+    expect(entries.has("_site/index.html")).toBe(true);
+    expect(entries.has("_site/slides.html")).toBe(true);
+    expect(entries.has("_site/site_libs/revealjs/reveal.js")).toBe(true);
+  });
+
+  it("does not set content_category for single-file HTML deployment", async () => {
+    makeFile("index.html", "<html><body>Single page</body></html>");
+
+    const manifest = manifestFromConfig({
+      $schema: "" as never,
+      productType: ProductType.CONNECT,
+      type: ContentType.HTML,
+      entrypoint: "index.html",
+      validate: true,
+      files: ["/index.html"],
+    });
+
+    const result = await createBundle({
+      projectPath: tmpDir,
+      manifest,
+      filePatterns: ["/index.html"],
+    });
+
+    const entries = await extractTarEntries(result.bundle);
+    const archivedManifest = JSON.parse(
+      entries.get("manifest.json")!.data.toString(),
+    );
+    expect(archivedManifest.metadata.content_category).toBeUndefined();
   });
 });
