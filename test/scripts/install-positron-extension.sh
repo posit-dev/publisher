@@ -51,7 +51,7 @@ INSTALL_LOG="./logs/workbench-extension/workbench-extension-installation.log"
 
 # Run installation command as the rstudio user to ensure proper permissions
 echo "Running installation command..." | tee "$INSTALL_LOG"
-docker exec -u rstudio publisher-e2e.workbench-$SERVICE bash -c "cd /usr/lib/rstudio-server/bin/positron-server && ./bin/positron-server --install-extension /vsix-tmp/$VSIX_FILENAME --force" | tee -a "$INSTALL_LOG" || {
+docker exec -u rstudio publisher-e2e.workbench-$SERVICE bash -c "cd /usr/lib/rstudio-server/bin/positron-server && ./bundled/bin/positron-server --install-extension /vsix-tmp/$VSIX_FILENAME --force" | tee -a "$INSTALL_LOG" || {
     echo "Installation command failed" | tee -a "$INSTALL_LOG"
     exit 2
 }
