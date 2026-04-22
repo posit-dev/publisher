@@ -23,10 +23,23 @@ export class QuartoProjectHelper {
   readonly renderedEntrypoint: string;
   readonly projectDir: string;
 
-  constructor(source: string, renderedEntrypoint: string, projectDir: string) {
+  /**
+   * @param source - Source entrypoint filename (e.g. "index.qmd")
+   * @param renderedEntrypoint - Rendered output filename (e.g. "index.html")
+   * @param projectDir - Project directory (may be relative)
+   * @param rootDir - If provided, projectDir is resolved against this root to
+   *   produce an absolute path. This ensures filesystem checks and quarto
+   *   render commands work correctly regardless of the extension host's cwd.
+   */
+  constructor(
+    source: string,
+    renderedEntrypoint: string,
+    projectDir: string,
+    rootDir?: string,
+  ) {
     this.source = source;
     this.renderedEntrypoint = renderedEntrypoint;
-    this.projectDir = projectDir;
+    this.projectDir = rootDir ? path.resolve(rootDir, projectDir) : projectDir;
   }
 
   async render() {

@@ -106,6 +106,60 @@ describe("QuartoProjectHelper", () => {
     });
   });
 
+  describe("rootDir resolves relative projectDir", () => {
+    const rootDir = path.join(path.sep, "workspace", "my project");
+
+    test("relative projectDir is resolved against rootDir", async () => {
+      mockFileExistsAt.mockResolvedValue(false);
+
+      const helper = new QuartoProjectHelper(
+        "index.qmd",
+        "index.html",
+        ".",
+        rootDir,
+      );
+      expect(helper.projectDir).toBe(rootDir);
+      await helper.render();
+      expect(mockRenderCmd).toHaveBeenCalledWith(
+        `quarto render "${path.join(rootDir, "index.qmd")}" --to html`,
+      );
+    });
+
+    test("nested relative projectDir is resolved against rootDir", async () => {
+      mockFileExistsAt.mockResolvedValue(true);
+
+      const relProjectDir = path.join("sub", "dir");
+      const helper = new QuartoProjectHelper(
+        "index.qmd",
+        "index.html",
+        relProjectDir,
+        rootDir,
+      );
+      const expected = path.resolve(rootDir, relProjectDir);
+      expect(helper.projectDir).toBe(expected);
+      await helper.render();
+      expect(mockRenderCmd).toHaveBeenCalledWith(
+        `quarto render "${expected}" --to html`,
+      );
+    });
+
+    test("absolute projectDir is unchanged when rootDir is provided", () => {
+      const absProjectDir = path.join(path.sep, "already", "absolute");
+      const helper = new QuartoProjectHelper(
+        "index.qmd",
+        "index.html",
+        absProjectDir,
+        rootDir,
+      );
+      expect(helper.projectDir).toBe(absProjectDir);
+    });
+
+    test("projectDir is unchanged when rootDir is omitted", () => {
+      const helper = new QuartoProjectHelper("index.qmd", "index.html", ".");
+      expect(helper.projectDir).toBe(".");
+    });
+  });
+
   describe("errors", () => {
     test("there is no quarto binary", async () => {
       mockFileExistsAt.mockResolvedValue(false);

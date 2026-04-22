@@ -133,6 +133,93 @@ Hello project
 );
 
 // --------------------------------------------------------------------------
+// rootDir resolution — verifies that QuartoProjectHelper resolves a relative
+// projectDir against rootDir internally, so callers don't need to.
+// --------------------------------------------------------------------------
+describe("QuartoProjectHelper - rootDir resolution", () => {
+  test("relative projectDir '.' is resolved to rootDir", () => {
+    const helper = new QuartoProjectHelper(
+      "index.qmd",
+      "index.html",
+      ".",
+      tmpDir,
+    );
+    expect(helper.projectDir).toBe(tmpDir);
+  });
+
+  test("nested relative projectDir is resolved against rootDir", () => {
+    const subDir = path.join("sub", "project");
+    const helper = new QuartoProjectHelper(
+      "index.qmd",
+      "index.html",
+      subDir,
+      tmpDir,
+    );
+    expect(helper.projectDir).toBe(path.join(tmpDir, subDir));
+  });
+
+  test("absolute projectDir is unchanged when rootDir is provided", () => {
+    const absDir = path.join(tmpDir, "already-absolute");
+    const helper = new QuartoProjectHelper(
+      "index.qmd",
+      "index.html",
+      absDir,
+      tmpDir,
+    );
+    expect(helper.projectDir).toBe(absDir);
+  });
+
+  test("rootDir enables _quarto.yml detection with relative projectDir", async () => {
+    fs.writeFileSync(
+      path.join(tmpDir, "_quarto.yml"),
+      "project:\n  type: website\n",
+    );
+    // Without rootDir, "." would resolve against cwd (not tmpDir)
+    const helperWithout = new QuartoProjectHelper(
+      "index.qmd",
+      "index.html",
+      ".",
+    );
+    // With rootDir, "." resolves to tmpDir where _quarto.yml exists
+    const helperWith = new QuartoProjectHelper(
+      "index.qmd",
+      "index.html",
+      ".",
+      tmpDir,
+    );
+    expect(await helperWithout.isQuartoYmlPresent()).toBe(false);
+    expect(await helperWith.isQuartoYmlPresent()).toBe(true);
+  });
+
+  test("rootDir triggers project render with relative projectDir", async () => {
+    fs.writeFileSync(
+      path.join(tmpDir, "_quarto.yml"),
+      "project:\n  type: website\n",
+    );
+
+    let capturedCommand: string | undefined;
+    mockRunTerminalCommand.mockImplementation((cmd: string) => {
+      if (cmd === "quarto --version") {
+        return Promise.resolve(0);
+      }
+      capturedCommand = cmd;
+      return Promise.resolve(0);
+    });
+
+    const helper = new QuartoProjectHelper(
+      "index.qmd",
+      "index.html",
+      ".",
+      tmpDir,
+    );
+    await helper.render();
+
+    // Should render the resolved absolute directory
+    expect(capturedCommand).toBe(`quarto render "${tmpDir}" --to html`);
+  });
+});
+
+// --------------------------------------------------------------------------
 // Command construction with real filesystem
 // --------------------------------------------------------------------------
 describe("QuartoProjectHelper - command construction smoke test", () => {
