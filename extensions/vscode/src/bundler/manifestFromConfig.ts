@@ -1,7 +1,5 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import * as path from "path";
-
 import { ConfigurationDetails, ContentType } from "../api/types/configurations";
 import { appModeFromType } from "./appMode";
 import {
@@ -120,20 +118,26 @@ function primaryField(
   }
 }
 
+// Known Quarto output directories that indicate a pre-rendered multi-page site.
+const quartoSiteOutputDirs = new Set(["_site", "_book"]);
+
 // Detect multi-page site content for the manifest's content_category field.
-// When an HTML deployment's entrypoint lives inside a subdirectory (e.g.
-// "_site/index.html"), the content is a pre-rendered multi-page site (typically
-// a Quarto website). Connect uses content_category="site" to serve all files
-// in the bundle rather than only the entrypoint.
+// When an HTML deployment's entrypoint lives inside a known Quarto output
+// directory (e.g. "_site/index.html" or "_book/index.html"), the content is a
+// pre-rendered multi-page site. Connect uses content_category="site" to serve
+// all files in the bundle rather than only the entrypoint.
+//
+// Only known Quarto output directories trigger this — an arbitrary subdirectory
+// (e.g. "subdir/page.html") does not, to avoid false positives for standalone
+// HTML files that happen to be nested.
 function contentCategoryField(
   cfg: ConfigurationDetails,
 ): { content_category: string } | undefined {
-  if (
-    cfg.type === ContentType.HTML &&
-    cfg.entrypoint &&
-    path.dirname(cfg.entrypoint) !== "."
-  ) {
-    return { content_category: "site" };
+  if (cfg.type === ContentType.HTML && cfg.entrypoint) {
+    const topDir = cfg.entrypoint.split("/")[0];
+    if (quartoSiteOutputDirs.has(topDir)) {
+      return { content_category: "site" };
+    }
   }
   return undefined;
 }
