@@ -295,6 +295,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       projectDir,
       sourceEntrypoint,
       renderedEntrypoint,
+      this.root?.uri.fsPath,
     );
   }
 
