@@ -202,9 +202,6 @@ Hello project
 );
 
 // --------------------------------------------------------------------------
-// Command construction with real filesystem
-// --------------------------------------------------------------------------
-// --------------------------------------------------------------------------
 // Relative vs absolute projectDir — verifies the bug where a relative
 // projectDir (e.g. ".") caused isQuartoYmlPresent() to check the wrong
 // directory, falling through to single-document render.
@@ -220,6 +217,10 @@ describe("QuartoProjectHelper - relative vs absolute projectDir", () => {
   });
 
   test("relative projectDir '.' only finds _quarto.yml if cwd matches", async () => {
+    // Guard: this test assumes cwd does NOT contain _quarto.yml.
+    // If it does, the assertion below would pass trivially or fail confusingly.
+    expect(fs.existsSync(path.join(process.cwd(), "_quarto.yml"))).toBe(false);
+
     fs.writeFileSync(
       path.join(tmpDir, "_quarto.yml"),
       "project:\n  type: website\n",
@@ -232,8 +233,6 @@ describe("QuartoProjectHelper - relative vs absolute projectDir", () => {
     // The disk check looks for path.join(".", "_quarto.yml") which resolves
     // relative to cwd, not the project — so it won't find the file.
     const found = await helper.isQuartoYmlPresent();
-    // This should be false (unless cwd happens to have _quarto.yml),
-    // demonstrating why absolute paths are needed.
     expect(found).toBe(false);
   });
 
