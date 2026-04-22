@@ -1,9 +1,0 @@
-"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
-type = "r-shiny"
-entrypoint = "app.R"
-title = "Smoke Test - lockfile only (regression)"
-validate = true
-
-[r]
-package_file = "renv.lock"
-package_manager = "renv"
