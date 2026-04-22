@@ -53,6 +53,19 @@ function isQuartoYaml(entrypointBase: string): boolean {
   return ["_quarto.yml", "_quarto.yaml"].includes(entrypointBase);
 }
 
+function isExpectedInspectFailure(err: unknown): boolean {
+  if (typeof err === "object" && err !== null) {
+    const obj = err as Record<string, unknown>;
+    if (obj.code === "ENOENT") {
+      return true;
+    }
+    if (typeof obj.stderr === "string") {
+      return obj.stderr.includes("is not a valid Quarto input document");
+    }
+  }
+  return false;
+}
+
 export class QuartoDetector implements ContentTypeDetector {
   async inferType(
     baseDir: string,
@@ -110,7 +123,9 @@ export class QuartoDetector implements ContentTypeDetector {
       inspectOutput = await this.quartoInspect(inspectPath);
       logger.debug(`[quarto] quarto inspect succeeded for ${inspectPath}`);
     } catch (err: unknown) {
-      logger.warn(
+      const expected = isExpectedInspectFailure(err);
+      const log = expected ? logger.debug : logger.warn;
+      log(
         `[quarto] quarto inspect failed for ${inspectPath}, attempting fallback: ${err}`,
       );
       const fallbackCfg = await this.genNonInspectConfig(baseDir, inspectPath);
@@ -119,7 +134,7 @@ export class QuartoDetector implements ContentTypeDetector {
           `[quarto] generated configuration without quarto binary inspection: ${inspectPath}`,
         );
       } else {
-        logger.warn(
+        log(
           `[quarto] could not identify Quarto project by files context: ${inspectPath}`,
         );
       }
