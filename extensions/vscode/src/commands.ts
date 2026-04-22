@@ -1,38 +1,11 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import * as path from "path";
+import { Position, Range, Uri, window } from "vscode";
 
-import { ExtensionContext, Position, window, Range, Uri } from "vscode";
-
-import { HOST } from "src";
 import { EditConfigurationSelection } from "./types/messages/webviewToHostMessages";
 
 export { copySystemInfoCommand } from "./commands/copySystemInfo";
 export { diagnosticBundleCommand } from "./commands/diagnosticBundle";
-
-export const create = async (
-  context: ExtensionContext,
-  path: string,
-  port: number,
-  useKeyChain: boolean,
-  subcommand: string = "ui",
-): Promise<[string, string[]]> => {
-  const executable = await getExecutableBinary(context);
-  return [
-    executable,
-    [
-      subcommand,
-      "-vv",
-      `--listen=${HOST}:${port}`,
-      `--use-keychain=${useKeyChain}`,
-      path,
-    ],
-  ];
-};
-
-const getExecutableBinary = (context: ExtensionContext): string => {
-  return path.join(context.extensionPath, "bin", "publisher");
-};
 
 const args = ["@ext:posit.publisher"];
 export const openConfigurationCommand = Uri.parse(

@@ -67,7 +67,7 @@ describe("contentTypeFromAppMode", () => {
   });
 
   // QUARTO and QUARTO_STATIC both map to "quarto-static" in the forward
-  // direction; the reverse map resolves to QUARTO matching Go's mapping.
+  // direction; the reverse map resolves to QUARTO.
   it("resolves quarto-static to QUARTO (not QUARTO_STATIC)", () => {
     expect(contentTypeFromAppMode("quarto-static")).toBe(ContentType.QUARTO);
   });
@@ -76,8 +76,6 @@ describe("contentTypeFromAppMode", () => {
     expect(contentTypeFromAppMode("unknown-xyz")).toBe("unknown-xyz");
   });
 
-  // "unknown" and "" are the two canonical unknown modes in the Go codebase.
-  // Neither has an entry in the reverse map, so both pass through as-is.
   it('passes through "unknown" as-is', () => {
     expect(contentTypeFromAppMode("unknown")).toBe("unknown");
   });

@@ -42,10 +42,9 @@ export class ConnectAPIError extends Error {
 }
 
 /**
- * Known Connect app modes that have app-specific scheduler settings.
- * Mirrors Go's contentTypeConnectMap keys (excluding "static" which has
- * no scheduler settings). Unknown strings fall back to the base
- * /server_settings/scheduler endpoint.
+ * Known Connect app modes that have app-specific scheduler settings
+ * (excluding "static" which has no scheduler settings). Unknown strings
+ * fall back to the base /server_settings/scheduler endpoint.
  */
 const knownAppModes = new Set([
   "jupyter-static",
@@ -201,8 +200,7 @@ export class ConnectAPI {
 
     // Guard against non-JSON responses (e.g., an auth proxy returning HTML).
     // Axios returns the raw string when content-type isn't JSON, so `data`
-    // would be a string instead of an object. Mirrors Go's isConnectAuthError
-    // which catches json.SyntaxError and returns a clear credential/server error.
+    // would be a string instead of an object.
     if (typeof data !== "object" || data === null || !("guid" in data)) {
       throw new ConnectAPIError(
         "The server did not return a valid JSON response. " +
@@ -435,23 +433,22 @@ export class ConnectAPI {
   }
 
   /**
-   * Fetches composite server settings from 7 separate endpoints,
-   * mirroring the Go client's GetSettings behavior.
+   * Fetches composite server settings from 7 separate endpoints.
    *
    * @param appMode - Connect app mode string (e.g. "python-shiny", "static").
    *   When provided and not "static", the scheduler endpoint is fetched with
    *   an app-mode-specific path (`/scheduler/{appMode}`) to get limits that
-   *   apply to that content type. Mirrors Go's `GetSettings` which skips
-   *   the app-mode path for static and unknown content types.
+   *   apply to that content type. The app-mode path is skipped for static and
+   *   unknown content types.
    * @param signal - optional abort signal to cancel all settings requests
    */
   async getSettings(
     appMode?: string,
     signal?: AbortSignal,
   ): Promise<AllSettings> {
-    // Go uses the app-mode-specific scheduler path for known, non-static types.
+    // Use the app-mode-specific scheduler path for known, non-static types.
     // "static" content has no scheduler settings; unknown types would produce
-    // invalid API paths. Mirrors Go's IsKnown() && !IsStaticContent() guard.
+    // invalid API paths.
     const schedulerPath =
       appMode && knownAppModes.has(appMode)
         ? `/__api__/server_settings/scheduler/${appMode}`

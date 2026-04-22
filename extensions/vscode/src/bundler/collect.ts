@@ -7,7 +7,7 @@ import picomatch from "picomatch";
 
 import { FileEntry } from "./types";
 
-// Standard exclusions matching the Go bundler's walker.go.
+// Standard exclusions applied after user patterns.
 // These are always appended after user patterns, so they take precedence.
 export const STANDARD_EXCLUSIONS = [
   // From rsconnect-python
@@ -152,7 +152,6 @@ function getAncestorPaths(relativePath: string): string[] {
 // Determine if a path should be included.
 // For files: must have a positive (non-exclude) match.
 // For directories: returns false only if explicitly excluded.
-// This matches the Go walker's behavior.
 function shouldInclude(
   relativePath: string,
   isDirectory: boolean,
@@ -164,7 +163,6 @@ function shouldInclude(
     // For files, check if a parent directory matches the pattern.
     // A pattern matching a directory includes its contents, whether
     // specified as "data/" (matchesDir) or "data" (bare path).
-    // This matches the Go bundler's behavior.
     if (!isDirectory) {
       const ancestors = getAncestorPaths(relativePath);
       for (const ancestor of ancestors) {
@@ -232,7 +230,7 @@ async function walkDirectory(
         // Mask off the file type bits, keeping only permission bits (rwxrwxrwx)
         symlinkMode = stats.mode & 0o777;
       } catch {
-        // Broken symlink — skip silently (matches Go behavior)
+        // Broken symlink — skip silently
         continue;
       }
     } else {

@@ -24,7 +24,6 @@ import { QuartoDetector } from "./detectors/quarto";
 
 /**
  * Create the ordered list of detectors.
- * The order matches Go's detectors/all.go.
  */
 function createDetectors(): ContentTypeDetector[] {
   return [

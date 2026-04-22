@@ -11,14 +11,14 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@v8
+      - uses: actions/setup-node@v6
         with:
-          name: bin
-          path: bin
-      - run: chmod -R +x ./bin
-      - run: just package
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      - run: just vscode deps
+      - run: just vscode package
       - uses: actions/upload-artifact@v7
-        id: upload
         with:
           name: dist
           path: dist/**/*

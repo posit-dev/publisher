@@ -17,8 +17,8 @@ export function generateTokenId(): string {
  * Generates an RSA 2048-bit key pair and returns both keys
  * as base64-encoded DER buffers.
  *
- * - Private key: PKCS#1 DER format (matches Go's x509.MarshalPKCS1PrivateKey)
- * - Public key: SPKI DER format (matches Go's x509.MarshalPKIXPublicKey)
+ * - Private key: PKCS#1 DER format
+ * - Public key: SPKI DER format
  */
 export function generateKeyPair(): {
   privateKey: string;

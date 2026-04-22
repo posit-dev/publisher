@@ -470,7 +470,7 @@ describe("connectPublish", () => {
       data: { ...TEST_CONTENT, app_mode: "" },
     } as never);
 
-    // Empty string is Go's UnknownMode — should not throw
+    // Empty string is UnknownMode — should not throw
     await connectPublish(opts);
   });
 
@@ -607,7 +607,7 @@ describe("connectPublish", () => {
       "log", // done
       "success",
     ]);
-    // Summary line before per-variable logs (matching Go)
+    // Summary line before per-variable logs
     expect(envEvents[1]!.message).toBe("Setting environment variables");
     // Secret variables use "Setting secret as environment variable"
     expect(envEvents[2]!.message).toBe(
@@ -1529,7 +1529,7 @@ describe("connectPublish — error classification", () => {
     // Note: createManifest emits log events from the orchestrator, but is
     // intentionally omitted from stepToEventPrefix in deployProgress.ts
     // because it maps to the R-specific publish/getRPackageDescriptions
-    // stage that the Go path skips for Python-only projects.
+    // stage that is skipped for Python-only projects.
     expect(logMessages).toContainEqual({
       step: "createManifest",
       message: "Collecting package descriptions",
@@ -1936,7 +1936,7 @@ describe("connectPublish — preflight validation", () => {
   });
 
   test("rejects requirements file when files list is empty", async () => {
-    // Matches Go behavior: empty cfg.Files means the suffix-match loop
+    // Empty cfg.Files means the suffix-match loop
     // produces no match, so requirementsIsIncluded stays false.
     const config = makeConfig({
       files: [],

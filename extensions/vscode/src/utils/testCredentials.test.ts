@@ -112,7 +112,7 @@ describe("testCredentials", () => {
 
   test("no API key — 401 treated as success (URL reachable), no user", async () => {
     // Without credentials, Connect returns 401. The tester should treat this
-    // as success (server is reachable) matching Go behavior at client_connect.go:132-140.
+    // as success (server is reachable).
     mockTestAuthentication.mockRejectedValue(
       new ConnectAPIError("HTTP 401", 401),
     );

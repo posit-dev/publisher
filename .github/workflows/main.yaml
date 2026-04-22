@@ -6,11 +6,8 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-  id-token: write # Required for upload.yaml AWS OIDC authentication
 jobs:
   # Unit Tests
-  agent:
-    uses: ./.github/workflows/agent.yaml
   vscode:
     uses: ./.github/workflows/vscode.yaml
   extension-contract-tests:
@@ -20,18 +17,12 @@ jobs:
     uses: ./.github/workflows/connect-contract-tests.yaml
 
   # Build
-  build:
-    uses: ./.github/workflows/build.yaml
   package:
-    needs: build
     uses: ./.github/workflows/package.yaml
-  archive:
-    needs: build
-    uses: ./.github/workflows/archive.yaml
 
   # E2E Tests
   e2e:
-    needs: [package, agent, vscode]
+    needs: [package, vscode]
     uses: ./.github/workflows/e2e.yaml
     secrets:
       CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
@@ -40,28 +31,10 @@ jobs:
       GH_DOWNLOAD_TOKEN: ${{ secrets.GH_DOWNLOAD_TOKEN }}
       PCC_USER_CCQA3: ${{ secrets.PCC_USER_CCQA3 }}
 
-  upload:
-    needs:
-      - archive
-      - package
-    uses: ./.github/workflows/upload.yaml
-    secrets:
-      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-
   # Slack notification on failure
   slack-notification:
     needs:
-      [
-        agent,
-        vscode,
-        extension-contract-tests,
-        connect-contract-tests,
-        build,
-        package,
-        archive,
-        e2e,
-        upload,
-      ]
+      [vscode, extension-contract-tests, connect-contract-tests, package, e2e]
     if: failure()
     runs-on: ubuntu-latest
     steps:
@@ -81,17 +54,7 @@ jobs:
   # Slack notification when CI recovers from failure
   slack-notification-resolved:
     needs:
-      [
-        agent,
-        vscode,
-        extension-contract-tests,
-        connect-contract-tests,
-        build,
-        package,
-        archive,
-        e2e,
-        upload,
-      ]
+      [vscode, extension-contract-tests, connect-contract-tests, package, e2e]
     if: success()
     runs-on: ubuntu-latest
     steps:

@@ -61,8 +61,8 @@ describe("writePublishRecord round-trip through loadDeploymentFromFile", () => {
     const dp = deploymentPath("minimal");
     await writePublishRecord(dp, record);
 
-    // writePublishRecord sets deployedAt on every write (matching Go's
-    // WriteDeploymentRecord), so records always read back as DEPLOYED.
+    // writePublishRecord sets deployedAt on every write, so records
+    // always read back as DEPLOYED.
     // The NEW state only applies to records created via createDeploymentRecord.
     const loaded = await loadDeploymentFromFile(dp, tmpDir);
     expect(loaded.state).toBe(ContentRecordState.DEPLOYED);

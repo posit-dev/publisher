@@ -8,9 +8,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: extractions/setup-just@v4
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
@@ -21,6 +18,3 @@ jobs:
 
       - run: just vscode deps
       - run: just vscode lint
-
-      - run: just install
-      - run: just lint

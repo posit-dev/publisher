@@ -378,6 +378,11 @@ export class PublisherState implements Disposable {
     return findConfiguration(name, projectDir, this.configurations);
   }
 
+  // WARNING: the returned config may have stale data (empty interpreter
+  // fields, outdated files list) if the file watcher hasn't finished
+  // refreshing yet. Safe for UI display, but code that needs the
+  // current config for correctness (e.g. publish) should read fresh
+  // from disk via loadConfiguration() instead.
   findValidConfig(name: string, projectDir: string) {
     return findConfiguration(name, projectDir, this.validConfigs);
   }

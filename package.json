@@ -2,6 +2,13 @@
   "name": "publishing-client",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "packages/*",
+    "extensions/vscode",
+    "extensions/vscode/webviews/homeView",
+    "test/connect-api-contracts",
+    "test/extension-contract-tests"
+  ],
   "scripts": {
     "format": "prettier . --write",
     "check-format": "prettier . --check",
@@ -13,7 +20,7 @@
     ]
   },
   "devDependencies": {
-    "@types/node": "^25.3.5",
+    "@types/node": "^22.0.0",
     "husky": "^9.0.11",
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.2"

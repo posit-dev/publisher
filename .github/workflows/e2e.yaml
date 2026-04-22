@@ -174,7 +174,7 @@ jobs:
         working-directory: test/e2e
         run: |
           # Install the Publisher extension and set ownership in parallel
-          VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
+          VSIX_FILENAME=$(ls -Art ../../dist/*.vsix | xargs -n1 basename | tail -n 1)
           docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}" &
 
           # Set proper ownership for workspace files while extension installs

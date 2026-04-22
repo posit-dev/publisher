@@ -9,8 +9,6 @@ import { MatchList, STANDARD_EXCLUSIONS } from "./matcher";
 /**
  * Build a file tree for a project directory, applying the file patterns
  * from a named configuration plus standard exclusions.
- *
- * Replaces the Go `GET /api/configurations/{name}/files` endpoint.
  */
 export async function getConfigurationFiles(
   projectDir: string,

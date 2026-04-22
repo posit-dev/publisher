@@ -56,7 +56,6 @@ export const extractConnectCloudAccount = (input: string) => {
 
 /**
  * Infers a ServerType from a URL hostname.
- * Port of Go's `server_type.ServerTypeFromURL`.
  */
 export function serverTypeFromURL(urlStr: string): ServerType {
   const u = new URL(urlStr);
@@ -73,7 +72,6 @@ export function serverTypeFromURL(urlStr: string): ServerType {
 
 /**
  * Generates a list of URLs by progressively adding path segments.
- * Port of Go's `util.GetListOfPossibleURLs`.
  *
  * Input: "https://host.com/a/b/c"
  * Output: ["https://host.com", "https://host.com/a", "https://host.com/a/b", "https://host.com/a/b/c"]
@@ -107,7 +105,6 @@ export type URLTester = (url: string) => Promise<void>;
 /**
  * Attempts to find the correct server URL by testing possible URLs
  * derived from the provided URL. Walks backwards (longest path first).
- * Port of Go's `util.DiscoverServerURL`.
  */
 export async function discoverServerURL(
   providedURL: string,

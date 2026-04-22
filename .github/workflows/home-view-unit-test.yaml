@@ -14,9 +14,7 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-          cache-dependency-path: "**/package-lock.json"
+          cache-dependency-path: "package-lock.json"
       - run: npm ci
-        working-directory: packages/connect-cloud-api
-      - run: npm install --prefix ../..
-      - run: npm install
+        working-directory: ${{ github.workspace }}
       - run: npm test

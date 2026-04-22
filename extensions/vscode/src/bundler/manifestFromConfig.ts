@@ -10,7 +10,6 @@ import {
 
 // Builds a Connect manifest from a deployment configuration.
 // Pure data transformation — no I/O or side effects.
-// Port of Go's NewManifestFromConfig (internal/bundles/manifest.go).
 export function manifestFromConfig(cfg: ConfigurationDetails): Manifest {
   const appmode = appModeFromType(cfg.type);
 
@@ -26,7 +25,7 @@ export function manifestFromConfig(cfg: ConfigurationDetails): Manifest {
       appmode,
       entrypoint: cfg.entrypoint,
       ...primaryField(cfg.type, cfg.entrypoint),
-      // Matches Go's omitempty: false is omitted so it doesn't appear in manifest.json
+      // false is omitted so it doesn't appear in manifest.json
       has_parameters: cfg.hasParameters || undefined,
     },
     ...(cfg.python && {

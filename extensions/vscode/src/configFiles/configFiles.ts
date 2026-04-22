@@ -57,8 +57,6 @@ export async function includeFile(
  * - If an explicit inclusion (`path`) exists, removes it (effectively excluding the file).
  * - Otherwise, adds `!path` exclusion pattern (idempotent — skips if already present).
  *
- * Matches Go's `applyFileAction` with `fileActionExclude`.
- *
  * @param configName - Name of the configuration (without .toml extension)
  * @param filePath - The file path to exclude (e.g., "/data.csv")
  * @param projectDir - Relative project directory (e.g., "." or "subdir")

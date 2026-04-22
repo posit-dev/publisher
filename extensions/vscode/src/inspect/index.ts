@@ -18,9 +18,9 @@ const CONFIG_SCHEMA_URL =
   "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json";
 
 // Convert a raw PartialConfig alternative into a ConfigurationDetails.
-// Matches Go behavior: alternatives get $schema and validate from config.New(),
-// plus the fields set by the detector (type, title, source, entrypoint, files).
-// They are NOT normalized (no comments, no interpreter detection, no productType).
+// Alternatives get $schema and validate, plus the fields set by the detector
+// (type, title, source, entrypoint, files). They are NOT normalized (no
+// comments, no interpreter detection, no productType).
 function alternativeToDetails(alt: PartialConfig): ConfigurationDetails {
   return {
     $schema: CONFIG_SCHEMA_URL,
@@ -58,7 +58,6 @@ function toConfigurationDetails(
 
 /**
  * Inspect a project directory to detect content types and return configuration suggestions.
- * This is the TypeScript replacement for the Go POST /inspect endpoint.
  */
 export function inspectProject(
   options: InspectOptions,
@@ -163,7 +162,7 @@ async function inspectRecursive(
   return allResults;
 }
 
-// Directories to skip during recursive inspection, matching Go's behavior.
+// Directories to skip during recursive inspection.
 const SKIP_DIRS = new Set([
   ".posit",
   ".git",

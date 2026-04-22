@@ -26,15 +26,6 @@ stop:
 lint:
     npm run lint
 
-clear-credentials:
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    cat <<EOF > e2e-test.connect-credentials
-    # File updated and managed by e2e tests. Refrain from updating it manually.
-
-    EOF
-
 # Build publisher and run e2e tests (requires with-connect CLI and license file)
 dev:
     #!/usr/bin/env bash
@@ -63,17 +54,11 @@ e2e *cypress_args:
         exit 1
     fi
 
-    function cleanup() {
-        just clear-credentials
-    }
-    trap cleanup EXIT
-
-    just clear-credentials
     just install
     just start "code-server"
 
     # Install the Publisher extension
-    VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
+    VSIX_FILENAME=$(ls -Art ../../dist/*.vsix | xargs -n1 basename | tail -n 1)
     docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
 
     # Run tests with Connect managed by with-connect
@@ -99,7 +84,7 @@ e2e-open:
     just start "code-server"
 
     # Install the Publisher extension
-    VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
+    VSIX_FILENAME=$(ls -Art ../../dist/*.vsix | xargs -n1 basename | tail -n 1)
     docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
 
     with-connect --license "{{LICENSE}}" -- \
@@ -113,7 +98,7 @@ build-images:
     just pull-workbench "release"
 
 build-publisher:
-    USE_PLATFORM="linux/amd64" just ../../
+    just ../../
 
 
 

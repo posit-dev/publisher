@@ -53,11 +53,6 @@ const logsCommands = {
   ToggleVisibility: "posit.publisher.logs.toggleVisibility",
 } as const;
 
-const credentialsContexts = {
-  Keychain: "posit.publisher.credentials.tree.item.keychain",
-  EnvironmentVars: "posit.publisher.credentials.tree.item.environmentVars",
-};
-
 const filesCommands = {
   Refresh: "posit.publisher.files.refresh",
   Exclude: "posit.publisher.files.exclude",
@@ -124,7 +119,6 @@ export const Commands = {
 
 export const Contexts = {
   ...baseContexts,
-  Credentials: credentialsContexts,
   HomeView: homeViewContexts,
 };
 
