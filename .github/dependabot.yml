@@ -5,12 +5,11 @@
 
 version: 2
 updates:
-  # npm
+  # npm — root workspace covers extensions/vscode, its homeView webview,
+  # packages/*, and test/{connect-api-contracts,extension-contract-tests}
+  # via the single root package-lock.json. test/e2e stays standalone.
   - package-ecosystem: "npm"
-    directories:
-      - "/"
-      - "/extensions/vscode"
-      - "/extensions/vscode/webviews/homeView"
+    directory: "/"
     schedule:
       interval: "weekly"
     groups:
