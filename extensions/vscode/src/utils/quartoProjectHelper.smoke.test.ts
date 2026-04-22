@@ -204,6 +204,62 @@ Hello project
 // --------------------------------------------------------------------------
 // Command construction with real filesystem
 // --------------------------------------------------------------------------
+// --------------------------------------------------------------------------
+// Relative vs absolute projectDir — verifies the bug where a relative
+// projectDir (e.g. ".") caused isQuartoYmlPresent() to check the wrong
+// directory, falling through to single-document render.
+// --------------------------------------------------------------------------
+describe("QuartoProjectHelper - relative vs absolute projectDir", () => {
+  test("absolute projectDir detects _quarto.yml on disk", async () => {
+    fs.writeFileSync(
+      path.join(tmpDir, "_quarto.yml"),
+      "project:\n  type: website\n",
+    );
+    const helper = new QuartoProjectHelper("index.qmd", "index.html", tmpDir);
+    expect(await helper.isQuartoYmlPresent()).toBe(true);
+  });
+
+  test("relative projectDir '.' only finds _quarto.yml if cwd matches", async () => {
+    fs.writeFileSync(
+      path.join(tmpDir, "_quarto.yml"),
+      "project:\n  type: website\n",
+    );
+    // With "." as projectDir, fileExistsAt resolves relative to process.cwd(),
+    // which is NOT tmpDir. This simulates the bug: the extension host's cwd
+    // differs from the project directory.
+    const helper = new QuartoProjectHelper("index.qmd", "index.html", ".");
+    // source doesn't contain "_quarto.yml", so it falls through to disk check.
+    // The disk check looks for path.join(".", "_quarto.yml") which resolves
+    // relative to cwd, not the project — so it won't find the file.
+    const found = await helper.isQuartoYmlPresent();
+    // This should be false (unless cwd happens to have _quarto.yml),
+    // demonstrating why absolute paths are needed.
+    expect(found).toBe(false);
+  });
+
+  test("absolute projectDir triggers project render, not document render", async () => {
+    fs.writeFileSync(
+      path.join(tmpDir, "_quarto.yml"),
+      "project:\n  type: website\n",
+    );
+
+    let capturedCommand: string | undefined;
+    mockRunTerminalCommand.mockImplementation((cmd: string) => {
+      if (cmd === "quarto --version") {
+        return Promise.resolve(0);
+      }
+      capturedCommand = cmd;
+      return Promise.resolve(0);
+    });
+
+    const helper = new QuartoProjectHelper("index.qmd", "index.html", tmpDir);
+    await helper.render();
+
+    // Should render the project directory, not the single document
+    expect(capturedCommand).toBe(`quarto render "${tmpDir}"`);
+  });
+});
+
 describe("QuartoProjectHelper - command construction smoke test", () => {
   let capturedCommand: string | undefined;
 
