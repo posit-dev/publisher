@@ -47,12 +47,16 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              labels: ['community']
-            });
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['community']
+              });
+            } catch (error) {
+              core.warning(`Failed to add community label: ${error.message}`);
+            }
 
       - name: Send Slack notification
         if: steps.check-team.outputs.is_external == 'true'
