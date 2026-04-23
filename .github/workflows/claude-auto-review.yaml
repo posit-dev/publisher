@@ -6,8 +6,12 @@ on:
 
 jobs:
   auto-review:
-    # Skip draft PRs and Dependabot PRs
-    if: github.event.pull_request.draft == false && github.actor != 'dependabot[bot]'
+    # Skip draft PRs, Dependabot PRs, and release PRs opened by bots
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.actor != 'dependabot[bot]' &&
+      github.actor != 'posit-connect-projects[bot]' &&
+      !startsWith(github.event.pull_request.head.ref, 'release/')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
