@@ -40,6 +40,16 @@
         })
       "
     />
+    <TreeItem
+      title="Save Diagnostic Bundle"
+      tooltip="Save a diagnostic bundle with system info, runtime versions, and logs for support"
+      align-icon-with-twisty
+      @click="
+        hostConduit.sendMsg({
+          kind: WebviewToHostMessageType.DIAGNOSTIC_BUNDLE,
+        })
+      "
+    />
   </TreeSection>
 </template>
 

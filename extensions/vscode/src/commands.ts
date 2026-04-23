@@ -5,6 +5,7 @@ import { Position, Range, Uri, window } from "vscode";
 import { EditConfigurationSelection } from "./types/messages/webviewToHostMessages";
 
 export { copySystemInfoCommand } from "./commands/copySystemInfo";
+export { diagnosticBundleCommand } from "./commands/diagnosticBundle";
 
 const args = ["@ext:posit.publisher"];
 export const openConfigurationCommand = Uri.parse(

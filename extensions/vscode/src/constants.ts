@@ -93,6 +93,7 @@ const homeViewCommands = {
   RemoveSecret: "posit.publisher.homeView.removeSecret",
   EditCurrentConfiguration: "posit.publisher.homeView.edit.Configuration",
   CopySystemInfo: "posit.publisher.homeView.copySystemInfo",
+  DiagnosticBundle: "posit.publisher.homeView.diagnosticBundle",
   // Added automatically by VSCode with view registration
   Focus: "posit.publisher.homeView.focus",
 } as const;

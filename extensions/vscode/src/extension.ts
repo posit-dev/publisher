@@ -13,7 +13,7 @@ import { getXDGConfigProperty } from "src/utils/config";
 import { PublisherState } from "./state";
 import { PublisherAuthProvider } from "./authProvider";
 import { logger } from "./logging";
-import { copySystemInfoCommand } from "src/commands";
+import { copySystemInfoCommand, diagnosticBundleCommand } from "src/commands";
 import { registerLLMTooling } from "./llm";
 import {
   clearConnectContentBundleForUri,
@@ -132,6 +132,9 @@ function initializeExtension(context: ExtensionContext) {
     ),
     commands.registerCommand(Commands.HomeView.CopySystemInfo, () =>
       copySystemInfoCommand(context),
+    ),
+    commands.registerCommand(Commands.HomeView.DiagnosticBundle, () =>
+      diagnosticBundleCommand(context),
     ),
   );
   setStateContext(PositPublishState.initialized);

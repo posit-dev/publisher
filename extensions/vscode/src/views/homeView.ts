@@ -240,6 +240,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.updateSelectionIsPreContentRecordState(msg.content.state);
       case WebviewToHostMessageType.COPY_SYSTEM_INFO:
         return await this.copySystemInfo();
+      case WebviewToHostMessageType.DIAGNOSTIC_BUNDLE:
+        return await this.generateDiagnosticBundle();
       case WebviewToHostMessageType.ADD_INTEGRATION_REQUEST:
         return await this.addIntegrationRequest();
       case WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST:
@@ -265,6 +267,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async copySystemInfo() {
     return await commands.executeCommand(Commands.HomeView.CopySystemInfo);
+  }
+
+  private async generateDiagnosticBundle() {
+    return await commands.executeCommand(Commands.HomeView.DiagnosticBundle);
   }
 
   private async renderContent() {
