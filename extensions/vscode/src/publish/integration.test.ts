@@ -34,6 +34,7 @@ import {
   listAvailablePackages,
   readPackageDescription,
   libraryToManifestPackages,
+  toManifestPackage,
   type PackageLister,
 } from "./rLibraryMapper";
 
@@ -189,6 +190,98 @@ describe(
           );
           const lockfile = JSON.parse(lockfileContent);
           expect(lockfile.Packages["jsonlite"]).toBeDefined();
+
+          // Diagnostic: dump renv lockfile entry and DESCRIPTION to help debug CI failures
+          const renvLockEntry = lockfile.Packages["renv"];
+          if (renvLockEntry) {
+            console.log(
+              "[DEBUG] renv lockfile entry:",
+              JSON.stringify(
+                {
+                  Source: renvLockEntry.Source,
+                  Repository: renvLockEntry.Repository,
+                  Version: renvLockEntry.Version,
+                },
+                null,
+                2,
+              ),
+            );
+          } else {
+            console.log("[DEBUG] renv is NOT in lockfile.Packages");
+          }
+
+          // Diagnostic: read renv DESCRIPTION from the project library
+          const libPaths = await getLibPaths("R", dir);
+          console.log("[DEBUG] libPaths:", libPaths);
+          for (const lp of libPaths) {
+            const descPath = path.join(lp, "renv", "DESCRIPTION");
+            try {
+              const descContent = await readFile(descPath, "utf-8");
+              const repoLine = descContent
+                .split("\n")
+                .find((l) => l.startsWith("Repository:"));
+              const sourceLine = descContent
+                .split("\n")
+                .find((l) => l.startsWith("Source:"));
+              console.log(
+                `[DEBUG] renv DESCRIPTION at ${descPath}:`,
+                JSON.stringify({ Repository: repoLine, Source: sourceLine }),
+              );
+            } catch {
+              console.log(`[DEBUG] No renv DESCRIPTION at ${descPath}`);
+            }
+          }
+
+          // Diagnostic: check system-level renv DESCRIPTION
+          const { stdout: sysDescOut } = await execFileAsync("Rscript", [
+            "-e",
+            'cat(system.file("DESCRIPTION", package = "renv"))',
+          ]);
+          if (sysDescOut) {
+            try {
+              const sysDesc = await readFile(sysDescOut.trim(), "utf-8");
+              const repoLine = sysDesc
+                .split("\n")
+                .find((l) => l.startsWith("Repository:"));
+              console.log(
+                `[DEBUG] System renv DESCRIPTION (${sysDescOut.trim()}):`,
+                JSON.stringify({ Repository: repoLine }),
+              );
+            } catch {
+              console.log(
+                `[DEBUG] Could not read system renv DESCRIPTION at ${sysDescOut}`,
+              );
+            }
+          }
+
+          // Diagnostic: check what availablePackages returns for renv
+          const repos = lockfile.R.Repositories;
+          const availablePackages = await listAvailablePackages(
+            "R",
+            dir,
+            repos,
+          );
+          const renvAvail = availablePackages.find((p) => p.name === "renv");
+          console.log(
+            "[DEBUG] renv in availablePackages:",
+            renvAvail
+              ? JSON.stringify(renvAvail)
+              : "NOT FOUND (count: " + availablePackages.length + ")",
+          );
+
+          // Diagnostic: call toManifestPackage directly for renv
+          if (renvLockEntry) {
+            const manifestResult = toManifestPackage(
+              renvLockEntry,
+              repos,
+              availablePackages,
+              [],
+            );
+            console.log(
+              "[DEBUG] toManifestPackage result for renv:",
+              JSON.stringify(manifestResult),
+            );
+          }
 
           const rConfig = {
             version: lockfile.R.Version,
