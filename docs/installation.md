@@ -27,36 +27,3 @@ Posit Publisher to correctly detect Quarto application types for easier
 deploying.
 
 [Quarto - Get Started](https://quarto.org/docs/get-started/)
-
-## Operating systems
-
-The following operating systems are supported.
-
-### macOS
-
-- macOS 12 (Monterey)
-- macOS 13 (Ventura)
-- macOS 14 (Sonoma)
-
-### Windows
-
-- Windows 10
-- Windows 11
-
-### Linux
-
-- RHEL 8
-- RHEL 9
-- Ubuntu 20.04 (focal)
-- Ubuntu 22.04 (jammy)
-- SUSE Linux Enterprise Server 15 SP5
-- openSUSE 15.5
-
-### Support grid
-
-Operating system by chip architecture
-
-|             | `darwin` | `linux` | `windows` |             |
-| ----------: | :------: | :-----: | :-------: | :---------- |
-| **`amd64`** |   `x`    |   `x`   |    `x`    | **`amd64`** |
-| **`arm64`** |   `x`    |   `x`   |           | **`arm64`** |
