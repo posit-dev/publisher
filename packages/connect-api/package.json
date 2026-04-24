@@ -12,7 +12,7 @@
     "axios": "^1.15.0"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "@types/node": "^22.0.0",
     "vitest": "^4.1.4"
   }
