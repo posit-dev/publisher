@@ -44,7 +44,7 @@ jobs:
 
       - name: Add community label
         if: steps.check-team.outputs.is_external == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             try {
