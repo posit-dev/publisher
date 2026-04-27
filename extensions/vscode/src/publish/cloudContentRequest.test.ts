@@ -831,6 +831,26 @@ describe("buildUpdateContentRequest", () => {
     expect(request.secrets).toBeUndefined();
   });
 
+  it("omits secrets when secrets param is empty object (redeploy without new values)", () => {
+    const config: ConfigurationDetails = {
+      $schema: "https://example.com/schema",
+      productType: ProductType.CONNECT_CLOUD,
+      type: ContentType.R_SHINY,
+      entrypoint: "app.R",
+      validate: true,
+    };
+
+    const request = buildUpdateContentRequest(
+      config,
+      "my-app",
+      {},
+      ContentID("content-456"),
+      undefined,
+    );
+
+    expect(request.secrets).toBeUndefined();
+  });
+
   it("includes secrets in PATCH payload when secrets are provided", () => {
     const config: ConfigurationDetails = {
       $schema: "https://example.com/schema",
