@@ -186,8 +186,8 @@ const TEST_CONTENT: ContentDetailsDTO = {
   run_as: null,
   run_as_current_user: false,
   owner_guid: "user-guid",
-  content_url: "https://connect.example.com/content/content-guid-123/",
-  dashboard_url: "https://connect.example.com/connect/#/apps/content-guid-123",
+  content_url: "https://external.example.com/content/content-guid-123/",
+  dashboard_url: "https://external.example.com/connect/#/apps/content-guid-123",
   locked: false,
   app_role: "owner",
   id: "12345",
@@ -367,10 +367,10 @@ describe("connectPublish", () => {
     expect(result.contentId).toBe("content-guid-123");
     expect(result.bundleId).toBe("bundle-42");
     expect(result.dashboardUrl).toBe(
-      "https://connect.example.com/connect/#/apps/content-guid-123",
+      "https://external.example.com/connect/#/apps/content-guid-123",
     );
     expect(result.directUrl).toBe(
-      "https://connect.example.com/content/content-guid-123/",
+      "https://external.example.com/content/content-guid-123/",
     );
 
     // Verify API call sequence
@@ -395,6 +395,11 @@ describe("connectPublish", () => {
     const result = await connectPublish(opts);
 
     expect(result.contentId).toBe("existing-id");
+
+    // URLs come from the API response, not local construction from serverUrl
+    expect(result.dashboardUrl).toBe(TEST_CONTENT.dashboard_url);
+    expect(result.directUrl).toBe(TEST_CONTENT.content_url);
+    expect(result.logsUrl).toBe(TEST_CONTENT.dashboard_url + "/logs");
 
     // Should NOT create a new deployment
     expect(opts.api.createDeployment).not.toHaveBeenCalled();
