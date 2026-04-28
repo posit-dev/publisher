@@ -4,7 +4,7 @@
   "author": "Posit, PBC",
   "displayName": "Posit Publisher",
   "description": "Publish and share your Python and R content on Posit Connect",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "license": "MIT",
   "icon": "assets/img/posit-publisher.png",
   "repository": {
