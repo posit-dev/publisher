@@ -131,7 +131,7 @@ jobs:
         id: generate-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ secrets.POSIT_CONNECT_PROJECTS_APP_ID }}
+          client-id: ${{ secrets.POSIT_CONNECT_PROJECTS_APP_ID }}
           private-key: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
           # Tags are part of repository contents, so we need this permission
           permission-contents: write
