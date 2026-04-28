@@ -7,6 +7,7 @@ Usage: ./scripts/prepare-release.py <version>
 Example: ./scripts/prepare-release.py 1.34.0
 """
 
+import argparse
 import json
 import re
 import sys
@@ -171,17 +172,28 @@ def update_package_version(package_json: Path, version: str) -> None:
     package_json.write_text(json.dumps(data, indent=2) + "\n")
 
 
-def main() -> None:
-    # Check arguments
-    if len(sys.argv) != 2:
-        print("Usage: prepare-release.py <version>")
-        print("Example: prepare-release.py 1.34.0")
-        sys.exit(1)
+def read_package_version(package_json: Path) -> str:
+    """Read current version from package.json."""
+    return json.loads(package_json.read_text())["version"]
 
-    version_arg = sys.argv[1]
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Prepare a release by updating CHANGELOG files and package.json.",
+    )
+    parser.add_argument("version", help="Version to release, e.g. 1.34.0")
+    parser.add_argument(
+        "--allow-downgrade",
+        action="store_true",
+        help=(
+            "Permit setting package.json to a lower version than its current value. "
+            "Required when preparing a patch release of an older release line."
+        ),
+    )
+    args = parser.parse_args()
 
     # Parse and validate version
-    major, minor, patch = parse_version(version_arg)
+    major, minor, patch = parse_version(args.version)
     version = f"{major}.{minor}.{patch}"
 
     # Validate even minor version for production release
@@ -205,6 +217,16 @@ def main() -> None:
         error(f"VSCode CHANGELOG not found: {vscode_changelog}")
     if not package_json.exists():
         error(f"package.json not found: {package_json}")
+
+    # Guard against accidentally setting package.json to a lower version.
+    # This catches operator typos and forces explicit acknowledgment when
+    # preparing a patch release of an older release line.
+    current_version = read_package_version(package_json)
+    if parse_version(current_version) > (major, minor, patch) and not args.allow_downgrade:
+        error(
+            f"Refusing to downgrade {package_json} from {current_version} to {version}. "
+            f"Pass --allow-downgrade to confirm (e.g. when patching an older release line)."
+        )
 
     # Extract unreleased content and check if empty
     unreleased_content = extract_unreleased_content(root_changelog)

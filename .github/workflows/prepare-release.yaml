@@ -7,6 +7,11 @@ on:
         description: "Version to release (e.g., 1.34.0) - must be even minor"
         required: true
         type: string
+      allow_downgrade:
+        description: "Allow setting package.json to a lower version (use only for patch releases of older release lines)"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   prepare:
@@ -74,9 +79,18 @@ jobs:
           node-version: "lts/*"
 
       - name: Run prepare-release script
+        env:
+          ALLOW_DOWNGRADE: ${{ inputs.allow_downgrade }}
         run: |
-          # Run non-interactively by providing 'y' to any prompts
-          yes | python3 ./scripts/prepare-release.py "$VERSION" || true
+          # Auto-accept the empty-Unreleased prompt with a single 'y'.
+          # Using `echo y` (not `yes`) avoids SIGPIPE-induced nonzero exits under
+          # pipefail, so a real script failure (e.g. the no-downgrade guard) fails
+          # the step instead of being swallowed.
+          ALLOW_DOWNGRADE_FLAG=""
+          if [ "$ALLOW_DOWNGRADE" = "true" ]; then
+            ALLOW_DOWNGRADE_FLAG="--allow-downgrade"
+          fi
+          echo y | python3 ./scripts/prepare-release.py "$VERSION" $ALLOW_DOWNGRADE_FLAG
 
       - name: Install dependencies and sync lockfile
         run: npm install
