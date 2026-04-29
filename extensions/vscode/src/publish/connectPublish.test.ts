@@ -1478,22 +1478,31 @@ describe("connectPublish — error classification", () => {
     expect(tomlContent).toContain("Unable to reach the server");
   });
 
-  test("certificate error classifies as errorCertificateVerification", async () => {
-    const api = makeMockApi();
-    const certErr = new AxiosError("certificate error");
-    certErr.code = "UNABLE_TO_VERIFY_LEAF_SIGNATURE";
-    (api.testAuthentication as ReturnType<typeof vi.fn>).mockRejectedValue(
-      certErr,
-    );
+  test.each([
+    "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+    "DEPTH_ZERO_SELF_SIGNED_CERT",
+    "SELF_SIGNED_CERT_IN_CHAIN",
+    "ERR_TLS_CERT_ALTNAME_INVALID",
+    "CERT_HAS_EXPIRED",
+  ])(
+    "certificate error (%s) classifies as errorCertificateVerification",
+    async (code) => {
+      const api = makeMockApi();
+      const certErr = new AxiosError("certificate error");
+      certErr.code = code;
+      (api.testAuthentication as ReturnType<typeof vi.fn>).mockRejectedValue(
+        certErr,
+      );
 
-    const opts = makeOptions({ api });
+      const opts = makeOptions({ api });
 
-    await expect(connectPublish(opts)).rejects.toThrow();
+      await expect(connectPublish(opts)).rejects.toThrow();
 
-    const lastWrite = mockWriteFile.mock.calls.at(-1);
-    const tomlContent = lastWrite![1] as string;
-    expect(tomlContent).toContain("errorCertificateVerification");
-  });
+      const lastWrite = mockWriteFile.mock.calls.at(-1);
+      const tomlContent = lastWrite![1] as string;
+      expect(tomlContent).toContain("errorCertificateVerification");
+    },
+  );
 
   test("app mode mismatch classifies as appModeNotModifiableErr", async () => {
     const api = makeMockApi();

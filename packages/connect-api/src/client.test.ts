@@ -413,13 +413,19 @@ describe("testAuthentication", () => {
     }
   });
 
-  it("certificate errors are not wrapped as network errors", async () => {
+  it.each([
+    "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+    "DEPTH_ZERO_SELF_SIGNED_CERT",
+    "SELF_SIGNED_CERT_IN_CHAIN",
+    "ERR_TLS_CERT_ALTNAME_INVALID",
+    "CERT_HAS_EXPIRED",
+  ])("certificate error (%s) is not wrapped as network error", async (code) => {
     // TLS/certificate errors also have no `response`, but they should NOT
     // be caught by the network-error check — callers need the original
     // error code to classify them as certificate verification failures.
-    const certErr = Object.assign(new Error("self-signed certificate"), {
+    const certErr = Object.assign(new Error(`cert error: ${code}`), {
       isAxiosError: true,
-      code: "DEPTH_ZERO_SELF_SIGNED_CERT",
+      code,
     });
     mockRequest.mockRejectedValue(certErr);
 
@@ -427,7 +433,7 @@ describe("testAuthentication", () => {
     // The original error is rethrown as-is (not wrapped in ConnectAPIError)
     // so callers can inspect the error code for certificate classification.
     await expect(client.testAuthentication()).rejects.toThrow(
-      "self-signed certificate",
+      `cert error: ${code}`,
     );
   });
 
