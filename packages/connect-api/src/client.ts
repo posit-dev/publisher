@@ -496,7 +496,7 @@ export class ConnectAPI {
 }
 
 /** Detect TLS/certificate errors from axios error codes. */
-function isCertificateError(err: { code?: string }): boolean {
+export function isCertificateError(err: { code?: string }): boolean {
   const certCodes = [
     "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
     "DEPTH_ZERO_SELF_SIGNED_CERT",

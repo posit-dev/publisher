@@ -8,6 +8,7 @@ import {
   ContentID,
   BundleID,
   TaskID,
+  isCertificateError,
 } from "@posit-dev/connect-api";
 import type { AllSettings } from "@posit-dev/connect-api";
 
@@ -858,18 +859,6 @@ function classifyDeploymentError(
   }
 
   return { code: "unknown", message: fallbackMessage };
-}
-
-/** Detect TLS/certificate errors from axios error codes. */
-function isCertificateError(err: { code?: string }): boolean {
-  const certCodes = [
-    "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
-    "DEPTH_ZERO_SELF_SIGNED_CERT",
-    "SELF_SIGNED_CERT_IN_CHAIN",
-    "ERR_TLS_CERT_ALTNAME_INVALID",
-    "CERT_HAS_EXPIRED",
-  ];
-  return !!err.code && certCodes.includes(err.code);
 }
 
 // ---------------------------------------------------------------------------

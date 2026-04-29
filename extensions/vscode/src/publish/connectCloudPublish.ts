@@ -14,6 +14,7 @@ import {
 import type { ConfigurationDetails } from "../api/types/configurations";
 import type { ServerType } from "../api/types/contentRecords";
 import type { PositronRSettings } from "../api/types/positron";
+import { isCertificateError } from "@posit-dev/connect-api";
 import type { ErrorCode } from "../utils/errorTypes";
 import { logger } from "../logging";
 import { DEFAULT_PYTHON_PACKAGE_FILE } from "../constants";
@@ -670,6 +671,18 @@ function classifyCloudDeploymentError(
   err: unknown,
 ): { code: ErrorCode; message: string } {
   const fallbackMessage = err instanceof Error ? err.message : String(err);
+
+  // Certificate verification errors (any step)
+  // Must be checked before the generic network error check below, because
+  // TLS failures also have no `response`.
+  if (isAxiosError(err) && isCertificateError(err)) {
+    return {
+      code: "errorCertificateVerification",
+      message:
+        "Certificate verification failed. " +
+        "Check the server's TLS certificate or disable verification.",
+    };
+  }
 
   // Network errors (no response received) — server unreachable due to
   // DNS failure, VPN disconnected, firewall, etc.
