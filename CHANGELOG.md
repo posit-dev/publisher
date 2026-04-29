@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed Quarto `.qmd` files being deployed with empty engines when `quarto inspect` is unavailable, causing Connect to skip `renv` restore and fail at render time due to missing packages. The fallback path now detects `knitr` and `jupyter` engines from code chunks, and `normalizeConfig()` backfills missing engines when R or Python dependencies are present. (#3993)
 - Fixed content URLs (View Content, dashboard, logs) being unreachable when the configured server URL differs from the external hostname. This scenario can happen when publishing from Workbench to Connect within the Posit Team Native App in Snowpark Container Services. (#3698)
 
 ## [2.2.0]
