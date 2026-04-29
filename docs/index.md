@@ -30,19 +30,6 @@ Supported features:
 - Verification that deployed apps can successfully start
 - View and manage OAuth Integration content requirements directly from the "Integration Requests" pane in the Publisher UI.
 
-What's not supported yet but is on our to-do list:
-
-- Deploy to servers other than Connect
-- Show more information in the UI such as changes since last deployment
-- More metadata such as tags, thumbnail image, etc
-- Configure permissions for sharing
-- Option to export a `manifest.json` for compatibility with prior tool
-- Schedule reports
-- Streamlined `update deployment` command in VSCode command palette
-- Support VSCode windows with multiple workspaces, or deploy from a
-  subdirectory of the workspace
-- Better error handling
-
 ## Installation
 
 See the [Installation](installation.md) page.

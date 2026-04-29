@@ -1,12 +1,14 @@
 ---
-name: Issue Template
-about: An issue template.
+name: General Issue
+about: For issues that aren't bugs or feature requests (e.g., tasks, refactors, documentation).
 title: ""
 labels: ""
 assignees: ""
 ---
 
-Description for the issue.
+## Description
+
+<!-- Describe the issue. -->
 
 ### Related Issues
 

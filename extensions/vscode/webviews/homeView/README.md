@@ -1,10 +1,5 @@
-# `webview-ui` Directory
+# Home View Webview
 
-This directory contains all of the code that will be executed within the webview context. It can be thought of as the place where all the "frontend" code of a webview is contained.
+This is the Home View webview for the Posit Publisher VSCode extension — a Vue 3 application that renders the main sidebar UI.
 
-Types of content that can be contained here:
-
-- Frontend framework code (i.e. Vue, SolidJS, React, Svelte, etc.)
-- JavaScript files
-- CSS files
-- Assets / resources (i.e. images, illustrations, etc.)
+See [CONTRIBUTING.md](CONTRIBUTING.md) for testing and development details.
