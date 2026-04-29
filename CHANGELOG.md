@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed deployment and credential testing showing "HTTP undefined" when the server is unreachable. Now displays a clear message asking the user to check their network connection, VPN, and server URL. (#4096)
+
 ## [2.2.0]
 
 ### Fixed
