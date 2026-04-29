@@ -188,7 +188,7 @@ describe("testCredentials", () => {
     expect(result.user).toBeNull();
     expect(result.error).not.toBeNull();
     expect(result.error!.msg).toContain("Unable to reach the server");
-    expect(result.error!.code).toBe("unknown");
+    expect(result.error!.code).toBe("connectionFailed");
   });
 
   test("invalid URL — returns error, null serverType", async () => {
