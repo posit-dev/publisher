@@ -32,14 +32,6 @@ On the extension's page, click the "Download" button to download the extension a
 
 Open your IDE extension manager and look for an option to install from a .vsix file. Select the downloaded .vsix file to install the extension.
 
-### Optional: Install Quarto
-
-If you plan on deploying Quarto content having Quarto installed will allow
-Posit Publisher to correctly detect Quarto application types for easier
-deploying.
-
-[Quarto - Get Started](https://quarto.org/docs/get-started/)
-
 ## Using the Extension
 
 See the [VS Code Extension](vscode.md) page.
