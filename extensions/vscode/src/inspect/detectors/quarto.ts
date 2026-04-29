@@ -508,7 +508,7 @@ export class QuartoDetector implements ContentTypeDetector {
     }
 
     // Include .qmd files and detect languages from their content
-    const qmdFiles = await globDir(baseDir, "*.qmd");
+    const qmdFiles = await globDir(baseDir, "*.qmd", { nocase: true });
     const engines: string[] = [];
     for (const qmdPath of qmdFiles) {
       const relPath = path.basename(qmdPath);
