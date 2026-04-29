@@ -7,12 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed content URLs (View Content, dashboard, logs) being unreachable when the configured server URL differs from the external hostname. This scenario can happen when publishing from Workbench to Connect within the Posit Team Native App in Snowpark Container Services. (#3698)
+
 ## [2.2.0]
 
 ### Fixed
 
 - Fixed Connect Cloud redeploy wiping previously set secrets. (#4082)
-- Fixed content URLs (View Content, dashboard, logs) being unreachable when the configured server URL differs from the external hostname. This scenario can happen when publishing from Workbench to Connect within the Posit Team Native App in Snowpark Container Services. (#3698)
 
 ## [2.0.0]
 
