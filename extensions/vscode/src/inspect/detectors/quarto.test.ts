@@ -713,6 +713,60 @@ describe("QuartoDetector", () => {
     expect(configs[0]?.alternatives).toBeUndefined();
   });
 
+  test("fallback detects R engine from .qmd file content", async () => {
+    setupGlobDir(["report.qmd"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue(
+      '---\ntitle: "Report"\n---\n\n```{r}\nsource("script.R")\n```\n',
+    );
+
+    mockExecFile.mockRejectedValue(
+      new Error("executable file not found in $PATH"),
+    );
+
+    const configs = await detector.inferType("/project", "report.qmd");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.type).toBe(ContentType.QUARTO_STATIC);
+    expect(configs[0]?.r).toEqual({});
+    expect(configs[0]?.quarto?.engines).toContain("knitr");
+  });
+
+  test("fallback detects Python engine from .qmd file content", async () => {
+    setupGlobDir(["analysis.qmd"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue(
+      '---\ntitle: "Analysis"\n---\n\n```{python}\nimport pandas\n```\n',
+    );
+
+    mockExecFile.mockRejectedValue(
+      new Error("executable file not found in $PATH"),
+    );
+
+    const configs = await detector.inferType("/project", "analysis.qmd");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.python).toEqual({});
+    expect(configs[0]?.quarto?.engines).toContain("jupyter");
+  });
+
+  test("fallback detects both engines from .qmd file content", async () => {
+    setupGlobDir(["mixed.qmd"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue(
+      "```{r}\nlibrary(ggplot2)\n```\n\n```{python}\nimport pandas\n```\n",
+    );
+
+    mockExecFile.mockRejectedValue(
+      new Error("executable file not found in $PATH"),
+    );
+
+    const configs = await detector.inferType("/project", "mixed.qmd");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.r).toEqual({});
+    expect(configs[0]?.python).toEqual({});
+    expect(configs[0]?.quarto?.engines).toContain("knitr");
+    expect(configs[0]?.quarto?.engines).toContain("jupyter");
+  });
+
   test("fallback detects .rmd (lowercase) as Quarto content", async () => {
     setupGlobDir(["report.rmd"]);
     mockAccess.mockRejectedValue(new Error("ENOENT"));
