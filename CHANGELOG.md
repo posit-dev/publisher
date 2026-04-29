@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed Quarto dashboards with `server: shiny` being misdetected as static content, causing deployment to fail with an `output-dir` error on Connect. (#3991)
 - Fixed content URLs (View Content, dashboard, logs) being unreachable when the configured server URL differs from the external hostname. This scenario can happen when publishing from Workbench to Connect within the Posit Team Native App in Snowpark Container Services. (#3698)
 
 ## [2.2.0]
