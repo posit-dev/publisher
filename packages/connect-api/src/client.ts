@@ -188,12 +188,26 @@ export class ConnectAPI {
         throw err;
       }
       if (axios.isAxiosError(err)) {
-        const errorBody = err.response?.data;
+        // No response at all — a connection-level failure.
+        if (!err.response) {
+          // TLS/certificate errors: rethrow as-is so callers can identify
+          // them (e.g. testCredentials classifies them as
+          // errorCertificateVerification).
+          if (isCertificateError(err)) {
+            throw err;
+          }
+          // Other network errors (DNS failure, VPN disconnected, etc.)
+          throw new ConnectAPIError(
+            "Unable to reach the server. " +
+              "Check your network connection, VPN, and server URL.",
+          );
+        }
+        const errorBody = err.response.data;
         const msg =
           typeof errorBody?.error === "string"
             ? errorBody.error
-            : `HTTP ${err.response?.status}`;
-        throw new ConnectAPIError(msg, err.response?.status);
+            : `HTTP ${err.response.status}`;
+        throw new ConnectAPIError(msg, err.response.status);
       }
       throw err;
     }
@@ -479,4 +493,16 @@ export class ConnectAPI {
 
     return { general, user, application, scheduler, python, r, quarto };
   }
+}
+
+/** Detect TLS/certificate errors from axios error codes. */
+function isCertificateError(err: { code?: string }): boolean {
+  const certCodes = [
+    "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+    "DEPTH_ZERO_SELF_SIGNED_CERT",
+    "SELF_SIGNED_CERT_IN_CHAIN",
+    "ERR_TLS_CERT_ALTNAME_INVALID",
+    "CERT_HAS_EXPIRED",
+  ];
+  return !!err.code && certCodes.includes(err.code);
 }

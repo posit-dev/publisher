@@ -671,6 +671,17 @@ function classifyCloudDeploymentError(
 ): { code: ErrorCode; message: string } {
   const fallbackMessage = err instanceof Error ? err.message : String(err);
 
+  // Network errors (no response received) — server unreachable due to
+  // DNS failure, VPN disconnected, firewall, etc.
+  if (isAxiosError(err) && !err.response) {
+    return {
+      code: "connectionFailed",
+      message:
+        "Unable to reach the server. " +
+        "Check your network connection, VPN, and server URL.",
+    };
+  }
+
   // Authentication failures (401 from any step)
   if (isAxiosError(err) && err.response?.status === 401) {
     return {

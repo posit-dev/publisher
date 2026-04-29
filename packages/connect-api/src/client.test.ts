@@ -377,6 +377,60 @@ describe("testAuthentication", () => {
     await expect(client.testAuthentication()).rejects.toThrow("HTTP 403");
   });
 
+  it("throws clear network error when server is unreachable (no response)", async () => {
+    // Simulate a network error (e.g. VPN disconnected, DNS failure) —
+    // axios throws an AxiosError with no `response` property.
+    const networkErr = Object.assign(new Error("connect ECONNREFUSED"), {
+      isAxiosError: true,
+      code: "ECONNREFUSED",
+      // No `response` — this is what triggers "HTTP undefined" without the fix
+    });
+    mockRequest.mockRejectedValue(networkErr);
+
+    const client = createClient();
+    await expect(client.testAuthentication()).rejects.toThrow(
+      /Unable to reach the server/,
+    );
+  });
+
+  it("network error throws ConnectAPIError with no httpStatus", async () => {
+    const { ConnectAPIError } = await import("./client.js");
+    const networkErr = Object.assign(new Error("Network Error"), {
+      isAxiosError: true,
+      code: "ERR_NETWORK",
+    });
+    mockRequest.mockRejectedValue(networkErr);
+
+    const client = createClient();
+    try {
+      await client.testAuthentication();
+      expect.unreachable("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ConnectAPIError);
+      expect(
+        (err as InstanceType<typeof ConnectAPIError>).httpStatus,
+      ).toBeUndefined();
+    }
+  });
+
+  it("certificate errors are not wrapped as network errors", async () => {
+    // TLS/certificate errors also have no `response`, but they should NOT
+    // be caught by the network-error check — callers need the original
+    // error code to classify them as certificate verification failures.
+    const certErr = Object.assign(new Error("self-signed certificate"), {
+      isAxiosError: true,
+      code: "DEPTH_ZERO_SELF_SIGNED_CERT",
+    });
+    mockRequest.mockRejectedValue(certErr);
+
+    const client = createClient();
+    // The original error is rethrown as-is (not wrapped in ConnectAPIError)
+    // so callers can inspect the error code for certificate classification.
+    await expect(client.testAuthentication()).rejects.toThrow(
+      "self-signed certificate",
+    );
+  });
+
   it("throws clear error when auth proxy returns HTML on 200", async () => {
     // An authenticating proxy may return a 200 with an HTML login page
     // instead of a JSON user object. The guard should catch this.

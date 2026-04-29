@@ -752,12 +752,25 @@ function classifyDeploymentError(
   const fallbackMessage = err instanceof Error ? err.message : String(err);
 
   // Certificate verification errors (any step)
+  // Must be checked before the generic network error check below, because
+  // TLS failures also have no `response`.
   if (isAxiosError(err) && isCertificateError(err)) {
     return {
       code: "errorCertificateVerification",
       message:
         "Certificate verification failed. " +
         "Check the server's TLS certificate or disable verification.",
+    };
+  }
+
+  // Network errors (no response received) — server unreachable due to
+  // DNS failure, VPN disconnected, firewall, etc.
+  if (isAxiosError(err) && !err.response) {
+    return {
+      code: "connectionFailed",
+      message:
+        "Unable to reach the server. " +
+        "Check your network connection, VPN, and server URL.",
     };
   }
 
