@@ -60,7 +60,7 @@ set `packages_from_library = true` under `[r]` in your configuration.
 You are all set to Deploy!
 
 Click the `Deploy Your Project` button in the Home view to start the deployment
-process. :tada:
+process.
 
 ![](https://cdn.posit.co/publisher/assets/img/deploy-your-project-4.png)
 

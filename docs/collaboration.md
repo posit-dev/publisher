@@ -28,7 +28,7 @@ configure the same content. To grant others collaborator access to content see
 
 ## With source control
 
-Configuration and Deployment files found in `./posit/publish` are intended
+Configuration and Deployment files found in `.posit/publish` are intended
 to be committed into source repositories.
 
 Once tracked in source control, anyone with access can easily collaborate on the

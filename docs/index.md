@@ -11,43 +11,28 @@ Key concepts:
 - Deployment options are set via configuration files in `.posit/publish/`.
 - Records of where you have deployed are kept in `.posit/publish/deployments`.
 
-## Features
-
-Supported features:
-
-- Deploy projects to Connect
-- UI available as a VS Code extension
-- Configuration-file based workflow
-- Configuration schema enables editing with the [Even Better TOML
-  VS Code](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)
-  extension
-- Python content: APIs, applications, and notebooks
-- Quarto content: .qmd and .Rmd files. Support for embedded Shiny apps
-- R content: Shiny apps, RMarkdown, Plumber APIs, and Rmd with embedded Shiny apps
-- Automatic detection of client R, Python and Quarto versions
-- Dependencies from `requirements.txt` and/or `renv.lock` files
-- Automatic creation of a minimal `requirements.txt` file if needed, by scanning imports and mapping them to package names/versions installed in the local Python library path.
-- Collaborate via git, or by downloading a source bundle from Connect
-- Pre-flight checking of settings before deploying to Connect
-- Verification that deployed apps can successfully start
-- View and manage OAuth Integration content requirements directly from the "Integration Requests" pane in the Publisher UI.
-
-What's not supported yet but is on our to-do list:
-
-- Deploy to servers other than Connect
-- Show more information in the UI such as changes since last deployment
-- More metadata such as tags, thumbnail image, etc
-- Configure permissions for sharing
-- Option to export a `manifest.json` for compatibility with prior tool
-- Schedule reports
-- Streamlined `update deployment` command in VSCode command palette
-- Support VSCode windows with multiple workspaces, or deploy from a
-  subdirectory of the workspace
-- Better error handling
+For a full list of features and supported content types, see the
+[extension README](../extensions/vscode/README.md).
 
 ## Installation
 
-See the [Installation](installation.md) page.
+[Install via the Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Posit.publisher)
+
+Or open the VS Code Extensions view and search for "Posit Publisher" and then click "Install".
+
+### Pre-release version
+
+If a pre-release version is available, you can install it by following the same steps as above and then after installation click "Switch to Pre-release Version".
+
+If the "Switch to Pre-release Version" button is not available there is currently no pre-release version available or you are already on a pre-release version.
+
+### Open VSX Registry
+
+[Open the Publisher extension page on Open VSX Registry](https://open-vsx.org/extension/posit/publisher)
+
+On the extension's page, click the "Download" button to download the extension as a .vsix file.
+
+Open your IDE extension manager and look for an option to install from a .vsix file. Select the downloaded .vsix file to install the extension.
 
 ## Using the Extension
 
