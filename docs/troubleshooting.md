@@ -1,4 +1,6 @@
-# Troubleshooting Posit Publisher
+---
+title: "Troubleshooting"
+---
 
 This document contains some common issues and solutions for Posit Publisher.
 

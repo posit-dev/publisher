@@ -1,4 +1,6 @@
-# VS Code Extension
+---
+title: "VS Code Extension"
+---
 
 ## Tutorial
 

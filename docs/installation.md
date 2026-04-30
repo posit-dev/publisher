@@ -1,3 +1,7 @@
+---
+title: "Installation"
+---
+
 This page walks you through installation options for Posit Publisher.
 
 ## Installation for Positron and VS Code

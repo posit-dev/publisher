@@ -1,0 +1,22 @@
+project:
+  type: posit-docs
+
+website:
+  title: "Posit Publisher"
+  site-url: "https://posit-dev.github.io/publisher"
+  navbar:
+    left:
+      - text: "Home"
+        href: index.md
+      - text: "Installation"
+        href: installation.md
+      - text: "VS Code Guide"
+        href: vscode.md
+      - text: "Configuration"
+        href: configuration.md
+      - text: "Collaboration"
+        href: collaboration.md
+      - text: "Troubleshooting"
+        href: troubleshooting.md
+  search:
+    keyboard-shortcut: ["/"]

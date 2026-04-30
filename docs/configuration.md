@@ -1,4 +1,6 @@
-# Configuration File Reference
+---
+title: "Configuration File Reference"
+---
 
 ## General settings
 
