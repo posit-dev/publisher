@@ -85,8 +85,8 @@ async function getPythonInterpreterFromVSCode(): Promise<string | undefined> {
     );
   } catch (error: unknown) {
     console.error(
-      "getPythonInterpreterFromPath was unable to execute command. Error = ",
-      error,
+      "getPythonInterpreterFromVSCode was unable to execute command. Error =",
+      error instanceof Error ? error.message : String(error),
     );
   }
   if (configuredPython === undefined) {

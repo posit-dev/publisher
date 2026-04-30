@@ -153,7 +153,8 @@ export class QuartoDetector implements ContentTypeDetector {
     // Determine content type: shiny or static
     if (
       isQuartoShiny(inspectOutput.htmlMetadata) ||
-      isQuartoShiny(inspectOutput.revealjsMetadata)
+      isQuartoShiny(inspectOutput.revealjsMetadata) ||
+      isQuartoShiny(inspectOutput.dashboardMetadata)
     ) {
       logger.info(`[quarto] detected Quarto Shiny content: ${relEntrypoint}`);
       cfg.type = ContentType.QUARTO_SHINY;

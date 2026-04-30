@@ -167,6 +167,38 @@ describe("Interpreter Detection", () => {
         expect(result).toBeUndefined();
       });
 
+      test("logs error message when python.interpreterPath command fails", async () => {
+        const consoleSpy = vi
+          .spyOn(console, "error")
+          .mockImplementation(() => {});
+        vi.mocked(commands.executeCommand).mockRejectedValue(
+          new Error("command 'python.interpreterPath' not found"),
+        );
+
+        await getPythonInterpreterPath();
+
+        expect(consoleSpy).toHaveBeenCalledWith(
+          "getPythonInterpreterFromVSCode was unable to execute command. Error =",
+          "command 'python.interpreterPath' not found",
+        );
+        consoleSpy.mockRestore();
+      });
+
+      test("logs stringified error when command fails with non-Error", async () => {
+        const consoleSpy = vi
+          .spyOn(console, "error")
+          .mockImplementation(() => {});
+        vi.mocked(commands.executeCommand).mockRejectedValue("string error");
+
+        await getPythonInterpreterPath();
+
+        expect(consoleSpy).toHaveBeenCalledWith(
+          "getPythonInterpreterFromVSCode was unable to execute command. Error =",
+          "string error",
+        );
+        consoleSpy.mockRestore();
+      });
+
       test("returns undefined when python.interpreterPath returns undefined", async () => {
         vi.mocked(commands.executeCommand).mockResolvedValue(undefined);
 
