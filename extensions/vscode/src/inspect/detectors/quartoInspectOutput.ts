@@ -59,6 +59,12 @@ export interface QuartoInspectData {
         "output-file"?: string;
       };
     };
+    dashboard?: {
+      metadata?: QuartoMetadata;
+      pandoc?: {
+        "output-file"?: string;
+      };
+    };
   };
   fileInformation?: Record<
     string,
@@ -98,6 +104,10 @@ export class QuartoInspectOutput {
 
   get revealjsMetadata(): QuartoMetadata {
     return this.data.formats?.revealjs?.metadata ?? {};
+  }
+
+  get dashboardMetadata(): QuartoMetadata {
+    return this.data.formats?.dashboard?.metadata ?? {};
   }
 
   outputDir(): string {
@@ -188,6 +198,10 @@ export class QuartoInspectOutput {
     const revealjsTitle = this.data.formats?.revealjs?.metadata?.title;
     if (isValidTitle(revealjsTitle)) {
       return revealjsTitle;
+    }
+    const dashboardTitle = this.data.formats?.dashboard?.metadata?.title;
+    if (isValidTitle(dashboardTitle)) {
+      return dashboardTitle;
     }
     const websiteTitle = this.data.config?.website?.title;
     if (isValidTitle(websiteTitle)) {
