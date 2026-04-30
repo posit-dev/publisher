@@ -8,8 +8,6 @@ website:
     left:
       - text: "Home"
         href: index.md
-      - text: "Installation"
-        href: installation.md
       - text: "VS Code Guide"
         href: vscode.md
       - text: "Configuration"
