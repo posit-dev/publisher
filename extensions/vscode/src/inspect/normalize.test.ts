@@ -322,4 +322,64 @@ describe("normalizeConfig", () => {
     );
     expect(result.entrypoint).toBe("custom-entry.py");
   });
+
+  test("backfills knitr engine when R discovered via renv.lock", async () => {
+    const cfg: PartialConfig = {
+      type: ContentType.QUARTO_STATIC,
+      entrypoint: "report.qmd",
+      quarto: { version: "1.7.34" },
+    };
+    // renv.lock exists
+    mockAccess.mockResolvedValue(undefined);
+    mockReadFile.mockRejectedValue(new Error("ENOENT"));
+
+    const result = await normalizeConfig(cfg, "/project", undefined, "R");
+    expect(result.r).toBeDefined();
+    expect(result.quarto?.engines).toContain("knitr");
+  });
+
+  test("backfills jupyter engine when Python discovered", async () => {
+    const cfg: PartialConfig = {
+      type: ContentType.QUARTO_STATIC,
+      entrypoint: "report.qmd",
+      quarto: { version: "1.4.0" },
+      python: {},
+    };
+    setupDefaultMocks();
+
+    const result = await normalizeConfig(cfg, "/project", "python3");
+    expect(result.python).toBeDefined();
+    expect(result.quarto?.engines).toContain("jupyter");
+  });
+
+  test("does not duplicate existing engines during backfill", async () => {
+    const cfg: PartialConfig = {
+      type: ContentType.QUARTO_STATIC,
+      entrypoint: "report.qmd",
+      quarto: { version: "1.4.0", engines: ["knitr"] },
+      r: {},
+    };
+    // renv.lock exists
+    mockAccess.mockResolvedValue(undefined);
+    mockReadFile.mockRejectedValue(new Error("ENOENT"));
+
+    const result = await normalizeConfig(cfg, "/project", undefined, "R");
+    expect(result.r).toBeDefined();
+    const knitrCount = result.quarto?.engines?.filter(
+      (e) => e === "knitr",
+    ).length;
+    expect(knitrCount).toBe(1);
+  });
+
+  test("does not backfill engines when no quarto config", async () => {
+    const cfg: PartialConfig = {
+      type: ContentType.R_SHINY,
+      entrypoint: "app.R",
+      r: {},
+    };
+    setupDefaultMocks();
+
+    const result = await normalizeConfig(cfg, "/project", undefined, "R");
+    expect(result.quarto).toBeUndefined();
+  });
 });

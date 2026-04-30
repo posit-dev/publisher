@@ -507,11 +507,35 @@ export class QuartoDetector implements ContentTypeDetector {
       return cfg;
     }
 
-    // Include .qmd files
-    const qmdFiles = await globDir(baseDir, "*.qmd");
+    // Include .qmd files and detect languages from their content
+    const qmdFiles = await globDir(baseDir, "*.qmd", { nocase: true });
+    const engines: string[] = [];
     for (const qmdPath of qmdFiles) {
       const relPath = path.basename(qmdPath);
       files.push(`/${relPath}`);
+
+      // Read file content to detect R/Python code chunks
+      try {
+        const content = await fs.readFile(qmdPath, "utf-8");
+        const langs = detectMarkdownLanguagesInContent(content);
+        if (langs.needsR && !engines.includes("knitr")) {
+          engines.push("knitr");
+          cfg.r = {};
+        }
+        if (langs.needsPython && !engines.includes("jupyter")) {
+          engines.push("jupyter");
+          cfg.python = {};
+        }
+      } catch (err: unknown) {
+        logger.debug(
+          `[quarto] could not read file for language detection in fallback: ${qmdPath}: ${err}`,
+        );
+      }
+    }
+
+    if (engines.length > 0) {
+      engines.sort();
+      cfg.quarto = { version: defaultQuartoVersion, engines };
     }
 
     // Include special yml files

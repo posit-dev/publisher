@@ -126,6 +126,27 @@ export async function normalizeConfig(
     }
   }
 
+  // Ensure quarto engines reflect discovered R/Python needs.
+  // Detectors may miss engines (e.g., fallback path when quarto binary is
+  // unavailable), but normalize can discover R/Python via renv.lock or rpy2.
+  let quartoConfig = cfg.quarto;
+  if (quartoConfig) {
+    const engines = [...(quartoConfig.engines ?? [])];
+    let changed = false;
+    if (rConfig && !engines.includes("knitr")) {
+      engines.push("knitr");
+      changed = true;
+    }
+    if (pythonConfig && !engines.includes("jupyter")) {
+      engines.push("jupyter");
+      changed = true;
+    }
+    if (changed) {
+      engines.sort();
+      quartoConfig = { ...quartoConfig, engines };
+    }
+  }
+
   const comments = initialComment.split("\n");
 
   return {
@@ -138,7 +159,7 @@ export async function normalizeConfig(
     files,
     python: pythonConfig,
     r: rConfig,
-    quarto: cfg.quarto,
+    quarto: quartoConfig,
     comments,
     // Pass alternatives through without normalization. The detector already
     // sets the fields the UI needs (type, entrypoint, source, title, files).
