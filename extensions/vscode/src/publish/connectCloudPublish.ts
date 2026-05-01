@@ -680,7 +680,8 @@ function classifyCloudDeploymentError(
       code: "errorCertificateVerification",
       message:
         "Certificate verification failed. " +
-        "Check the server's TLS certificate or disable verification.",
+        "This may be caused by a network proxy or firewall. " +
+        "Please contact Posit support or file an issue if the problem persists.",
     };
   }
 
