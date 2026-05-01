@@ -119,18 +119,67 @@ describe("CredentialsService", () => {
       expect(result.apiKey).toBe("");
     });
 
-    test("creates a Snowflake credential", async () => {
+    test("creates a Snowflake credential with API key", async () => {
       const input: CreateCredentialInput = {
         name: "My Snowflake",
         url: "https://my-org.snowflakecomputing.app",
         serverType: ServerType.SNOWFLAKE,
         snowflakeConnection: "my-connection",
+        apiKey: "connect-api-key",
       };
 
       const result = await service.create(input);
 
       expect(result.snowflakeConnection).toBe("my-connection");
+      expect(result.apiKey).toBe("connect-api-key");
       expect(result.serverType).toBe(ServerType.SNOWFLAKE);
+    });
+
+    test("creates a Snowflake credential with token auth", async () => {
+      const input: CreateCredentialInput = {
+        name: "My Snowflake Token",
+        url: "https://my-org.snowflakecomputing.app",
+        serverType: ServerType.SNOWFLAKE,
+        snowflakeConnection: "my-connection",
+        token: "connect-token-id",
+        privateKey: "connect-private-key",
+      };
+
+      const result = await service.create(input);
+
+      expect(result.snowflakeConnection).toBe("my-connection");
+      expect(result.token).toBe("connect-token-id");
+      expect(result.privateKey).toBe("connect-private-key");
+      expect(result.serverType).toBe(ServerType.SNOWFLAKE);
+    });
+
+    test("throws IncompleteCredentialError when Snowflake has no Connect auth", async () => {
+      const input: CreateCredentialInput = {
+        name: "Bad Snowflake",
+        url: "https://my-org.snowflakecomputing.app",
+        serverType: ServerType.SNOWFLAKE,
+        snowflakeConnection: "my-connection",
+      };
+
+      await expect(service.create(input)).rejects.toThrow(
+        IncompleteCredentialError,
+      );
+    });
+
+    test("throws IncompleteCredentialError when Snowflake has both apiKey and token", async () => {
+      const input: CreateCredentialInput = {
+        name: "Bad Snowflake",
+        url: "https://my-org.snowflakecomputing.app",
+        serverType: ServerType.SNOWFLAKE,
+        snowflakeConnection: "my-connection",
+        apiKey: "key",
+        token: "tok",
+        privateKey: "pk",
+      };
+
+      await expect(service.create(input)).rejects.toThrow(
+        IncompleteCredentialError,
+      );
     });
 
     test("creates a Connect Cloud credential", async () => {
@@ -418,7 +467,42 @@ describe("connectAPIOptionsFromCredential", () => {
       });
     });
 
-    test("returns snowflakeToken options for Snowflake credentials", async () => {
+    test("returns snowflakeToken + apiKey options for Snowflake credentials with API key", async () => {
+      const result = await connectAPIOptionsFromCredential({
+        url: "https://my-org.snowflakecomputing.app",
+        apiKey: "connect-api-key",
+        token: "",
+        privateKey: "",
+        serverType: ServerType.SNOWFLAKE,
+        snowflakeConnection: "default",
+      });
+
+      expect(result).toMatchObject({
+        url: "https://my-org.snowflakecomputing.app",
+        snowflakeToken: "sf-test-token-123",
+        apiKey: "connect-api-key",
+      });
+    });
+
+    test("returns snowflakeToken + token+privateKey options for Snowflake credentials with token auth", async () => {
+      const result = await connectAPIOptionsFromCredential({
+        url: "https://my-org.snowflakecomputing.app",
+        apiKey: "",
+        token: "connect-token-id",
+        privateKey: "connect-private-key",
+        serverType: ServerType.SNOWFLAKE,
+        snowflakeConnection: "default",
+      });
+
+      expect(result).toMatchObject({
+        url: "https://my-org.snowflakecomputing.app",
+        snowflakeToken: "sf-test-token-123",
+        token: "connect-token-id",
+        privateKey: "connect-private-key",
+      });
+    });
+
+    test("returns snowflakeToken-only for legacy Snowflake credentials with no Connect auth", async () => {
       const result = await connectAPIOptionsFromCredential({
         url: "https://my-org.snowflakecomputing.app",
         apiKey: "",
@@ -433,6 +517,7 @@ describe("connectAPIOptionsFromCredential", () => {
         snowflakeToken: "sf-test-token-123",
       });
       expect(result).not.toHaveProperty("apiKey");
+      expect(result).not.toHaveProperty("token");
     });
 
     test("passes extra options through for Snowflake credentials", async () => {
