@@ -97,6 +97,26 @@ When uncommon errors occur that Posit Publisher cannot solve for you, it
 prompts to evaluate the status of `renv` using
 [`renv::status()`](https://rstudio.github.io/renv/reference/status.html).
 
+## Unable to reach the server / Network connectivity errors
+
+If you see the following error when deploying or testing credentials:
+
+> Unable to reach the server. Check your network connection, VPN, and server URL.
+
+This means the Posit Publisher could not establish a connection to the server at
+all. Common causes include:
+
+- **VPN not connected** — If your Posit Connect server is behind a VPN, make
+  sure you are connected to the VPN before deploying.
+- **DNS resolution failure** — The server hostname could not be resolved. Verify
+  the URL is correct and that your DNS settings are configured properly.
+- **Firewall or proxy blocking the connection** — A local firewall, corporate
+  proxy, or network policy may be preventing outbound connections to the server.
+- **Server is down** — The Posit Connect server may be temporarily unavailable.
+  Try accessing the server dashboard directly in your browser to confirm.
+- **Incorrect server URL** — Double-check the URL in your credential
+  configuration. A typo or wrong port number will prevent the connection.
+
 ## `EOF` error on deployment
 
 When deploying to a Posit Connect server, it is possible to encounter the error:

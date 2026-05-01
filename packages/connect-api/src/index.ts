@@ -1,6 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-export { ConnectAPI, ConnectAPIError } from "./client.js";
+export { ConnectAPI, ConnectAPIError, isCertificateError } from "./client.js";
 
 export { ContentID, BundleID, TaskID, UserID, GUID } from "./types.js";
 

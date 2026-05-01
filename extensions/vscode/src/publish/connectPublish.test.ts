@@ -1458,12 +1458,19 @@ describe("connectPublish — error classification", () => {
     expect(tomlContent).toContain("content type cannot be changed");
   });
 
-  test("certificate error classifies as errorCertificateVerification", async () => {
+  test("network error (no response) classifies as connectionFailed", async () => {
     const api = makeMockApi();
-    const certErr = new AxiosError("certificate error");
-    certErr.code = "UNABLE_TO_VERIFY_LEAF_SIGNATURE";
+    // Simulate a network error — axios throws with no `response` property
+    // (e.g. VPN disconnected, DNS failure, ECONNREFUSED)
+    const networkErr = new AxiosError(
+      "connect ECONNREFUSED",
+      "ECONNREFUSED",
+      undefined,
+      undefined,
+      undefined, // no response
+    );
     (api.testAuthentication as ReturnType<typeof vi.fn>).mockRejectedValue(
-      certErr,
+      networkErr,
     );
 
     const opts = makeOptions({ api });
@@ -1472,8 +1479,35 @@ describe("connectPublish — error classification", () => {
 
     const lastWrite = mockWriteFile.mock.calls.at(-1);
     const tomlContent = lastWrite![1] as string;
-    expect(tomlContent).toContain("errorCertificateVerification");
+    expect(tomlContent).toContain("connectionFailed");
+    expect(tomlContent).toContain("Unable to reach the server");
   });
+
+  test.each([
+    "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+    "DEPTH_ZERO_SELF_SIGNED_CERT",
+    "SELF_SIGNED_CERT_IN_CHAIN",
+    "ERR_TLS_CERT_ALTNAME_INVALID",
+    "CERT_HAS_EXPIRED",
+  ])(
+    "certificate error (%s) classifies as errorCertificateVerification",
+    async (code) => {
+      const api = makeMockApi();
+      const certErr = new AxiosError("certificate error");
+      certErr.code = code;
+      (api.testAuthentication as ReturnType<typeof vi.fn>).mockRejectedValue(
+        certErr,
+      );
+
+      const opts = makeOptions({ api });
+
+      await expect(connectPublish(opts)).rejects.toThrow();
+
+      const lastWrite = mockWriteFile.mock.calls.at(-1);
+      const tomlContent = lastWrite![1] as string;
+      expect(tomlContent).toContain("errorCertificateVerification");
+    },
+  );
 
   test("app mode mismatch classifies as appModeNotModifiableErr", async () => {
     const api = makeMockApi();
