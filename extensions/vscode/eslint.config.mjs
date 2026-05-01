@@ -27,8 +27,6 @@ export default [
           ignoreRestSiblings: true,
         },
       ],
-      "no-useless-assignment": "off",
-      "preserve-caught-error": "off",
     },
   },
   eslintConfigPrettier,
