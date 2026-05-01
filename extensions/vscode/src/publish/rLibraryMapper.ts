@@ -263,13 +263,8 @@ export function toManifestPackage(
   availablePackages: AvailablePackage[],
   biocPackages: AvailablePackage[],
 ): { Source: string; Repository: string } {
-  let source = pkg.Source;
+  const source = pkg.Source;
   const repository = pkg.Repository ?? "";
-
-  if (!repository && pkg.RemoteRepos?.includes("bioconductor.org")) {
-    // Workaround for https://github.com/rstudio/renv/issues/1202
-    source = "Bioconductor";
-  }
 
   switch (source) {
     case "Repository": {

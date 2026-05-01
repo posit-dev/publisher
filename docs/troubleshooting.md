@@ -28,7 +28,7 @@ can help catch problems in the Configuration by providing syntax highlighting,
 completion, and hover text using the schema provided by Posit Publisher.
 
 Carefully check your Configuration file for any errors, and refer to the
-[Configuration File reference documentation](https://github.com/posit-dev/publisher/blob/main/docs/configuration.md)
+[Configuration File reference documentation](./configuration.md)
 for more details on the fields and values that are expected.
 
 ## Deployed content does not seem to be running
@@ -65,7 +65,7 @@ for the framework you are using to be set using the `type` field in your
 Configuration.
 
 To fix this you will need to find and set the `type` in your Configuration file.
-Supported types can be found in the [Configuration File Reference documentation](https://github.com/posit-dev/publisher/blob/main/docs/configuration.md#type).
+Supported types can be found in the [Configuration File Reference documentation](./configuration.md#type).
 
 ### Unsupported `type`
 
@@ -96,6 +96,26 @@ Projects that already include a `lockfile` do not require `renv` be setup.
 When uncommon errors occur that Posit Publisher cannot solve for you, it
 prompts to evaluate the status of `renv` using
 [`renv::status()`](https://rstudio.github.io/renv/reference/status.html).
+
+## Unable to reach the server / Network connectivity errors
+
+If you see the following error when deploying or testing credentials:
+
+> Unable to reach the server. Check your network connection, VPN, and server URL.
+
+This means the Posit Publisher could not establish a connection to the server at
+all. Common causes include:
+
+- **VPN not connected** — If your Posit Connect server is behind a VPN, make
+  sure you are connected to the VPN before deploying.
+- **DNS resolution failure** — The server hostname could not be resolved. Verify
+  the URL is correct and that your DNS settings are configured properly.
+- **Firewall or proxy blocking the connection** — A local firewall, corporate
+  proxy, or network policy may be preventing outbound connections to the server.
+- **Server is down** — The Posit Connect server may be temporarily unavailable.
+  Try accessing the server dashboard directly in your browser to confirm.
+- **Incorrect server URL** — Double-check the URL in your credential
+  configuration. A typo or wrong port number will prevent the connection.
 
 ## `EOF` error on deployment
 

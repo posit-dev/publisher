@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed deployment and credential testing showing "HTTP undefined" when the server is unreachable. Now displays a clear message asking the user to check their network connection, VPN, and server URL. (#4096)
+- Fixed Quarto dashboards with `server: shiny` being misdetected as static content, causing deployment to fail with an `output-dir` error on Connect. (#3991)
+- Fixed content URLs (View Content, dashboard, logs) being unreachable when the configured server URL differs from the external hostname. This scenario can happen when publishing from Workbench to Connect within the Posit Team Native App in Snowpark Container Services. (#3698)
+
+## [2.2.0]
+
+### Fixed
+
+- Fixed Connect Cloud redeploy wiping previously set secrets. (#4082)
+
+## [2.0.0]
+
 ### Added
 
 - Added support for deploying projects with dependencies recorded in pylock.toml (PEP 751), uv.lock, or pyproject.toml files. When requirements.txt is not present, these files are automatically detected and used in that priority order. (#2824)
@@ -21,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- Removed the Go backend. Publisher is now a pure TypeScript extension; all functionality that previously went through the Go binary (credential CRUD, publishing, SSE streaming) runs natively in the extension. (#3818)
+- Removed the Go backend. Publisher is now a pure TypeScript extension; all functionality that previously went through the Go binary (credential CRUD, publishing, SSE streaming) runs natively in the extension. (#3484, #3693, #3713, #3821)
 - Removed the `positPublisher.useKeyChainCredentialStorage` setting. Credentials are now stored exclusively by Positron's and VS Code's SecretStorage, which handles OS-level storage automatically. (#3649)
 
 ## [1.36.0]

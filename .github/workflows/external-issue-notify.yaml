@@ -3,15 +3,22 @@ name: External Issue Notification
 on:
   issues:
     types: [opened]
+  issue_comment:
+    types: [created]
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   notify:
+    # Skip comments on pull requests (issue_comment fires for both issues and PRs)
+    if: >-
+      github.event_name == 'issues' ||
+      (github.event_name == 'issue_comment' && !github.event.issue.pull_request)
     runs-on: ubuntu-latest
     env:
-      AUTHOR: ${{ github.event.issue.user.login }}
+      AUTHOR: ${{ github.event_name == 'issue_comment' && github.event.comment.user.login || github.event.issue.user.login }}
       ISSUE_NUMBER: ${{ github.event.issue.number }}
       ISSUE_URL: ${{ github.event.issue.html_url }}
     steps:
@@ -20,14 +27,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.ORG_TEAM_READ_TOKEN }}
         run: |
-          # Check if the issue author is a member of posit-dev/publisher
-          # The API returns 200 if they are a member, 404 if not
+          # Check if the author is a member of posit-dev/publisher
+          # The API returns 204 if they are a member, 404 if not
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/orgs/posit-dev/teams/publisher/members/$AUTHOR")
+            "https://api.github.com/orgs/posit-dev/teams/publisher-code-owners/members/$AUTHOR")
 
-          if [ "$HTTP_STATUS" = "200" ]; then
+          if [ "$HTTP_STATUS" = "204" ]; then
             echo "is_external=false" >> "$GITHUB_OUTPUT"
             echo "$AUTHOR is a publisher team member"
           else
@@ -35,24 +42,49 @@ jobs:
             echo "$AUTHOR is external (HTTP $HTTP_STATUS)"
           fi
 
+      - name: Add community label
+        if: steps.check-team.outputs.is_external == 'true'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['community']
+              });
+            } catch (error) {
+              core.warning(`Failed to add community label: ${error.message}`);
+            }
+
       - name: Send Slack notification
         if: steps.check-team.outputs.is_external == 'true'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.EXTERNAL_ISSUE_SLACK_WEBHOOK_URL }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
+          EVENT_NAME: ${{ github.event_name }}
+          COMMENT_URL: ${{ github.event.comment.html_url }}
         run: |
+          if [ "$EVENT_NAME" = "issue_comment" ]; then
+            MESSAGE=$(printf ':speech_balloon: *New external comment on Publisher issue*\n\n*<%s|#%s: %s>*\nComment by: <%s|@%s>' \
+              "$COMMENT_URL" "$ISSUE_NUMBER" "$ISSUE_TITLE" \
+              "https://github.com/${AUTHOR}" "$AUTHOR")
+          else
+            MESSAGE=$(printf ':rotating_light: *New external issue filed on Publisher*\n\n*<%s|#%s: %s>*\nFiled by: <%s|@%s>' \
+              "$ISSUE_URL" "$ISSUE_NUMBER" "$ISSUE_TITLE" \
+              "https://github.com/${AUTHOR}" "$AUTHOR")
+          fi
+
           PAYLOAD=$(jq -n \
-            --arg title "$ISSUE_TITLE" \
-            --arg url "$ISSUE_URL" \
-            --arg number "$ISSUE_NUMBER" \
-            --arg author "$AUTHOR" \
+            --arg text "$MESSAGE" \
             '{
               "blocks": [
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": ":rotating_light: *New external issue filed on Publisher*\n\n*<\($url)|#\($number): \($title)>*\nFiled by: <https://github.com/\($author)|@\($author)>"
+                    "text": $text
                   }
                 }
               ]

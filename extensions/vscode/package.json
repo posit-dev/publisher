@@ -4,7 +4,7 @@
   "author": "Posit, PBC",
   "displayName": "Posit Publisher",
   "description": "Publish and share your Python and R content on Posit Connect",
-  "version": "1.37.21",
+  "version": "2.3.1",
   "license": "MIT",
   "icon": "assets/img/posit-publisher.png",
   "repository": {
@@ -660,7 +660,7 @@
     "test-integration-publish": "vitest run src/publish/integration.test.ts"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
+    "@eslint/js": "^10.0.1",
     "@types/js-yaml": "^4.0.9",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mocha": "^10.0.2",

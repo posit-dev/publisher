@@ -289,27 +289,6 @@ describe("toManifestPackage", () => {
       Repository: "https://custom.example.com",
     });
   });
-
-  test("Bioconductor workaround for missing repository with bioconductor RemoteRepos", () => {
-    const pkg: RenvPackage = {
-      Package: "Biobase",
-      Version: "2.62.0",
-      Source: "Repository",
-      RemoteRepos: "https://bioconductor.org/packages/3.18/bioc",
-    };
-    const biocPackages: AvailablePackage[] = [
-      {
-        name: "Biobase",
-        version: "2.62.0",
-        repository: "https://bioconductor.org/packages/3.18/bioc",
-      },
-    ];
-    const result = toManifestPackage(pkg, cranRepos, [], biocPackages);
-    expect(result).toEqual({
-      Source: "Bioconductor",
-      Repository: "https://bioconductor.org/packages/3.18/bioc",
-    });
-  });
 });
 
 // ---------------------------------------------------------------------------

@@ -145,7 +145,6 @@ export class RMarkdownDetector implements ContentTypeDetector {
             `[rmarkdown] found site metadata in fallback file: ${siteMeta.indexFile}`,
           );
           metadata = siteMeta.metadata;
-          content = siteMeta.indexContent;
           if (siteMeta.indexFile) {
             files.push(`/${siteMeta.indexFile}`);
           }

@@ -455,7 +455,7 @@ export async function newDeployment(
       });
     }
 
-    let selectedEntrypointFile: string | undefined = undefined;
+    let selectedEntrypointFile: string | undefined;
     do {
       const pick = await input.showQuickPick({
         title: state.title,

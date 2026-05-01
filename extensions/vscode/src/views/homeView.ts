@@ -289,10 +289,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
+    // Resolve projectDir to an absolute path. activeConfig.projectDir is
+    // relative to the workspace root (e.g. "."), but QuartoProjectHelper
+    // needs an absolute path for filesystem checks and quarto render commands.
+    const root = this.root?.uri.fsPath;
+    if (!root) {
+      window.showErrorMessage("No workspace folder open.");
+      return;
+    }
+    const absProjectDir = path.resolve(root, projectDir);
+
     // Currently we only support rendering content with Quarto
     renderQuartoContent(
       this.webviewConduit,
-      projectDir,
+      absProjectDir,
       sourceEntrypoint,
       renderedEntrypoint,
     );
