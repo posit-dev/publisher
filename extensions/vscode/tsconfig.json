@@ -19,7 +19,8 @@
     "noUncheckedIndexedAccess": true,
     "paths": {
       "src/*": ["./src/*"]
-    }
+    },
+    "types": ["mocha", "node"]
   },
   "exclude": [
     "node_modules",
