@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "isolatedModules": true,
     "esModuleInterop": true,
     "module": "preserve",
