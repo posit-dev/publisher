@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.0]
+
 ### Fixed
 
 - Fixed re-deploying static HTML content (e.g., Quarto sites) failing with Connect error 110 when the content was originally deployed without `content_category`. (#4110)
