@@ -44,22 +44,39 @@ interface TokenAuth extends ConnectAPIBaseOptions {
   snowflakeToken?: never;
 }
 
-interface SnowflakeAuth extends ConnectAPIBaseOptions {
-  apiKey?: never;
-  token?: never;
-  privateKey?: never;
+interface SnowflakeApiKeyAuth extends ConnectAPIBaseOptions {
   /** Pre-computed Snowflake session token for Snowflake-proxied Connect servers. */
   snowflakeToken: string;
+  /** Connect API key, sent via X-RSC-Authorization header. */
+  apiKey: string;
+  token?: never;
+  privateKey?: never;
+}
+
+interface SnowflakeTokenAuth extends ConnectAPIBaseOptions {
+  /** Pre-computed Snowflake session token for Snowflake-proxied Connect servers. */
+  snowflakeToken: string;
+  apiKey?: never;
+  /** Token ID for Connect token-based authentication (RSA key-pair signing). */
+  token: string;
+  /** Base64-encoded DER PKCS#1 RSA private key for Connect token-based authentication. */
+  privateKey: string;
 }
 
 interface NoAuth extends ConnectAPIBaseOptions {
   apiKey?: never;
   token?: never;
   privateKey?: never;
-  snowflakeToken?: never;
+  /** Optional Snowflake token for legacy credentials without Connect auth. */
+  snowflakeToken?: string;
 }
 
-export type ConnectAPIOptions = ApiKeyAuth | TokenAuth | SnowflakeAuth | NoAuth;
+export type ConnectAPIOptions =
+  | ApiKeyAuth
+  | TokenAuth
+  | SnowflakeApiKeyAuth
+  | SnowflakeTokenAuth
+  | NoAuth;
 
 // ---------------------------------------------------------------------------
 // User types

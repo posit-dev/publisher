@@ -1370,11 +1370,12 @@ describe("Token authentication", () => {
 // Snowflake authentication
 // ---------------------------------------------------------------------------
 
-describe("Snowflake authentication", () => {
-  it("sets Snowflake authorization header", () => {
+describe("Snowflake + API key authentication", () => {
+  it("sets both Snowflake Authorization and X-RSC-Authorization headers", () => {
     new ConnectAPI({
       url: BASE_URL,
       snowflakeToken: "sf-session-token-abc",
+      apiKey: "connect-api-key-123",
     });
 
     expect(axios.create).toHaveBeenCalledWith(
@@ -1382,6 +1383,7 @@ describe("Snowflake authentication", () => {
         baseURL: BASE_URL,
         headers: expect.objectContaining({
           Authorization: 'Snowflake Token="sf-session-token-abc"',
+          "X-RSC-Authorization": "Key connect-api-key-123",
         }),
       }),
     );
@@ -1393,11 +1395,57 @@ describe("Snowflake authentication", () => {
     const client = new ConnectAPI({
       url: BASE_URL,
       snowflakeToken: "sf-session-token-abc",
+      apiKey: "connect-api-key-123",
     });
     await client.getCurrentUser();
 
     const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
     expect(config._signedHeaders).toBeUndefined();
+  });
+});
+
+describe("Snowflake + token authentication", () => {
+  const SF_TOKEN = "sf-session-token-abc";
+  const { privateKeyBase64: SF_PRIVATE_KEY } = generateTestKeyPair();
+  const SF_CONNECT_TOKEN = "Tconnect-token-456";
+
+  it("sets Snowflake Authorization as static header", () => {
+    new ConnectAPI({
+      url: BASE_URL,
+      snowflakeToken: SF_TOKEN,
+      token: SF_CONNECT_TOKEN,
+      privateKey: SF_PRIVATE_KEY,
+    });
+
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseURL: BASE_URL,
+        headers: expect.objectContaining({
+          Authorization: `Snowflake Token="${SF_TOKEN}"`,
+        }),
+      }),
+    );
+  });
+
+  it("adds signing interceptor for Connect token auth", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(validUserDTO()));
+
+    const client = new ConnectAPI({
+      url: BASE_URL,
+      snowflakeToken: SF_TOKEN,
+      token: SF_CONNECT_TOKEN,
+      privateKey: SF_PRIVATE_KEY,
+    });
+    await client.getCurrentUser();
+
+    const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    const signedHeaders = config._signedHeaders as Record<string, string>;
+
+    expect(signedHeaders).toBeDefined();
+    expect(signedHeaders["X-Auth-Token"]).toBe(SF_CONNECT_TOKEN);
+    expect(signedHeaders["X-Auth-Signature"]).toBeDefined();
+    expect(signedHeaders["X-Content-Checksum"]).toBeDefined();
+    expect(signedHeaders["Date"]).toBeDefined();
   });
 });
 
@@ -1452,9 +1500,33 @@ describe("Constructor validation", () => {
     ).not.toThrow();
   });
 
-  it("accepts snowflakeToken auth", () => {
+  it("accepts snowflakeToken + apiKey auth", () => {
     expect(
-      () => new ConnectAPI({ url: BASE_URL, snowflakeToken: "sf-token" }),
+      () =>
+        new ConnectAPI({
+          url: BASE_URL,
+          snowflakeToken: "sf-token",
+          apiKey: "connect-key",
+        }),
+    ).not.toThrow();
+  });
+
+  it("accepts snowflakeToken + token+privateKey auth", () => {
+    const { privateKey } = crypto.generateKeyPairSync("rsa", {
+      modulusLength: 2048,
+    });
+    const privateKeyBase64 = Buffer.from(
+      privateKey.export({ format: "der", type: "pkcs1" }),
+    ).toString("base64");
+
+    expect(
+      () =>
+        new ConnectAPI({
+          url: BASE_URL,
+          snowflakeToken: "sf-token",
+          token: "Ttoken123",
+          privateKey: privateKeyBase64,
+        }),
     ).not.toThrow();
   });
 });
