@@ -572,6 +572,8 @@ export async function newConnectCredential(
     authMethod = getAuthMethod(pick.label as AuthMethodName);
 
     if (isApiKey(authMethod)) {
+      state.data.token = undefined;
+      state.data.privateKey = undefined;
       return {
         name: step.INPUT_API_KEY,
         step: (input: MultiStepInput) =>
@@ -579,6 +581,7 @@ export async function newConnectCredential(
       };
     }
 
+    state.data.apiKey = undefined;
     return {
       name: step.INPUT_TOKEN,
       step: (input: MultiStepInput) => steps[step.INPUT_TOKEN](input, state),
