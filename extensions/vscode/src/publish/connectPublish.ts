@@ -313,17 +313,19 @@ export async function connectPublish({
         if (isAxiosError(err) && err.response?.status === 404) {
           throw new Error(
             `Cannot deploy content: ID ${contentId} - Content cannot be found.`,
+            { cause: err },
           );
         }
         if (isAxiosError(err) && err.response?.status === 403) {
           throw new Error(
             `Cannot deploy content: ID ${contentId} - ` +
               `You may need to request collaborator permissions or verify the credentials in use.`,
+            { cause: err },
           );
         }
-        const errMsg = err instanceof Error ? err.message : String(err);
         throw new Error(
-          `Cannot deploy content: ID ${contentId} - Unknown error: ${errMsg}`,
+          `Cannot deploy content: ID ${contentId} - Unknown error: ${err instanceof Error ? err.message : String(err)}`,
+          { cause: err },
         );
       }
 
