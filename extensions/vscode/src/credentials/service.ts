@@ -89,7 +89,10 @@ export async function connectAPIOptionsFromCredential(
 }
 
 async function buildSnowflakeOptions(
-  credential: Pick<Credential, "url" | "snowflakeConnection">,
+  credential: Pick<
+    Credential,
+    "url" | "snowflakeConnection" | "apiKey" | "token" | "privateKey"
+  >,
   extra?: Pick<ConnectAPIOptions, "rejectUnauthorized" | "timeout">,
 ): Promise<ConnectAPIOptions> {
   const connections = listConnections();
@@ -105,6 +108,25 @@ async function buildSnowflakeOptions(
   const hostname = new URL(credential.url).hostname;
   const snowflakeToken = await tokenProvider.getToken(hostname);
 
+  if (credential.token && credential.privateKey) {
+    return {
+      url: credential.url,
+      snowflakeToken,
+      token: credential.token,
+      privateKey: credential.privateKey,
+      ...extra,
+    };
+  }
+  if (credential.apiKey) {
+    return {
+      url: credential.url,
+      snowflakeToken,
+      apiKey: credential.apiKey,
+      ...extra,
+    };
+  }
+  // Legacy credential with no Connect auth — will fail at request time
+  // but we still need to allow loading/displaying it.
   return {
     url: credential.url,
     snowflakeToken,
@@ -153,12 +175,12 @@ export class CredentialsService {
       case ServerType.SNOWFLAKE:
         if (
           !snowflakePresent ||
-          connectPresent ||
-          connectCloudPresent ||
-          tokenAuthPresent
+          (connectPresent && tokenAuthPresent) ||
+          (!connectPresent && !tokenAuthPresent) ||
+          connectCloudPresent
         ) {
           throw new IncompleteCredentialError(
-            "Snowflake credential requires a Snowflake connection string and no other auth fields",
+            "Snowflake credential requires a Snowflake connection and either an API Key or Token+PrivateKey (but not both)",
           );
         }
         break;
