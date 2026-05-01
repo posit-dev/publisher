@@ -736,6 +736,26 @@ describe("buildCreateContentRequest", () => {
 
     expect(request.title).toBe("my-save-name");
   });
+
+  it("omits secrets when no environment vars and no secrets provided", () => {
+    const config: ConfigurationDetails = {
+      $schema: "https://example.com/schema",
+      productType: ProductType.CONNECT_CLOUD,
+      type: ContentType.PYTHON_DASH,
+      entrypoint: "app.py",
+      validate: true,
+    };
+
+    const request = buildCreateContentRequest(
+      config,
+      "my-app",
+      undefined,
+      "account-123",
+      ContentAccess.ViewPrivateEditPrivate,
+    );
+
+    expect(request.secrets).toBeUndefined();
+  });
 });
 
 describe("buildUpdateContentRequest", () => {
@@ -789,5 +809,91 @@ describe("buildUpdateContentRequest", () => {
     );
 
     expect(request.access).toBeUndefined();
+  });
+
+  it("omits secrets from PATCH payload when no environment vars and no secrets provided", () => {
+    const config: ConfigurationDetails = {
+      $schema: "https://example.com/schema",
+      productType: ProductType.CONNECT_CLOUD,
+      type: ContentType.R_SHINY,
+      entrypoint: "app.R",
+      validate: true,
+    };
+
+    const request = buildUpdateContentRequest(
+      config,
+      "my-app",
+      undefined,
+      ContentID("content-456"),
+      undefined,
+    );
+
+    expect(request.secrets).toBeUndefined();
+  });
+
+  it("omits secrets when secrets param is empty object (redeploy without new values)", () => {
+    const config: ConfigurationDetails = {
+      $schema: "https://example.com/schema",
+      productType: ProductType.CONNECT_CLOUD,
+      type: ContentType.R_SHINY,
+      entrypoint: "app.R",
+      validate: true,
+    };
+
+    const request = buildUpdateContentRequest(
+      config,
+      "my-app",
+      {},
+      ContentID("content-456"),
+      undefined,
+    );
+
+    expect(request.secrets).toBeUndefined();
+  });
+
+  it("includes secrets in PATCH payload when secrets are provided", () => {
+    const config: ConfigurationDetails = {
+      $schema: "https://example.com/schema",
+      productType: ProductType.CONNECT_CLOUD,
+      type: ContentType.R_SHINY,
+      entrypoint: "app.R",
+      validate: true,
+    };
+
+    const request = buildUpdateContentRequest(
+      config,
+      "my-app",
+      { MY_SECRET: "value" },
+      ContentID("content-456"),
+      undefined,
+    );
+
+    expect(request.secrets).toHaveLength(1);
+    expect(request.secrets![0]).toEqual({ name: "MY_SECRET", value: "value" });
+  });
+
+  it("includes secrets in PATCH payload when config has environment vars", () => {
+    const config: ConfigurationDetails = {
+      $schema: "https://example.com/schema",
+      productType: ProductType.CONNECT_CLOUD,
+      type: ContentType.R_SHINY,
+      entrypoint: "app.R",
+      environment: { ENV_VAR: "env-value" },
+      validate: true,
+    };
+
+    const request = buildUpdateContentRequest(
+      config,
+      "my-app",
+      undefined,
+      ContentID("content-456"),
+      undefined,
+    );
+
+    expect(request.secrets).toHaveLength(1);
+    expect(request.secrets![0]).toEqual({
+      name: "ENV_VAR",
+      value: "env-value",
+    });
   });
 });

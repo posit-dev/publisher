@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   notify:
@@ -40,6 +41,22 @@ jobs:
             echo "is_external=true" >> "$GITHUB_OUTPUT"
             echo "$AUTHOR is external (HTTP $HTTP_STATUS)"
           fi
+
+      - name: Add community label
+        if: steps.check-team.outputs.is_external == 'true'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['community']
+              });
+            } catch (error) {
+              core.warning(`Failed to add community label: ${error.message}`);
+            }
 
       - name: Send Slack notification
         if: steps.check-team.outputs.is_external == 'true'

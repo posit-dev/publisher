@@ -184,7 +184,7 @@ When executing commands the following variables are accepted to change behavior.
 
 | Variable | Default | Type | Description                                                                           |
 | -------- | ------- | ---- | ------------------------------------------------------------------------------------- |
-| CI       | false   | bool | Enable CI mode. When set to true, multi-platform builds are enabled.                  |
+| CI       | false   | bool | Enable CI mode. When set to true, `npm ci` is used instead of `npm install`.          |
 | DEBUG    | false   | bool | Enable DEBUG mode. When set to true, `set +x` is enabled for all Justfile targets.    |
 | MODE     | dev     | enum | When set to `dev`, development is enabled. All other values disable development mode. |
 
@@ -290,7 +290,7 @@ When the release PR is merged, automation takes over:
 
 1. The `tag-on-release-merge` workflow automatically creates the version tag
 2. The tag triggers the `release` workflow which:
-   - Builds release artifacts for all platforms
+   - Builds release artifacts
    - Creates a GitHub release
    - Publishes to VS Code Marketplace and Open VSX
    - Sends a Slack notification to announce the release
@@ -301,7 +301,7 @@ Once the workflows complete, verify:
 
 - The release appears on the [Releases page](https://github.com/posit-dev/publisher/releases)
 - The new version shows up in [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Posit.publisher) and [Open VSX](https://open-vsx.org/extension/posit/publisher)
-- All expected target platforms are supported (Linux x64, Linux ARM64, Windows x64, macOS Intel, macOS Apple Silicon)
+- Works With / Target Platforms is "Universal"
 
 It may take some time after the workflows complete for the new version to appear in the marketplaces.
 

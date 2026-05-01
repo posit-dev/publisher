@@ -6,6 +6,31 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0]
+
+### Fixed
+
+- Fixed Connect Cloud redeploy wiping previously set secrets. (#4082)
+
+## [2.0.0]
+
+### Added
+
+- Added support for deploying projects with dependencies recorded in pylock.toml (PEP 751), uv.lock, or pyproject.toml files. When requirements.txt is not present, these files are automatically detected and used in that priority order. (#2824)
+- Directory checkboxes in Project Files now show an indeterminate state when some, but not all, children are included in the deployment. Directories also now show as checked when all children are included. (#3472)
+
+### Fixed
+
+- Fixed deployment records being written with an empty `created_at` timestamp after publishing. (#3718)
+- Fixed configuration schema to use `auth_type` (snake_case) for integration requests, matching the format the extension actually produces. Added strict property validation to integration request items. (#3651)
+- Fixed a bug with cancellation that could cause redeployment to create a new content item instead of updating the existing one. (#3305)
+- Fixed the Python/R Packages panel showing "file does not exist" after scanning when the package file was absent at startup. (#3963)
+
+### Removed
+
+- Removed the Go backend. Publisher is now a pure TypeScript extension; all functionality that previously went through the Go binary (credential CRUD, publishing, SSE streaming) runs natively in the extension. (#3484, #3693, #3713, #3821)
+- Removed the `positPublisher.useKeyChainCredentialStorage` setting. Credentials are now stored exclusively by Positron's and VS Code's SecretStorage, which handles OS-level storage automatically. (#3649)
+
 ## [1.36.0]
 
 ### Fixed
