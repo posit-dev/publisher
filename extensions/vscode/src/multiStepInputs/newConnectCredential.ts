@@ -75,6 +75,7 @@ export async function newConnectCredential(
     INPUT_SERVER_URL = "inputServerUrl",
     INPUT_API_KEY = "inputAPIKey",
     INPUT_SNOWFLAKE_CONN = "inputSnowflakeConnection",
+    INPUT_SNOWFLAKE_AUTH_METHOD = "inputSnowflakeAuthMethod",
     INPUT_CRED_NAME = "inputCredentialName",
     INPUT_AUTH_METHOD = "inputAuthMethod",
     INPUT_TOKEN = "inputToken",
@@ -87,6 +88,7 @@ export async function newConnectCredential(
     [step.INPUT_SERVER_URL]: inputServerUrl,
     [step.INPUT_API_KEY]: inputAPIKey,
     [step.INPUT_SNOWFLAKE_CONN]: inputSnowflakeConnection,
+    [step.INPUT_SNOWFLAKE_AUTH_METHOD]: inputSnowflakeAuthMethod,
     [step.INPUT_CRED_NAME]: inputCredentialName,
     [step.INPUT_AUTH_METHOD]: inputAuthMethod,
     [step.INPUT_TOKEN]: inputToken,
@@ -120,8 +122,12 @@ export async function newConnectCredential(
   };
 
   const isValidSnowflakeAuth = () => {
-    // for Snowflake, require snowflakeConnection
-    return isSnowflake(serverType) && isString(state.data.snowflakeConnection);
+    return (
+      isSnowflake(serverType) &&
+      isString(state.data.snowflakeConnection) &&
+      (isString(state.data.apiKey) ||
+        (isString(state.data.token) && isString(state.data.privateKey)))
+    );
   };
 
   // ***************************************************************
@@ -483,7 +489,19 @@ export async function newConnectCredential(
 
     try {
       await showProgress("Reading Snowflake connections", viewId, async () => {
-        const resp = await fetchSnowflakeConnections(serverUrl);
+        const connectAuth =
+          typeof state.data.apiKey === "string" && state.data.apiKey
+            ? { apiKey: state.data.apiKey }
+            : typeof state.data.token === "string" &&
+                typeof state.data.privateKey === "string" &&
+                state.data.token &&
+                state.data.privateKey
+              ? {
+                  token: state.data.token,
+                  privateKey: state.data.privateKey,
+                }
+              : undefined;
+        const resp = await fetchSnowflakeConnections(serverUrl, connectAuth);
         connections = resp.connections;
         connectionQuickPicks = resp.connectionQuickPicks;
       });
@@ -514,9 +532,57 @@ export async function newConnectCredential(
     }
 
     return {
-      name: step.INPUT_CRED_NAME,
+      name: step.INPUT_SNOWFLAKE_AUTH_METHOD,
       step: (input: MultiStepInput) =>
-        steps[step.INPUT_CRED_NAME](input, state),
+        steps[step.INPUT_SNOWFLAKE_AUTH_METHOD](input, state),
+    };
+  }
+
+  // ***************************************************************
+  // Step: Select Connect auth method (Snowflake SPCS only)
+  // ***************************************************************
+  async function inputSnowflakeAuthMethod(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    const authMethods = [
+      {
+        label: AuthMethodName.API_KEY,
+        description: "Enter a Connect API key",
+      },
+      {
+        label: AuthMethodName.TOKEN,
+        description: "One-click token authentication",
+      },
+    ];
+
+    const pick = await input.showQuickPick({
+      title: state.title,
+      step: 0,
+      totalSteps: 0,
+      placeholder:
+        "Select how to authenticate with Posit Connect (behind Snowflake)",
+      items: authMethods,
+      activeItem: authMethods[0],
+      buttons: [],
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
+
+    authMethod = getAuthMethod(pick.label as AuthMethodName);
+
+    if (isApiKey(authMethod)) {
+      return {
+        name: step.INPUT_API_KEY,
+        step: (input: MultiStepInput) =>
+          steps[step.INPUT_API_KEY](input, state),
+      };
+    }
+
+    return {
+      name: step.INPUT_TOKEN,
+      step: (input: MultiStepInput) => steps[step.INPUT_TOKEN](input, state),
+      skipStepHistory: true,
     };
   }
 
