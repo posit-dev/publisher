@@ -384,6 +384,52 @@ version = "3.11"
     }
   });
 
+  it("loads a Node.js config with empty [node] section", async () => {
+    const configPath = writeConfig(
+      "nodejs-app",
+      `
+"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
+type = "nodejs"
+entrypoint = "index.js"
+
+[node]
+`,
+    );
+
+    const cfg = await loadConfigFromFile(configPath, tmpDir);
+
+    expect(cfg.configuration.type).toBe("nodejs");
+    expect(cfg.configuration.entrypoint).toBe("index.js");
+    expect(cfg.configuration.node).toEqual({});
+  });
+
+  it("throws for Connect Cloud config with type=nodejs", async () => {
+    const configPath = writeConfig(
+      "cloud-nodejs",
+      `
+"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
+type = "nodejs"
+entrypoint = "index.js"
+product_type = "connect_cloud"
+
+[node]
+`,
+    );
+
+    try {
+      await loadConfigFromFile(configPath, tmpDir);
+      expect.fail("should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigurationLoadError);
+      if (error instanceof ConfigurationLoadError) {
+        // Connect Cloud configs are rejected at schema time because the
+        // config_connect_cloud branch's unevaluatedProperties:false seal
+        // disallows the unknown `node` property.
+        expect(error.configurationError.error.code).toBe("tomlValidationError");
+      }
+    }
+  });
+
   it("accepts Connect Cloud config with supported content type", async () => {
     const configPath = writeConfig(
       "cloud-dash",
