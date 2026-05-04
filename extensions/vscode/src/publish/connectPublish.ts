@@ -893,8 +893,7 @@ function isAPIContentType(contentType: string): boolean {
   return (
     contentType === ContentType.PYTHON_FLASK ||
     contentType === ContentType.PYTHON_FASTAPI ||
-    contentType === ContentType.R_PLUMBER ||
-    contentType === ContentType.NODEJS
+    contentType === ContentType.R_PLUMBER
   );
 }
 

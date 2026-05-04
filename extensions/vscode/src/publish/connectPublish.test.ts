@@ -2233,33 +2233,6 @@ describe("connectPublish — server settings validation", () => {
     );
   });
 
-  test("rejects Node.js content when allow-apis is not licensed", async () => {
-    const api = makeMockApi();
-    vi.mocked(api.getSettings).mockResolvedValue(
-      makeSettings({
-        general: {
-          license: {
-            "allow-apis": false,
-            "current-user-execution": true,
-            "enable-launcher": true,
-            "oauth-integrations": true,
-          },
-        } as AllSettings["general"],
-      }),
-    );
-
-    const config = makeConfig({
-      type: ContentType.NODEJS,
-      python: undefined,
-      node: {},
-    });
-    const opts = makeOptions({ api, config });
-
-    await expect(connectPublish(opts)).rejects.toThrow(
-      "API deployment is not licensed",
-    );
-  });
-
   // --- RACU (run_as_current_user) ---
 
   test("rejects RACU when not licensed", async () => {
