@@ -384,6 +384,47 @@ version = "3.11"
     }
   });
 
+  it("loads a Node.js config", async () => {
+    const configPath = writeConfig(
+      "nodejs-app",
+      `
+"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
+type = "nodejs"
+entrypoint = "index.js"
+`,
+    );
+
+    const cfg = await loadConfigFromFile(configPath, tmpDir);
+
+    expect(cfg.configuration.type).toBe("nodejs");
+    expect(cfg.configuration.entrypoint).toBe("index.js");
+  });
+
+  it("throws for Connect Cloud config with type=nodejs", async () => {
+    const configPath = writeConfig(
+      "cloud-nodejs",
+      `
+"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
+type = "nodejs"
+entrypoint = "index.js"
+product_type = "connect_cloud"
+`,
+    );
+
+    try {
+      await loadConfigFromFile(configPath, tmpDir);
+      expect.fail("should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigurationLoadError);
+      if (error instanceof ConfigurationLoadError) {
+        // Connect Cloud configs with type=nodejs are rejected at load time
+        // by connectCloudSupportedTypes (nodejs is not in the allowlist).
+        expect(error.configurationError.error.code).toBe("tomlValidationError");
+        expect(error.message).toContain("not supported by Connect Cloud");
+      }
+    }
+  });
+
   it("accepts Connect Cloud config with supported content type", async () => {
     const configPath = writeConfig(
       "cloud-dash",

@@ -84,6 +84,23 @@ describe("schema validates valid configs", () => {
   });
 });
 
+describe("schema validates Node.js configs", () => {
+  it("accepts type=nodejs without a [node] section", () => {
+    const data = baseConfig("connect");
+    data.type = "nodejs";
+    data.entrypoint = "index.js";
+    expectValid(data);
+  });
+
+  it("rejects [node] section under any product_type", () => {
+    const data = baseConfig("connect");
+    data.type = "nodejs";
+    data.entrypoint = "index.js";
+    data.node = {};
+    expectInvalid(data);
+  });
+});
+
 describe("schema rejects unknown property at root", () => {
   it("rejects unknown root property", () => {
     const data = baseConfig("connect");
