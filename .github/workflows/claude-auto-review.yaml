@@ -70,7 +70,7 @@ jobs:
           aws-region: us-east-2
 
       - name: Run Claude Code Review
-        uses: anthropics/claude-code-action@v1.0.92
+        uses: anthropics/claude-code-action@v1.0.111
         env:
           # Pass git config via environment to rewrite SSH URLs to authenticated HTTPS
           # This is for installing plugins from private repos
