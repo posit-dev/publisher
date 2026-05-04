@@ -1,7 +1,0 @@
----
-title: "quarto-proj-none"
----
-
-## Hello, World!
-
-This is the simplest possible Quarto project. It uses no runtimes.
