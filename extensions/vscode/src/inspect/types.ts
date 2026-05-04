@@ -23,7 +23,6 @@ export interface PartialConfig {
   files?: string[];
   python?: Record<string, never>; // Presence means "needs Python inspection"
   r?: Record<string, never>; // Presence means "needs R inspection"
-  node?: Record<string, never>; // Presence means "Node.js project"
   quarto?: { version: string; engines?: string[] };
   alternatives?: PartialConfig[];
 }

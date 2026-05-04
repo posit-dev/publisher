@@ -139,7 +139,6 @@ export type ConfigurationDetails = {
   hasParameters?: boolean;
   python?: PythonConfig;
   r?: RConfig;
-  node?: Record<string, never>;
   quarto?: QuartoConfig;
   jupyter?: JupyterConfig;
   environment?: EnvironmentConfig;
