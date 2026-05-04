@@ -84,6 +84,12 @@
             }
           }
         },
+        "node": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Node.js runtime marker. The presence of this section indicates a Node.js deployment; package.json and package-lock.json in the bundle drive runtime configuration.",
+          "properties": {}
+        },
         "quarto": {
           "type": "object",
           "additionalProperties": false,
@@ -315,11 +321,12 @@
     },
     "type": {
       "type": "string",
-      "description": "Indicates the type of content being deployed. Valid values are: html, jupyter-notebook, jupyter-voila, python-bokeh, python-dash, python-fastapi, python-flask, python-gradio, python-panel, python-shiny, python-streamlit, quarto-shiny, quarto-static, r-plumber, r-shiny, rmd-shiny, rmd",
+      "description": "Indicates the type of content being deployed. Valid values are: html, jupyter-notebook, jupyter-voila, nodejs, python-bokeh, python-dash, python-fastapi, python-flask, python-gradio, python-panel, python-shiny, python-streamlit, quarto-shiny, quarto-static, r-plumber, r-shiny, rmd-shiny, rmd",
       "enum": [
         "html",
         "jupyter-notebook",
         "jupyter-voila",
+        "nodejs",
         "python-bokeh",
         "python-dash",
         "python-fastapi",
@@ -558,6 +565,13 @@
       "then": {
         "required": ["r"]
       }
+    },
+    {
+      "if": {
+        "properties": { "type": { "const": "nodejs" } },
+        "required": ["type"]
+      },
+      "then": { "required": ["node"] }
     },
     {
       "if": {
