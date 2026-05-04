@@ -48,6 +48,7 @@ export enum ContentType {
   HTML = "html",
   JUPYTER_NOTEBOOK = "jupyter-notebook",
   JUPYTER_VOILA = "jupyter-voila",
+  NODEJS = "nodejs",
   PYTHON_BOKEH = "python-bokeh",
   PYTHON_DASH = "python-dash",
   PYTHON_FASTAPI = "python-fastapi",
@@ -70,6 +71,7 @@ export const allValidContentTypes: ContentType[] = [
   ContentType.HTML,
   ContentType.JUPYTER_NOTEBOOK,
   ContentType.JUPYTER_VOILA,
+  ContentType.NODEJS,
   ContentType.PYTHON_BOKEH,
   ContentType.PYTHON_DASH,
   ContentType.PYTHON_FASTAPI,
@@ -91,6 +93,7 @@ export const contentTypeStrings = {
   [ContentType.HTML]: "serve HTML",
   [ContentType.JUPYTER_NOTEBOOK]: "render with Jupyter nbconvert",
   [ContentType.JUPYTER_VOILA]: "run with Jupyter Voila",
+  [ContentType.NODEJS]: "run with Node.js",
   [ContentType.PYTHON_BOKEH]: "run with Bokeh",
   [ContentType.PYTHON_DASH]: "run with Dash",
   [ContentType.PYTHON_FASTAPI]: "run with FastAPI",
@@ -136,6 +139,7 @@ export type ConfigurationDetails = {
   hasParameters?: boolean;
   python?: PythonConfig;
   r?: RConfig;
+  node?: Record<string, never>;
   quarto?: QuartoConfig;
   jupyter?: JupyterConfig;
   environment?: EnvironmentConfig;
