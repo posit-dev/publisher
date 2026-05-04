@@ -122,6 +122,18 @@ describe("forceProductTypeCompliance", () => {
       expect(config.hasParameters).toBeUndefined();
     });
 
+    it("clears node section", () => {
+      const config = makeConfig({
+        productType: ProductType.CONNECT_CLOUD,
+        type: ContentType.HTML,
+        node: {},
+      });
+
+      forceProductTypeCompliance(config);
+
+      expect(config.node).toBeUndefined();
+    });
+
     it("handles missing optional sections gracefully", () => {
       const config = makeConfig({
         productType: ProductType.CONNECT_CLOUD,
@@ -190,6 +202,19 @@ describe("forceProductTypeCompliance", () => {
       expect(config.quarto).toEqual({ version: "1.4" });
       expect(config.jupyter).toEqual({ hideAllInput: true });
       expect(config.hasParameters).toBe(true);
+    });
+
+    it("preserves node section", () => {
+      const config = makeConfig({
+        productType: ProductType.CONNECT,
+        type: ContentType.NODEJS,
+        node: {},
+        entrypoint: "index.js",
+      });
+
+      forceProductTypeCompliance(config);
+
+      expect(config.node).toEqual({});
     });
   });
 

@@ -36,6 +36,7 @@ export function forceProductTypeCompliance(config: ConfigurationDetails): void {
     }
     config.quarto = undefined;
     config.jupyter = undefined;
+    config.node = undefined;
     config.hasParameters = undefined;
   }
 
