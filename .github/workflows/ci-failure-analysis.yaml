@@ -109,7 +109,7 @@ jobs:
       - name: Analyze failure with Claude
         if: steps.get-logs.outputs.has_failures == 'true'
         id: analyze
-        uses: anthropics/claude-code-action@v1.0.92
+        uses: anthropics/claude-code-action@v1.0.111
         with:
           use_bedrock: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
