@@ -85,32 +85,17 @@ describe("schema validates valid configs", () => {
 });
 
 describe("schema validates Node.js configs", () => {
-  it("accepts type=nodejs with empty [node] section", () => {
+  it("accepts type=nodejs without a [node] section", () => {
     const data = baseConfig("connect");
     data.type = "nodejs";
     data.entrypoint = "index.js";
-    data.node = {};
     expectValid(data);
   });
 
-  it("rejects type=nodejs without [node] section", () => {
+  it("rejects [node] section under any product_type", () => {
     const data = baseConfig("connect");
     data.type = "nodejs";
     data.entrypoint = "index.js";
-    expectInvalid(data);
-  });
-
-  it("rejects [node] with extra properties", () => {
-    const data = baseConfig("connect");
-    data.type = "nodejs";
-    data.entrypoint = "index.js";
-    data.node = { version: "20" };
-    expectInvalid(data);
-  });
-
-  it("rejects [node] section in connect_cloud config", () => {
-    const data = baseConfig("connect_cloud");
-    data.type = "html";
     data.node = {};
     expectInvalid(data);
   });

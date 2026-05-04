@@ -84,12 +84,6 @@
             }
           }
         },
-        "node": {
-          "type": "object",
-          "additionalProperties": false,
-          "description": "Node.js runtime marker. The presence of this section indicates a Node.js deployment; package.json and package-lock.json in the bundle drive runtime configuration.",
-          "properties": {}
-        },
         "quarto": {
           "type": "object",
           "additionalProperties": false,
@@ -565,13 +559,6 @@
       "then": {
         "required": ["r"]
       }
-    },
-    {
-      "if": {
-        "properties": { "type": { "const": "nodejs" } },
-        "required": ["type"]
-      },
-      "then": { "required": ["node"] }
     },
     {
       "if": {
