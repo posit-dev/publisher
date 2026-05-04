@@ -22,5 +22,41 @@
         ]
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(just)",
+      "Bash(just -l)",
+      "Bash(just default)",
+      "Bash(just version)",
+      "Bash(just pre-release)",
+      "Bash(just clean)",
+      "Bash(just format)",
+      "Bash(just check-format)",
+      "Bash(just check-extension-contract-conformance)",
+      "Bash(just validate-fixtures)",
+      "Bash(just npm-install)",
+      "Bash(just test-extension-contracts)",
+      "Bash(just test-connect-contracts)",
+      "Bash(just test-scripts)",
+      "Bash(just vscode default)",
+      "Bash(just vscode deps)",
+      "Bash(just vscode lint)",
+      "Bash(just vscode test)",
+      "Bash(just vscode clean)",
+      "Bash(just vscode configure)",
+      "Bash(just vscode package)",
+      "Bash(just vscode package-name)",
+      "Bash(just vscode package-path)",
+      "Bash(npm install)",
+      "Bash(npm run format)",
+      "Bash(npm run check-format)",
+      "Bash(npm test *)",
+      "Bash(npm run lint *)",
+      "Bash(npm run typecheck *)",
+      "Bash(npm run test-unit --prefix extensions/vscode)",
+      "Bash(npm run esbuild --prefix extensions/vscode)",
+      "Bash(npm run build --prefix extensions/vscode/webviews/homeView)"
+    ]
   }
 }
