@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Notify Slack of Release failure
-        uses: slackapi/slack-github-action@v3.0.2
+        uses: slackapi/slack-github-action@v3.0.3
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK }}
           webhook-type: incoming-webhook
@@ -88,7 +88,7 @@ jobs:
           result-encoding: string
       - name: Notify Slack of Release recovery
         if: steps.check-previous.outputs.result == 'true'
-        uses: slackapi/slack-github-action@v3.0.2
+        uses: slackapi/slack-github-action@v3.0.3
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK }}
           webhook-type: incoming-webhook
@@ -107,7 +107,7 @@ jobs:
     if: success() && needs.release.outputs.prerelease != 'true'
     steps:
       - name: Notify Slack
-        uses: slackapi/slack-github-action@v3.0.2
+        uses: slackapi/slack-github-action@v3.0.3
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_PUBLISHER }}
           webhook-type: incoming-webhook
