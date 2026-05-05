@@ -6,6 +6,8 @@ on:
     paths:
       - ".github/workflows/**"
       - "scripts/audit_gha_security.py"
+  schedule:
+    - cron: "0 14 * * 1" # Every Monday at 9am ET
   workflow_dispatch:
 
 permissions:
