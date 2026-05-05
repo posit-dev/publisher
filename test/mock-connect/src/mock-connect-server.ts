@@ -1,12 +1,12 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 /**
- * Mock Connect server for contract testing.
+ * Mock Connect server for testing.
  *
- * This is a lightweight Node.js HTTP server that simulates the Posit Connect
- * API. It serves canned JSON responses from fixture files for every Connect
- * endpoint that Publisher calls. Routes are matched by HTTP method and path
- * regex, with more specific patterns registered before generic ones.
+ * A lightweight Node.js HTTP server that simulates the Posit Connect API.
+ * It serves canned JSON responses from fixture files for Connect endpoints
+ * that Publisher calls. Routes are matched by HTTP method and path regex,
+ * with more specific patterns registered before generic ones.
  *
  * Every incoming request (except control requests) is captured so that tests
  * can assert on the exact HTTP method, path, headers, and body that the
@@ -23,7 +23,8 @@ import {
   type ServerResponse,
 } from "node:http";
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 export interface CapturedRequest {
   method: string;
@@ -40,7 +41,20 @@ interface RouteHandler {
   contentType?: string; // defaults to "application/json"
 }
 
-const FIXTURES_DIR = resolve(__dirname, "fixtures", "connect-responses");
+export interface MockConnectServerOptions {
+  /** Port to listen on. Defaults to 0 (random available port). */
+  port?: number;
+  /** Address to bind to. Defaults to "localhost". Use "0.0.0.0" for Docker accessibility. */
+  host?: string;
+}
+
+/** Absolute path to the connect-responses fixtures directory. */
+export const FIXTURES_DIR = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "fixtures",
+  "connect-responses",
+);
 
 function loadFixture(name: string): unknown {
   const content = readFileSync(resolve(FIXTURES_DIR, name), "utf-8");
@@ -74,7 +88,6 @@ export class MockConnectServer {
 
   private registerDefaultRoutes(): void {
     // Routes are matched first-match, so more specific patterns must come first.
-    // Each entry: [method, pattern, status, fixture-or-response, contentType?]
     const routes: Array<[string, RegExp, number, unknown, string?]> = [
       // Authentication & User
       ["GET", /^\/__api__\/v1\/user$/, 200, loadFixture("user.json")],
@@ -179,10 +192,11 @@ export class MockConnectServer {
     }
   }
 
-  async start(): Promise<void> {
+  async start(options: MockConnectServerOptions = {}): Promise<void> {
+    const { port = 0, host = "localhost" } = options;
     return new Promise((resolve, reject) => {
       this.server = createServer((req, res) => this.handleRequest(req, res));
-      this.server.listen(0, "localhost", () => {
+      this.server.listen(port, host, () => {
         const addr = this.server!.address();
         if (addr && typeof addr === "object") {
           this._port = addr.port;

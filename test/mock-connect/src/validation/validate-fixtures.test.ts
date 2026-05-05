@@ -1,11 +1,11 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { readFileSync } from "fs";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
+import { join } from "path";
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
 import { describe, it, expect, beforeAll } from "vitest";
+import { FIXTURES_DIR } from "../mock-connect-server.js";
 import { fixtureMappings, skippedFixtures } from "./fixture-map.js";
 import {
   getSwaggerSpec,
@@ -14,9 +14,6 @@ import {
   type SwaggerSpec,
   type JsonSchema,
 } from "./swagger-helpers.js";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const FIXTURES_DIR = join(__dirname, "..", "fixtures", "connect-responses");
 
 let spec: SwaggerSpec;
 

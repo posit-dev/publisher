@@ -1,6 +1,6 @@
 # Connect API Contract Tests
 
-Contract tests that validate the HTTP requests Publisher sends **to Posit Connect** and how it parses Connect's responses. Tests run against a Node.js mock Connect server and exercise the shared `@posit-dev/connect-api` client (the same client the extension uses in production).
+Contract tests that validate the HTTP requests Publisher sends **to Posit Connect** and how it parses Connect's responses. Tests run against the mock Connect server from `@posit-dev/mock-connect` and exercise the shared `@posit-dev/connect-api` client (the same client the extension uses in production).
 
 ## Architecture
 
@@ -12,7 +12,7 @@ Test code  →  TypeScriptDirectClient  →  @posit-dev/connect-api  →  Mock C
 
 One server is involved:
 
-- **Mock Connect server** — A Node.js HTTP server (`src/mock-connect-server.ts`) that simulates Connect's API endpoints with canned JSON responses and captures all incoming requests for assertion.
+- **Mock Connect server** — From `@posit-dev/mock-connect` (`test/mock-connect/`). A Node.js HTTP server that simulates Connect's API endpoints with canned JSON responses and captures all incoming requests for assertion.
 
 Tests construct a `TypeScriptDirectClient` pointed at the mock. The client dispatches `call(method, params)` to the corresponding method on the shared `@posit-dev/connect-api` client, which issues real HTTP requests to the mock. Captured requests and responses flow back to the test for assertion.
 
@@ -68,28 +68,14 @@ cd test/connect-api-contracts && npm test
 # Update snapshots (currently only one inline snapshot in authentication.test.ts)
 cd test/connect-api-contracts && npm run test:update
 
-# Validate fixtures against the Connect Swagger spec
+# Validate mock server and fixtures against the Connect Swagger spec
 just validate-fixtures
 ```
-
-## Swagger spec validation
-
-Fixture files are validated against the [Connect public Swagger spec](https://docs.posit.co/connect/api/swagger.json) to ensure they match the real API schemas. This catches drift between our test fixtures and the actual Connect API.
-
-The validation suite:
-
-- Fetches the Swagger spec (cached locally for 24 hours in `.cache/`)
-- Resolves `$ref` pointers and transforms `x-nullable` to JSON Schema nullable types
-- Validates each fixture against its corresponding endpoint's response schema using AJV
-- Warns about extra fields in fixtures that aren't in the spec (non-failing)
-- Skips fixtures for undocumented internal endpoints (e.g. `server_settings`, `server_settings/applications`)
-
-Fixture-to-endpoint mappings are defined in `src/validation/fixture-map.ts`. When adding a new fixture, add a corresponding entry there.
 
 ## Adding tests
 
 1. Add a new entry to the `Method` constant in `src/client.ts` and dispatch it inside the `dispatch()` switch in `TypeScriptDirectClient` (`src/clients/ts-direct-client.ts`)
-2. Add a route handler in `src/mock-connect-server.ts` with a canned response fixture
+2. Add a route handler in `@posit-dev/mock-connect` (`test/mock-connect/src/mock-connect-server.ts`) with a canned response fixture
 3. Create a test file in `src/endpoints/` using `setupContractTest()`:
 
 ```ts
@@ -107,15 +93,13 @@ describe("NewMethod", () => {
 });
 ```
 
-4. Add a fixture mapping in `src/validation/fixture-map.ts` for Swagger validation
+4. Add a fixture file in `test/mock-connect/fixtures/connect-responses/`
+5. Add a fixture mapping in `test/mock-connect/src/validation/fixture-map.ts` for Swagger validation
 
 ## Project structure
 
 - `src/client.ts` — `Method` constants, `MethodName` type, and `ConnectContractClient` interface
 - `src/clients/ts-direct-client.ts` — `TypeScriptDirectClient` implementation wrapping `@posit-dev/connect-api`
-- `src/mock-connect-server.ts` — `MockConnectServer` class with route-based dispatch and test control endpoints
 - `src/helpers.ts` — `setupContractTest()` helper for test setup/teardown
 - `src/endpoints/` — One test file per `Method` entry
-- `src/fixtures/connect-responses/` — Canned JSON responses for Connect API endpoints
 - `src/fixtures/workspace/` — Minimal project files (used by GetSettings for config)
-- `src/validation/` — Swagger spec validation for fixtures

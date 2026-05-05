@@ -24,7 +24,7 @@ import {
 } from "vitest";
 import { ConnectAPI } from "@posit-dev/connect-api";
 import type { Integration } from "@posit-dev/connect-api";
-import { MockConnectServer } from "../../../../test/connect-api-contracts/src/mock-connect-server";
+import { MockConnectServer } from "@posit-dev/mock-connect";
 import {
   listIntegrationRequests,
   addIntegrationRequest,
