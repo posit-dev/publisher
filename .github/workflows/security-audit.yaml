@@ -1,0 +1,123 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/**"
+      - "scripts/audit_gha_security.py"
+  schedule:
+    - cron: "0 14 * * 1" # Every Monday at 9am ET
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Audit GitHub Actions Security
+    runs-on: ubuntu-latest
+    outputs:
+      has_errors: ${{ steps.run-audit.outputs.has_errors }}
+      json_results: ${{ steps.run-audit.outputs.json_results }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run security audit
+        id: run-audit
+        run: |
+          # Run audit and capture JSON output for downstream use
+          JSON_OUTPUT=$(python scripts/audit_gha_security.py --format json)
+          HAS_ERRORS=$(echo "$JSON_OUTPUT" | jq -r '.summary.has_errors')
+          echo "has_errors=$HAS_ERRORS" >> "$GITHUB_OUTPUT"
+
+          # Store JSON results (escaped for GH output)
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "json_results<<$EOF" >> "$GITHUB_OUTPUT"
+          echo "$JSON_OUTPUT" >> "$GITHUB_OUTPUT"
+          echo "$EOF" >> "$GITHUB_OUTPUT"
+
+          # Run again in text mode for human-readable logs
+          python scripts/audit_gha_security.py || true
+
+          # Fail the step if there are errors
+          if [ "$HAS_ERRORS" = "true" ]; then
+            echo "::error::Security audit found errors that must be fixed"
+            exit 1
+          fi
+
+  auto-fix:
+    name: Auto-fix security issues
+    needs: audit
+    if: failure() && needs.audit.outputs.has_errors == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Check actor has write permission
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PERMISSION=$(gh api /repos/${{ github.repository }}/collaborators/${{ github.actor }}/permission --jq '.permission')
+          if [[ "$PERMISSION" != "admin" && "$PERMISSION" != "write" ]]; then
+            echo "::error::Actor ${{ github.actor }} has '$PERMISSION' permission, requires 'write' or 'admin'"
+            exit 1
+          fi
+          echo "Actor ${{ github.actor }} authorized with '$PERMISSION' permission"
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Sanitize role session name
+        id: session-name
+        env:
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+        run: |
+          echo "value=$(echo "${TRIGGERING_ACTOR}" | sed 's/[^a-zA-Z0-9_+=,.@-]/_/g')" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.CLAUDE_CODE_AWS_ROLE_ARN }}
+          role-session-name: ${{ steps.session-name.outputs.value }}
+          aws-region: us-east-2
+
+      - name: Fix security issues with Claude
+        uses: anthropics/claude-code-action@v1.0.92
+        with:
+          use_bedrock: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch_prefix: "fix/gha-security-"
+          create_pull_request: true
+          prompt: |
+            The GitHub Actions security audit has failed on main. Your job is to fix
+            ALL errors identified by the audit. Do NOT fix warnings — only errors.
+
+            Here are the audit results in JSON:
+            ```json
+            ${{ needs.audit.outputs.json_results }}
+            ```
+
+            Instructions:
+            1. Read the audit script at scripts/audit_gha_security.py to understand what each check looks for.
+            2. Fix each error by editing the appropriate workflow file(s) in .github/workflows/.
+            3. After making fixes, run `python3 scripts/audit_gha_security.py` to verify 0 errors remain.
+            4. Only fix errors — do not refactor, add features, or address warnings.
+
+            Common fixes:
+            - "Missing top-level 'permissions:' block" → Add `permissions: contents: read` after the `on:` block
+            - "Uses untrusted input directly in run: block" → Move the expression to an `env:` variable and reference via $VAR_NAME
+            - "Uses secrets inherit pattern" → Pass individual secrets explicitly instead of inheriting all
+            - "Uses PR target event with PR checkout" → Avoid checking out PR code in privileged context
+          claude_args: |
+            --model us.anthropic.claude-sonnet-4-5-20241022-v2:0
+            --allowedTools Bash,Read,Write,Edit
