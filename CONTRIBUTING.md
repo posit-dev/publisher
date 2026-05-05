@@ -8,9 +8,9 @@
     - [Prerequisites](#prerequisites)
     - [Setup](#setup)
     - [Committing Changes to the repo](#committing-changes-to-the-repo)
+  - [Architecture](#architecture)
   - [Testing](#testing)
     - [Unit Tests](#unit-tests)
-      - [Coverage Reporting](#coverage-reporting)
     - [End-to-End Tests](#end-to-end-tests)
   - [Development](#development)
     - [Build Tools](#build-tools)
@@ -24,7 +24,6 @@
     - [Before Releasing](#before-releasing)
     - [Instructions](#instructions)
   - [Updating Dependencies](#updating-dependencies)
-    - [Updating a Go dependency](#updating-a-go-dependency)
 
 ## Getting Started
 
@@ -33,9 +32,18 @@ local machine for development and testing purposes.
 
 ### Prerequisites
 
-- [Go](https://go.dev/dl/)
 - [Just](https://github.com/casey/just?tab=readme-ov-file#installation)
-- [Node.js](https://nodejs.org/en/download/)
+- [Node.js](https://nodejs.org/en/download/) (LTS recommended; [nvm](https://github.com/nvm-sh/nvm) is a good version manager)
+- [R](https://www.r-project.org/) with the `renv` package — needed for R-related tests. [rig](https://github.com/r-lib/rig) is a convenient installer. After installing R, run `R -e 'install.packages("renv")'`.
+- [Visual Studio Code](https://code.visualstudio.com/download) with the recommended workspace extensions (see below)
+
+#### VS Code Extensions
+
+When you open the `extensions/vscode` workspace, VS Code will prompt you to install recommended extensions. If you miss the prompt, install them manually:
+
+- **`connor4312.esbuild-problem-matchers`** — **Required** to run the extension debug launch configurations. This is the most commonly missed prerequisite.
+- `dbaeumer.vscode-eslint` — ESLint integration
+- `esbenp.prettier-vscode` — Prettier formatting
 
 ### Setup
 
@@ -45,8 +53,7 @@ To get your development environment up and running, invoke the default Just comm
 just
 ```
 
-This installs dependencies, builds and packages the Go binary and the VS Code
-extension.
+This installs dependencies and packages the VS Code extension.
 
 See the [Posit Publisher VS Code Extension CONTRIBUTING guide](./extensions/vscode/CONTRIBUTING.md)
 next for setting up your development workflow.
@@ -55,14 +62,91 @@ next for setting up your development workflow.
 
 The repo utilizes git hooks (through `husky`) to implement some standard formatting and linting.
 
-The tools invoked are expected to be installed as packages within the root of the repo, as well as within the subdirectory `test/e2e`.
-
-To commit one or more files, you must have first installed the npm package dependencies within both locations. This can be done from the root of the repo by:
+The hooks depend on the root workspace's npm packages, which cover every workspace member (extensions/vscode, webviews/homeView, packages/\*, and the TypeScript test packages). A single install at the repo root is enough:
 
 ```bash
 npm install
-npm install --prefix="test/e2e"
 ```
+
+If you also work on the e2e Cypress suite, install its deps separately — that package is deliberately outside the workspace:
+
+```bash
+npm install --prefix=test/e2e
+```
+
+## Architecture
+
+Posit Publisher is a pure TypeScript project with two major sections:
+
+- A TypeScript Positron / VS Code extension that implements all publishing logic and
+  communicates with Connect / Connect Cloud servers directly.
+- A Vue webview that provides the sidebar UI in the IDE.
+
+```
+┌─────────────────────────────────────┐  ┌─────────────────────────────────────┐
+│  Posit Connect Server               │  │  `.posit/publish/` (on disk)        │
+│  (or Connect Cloud)                 │  │                                     │
+│                                     │  │  `*.toml` — configurations          │
+│  Content management, bundle upload, │  │    How content should be deployed:  │
+│  deployment, task polling,          │  │    type, entrypoint, packages, etc. │
+│  authentication                     │  │                                     │
+│                                     │  │  `deployments/*.toml` — records     │
+│                                     │  │    Where content was deployed and   │
+│                                     │  │    how it was configured at the     │
+│                                     │  │    time of deployment.              │
+│                                     │  │                                     │
+│                                     │  │  The extension watches these files  │
+│                                     │  │  and refreshes the webview.         │
+└──────────────────┬──────────────────┘  └──────────────────┬──────────────────┘
+                   │                                        │
+             HTTPS │                                        │  reads/writes
+                   │                                        │
+┌──────────────────┴────────────────────────────────────────┴──────────────────┐
+│  VSCode Extension Host (TypeScript)                                          │
+│  `extensions/vscode/src/`                                                    │
+│                                                                              │
+│  Owns all business logic:                                                    │
+│  - Project inspection (Python/R/Quarto)                                      │
+│  - Configuration & deployment record I/O                                     │
+│  - Credential storage (keyring or file)                                      │
+│  - Bundle creation (file packaging)                                          │
+│  - Publishing orchestration                                                  │
+│  - All communication with Connect / Connect Cloud servers                    │
+│                                                                              │
+│  Uses the shared npm packages:                                               │
+│  - `@posit-dev/connect-api` — axios client for Posit Connect                 │
+│  - `@posit-dev/connect-cloud-api` — client + OAuth for Connect Cloud         │
+└───────────────────────────┬──────────────────────────────────────────────────┘
+                            │
+                postMessage │
+                     (JSON) │
+             Typed messages │
+              serialized by │
+                  "conduit" │
+                   classes: │
+           `WebviewConduit` │
+              `HostConduit` │
+                            │
+┌───────────────────────────┴──────────────────────────────────────────────────┐
+│  Vue Webview (Sidebar UI)                                                    │
+│  `webviews/homeView/`                                                        │
+│                                                                              │
+│  Vue + Pinia app rendered in a VSCode webview iframe. A webview gives us     │
+│  full control over the UI beyond what the IDE's APIs provide. Has no         │
+│  direct access to Node.js, the filesystem, or the VS Code API. Uses          │
+│  `postMessage` from VS Code's `WebviewApi` to communicate with the           │
+│  extension host.                                                             │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Deployment flow (end to end):**
+
+1. User clicks Deploy
+2. Webview sends deploy message via `postMessage`
+3. Extension host receives it, inspects the project, bundles files, and uploads to Connect
+4. Deployment progress events flow through the extension's in-process `EventStream`
+5. Extension forwards status to webview via `postMessage`
+6. Webview updates UI reactively via Pinia stores
 
 ## Testing
 
@@ -70,21 +154,15 @@ This project follows the guidance written by _Ham Vocke_ in the _[The Practical 
 
 ### Unit Tests
 
-Unit tests are written in Go and utilize the [Testify](https://github.com/stretchr/testify) framework for assertions and mocking.
+The VSCode extension uses [Mocha](https://mochajs.org) for integration tests (under `extensions/vscode/src/test/`) and [Vitest](https://vitest.dev) for unit tests (`src/**/*.test.ts` alongside the source).
+
+From `extensions/vscode/`:
 
 ```console
 just test
 ```
 
-#### Coverage Reporting
-
-Coverage reporting is captured by the [cover](https://pkg.go.dev/cmd/cover) standard library. To capture coverage, run the following Just command:
-
-```console
-just cover
-```
-
-Once complete, a coverage report will open in your default browser.
+TypeScript packages under `packages/` use Vitest.
 
 ### End-to-End Tests
 
@@ -106,7 +184,7 @@ When executing commands the following variables are accepted to change behavior.
 
 | Variable | Default | Type | Description                                                                           |
 | -------- | ------- | ---- | ------------------------------------------------------------------------------------- |
-| CI       | false   | bool | Enable CI mode. When set to true, multi-platform builds are enabled.                  |
+| CI       | false   | bool | Enable CI mode. When set to true, `npm ci` is used instead of `npm install`.          |
 | DEBUG    | false   | bool | Enable DEBUG mode. When set to true, `set +x` is enabled for all Justfile targets.    |
 | MODE     | dev     | enum | When set to `dev`, development is enabled. All other values disable development mode. |
 
@@ -122,17 +200,9 @@ This mode can be reproduced on your local machine by setting `CI=true`.
 
 ### Debugging in VS Code
 
-A `launch.json` can be found at the root in the `.vscode` directory for
-debugging the Go API code.
-
-The "Launch API" configuration will start the API at port 9001.
-To change the directory that the API is started in, update the `cwd` property
-to the directory you want the API to be launched at.
-
-When debugging alongside the
-[VS Code Extension](./extensions/vscode/CONTRIBUTING.md#debugging) the `cwd`
-will frequently be the workspace folder of the extension host development
-window.
+Debug configurations for the extension itself live at
+[`extensions/vscode/.vscode/launch.json`](./extensions/vscode/.vscode/launch.json).
+See the [extension CONTRIBUTING guide](./extensions/vscode/CONTRIBUTING.md#debugging) for details.
 
 ### Extension Development
 
@@ -140,7 +210,7 @@ See [the Contribution Guide for the VSCode Extension](./extensions/vscode/CONTRI
 
 ## Schema Updates
 
-Schemas can be found in the `internal/schema/schemas` directory.
+Schemas live at `extensions/vscode/src/toml/schemas/`.
 
 Non-breaking or additive changes to the schema do not require a version bump. Breaking changes to the schema require a version bump.
 
@@ -151,6 +221,7 @@ To update the schema:
 - If you're using VSCode with the Even Better TOML extension, you can use the in-editor validation by putting the full local path to your updated schema in the `$schema` field in your TOML files.
 - Verify that the unit tests pass. They load the example files and validate them against the schemas.
 - The `draft` folder contains schemas that are a superset of the main schemas, and have ideas for the other settings we have considered adding. Usually we have added any new fields to those schemas and example files as well.
+- Version bump only: update in-code references to the schema URL (code that writes the TOML files, tests)
 
 When Pull Requests that modify schema files are merged into main, a GitHub Actions workflow automatically uploads the updated schemas to S3, making them available on the CDN.
 
@@ -172,8 +243,8 @@ rm /Users/$USERNAME/Library/Application\ Support/Code/User/globalStorage/tamasfe
 The Posit Publisher VSCode extension releases follow guidelines from the
 [VSCode Publishing Extensions docs](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#prerelease-extensions).
 
-[SemVer versioning](https://semver.org/spec/v2.0.0.html) is used , but the
-VSCode Marketplace will only support `major.minor.patch` for extension versions,
+[SemVer versioning](https://semver.org/spec/v2.0.0.html) is used, but the
+VSCode Marketplace only supports `major.minor.patch` for extension versions;
 semver pre-release tags are not supported.
 
 The recommendation is releases use `major.EVEN_NUMBER.patch` for release
@@ -184,57 +255,55 @@ minor version number is odd.
 
 ### Before Releasing
 
-- Ensure that all relevant changes are documented in [CHANGELOG.md](CHANGELOG.md): diff `main` against the last release, and compare with what's in `CHANGELOG.md`.
-  Generally these will be the same, but sometimes things get missed. Open a PR to update `CHANGELOG.md` if anything is missing.
-
-  Building and packaging the VSCode extension for release will [automatically sync](./extensions/vscode/justfile#L115) the VSCode changelog from the root `CHANGELOG.md`.
-
 - Merge any "Update licenses" PRs to `main`
-- Merge any release preparation PRs to `main`, e.g. any updates to `CHANGELOG.md`
 - Merge any Dependabot PRs to `main`
-- Wait for the `main.yaml` workflows to complete before creating a release tag
+- Wait for the `main.yaml` workflows to complete
 
 ### Instructions
 
-#### Step 1: Create a proper SemVer and extension version compatible tag
+The release process is automated via GitHub Actions workflows.
 
-Use an even minor version for releases, or an odd minor version for
-pre-releases. The example commands here use `v1.1.0`, replace this with the version you are releasing.
+#### Step 1: Run the Prepare Release workflow
 
-Make sure you are on `main` and up to date:
+1. Go to [Actions > Prepare Release](https://github.com/posit-dev/publisher/actions/workflows/prepare-release.yaml)
+2. Click "Run workflow"
+3. Enter the version number (e.g., `1.34.0`)
+   - Must use even minor version for production releases
+   - Do not include the `v` prefix
+4. Click "Run workflow"
 
-```sh
-git switch main
-git pull
-```
+This workflow will:
 
-and then create the tag:
+- Create a `release/v{version}` branch
+- Run the prepare-release script to update changelog files
+- Create a pull request for review
 
-```sh
-git tag v1.1.0
-```
+#### Step 2: Review and merge the release PR
 
-#### Step 2: Push the tag GitHub
+1. Review the PR to verify changelog entries are complete and accurate
+2. Ensure all PRs with user-facing changes since the last release have changelog entries
+3. Merge the PR when ready
 
-```sh
-git push origin v1.1.0
-```
+#### Step 3: Automatic tag creation and release
 
-This command will trigger the [Release GitHub Action](https://github.com/rstudio/publishing-client/actions/workflows/release.yaml).
+When the release PR is merged, automation takes over:
 
-#### Step 3: Confirm the release
+1. The `tag-on-release-merge` workflow automatically creates the version tag
+2. The tag triggers the `release` workflow which:
+   - Builds release artifacts
+   - Creates a GitHub release
+   - Publishes to VS Code Marketplace and Open VSX
+   - Sends a Slack notification to announce the release
 
-Once the action has completed, the release will be available on the
-[Releases page](https://github.com/rstudio/publishing-client/releases), and
-published to the VSCode Marketplace.
+#### Step 4: Confirm the release
 
-Confirm that the new version shows up in the [Visual
-Studio](https://marketplace.visualstudio.com/items?itemName=Posit.publisher)
-and [Open VSX](https://open-vsx.org/extension/posit/publisher) registries, and
-that all expected target platforms are supported (Linux x64, Linux ARM64,
-Windows x64, macOS Intel, macOS Apple Silicon).
+Once the workflows complete, verify:
 
-It may take some time after the action completes for the new version to show up.
+- The release appears on the [Releases page](https://github.com/posit-dev/publisher/releases)
+- The new version shows up in [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Posit.publisher) and [Open VSX](https://open-vsx.org/extension/posit/publisher)
+- Works With / Target Platforms is "Universal"
+
+It may take some time after the workflows complete for the new version to appear in the marketplaces.
 
 ## Updating Dependencies
 
@@ -257,7 +326,6 @@ After review and approval, Dependabot PRs can be merged like regular code change
 - Configuration is maintained in `.github/dependabot.yml`
 - Multiple ecosystems are monitored:
   - npm packages (root, VSCode extension, and test directories)
-  - Go modules
   - Python dependencies
   - Docker images
   - GitHub Actions
@@ -268,27 +336,9 @@ After review and approval, Dependabot PRs can be merged like regular code change
 Dependencies can be manually adjusted at any time; the process of updating after a
 release keeps us proactive.
 
-This includes our JavaScript packages, Go version/packages, and tooling
-dependencies.
+This includes our JavaScript packages and tooling dependencies.
 
 Any significantly difficult dependency updates should have an issue created to
 track the work and can be triaged alongside our other issues.
 
 Updates to dependencies should be done in a separate PR.
-
-### Updating a Go dependency
-
-1. Run `go get <dependency>@<version>` to update the dependency. This will
-   update the `go.mod` file with the new version.
-   - `go get` has a `-u` option that will update all child dependencies as well.
-     This is generally not recommended as it can cause unexpected problems. Use
-     it with caution. `go get` will do the right thing on its own without `-u`.
-   - It is best to specify the version with the `@<version>` suffix. This may be
-     a semver string, a branch name, or a commit hash.
-
-2. Update any import statements for the new version of the dependency.
-
-3. Run `go mod vendor` to update the `vendor` directory with the new version of
-   the dependency.
-
-4. Make sure all files under vendor are included in the git commit.

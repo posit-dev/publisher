@@ -13,7 +13,6 @@ services:
       - CONNECT_CLOUD_ENV=${CONNECT_CLOUD_ENV:-staging}
     volumes:
       - ./code-server-entry.sh:/home/coder/entrypoint.sh
-      - ./e2e-test.connect-credentials:/root/.connect-credentials
       - ./content-workspace:/home/coder/workspace
       - ../../dist:/home/coder/vsix
     ports:

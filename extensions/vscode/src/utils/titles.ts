@@ -31,7 +31,7 @@ export const calculateTitle = (
   // No title... determine what info we can provide
   if (!contentRecord.configurationName) {
     return {
-      title: `Unknown Title Due To Missing Config Entry in ${contentRecord.saveName}`,
+      title: `Unknown Title Due To Missing Config Entry in ${contentRecord.deploymentName}`,
       problem: true,
     };
   }

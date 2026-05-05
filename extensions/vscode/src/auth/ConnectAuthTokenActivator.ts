@@ -1,7 +1,8 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import { window, Uri, env } from "vscode";
-import { useApi } from "src/api";
+import { ConnectAPI, ConnectAPIError } from "@posit-dev/connect-api";
+import { generateToken } from "./generateToken";
 import { logger } from "src/logging";
 import { getMessageFromError } from "src/utils/errors";
 import { showProgress } from "src/utils/progress";
@@ -22,32 +23,26 @@ export class ConnectAuthTokenActivator {
   private readonly serverUrl: string;
   private readonly viewId: string;
   private readonly maxAttempts: number;
-  private api: Awaited<ReturnType<typeof useApi>> | null = null;
+  private readonly insecure?: boolean;
 
-  constructor(serverUrl: string, viewId: string, maxAttempts: number = 60) {
+  constructor(
+    serverUrl: string,
+    viewId: string,
+    maxAttempts: number = 60,
+    insecure?: boolean,
+  ) {
     this.serverUrl = serverUrl;
     this.viewId = viewId;
     // default: 60 = 30 seconds with 500ms between attempts
     this.maxAttempts = maxAttempts;
-  }
-
-  async initialize(): Promise<void> {
-    this.api = await useApi();
-  }
-
-  private ensureInitialized(): void {
-    if (!this.api) {
-      throw new Error(
-        "ConnectAuthTokenActivator must be initialized before use",
-      );
-    }
+    this.insecure = insecure;
   }
 
   async activateToken(): Promise<TokenAuthResult> {
     try {
       // Step 1: Generate token
       const { token, claimUrl, privateKey, serverUrl } =
-        await this.generateToken();
+        await this.requestToken();
 
       // Step 2: Open browser for token claim
       await this.openTokenClaimUrl(claimUrl);
@@ -66,21 +61,17 @@ export class ConnectAuthTokenActivator {
     }
   }
 
-  private async generateToken(): Promise<{
+  private async requestToken(): Promise<{
     token: string;
     claimUrl: string;
     privateKey: string;
     serverUrl: string;
   }> {
-    this.ensureInitialized();
     return await showProgress(
       "Generating authentication token",
       this.viewId,
       async () => {
-        const response = await this.api!.credentials.generateToken(
-          this.serverUrl,
-        );
-        return response.data;
+        return await generateToken(this.serverUrl, this.insecure);
       },
     );
   }
@@ -94,7 +85,6 @@ export class ConnectAuthTokenActivator {
     privateKey: string,
     serverUrl: string,
   ): Promise<string> {
-    this.ensureInitialized();
     return await showProgress(
       "Waiting for token to be claimed in browser...",
       this.viewId,
@@ -104,32 +94,21 @@ export class ConnectAuthTokenActivator {
         let userName = "";
         const maxAttempts = this.maxAttempts;
 
+        const client = new ConnectAPI({
+          url: serverUrl,
+          token,
+          privateKey,
+          rejectUnauthorized: this.insecure ? false : undefined,
+        });
+
         while (!isClaimed && attempt < maxAttempts) {
           try {
-            const response = await this.api!.credentials.verifyToken(
-              serverUrl,
-              token,
-              privateKey,
-            );
-
-            // Check if we got a successful response with username data
-            if (
-              response.status === 200 &&
-              response.data &&
-              response.data.username
-            ) {
-              userName = response.data.username;
-              isClaimed = true;
-              logger.info(`Token claimed by user: ${userName}`);
-            } else {
-              logger.debug(
-                `Token verification response without username: ${JSON.stringify(response.data)}`,
-              );
-              // Continue polling if username is missing - don't set isClaimed to true
-            }
+            const { user } = await client.testAuthentication();
+            userName = user.username;
+            isClaimed = true;
+            logger.info(`Token claimed by user: ${userName}`);
           } catch (e) {
-            // Only log the error if it's not a 401 (which is expected when token isn't claimed yet)
-            if (!this.isUnauthorizedError(e)) {
+            if (!(e instanceof ConnectAPIError && e.httpStatus === 401)) {
               logger.debug(
                 `Error during token verification: ${getMessageFromError(e)}`,
               );
@@ -149,20 +128,6 @@ export class ConnectAuthTokenActivator {
 
         return userName;
       },
-    );
-  }
-
-  private isUnauthorizedError(error: unknown): boolean {
-    const err = error as {
-      response?: { status?: number };
-      status?: number;
-      message?: string;
-    };
-    return (
-      err?.response?.status === 401 ||
-      err?.status === 401 ||
-      err?.message?.includes("401") ||
-      false
     );
   }
 

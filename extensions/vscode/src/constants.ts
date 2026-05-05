@@ -1,6 +1,8 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import config from "./config";
+import { CloudEnvironment } from "@posit-dev/connect-cloud-api";
+import { env } from "./config";
 
 export const POSIT_FOLDER = "**/.posit";
 export const PUBLISH_FOLDER = "**/.posit/publish";
@@ -12,7 +14,6 @@ export const DEPLOYMENTS_PATTERN = "**/.posit/publish/deployments/*.toml";
 export const DEFAULT_PYTHON_PACKAGE_FILE = "requirements.txt";
 export const DEFAULT_R_PACKAGE_FILE = "renv.lock";
 
-// pulled from /internal/services/api/get_entrypoints.go
 // should all be lowercase!
 export const ENTRYPOINT_FILE_EXTENSIONS = [
   ".htm",
@@ -51,11 +52,6 @@ const logsCommands = {
   Focus: "posit.publisher.logs.focus",
   ToggleVisibility: "posit.publisher.logs.toggleVisibility",
 } as const;
-
-const credentialsContexts = {
-  Keychain: "posit.publisher.credentials.tree.item.keychain",
-  EnvironmentVars: "posit.publisher.credentials.tree.item.environmentVars",
-};
 
 const filesCommands = {
   Refresh: "posit.publisher.files.refresh",
@@ -122,7 +118,6 @@ export const Commands = {
 
 export const Contexts = {
   ...baseContexts,
-  Credentials: credentialsContexts,
   HomeView: homeViewContexts,
 };
 
@@ -145,3 +140,15 @@ export const CONNECT_CLOUD_ACCOUNT_URL = `${config.connectCloudURL}/account/done
 export const CONNECT_CLOUD_ENV_HEADER = {
   "Connect-Cloud-Environment": CONNECT_CLOUD_ENV,
 };
+
+// Maps the local env enum to the connect-cloud-api package's CloudEnvironment
+// enum. Both enums have identical underlying string values; this map bridges
+// them without a type assertion.
+const envToCloudEnvironment: Record<env, CloudEnvironment> = {
+  [env.DEV]: CloudEnvironment.Development,
+  [env.STAGING]: CloudEnvironment.Staging,
+  [env.PROD]: CloudEnvironment.Production,
+};
+
+export const CONNECT_CLOUD_ENVIRONMENT: CloudEnvironment =
+  envToCloudEnvironment[config.env];

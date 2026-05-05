@@ -8,13 +8,10 @@ scripts/
 **/_.map
 \*\*/_.ts
 CONTRIBUTING.md
-vsc-extension-quickstart.md
+**/CLAUDE.md
 
 # Exclude icons as they are bundled into a font
 assets/icons/**
-
-# Include codicons dist from node_modules
-!node_modules/@vscode/codicons/dist
 
 # Ignore all webview files except the build directories
 webviews/homeView/src/**

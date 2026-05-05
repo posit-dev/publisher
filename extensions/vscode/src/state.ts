@@ -1,6 +1,16 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import { Disposable, env, Event, EventEmitter, Memento, window } from "vscode";
+import path from "node:path";
+
+import {
+  Disposable,
+  env,
+  Event,
+  EventEmitter,
+  Memento,
+  SecretStorage,
+  window,
+} from "vscode";
 
 import {
   Configuration,
@@ -12,22 +22,21 @@ import {
   PreContentRecord,
   PreContentRecordWithConfig,
   ServerType,
-  UpdateAllConfigsWithDefaults,
   UpdateConfigWithDefaults,
-  useApi,
 } from "src/api";
 import { normalizeURL } from "src/utils/url";
+import { getInterpreterDefaults } from "src/interpreters";
 import { showProgress } from "src/utils/progress";
+import { getSummaryStringFromError } from "src/utils/errors";
+import { CredentialsService } from "src/credentials/service";
 import {
-  getStatusFromError,
-  getSummaryStringFromError,
-} from "src/utils/errors";
-import {
-  isErrCredentialsCorrupted,
-  errCredentialsCorruptedMessage,
-  isErrCannotBackupCredentialsFile,
-  errCannotBackupCredentialsFileMessage,
-} from "src/utils/errorTypes";
+  loadConfiguration,
+  loadAllConfigurationsRecursive,
+  ConfigurationLoadError,
+  loadDeployment,
+  loadAllDeploymentsRecursive,
+} from "src/toml";
+import * as workspaces from "src/workspaces";
 import { DeploymentSelector, SelectionState } from "src/types/shared";
 import { LocalState, Views } from "./constants";
 import { getPythonInterpreterPath, getRInterpreterPath } from "./utils/vscode";
@@ -41,7 +50,7 @@ function findContentRecord<
   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
 >(name: string, projectDir: string, records: T[]): T | undefined {
   return records.find(
-    (r) => r.saveName === name && r.projectDir === projectDir,
+    (r) => r.deploymentName === name && r.projectDir === projectDir,
   );
 }
 
@@ -92,6 +101,8 @@ function findCredentialForContentRecord(
 interface extensionContext {
   // A memento object that stores state in the context
   readonly workspaceState: Memento;
+  // Secret storage for credential migration
+  readonly secrets: SecretStorage;
 }
 
 export interface CredentialRefreshEvent {
@@ -107,9 +118,11 @@ export class PublisherState implements Disposable {
   > = [];
   configurations: Array<Configuration | ConfigurationError> = [];
   credentials: Credential[] = [];
+  readonly credentialsService: CredentialsService;
 
   constructor(context: extensionContext) {
     this.context = context;
+    this.credentialsService = new CredentialsService(context.secrets);
   }
 
   dispose() {
@@ -157,33 +170,40 @@ export class PublisherState implements Disposable {
     }
     // if not found, then retrieve it and add it to our cache.
     try {
-      const api = await useApi();
-
-      const response = await api.contentRecords.get(
+      const root = workspaces.path();
+      if (!root) {
+        return undefined;
+      }
+      const loaded = await loadDeployment(
         selection.deploymentName,
         selection.projectDir,
+        root,
       );
-      const cr = recordAddConnectCloudUrlParams(response.data, env.appName);
+      const cr = recordAddConnectCloudUrlParams(loaded, env.appName);
       if (!isContentRecordError(cr)) {
         // its not foolproof, but it may help
-        if (!this.findContentRecord(cr.saveName, cr.projectDir)) {
+        if (!this.findContentRecord(cr.deploymentName, cr.projectDir)) {
           this.contentRecords.push(cr);
         }
         return cr;
       }
       return undefined;
     } catch (error: unknown) {
-      const code = getStatusFromError(error);
-      if (code !== 404) {
-        // 404 is expected when doesn't exist on disk
-        const summary = getSummaryStringFromError(
-          "getSelectedContentRecord, contentRecords.get",
-          error,
-        );
-        window.showInformationMessage(
-          `Unable to retrieve deployment record: ${summary}`,
-        );
+      // ENOENT is expected when file doesn't exist on disk
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ) {
+        return undefined;
       }
+      const summary = getSummaryStringFromError(
+        "getSelectedContentRecord, loadDeployment",
+        error,
+      );
+      window.showInformationMessage(
+        `Unable to retrieve deployment record: ${summary}`,
+      );
       return undefined;
     }
   }
@@ -192,7 +212,7 @@ export class PublisherState implements Disposable {
     newValue: ContentRecord | PreContentRecord | PreContentRecordWithConfig,
   ) {
     const existingContentRecord = this.findContentRecord(
-      newValue.saveName,
+      newValue.deploymentName,
       newValue.projectDir,
     );
     if (existingContentRecord) {
@@ -222,37 +242,49 @@ export class PublisherState implements Disposable {
     }
     // if not found, then retrieve it and add it to our cache.
     try {
-      const api = await useApi();
-      const python = await getPythonInterpreterPath();
-      const r = await getRInterpreterPath();
-
-      const response = await api.configurations.get(
+      const root = workspaces.path();
+      if (!root) {
+        return undefined;
+      }
+      const cfg = await loadConfiguration(
         contentRecord.configurationName,
         contentRecord.projectDir,
+        root,
       );
-      const defaults = await api.interpreters.get(
-        contentRecord.projectDir,
-        r,
-        python,
+
+      const python = await getPythonInterpreterPath();
+      const r = await getRInterpreterPath();
+      const defaults = await getInterpreterDefaults(
+        path.join(root, contentRecord.projectDir),
+        python?.pythonPath,
+        r?.rPath,
       );
-      const cfg = UpdateConfigWithDefaults(response.data, defaults.data);
+      const updated = UpdateConfigWithDefaults(cfg, defaults);
       // its not foolproof, but it may help
-      if (!this.findConfig(cfg.configurationName, cfg.projectDir)) {
-        this.configurations.push(cfg);
+      if (!this.findConfig(updated.configurationName, updated.projectDir)) {
+        this.configurations.push(updated);
       }
-      return cfg;
+      return updated;
     } catch (error: unknown) {
-      const code = getStatusFromError(error);
-      if (code !== 404) {
-        // 400 is expected when doesn't exist on disk
-        const summary = getSummaryStringFromError(
-          "getSelectedConfiguration, contentRecords.get",
-          error,
-        );
-        window.showInformationMessage(
-          `Unable to retrieve deployment configuration: ${summary}`,
-        );
+      // ENOENT is expected when file doesn't exist on disk
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ) {
+        return undefined;
       }
+      // ConfigurationLoadError means the file exists but is invalid
+      if (error instanceof ConfigurationLoadError) {
+        return undefined;
+      }
+      const summary = getSummaryStringFromError(
+        "getSelectedConfiguration",
+        error,
+      );
+      window.showInformationMessage(
+        `Unable to retrieve deployment configuration: ${summary}`,
+      );
       return undefined;
     }
   }
@@ -260,11 +292,12 @@ export class PublisherState implements Disposable {
   async refreshContentRecords() {
     try {
       await showProgress("Refreshing Deployments", Views.HomeView, async () => {
-        const api = await useApi();
-        const response = await api.contentRecords.getAll(".", {
-          recursive: true,
-        });
-        const contentRecords = response.data.map((record) =>
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const allRecords = await loadAllDeploymentsRecursive(root, root);
+        const contentRecords = allRecords.map((record) =>
           recordAddConnectCloudUrlParams(record, env.appName),
         );
         // Currently we filter out any Content Records in error
@@ -297,18 +330,32 @@ export class PublisherState implements Disposable {
         "Refreshing Configurations",
         Views.HomeView,
         async () => {
-          const api = await useApi();
+          const root = workspaces.path();
+          if (!root) {
+            return;
+          }
+
           const python = await getPythonInterpreterPath();
           const r = await getRInterpreterPath();
 
-          const response = await api.configurations.getAll(".", {
-            recursive: true,
-          });
-          const defaults = await api.interpreters.get(".", r, python);
-          this.configurations = UpdateAllConfigsWithDefaults(
-            response.data,
-            defaults.data,
-          );
+          const configs = await loadAllConfigurationsRecursive(root);
+          // Compute defaults per-config so each project subdirectory's
+          // package files (requirements.txt, renv.lock) are detected correctly.
+          const updated: (Configuration | ConfigurationError)[] = [];
+          for (const config of configs) {
+            if (isConfigurationError(config)) {
+              updated.push(config);
+              continue;
+            }
+            const projectDir = path.join(root, config.projectDir);
+            const defaults = await getInterpreterDefaults(
+              projectDir,
+              python?.pythonPath,
+              r?.rPath,
+            );
+            updated.push(UpdateConfigWithDefaults(config, defaults));
+          }
+          this.configurations = updated;
         },
       );
     } catch (error: unknown) {
@@ -331,6 +378,11 @@ export class PublisherState implements Disposable {
     return findConfiguration(name, projectDir, this.configurations);
   }
 
+  // WARNING: the returned config may have stale data (empty interpreter
+  // fields, outdated files list) if the file watcher hasn't finished
+  // refreshing yet. Safe for UI display, but code that needs the
+  // current config for correctness (e.g. publish) should read fresh
+  // from disk via loadConfiguration() instead.
   findValidConfig(name: string, projectDir: string) {
     return findConfiguration(name, projectDir, this.validConfigs);
   }
@@ -347,16 +399,10 @@ export class PublisherState implements Disposable {
     const oldCredentials = this.credentials;
     try {
       await showProgress("Refreshing Credentials", Views.HomeView, async () => {
-        const api = await useApi();
-        const response = await api.credentials.list();
-        this.credentials = response.data;
+        this.credentials = await this.credentialsService.list();
       });
       this.credentialRefresh.fire({ oldCredentials: oldCredentials });
     } catch (error: unknown) {
-      if (isErrCredentialsCorrupted(error)) {
-        this.resetCredentials();
-        return;
-      }
       const summary = getSummaryStringFromError("refreshCredentials", error);
       window.showErrorMessage(summary);
     }
@@ -367,19 +413,11 @@ export class PublisherState implements Disposable {
   async resetCredentials() {
     const oldCredentials = this.credentials;
     try {
-      const api = await useApi();
-      const response = await api.credentials.reset();
-      const warnMsg = errCredentialsCorruptedMessage(response.data.backupFile);
-      window.showWarningMessage(warnMsg);
-
-      const listResponse = await api.credentials.list();
-      this.credentials = listResponse.data;
+      await this.credentialsService.reset();
+      this.credentials = [];
+      window.showWarningMessage("Credentials have been reset.");
       this.credentialRefresh.fire({ oldCredentials: oldCredentials });
     } catch (err: unknown) {
-      if (isErrCannotBackupCredentialsFile(err)) {
-        window.showErrorMessage(errCannotBackupCredentialsFileMessage(err));
-        return;
-      }
       const summary = getSummaryStringFromError("resetCredentials", err);
       window.showErrorMessage(summary);
     }

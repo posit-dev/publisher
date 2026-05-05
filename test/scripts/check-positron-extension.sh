@@ -4,16 +4,12 @@ set -euo pipefail
 # Check if publisher extension is installed in workbench-release
 # This command is designed to work from any directory (Cypress or command line)
 
-# Read expected version from package.json, with fallback
+# Read the expected version directly from package.json
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PACKAGE_JSON="$SCRIPT_DIR/../../extensions/vscode/package.json"
+REPO_ROOT="$SCRIPT_DIR/../.."
+EXPECTED_VERSION=$(node -p "require('$REPO_ROOT/extensions/vscode/package.json').version")
 
-if [ -f "$PACKAGE_JSON" ]; then
-    EXPECTED_VERSION=$(grep -o '"version": *"[^"]*"' "$PACKAGE_JSON" | cut -d'"' -f4)
-else
-    echo "Warning: package.json not found at $PACKAGE_JSON, falling back to hardcoded version"
-    EXPECTED_VERSION="99.0.0"
-fi
+echo "Expected installed version: $EXPECTED_VERSION"
 mkdir -p ./logs/workbench-extension
 INSTALL_LOG="./logs/workbench-extension/workbench-extension-check.log"
 

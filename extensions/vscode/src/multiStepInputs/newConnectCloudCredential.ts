@@ -11,7 +11,7 @@ import {
 
 import { env, InputBoxValidationSeverity, window } from "vscode";
 
-import { useApi, Credential, ServerType, ProductName } from "src/api";
+import { Credential, ServerType, ProductName } from "src/api";
 import { getSummaryStringFromError } from "src/utils/errors";
 import {
   inputCredentialNameStep,
@@ -32,16 +32,14 @@ import {
 } from "src/constants";
 import { getPublishableAccounts } from "src/utils/multiStepHelpers";
 import { getConnectCloudTrafficParams } from "src/utils/connectCloudHelpers";
+import { CredentialsService } from "src/credentials/service";
 
 export async function newConnectCloudCredential(
   viewId: string,
   viewTitle: string,
+  credentialsService: CredentialsService,
   previousSteps?: InputStep[],
 ): Promise<Credential | undefined> {
-  // ***************************************************************
-  // API Calls and results
-  // ***************************************************************
-  const api = await useApi();
   let credentials: Credential[] = [];
 
   // globals
@@ -380,7 +378,7 @@ export async function newConnectCloudCredential(
   // ***************************************************************
   function determineAccountFlow(_: MultiStepInput, state: MultiStepState) {
     const accounts = getAvailableAccounts();
-    let name: string = "";
+    let name: string;
     let stepFunc: (input: MultiStepInput) => Thenable<InputStep | void>;
     let skipStepHistory: boolean | undefined;
 
@@ -444,11 +442,12 @@ export async function newConnectCloudCredential(
 
     const account = accounts.find((a) => a.displayName === pick.label);
 
-    // fallback to the first publishable account if the selected account is ever not found
-    if (
-      (!account?.id || !account?.name || !account?.displayName) &&
-      accounts[0]
-    ) {
+    if (account?.id && account?.name && account?.displayName) {
+      state.data.accountId = account.id;
+      state.data.accountName = account.name;
+      state.data.displayName = account.displayName;
+    } else if (accounts[0]) {
+      // fallback to the first publishable account if the selected account is ever not found
       state.data.accountId = accounts[0].id;
       state.data.accountName = accounts[0].name;
       state.data.displayName = accounts[0].displayName;
@@ -524,7 +523,7 @@ export async function newConnectCloudCredential(
   // This is a promise which returns the state data used to
   // collect the info.
   // ***************************************************************
-  credentials = await getExistingCredentials(viewId);
+  credentials = await getExistingCredentials(viewId, credentialsService);
   const state = await collectInputs();
 
   // make sure user has not hit escape or moved away from the window
@@ -542,14 +541,30 @@ export async function newConnectCloudCredential(
     throw new AbortError();
   }
 
+  const { name, accountId, accountName, refreshToken, accessToken } =
+    state.data;
+
+  if (
+    !isString(name) ||
+    !isString(accountId) ||
+    !isString(accountName) ||
+    !isString(refreshToken) ||
+    !isString(accessToken)
+  ) {
+    return undefined;
+  }
+
   // create the credential!
   let credential: Credential | undefined = undefined;
   try {
-    const resp = await api.credentials.connectCloudCreate(
-      state.data,
+    credential = await credentialsService.create({
+      name,
       serverType,
-    );
-    credential = resp.data;
+      accountId,
+      accountName,
+      refreshToken,
+      accessToken,
+    });
   } catch (error: unknown) {
     const summary = getSummaryStringFromError("credentials::add", error);
     window.showInformationMessage(summary);

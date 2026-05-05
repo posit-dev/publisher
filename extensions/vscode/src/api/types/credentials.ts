@@ -1,17 +1,25 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import { GUID } from "@posit-dev/connect-api";
+
 import { AgentError } from "./error";
 import { ServerType } from "./contentRecords";
 
+// NOTE: If you add or remove fields here, also update
+// REQUIRED_CREDENTIAL_FIELDS in credentials/storage.ts.
 export type Credential = {
-  guid: string;
+  guid: GUID;
   name: string;
   url: string;
   apiKey: string;
+  snowflakeConnection: string;
   accountId: string;
   accountName: string;
   refreshToken: string;
   accessToken: string;
+  cloudEnvironment: string;
+  token: string;
+  privateKey: string;
   serverType: ServerType;
 };
 

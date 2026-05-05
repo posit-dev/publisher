@@ -216,6 +216,6 @@ export type RefreshIntegrationRequestsMsg = AnyHostToWebviewMessage<
 export type RefreshServerSettingsMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.REFRESH_SERVER_SETTINGS,
   {
-    serverSettings: ServerSettings;
+    serverSettings: ServerSettings | undefined;
   }
 >;

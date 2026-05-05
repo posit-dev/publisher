@@ -6,27 +6,23 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-  id-token: write # Required for upload.yaml AWS OIDC authentication
 jobs:
   # Unit Tests
-  agent:
-    uses: ./.github/workflows/agent.yaml
   vscode:
     uses: ./.github/workflows/vscode.yaml
+  extension-contract-tests:
+    uses: ./.github/workflows/extension-contract-tests.yaml
+
+  connect-contract-tests:
+    uses: ./.github/workflows/connect-contract-tests.yaml
 
   # Build
-  build:
-    uses: ./.github/workflows/build.yaml
   package:
-    needs: build
     uses: ./.github/workflows/package.yaml
-  archive:
-    needs: build
-    uses: ./.github/workflows/archive.yaml
 
   # E2E Tests
   e2e:
-    needs: [package, agent, vscode]
+    needs: [package, vscode]
     uses: ./.github/workflows/e2e.yaml
     secrets:
       CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
@@ -35,33 +31,15 @@ jobs:
       GH_DOWNLOAD_TOKEN: ${{ secrets.GH_DOWNLOAD_TOKEN }}
       PCC_USER_CCQA3: ${{ secrets.PCC_USER_CCQA3 }}
 
-  upload:
-    needs:
-      - archive
-      - package
-    uses: ./.github/workflows/upload.yaml
-    secrets:
-      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-
-  # License generation
-  generate-licenses:
-    uses: ./.github/workflows/generate-licenses.yaml
-    with:
-      pr_changes: true
-      fail_on_forbidden: true
-    secrets:
-      POSIT_CONNECT_PROJECTS_APP_ID: ${{ secrets.POSIT_CONNECT_PROJECTS_APP_ID }}
-      POSIT_CONNECT_PROJECTS_PEM: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
-
   # Slack notification on failure
   slack-notification:
     needs:
-      [agent, vscode, build, package, archive, e2e, upload, generate-licenses]
+      [vscode, extension-contract-tests, connect-contract-tests, package, e2e]
     if: failure()
     runs-on: ubuntu-latest
     steps:
       - name: Notify Slack of CI failure
-        uses: slackapi/slack-github-action@v2.1.1
+        uses: slackapi/slack-github-action@v3.0.3
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK }}
           webhook-type: incoming-webhook
@@ -72,3 +50,46 @@ jobs:
                 text:
                   type: mrkdwn
                   text: ":x: *CI Failed on ${{ github.ref_name }}*\n\n*Repository:* ${{ github.repository }}\n*Branch:* `${{ github.ref_name }}`\n*Commit:* <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+
+  # Slack notification when CI recovers from failure
+  slack-notification-resolved:
+    needs:
+      [vscode, extension-contract-tests, connect-contract-tests, package, e2e]
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if previous run failed
+        id: check-previous
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'main.yaml',
+              branch: context.ref.replace('refs/heads/', ''),
+              per_page: 2,
+              exclude_pull_requests: true
+            });
+            // Get the previous run (skip current run)
+            const previousRuns = runs.data.workflow_runs.filter(run => run.id !== context.runId);
+            if (previousRuns.length > 0) {
+              const previousRun = previousRuns[0];
+              console.log(`Previous run conclusion: ${previousRun.conclusion}`);
+              return previousRun.conclusion === 'failure';
+            }
+            return false;
+          result-encoding: string
+      - name: Notify Slack of CI recovery
+        if: steps.check-previous.outputs.result == 'true'
+        uses: slackapi/slack-github-action@v3.0.3
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: ":white_check_mark: CI recovered on ${{ github.ref_name }}"
+            blocks:
+              - type: section
+                text:
+                  type: mrkdwn
+                  text: ":white_check_mark: *CI Recovered on ${{ github.ref_name }}*\n\n*Repository:* ${{ github.repository }}\n*Branch:* `${{ github.ref_name }}`\n*Commit:* <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"

@@ -42,17 +42,21 @@ Ask the user which mode they need:
    ```
    Analyze PR #<number> in posit-dev/publisher and suggest a CHANGELOG entry.
 
-   1. Get PR details: `gh pr view <number> --json title,body,files`
+   1. Get PR details including linked issues: `gh pr view <number> --json title,body,files,closingIssuesReferences`
    2. Review the changed files to understand what was actually modified
    3. Determine the user-facing impact of the changes
    4. Categorize: Added, Changed, Fixed, Deprecated, Removed, or Security
    5. Write a concise changelog entry from the user's perspective
+   6. IMPORTANT: Reference the linked issue number, not the PR number. If closingIssuesReferences contains an issue, use that number.
+   7. If NO linked issue exists, flag this PR as needing an issue to be created before the changelog entry can be added.
 
    Return in this format:
    - **PR**: #<number> - <title>
+   - **Linked Issue**: #<issue-number> (or "⚠️ MISSING - issue must be created")
    - **Category**: <Added|Changed|Fixed|etc.>
-   - **Suggested Entry**: <one-sentence description from user perspective>. (#<number>)
+   - **Suggested Entry**: <one-sentence description from user perspective>. (#<issue-number>)
    - **Reasoning**: <brief explanation of why this category and wording>
+   - **Action Required**: (only if no linked issue) "Create an issue for this change before adding to CHANGELOG"
    ```
 
    Run subagents in parallel (up to 5 at a time) for efficiency.
@@ -79,29 +83,43 @@ The CHANGELOG follows [Keep a Changelog](https://keepachangelog.com/) format:
 - Bug fix description. (#1236)
 ```
 
+## Reference Convention
+
+**IMPORTANT: Always reference GitHub issue numbers, not PR numbers.**
+
+- Issues represent the user-facing problem or feature request
+- Issues are more meaningful to users reading the changelog
+- Multiple PRs may address a single issue, so issues are the stable reference
+- If analyzing a PR, look up its linked issue(s) using `gh pr view <number> --json closingIssuesReferences`
+- If no issue exists for a change, **create one before adding the changelog entry**
+- Never use PR numbers in changelog entries
+
 ## Example Output
 
 ```
 ## CHANGELOG Analysis
 
 ### Already Documented
-- #3520: Updated Go from 1.24 to 1.25 ✓
+- #3396: Fixed credential operations failing silently ✓ (references issue)
 
 ### Missing Entries (Analyzing with subagents...)
 
-[Spawning 3 subagents to analyze PRs #3512, #3515, #3518...]
+[Spawning 3 subagents to analyze PRs #3550, #3551, #3552...]
 
 ### Subagent Analysis Results
 
 #### Fixed
 - Fixed entrypoint detection failing for files opened in custom editors. (#3512)
+  *PR #3550 → Linked Issue #3512*
   *Reasoning: The PR modifies detect.go to handle custom editor file types - directly impacts user experience*
 
-- Fixed deployment preview not updating after configuration changes. (#3515)
+- Fixed deployment preview not updating after configuration changes. (#3400)
+  *PR #3551 → Linked Issue #3400*
   *Reasoning: Bug fix that was causing stale UI state after config edits*
 
 #### Added
-- Added support for deploying Shiny Express applications. (#3518)
+- Added support for deploying Shiny Express applications. (#3480)
+  *PR #3552 → Linked Issue #3480*
   *Reasoning: New feature enabling a previously unsupported content type*
 
 ### Skipped (Infrastructure/Deps)
@@ -141,14 +159,23 @@ Help draft a changelog entry for the work on the current branch.
    - `refactor:` → **Changed** only if user-facing
    - Dependency bumps → Usually skip unless notable
 
-5. **Draft the entry**: If an entry is warranted:
+5. **Find the linked issue**: If a PR already exists for the current branch, check for linked issues:
+
+   ```bash
+   gh pr view --json number,closingIssuesReferences
+   ```
+
+   Use the linked issue number in the changelog entry. If no issue exists, one must be created.
+
+6. **Draft the entry**: If an entry is warranted:
    - Write from the user's perspective (what they'll notice/benefit from)
    - Use past tense for Fixed, present tense for Added/Changed
    - Keep it concise (one sentence when possible)
-   - Include placeholder for PR number: `(#XXXX)`
+   - **Reference the linked issue number**, not the PR number: `(#<issue-number>)`
+   - If no issue exists yet, prompt the user to create one before adding the changelog entry
    - Specify which section it belongs in (Added/Changed/Fixed/etc.)
 
-6. **Offer to add it**: Ask if the user wants you to add the entry to the root `CHANGELOG.md` file in the `[Unreleased]` section.
+7. **Offer to add it**: Ask if the user wants you to add the entry to the root `CHANGELOG.md` file in the `[Unreleased]` section.
 
 ### Example Output
 
@@ -157,6 +184,7 @@ Help draft a changelog entry for the work on the current branch.
 
 **Branch**: fix/detect-entrypoints-custom-editors
 **Commits**: 2 commits ahead of main
+**Linked Issue**: #3512 (from PR #3550)
 
 ### Changes Summary
 Modified `internal/inspect/detect.go` to handle custom editor file types
@@ -166,7 +194,7 @@ when scanning for entrypoints.
 
 **Section**: Fixed
 **Suggested Entry**:
-- Fixed entrypoint detection failing for files opened in custom editors. (#XXXX)
+- Fixed entrypoint detection failing for files opened in custom editors. (#3512)
 
 Would you like me to add this entry to the CHANGELOG.md?
 ```
@@ -179,4 +207,4 @@ Would you like me to add this entry to the CHANGELOG.md?
 - Keep descriptions concise and written from the user's perspective
 - Use past tense for Fixed entries, present tense for Added/Changed
 - Multiple related PRs can sometimes be combined into a single entry
-- For current work, use `(#XXXX)` as placeholder until PR is created
+- Every changelog entry must reference an issue number - create an issue if one doesn't exist

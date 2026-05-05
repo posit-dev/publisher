@@ -1,0 +1,1867 @@
+// Copyright (C) 2026 by Posit Software, PBC.
+
+import crypto from "crypto";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { ConnectAPI } from "./client.js";
+import { ContentID, BundleID, TaskID } from "./types.js";
+import type { UserDTO, ContentDetailsDTO } from "./types.js";
+
+// ---------------------------------------------------------------------------
+// Mock axios — simulates real axios throw behavior on non-2xx
+// ---------------------------------------------------------------------------
+
+const mockRequest = vi.fn();
+
+type RequestInterceptor = (
+  config: Record<string, unknown>,
+) => Record<string, unknown>;
+
+vi.mock("axios", () => {
+  type InterceptorFn = (
+    value: Record<string, unknown>,
+  ) => Record<string, unknown>;
+
+  function createInterceptorManager() {
+    const handlers: InterceptorFn[] = [];
+    return {
+      use: (fn: InterceptorFn) => {
+        handlers.push(fn);
+      },
+      _handlers: handlers,
+    };
+  }
+
+  return {
+    default: {
+      create: vi.fn(() => {
+        const reqInterceptors = createInterceptorManager();
+        const resInterceptors = createInterceptorManager();
+
+        async function request(config: Record<string, unknown>) {
+          // Add a mock headers object with .set() to simulate AxiosHeaders
+          const headerStore: Record<string, string> = {};
+          const baseHeaders = (config.headers ?? {}) as Record<string, unknown>;
+          const headers: Record<string, unknown> = {
+            ...baseHeaders,
+            set: (key: string, value: string) => {
+              headerStore[key] = value;
+            },
+          };
+
+          let cfg: Record<string, unknown> = {
+            ...config,
+            headers,
+          };
+
+          // Apply request interceptors
+          for (const handler of reqInterceptors._handlers) {
+            cfg = handler(cfg);
+          }
+
+          // Merge headerStore into cfg so tests can inspect signed headers
+          if (Object.keys(headerStore).length > 0) {
+            cfg._signedHeaders = headerStore;
+          }
+
+          let resp = await mockRequest(cfg);
+          const validate =
+            (cfg.validateStatus as ((s: number) => boolean) | undefined) ??
+            ((s: number) => s >= 200 && s < 300);
+          if (!validate(resp.status as number)) {
+            throw Object.assign(
+              new Error(`Request failed with status code ${resp.status}`),
+              { isAxiosError: true, response: resp },
+            );
+          }
+
+          // Apply response interceptors
+          for (const handler of resInterceptors._handlers) {
+            resp = handler(resp);
+          }
+
+          return resp;
+        }
+
+        return {
+          request,
+          get: (url: string, config?: Record<string, unknown>) =>
+            request({ method: "GET", url, ...config }),
+          post: (
+            url: string,
+            data?: unknown,
+            config?: Record<string, unknown>,
+          ) => request({ method: "POST", url, data, ...config }),
+          patch: (
+            url: string,
+            data?: unknown,
+            config?: Record<string, unknown>,
+          ) => request({ method: "PATCH", url, data, ...config }),
+          interceptors: {
+            request: reqInterceptors,
+            response: resInterceptors,
+          },
+        };
+      }),
+      isAxiosError: (err: unknown): boolean =>
+        typeof err === "object" &&
+        err !== null &&
+        (err as Record<string, unknown>).isAxiosError === true,
+      isCancel: (err: unknown): boolean =>
+        typeof err === "object" &&
+        err !== null &&
+        (err as Record<string, unknown>).__CANCEL__ === true,
+    },
+  };
+});
+
+// Re-import axios so we can inspect axios.create calls
+import axios from "axios";
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const BASE_URL = "https://connect.example.com";
+const API_KEY = "test-api-key-123";
+
+function createClient(): ConnectAPI {
+  return new ConnectAPI({ url: BASE_URL, apiKey: API_KEY });
+}
+
+function jsonResponse(
+  body: unknown,
+  status = 200,
+  statusText = "OK",
+): {
+  status: number;
+  statusText: string;
+  data: unknown;
+  headers: Record<string, string>;
+  config: object;
+} {
+  return {
+    status,
+    statusText,
+    data: body,
+    headers: { "content-type": "application/json" },
+    config: {},
+  };
+}
+
+function textResponse(
+  body: string,
+  status = 200,
+  statusText = "OK",
+): {
+  status: number;
+  statusText: string;
+  data: string;
+  headers: Record<string, string>;
+  config: object;
+} {
+  return {
+    status,
+    statusText,
+    data: body,
+    headers: {},
+    config: {},
+  };
+}
+
+function binaryResponse(
+  data: Uint8Array,
+  status = 200,
+): {
+  status: number;
+  statusText: string;
+  data: ArrayBuffer;
+  headers: Record<string, string>;
+  config: object;
+} {
+  const buffer = data.buffer.slice(
+    data.byteOffset,
+    data.byteOffset + data.byteLength,
+  ) as ArrayBuffer;
+  return {
+    status,
+    statusText: "OK",
+    data: buffer,
+    headers: {},
+    config: {},
+  };
+}
+
+/** A valid publisher UserDTO for reuse across tests. */
+function validUserDTO(overrides?: Partial<UserDTO>): UserDTO {
+  return {
+    guid: "user-guid-123",
+    username: "publisher1",
+    first_name: "Test",
+    last_name: "User",
+    email: "test@example.com",
+    user_role: "publisher",
+    created_time: "2024-01-01T00:00:00Z",
+    updated_time: "2024-01-01T00:00:00Z",
+    active_time: null,
+    confirmed: true,
+    locked: false,
+    ...overrides,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Setup / teardown
+// ---------------------------------------------------------------------------
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  mockRequest.mockReset();
+});
+
+// ---------------------------------------------------------------------------
+// Cross-cutting: Authorization header
+// ---------------------------------------------------------------------------
+
+describe("Authorization header", () => {
+  it("sends Authorization: Key <apiKey> on every request", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(validUserDTO()));
+
+    const client = createClient();
+    await client.getCurrentUser();
+
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseURL: BASE_URL,
+        headers: expect.objectContaining({
+          Authorization: `Key ${API_KEY}`,
+        }),
+      }),
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TLS certificate verification
+// ---------------------------------------------------------------------------
+
+describe("TLS certificate verification", () => {
+  it("does not set httpsAgent when rejectUnauthorized is not specified", () => {
+    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY });
+
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.httpsAgent).toBeUndefined();
+  });
+
+  it("does not set httpsAgent when rejectUnauthorized is true", () => {
+    new ConnectAPI({
+      url: BASE_URL,
+      apiKey: API_KEY,
+      rejectUnauthorized: true,
+    });
+
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.httpsAgent).toBeUndefined();
+  });
+
+  it("sets httpsAgent with rejectUnauthorized: false when option is false", () => {
+    new ConnectAPI({
+      url: BASE_URL,
+      apiKey: API_KEY,
+      rejectUnauthorized: false,
+    });
+
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.httpsAgent).toBeDefined();
+    expect(call?.httpsAgent?.options?.rejectUnauthorized).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Timeout option
+// ---------------------------------------------------------------------------
+
+describe("timeout option", () => {
+  it("passes timeout when specified", () => {
+    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY, timeout: 5000 });
+
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({ timeout: 5000 }),
+    );
+  });
+
+  it("does not pass timeout when omitted", () => {
+    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY });
+
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.timeout).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// testAuthentication
+// ---------------------------------------------------------------------------
+
+describe("testAuthentication", () => {
+  it("returns { user, error: null } with mapped User on success", async () => {
+    const dto = validUserDTO();
+    mockRequest.mockResolvedValue(jsonResponse(dto));
+
+    const client = createClient();
+    const result = await client.testAuthentication();
+
+    expect(result).toEqual({
+      user: {
+        id: dto.guid,
+        username: dto.username,
+        first_name: dto.first_name,
+        last_name: dto.last_name,
+        email: dto.email,
+      },
+      error: null,
+    });
+  });
+
+  it("throws on 401", async () => {
+    mockRequest.mockResolvedValue(
+      jsonResponse({ error: "Unauthorized" }, 401, "Unauthorized"),
+    );
+
+    const client = createClient();
+    await expect(client.testAuthentication()).rejects.toThrow("Unauthorized");
+  });
+
+  it("throws when user is locked", async () => {
+    const dto = validUserDTO({ locked: true });
+    mockRequest.mockResolvedValue(jsonResponse(dto));
+
+    const client = createClient();
+    await expect(client.testAuthentication()).rejects.toThrow(
+      /user account publisher1 is locked/,
+    );
+  });
+
+  it("throws when user is not confirmed", async () => {
+    const dto = validUserDTO({ confirmed: false });
+    mockRequest.mockResolvedValue(jsonResponse(dto));
+
+    const client = createClient();
+    await expect(client.testAuthentication()).rejects.toThrow(
+      /user account publisher1 is not confirmed/,
+    );
+  });
+
+  it("throws when user is a viewer", async () => {
+    const dto = validUserDTO({ user_role: "viewer" });
+    mockRequest.mockResolvedValue(jsonResponse(dto));
+
+    const client = createClient();
+    await expect(client.testAuthentication()).rejects.toThrow(
+      /does not have permission to publish content/,
+    );
+  });
+
+  it("accepts administrator role", async () => {
+    const dto = validUserDTO({ user_role: "administrator" });
+    mockRequest.mockResolvedValue(jsonResponse(dto));
+
+    const client = createClient();
+    const result = await client.testAuthentication();
+    expect(result.user.id).toBe(dto.guid);
+    expect(result.error).toBeNull();
+  });
+
+  it("throws with generic message on non-JSON error body", async () => {
+    mockRequest.mockResolvedValue(textResponse("not json", 403, "Forbidden"));
+
+    const client = createClient();
+    await expect(client.testAuthentication()).rejects.toThrow("HTTP 403");
+  });
+
+  it("throws clear network error when server is unreachable (no response)", async () => {
+    // Simulate a network error (e.g. VPN disconnected, DNS failure) —
+    // axios throws an AxiosError with no `response` property.
+    const networkErr = Object.assign(new Error("connect ECONNREFUSED"), {
+      isAxiosError: true,
+      code: "ECONNREFUSED",
+      // No `response` — this is what triggers "HTTP undefined" without the fix
+    });
+    mockRequest.mockRejectedValue(networkErr);
+
+    const client = createClient();
+    await expect(client.testAuthentication()).rejects.toThrow(
+      /Unable to reach the server/,
+    );
+  });
+
+  it("network error throws ConnectAPIError with no httpStatus", async () => {
+    const { ConnectAPIError } = await import("./client.js");
+    const networkErr = Object.assign(new Error("Network Error"), {
+      isAxiosError: true,
+      code: "ERR_NETWORK",
+    });
+    mockRequest.mockRejectedValue(networkErr);
+
+    const client = createClient();
+    try {
+      await client.testAuthentication();
+      expect.unreachable("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ConnectAPIError);
+      expect(
+        (err as InstanceType<typeof ConnectAPIError>).httpStatus,
+      ).toBeUndefined();
+    }
+  });
+
+  it.each([
+    "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+    "DEPTH_ZERO_SELF_SIGNED_CERT",
+    "SELF_SIGNED_CERT_IN_CHAIN",
+    "ERR_TLS_CERT_ALTNAME_INVALID",
+    "CERT_HAS_EXPIRED",
+  ])("certificate error (%s) is not wrapped as network error", async (code) => {
+    // TLS/certificate errors also have no `response`, but they should NOT
+    // be caught by the network-error check — callers need the original
+    // error code to classify them as certificate verification failures.
+    const certErr = Object.assign(new Error(`cert error: ${code}`), {
+      isAxiosError: true,
+      code,
+    });
+    mockRequest.mockRejectedValue(certErr);
+
+    const client = createClient();
+    // The original error is rethrown as-is (not wrapped in ConnectAPIError)
+    // so callers can inspect the error code for certificate classification.
+    await expect(client.testAuthentication()).rejects.toThrow(
+      `cert error: ${code}`,
+    );
+  });
+
+  it("throws clear error when auth proxy returns HTML on 200", async () => {
+    // An authenticating proxy may return a 200 with an HTML login page
+    // instead of a JSON user object. The guard should catch this.
+    mockRequest.mockResolvedValue(
+      textResponse("<html><body>Login required</body></html>"),
+    );
+
+    const client = createClient();
+    await expect(client.testAuthentication()).rejects.toThrow(
+      /did not return a valid JSON response/,
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getCurrentUser
+// ---------------------------------------------------------------------------
+
+describe("getCurrentUser", () => {
+  it("maps UserDTO to simplified User with id from guid", async () => {
+    const dto = validUserDTO();
+    mockRequest.mockResolvedValue(jsonResponse(dto));
+
+    const client = createClient();
+    const user = await client.getCurrentUser();
+
+    expect(user).toEqual({
+      id: dto.guid,
+      username: dto.username,
+      first_name: dto.first_name,
+      last_name: dto.last_name,
+      email: dto.email,
+    });
+  });
+
+  it("throws on non-2xx", async () => {
+    mockRequest.mockResolvedValue(
+      textResponse("err", 500, "Internal Server Error"),
+    );
+
+    const client = createClient();
+    await expect(client.getCurrentUser()).rejects.toThrow();
+  });
+
+  it("calls GET /__api__/v1/user", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(validUserDTO()));
+
+    const client = createClient();
+    await client.getCurrentUser();
+
+    expect(mockRequest).toHaveBeenCalledOnce();
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.url).toBe("/__api__/v1/user");
+    expect(call.method).toBe("GET");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// contentDetails
+// ---------------------------------------------------------------------------
+
+describe("contentDetails", () => {
+  const contentId = ContentID("content-guid-abc");
+  const detailsDTO: ContentDetailsDTO = {
+    guid: contentId,
+    name: "my-app",
+    title: "My App",
+    description: "",
+    access_type: "acl",
+    connection_timeout: null,
+    read_timeout: null,
+    init_timeout: null,
+    idle_timeout: null,
+    max_processes: null,
+    min_processes: null,
+    max_conns_per_process: null,
+    load_factor: null,
+    created_time: "2024-01-01T00:00:00Z",
+    last_deployed_time: "2024-01-01T00:00:00Z",
+    bundle_id: "bundle-1",
+    app_mode: "python-dash",
+    content_category: "",
+    parameterized: false,
+    cluster_name: null,
+    image_name: null,
+    r_version: null,
+    py_version: "3.11.0",
+    quarto_version: null,
+    run_as: null,
+    run_as_current_user: false,
+    owner_guid: "owner-guid-123",
+    content_url: "https://connect.example.com/content/content-guid-abc/",
+    dashboard_url:
+      "https://connect.example.com/connect/#/apps/content-guid-abc",
+    app_role: "owner",
+    id: "42",
+  };
+
+  it("returns the full content details DTO", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(detailsDTO));
+
+    const client = createClient();
+    const { data } = await client.contentDetails(contentId);
+
+    expect(data).toEqual(detailsDTO);
+  });
+
+  it("uses contentId in the URL path", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(detailsDTO));
+
+    const client = createClient();
+    await client.contentDetails(contentId);
+
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.url).toBe(`/__api__/v1/content/${contentId}`);
+  });
+
+  it("throws on non-2xx", async () => {
+    mockRequest.mockResolvedValue(textResponse("not found", 404, "Not Found"));
+
+    const client = createClient();
+    await expect(client.contentDetails(contentId)).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// createDeployment
+// ---------------------------------------------------------------------------
+
+describe("createDeployment", () => {
+  it("POSTs the body and returns the full content details", async () => {
+    const responseBody = {
+      guid: "new-content-guid",
+      name: "my-app",
+      title: null,
+    };
+    mockRequest.mockResolvedValue(jsonResponse(responseBody));
+
+    const client = createClient();
+    const { data } = await client.createDeployment({ name: "my-app" });
+
+    expect(data).toEqual(responseBody);
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.url).toBe("/__api__/v1/content");
+    expect(call.method).toBe("POST");
+    expect(call.data).toEqual({ name: "my-app" });
+  });
+
+  it("throws on non-2xx", async () => {
+    mockRequest.mockResolvedValue(textResponse("conflict", 409, "Conflict"));
+
+    const client = createClient();
+    await expect(client.createDeployment({ name: "dup" })).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// updateDeployment
+// ---------------------------------------------------------------------------
+
+describe("updateDeployment", () => {
+  const contentId = ContentID("content-123");
+
+  it("PATCHes the content and returns void", async () => {
+    mockRequest.mockResolvedValue(jsonResponse({}, 200));
+
+    const client = createClient();
+    const result = await client.updateDeployment(contentId, {
+      title: "New Title",
+    });
+
+    expect(result).toBeUndefined();
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.url).toBe(`/__api__/v1/content/${contentId}`);
+    expect(call.method).toBe("PATCH");
+  });
+
+  it("throws on non-2xx", async () => {
+    mockRequest.mockResolvedValue(
+      textResponse("bad request", 400, "Bad Request"),
+    );
+
+    const client = createClient();
+    await expect(
+      client.updateDeployment(contentId, { title: "x" }),
+    ).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getEnvVars
+// ---------------------------------------------------------------------------
+
+describe("getEnvVars", () => {
+  const contentId = ContentID("content-123");
+
+  it("returns an array of environment variable names", async () => {
+    const envNames = ["DATABASE_URL", "SECRET_KEY"];
+    mockRequest.mockResolvedValue(jsonResponse(envNames));
+
+    const client = createClient();
+    const { data } = await client.getEnvVars(contentId);
+
+    expect(data).toEqual(envNames);
+  });
+
+  it("calls the correct URL", async () => {
+    mockRequest.mockResolvedValue(jsonResponse([]));
+
+    const client = createClient();
+    await client.getEnvVars(contentId);
+
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.url).toBe(`/__api__/v1/content/${contentId}/environment`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// setEnvVars
+// ---------------------------------------------------------------------------
+
+describe("setEnvVars", () => {
+  const contentId = ContentID("content-123");
+
+  it("converts Record to [{name,value}] array in the body", async () => {
+    mockRequest.mockResolvedValue({
+      status: 204,
+      statusText: "No Content",
+      data: null,
+      headers: {},
+      config: {},
+    });
+
+    const client = createClient();
+    await client.setEnvVars(contentId, { FOO: "bar", BAZ: "qux" });
+
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.url).toBe(`/__api__/v1/content/${contentId}/environment`);
+    expect(call.method).toBe("PATCH");
+    expect(call.data).toEqual([
+      { name: "FOO", value: "bar" },
+      { name: "BAZ", value: "qux" },
+    ]);
+  });
+
+  it("throws on non-2xx", async () => {
+    mockRequest.mockResolvedValue(
+      textResponse("error", 500, "Internal Server Error"),
+    );
+
+    const client = createClient();
+    await expect(
+      client.setEnvVars(contentId, { KEY: "val" }),
+    ).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// uploadBundle
+// ---------------------------------------------------------------------------
+
+describe("uploadBundle", () => {
+  const contentId = ContentID("content-123");
+
+  it("sends application/gzip with raw bytes and returns full BundleDTO", async () => {
+    const bundleResponse = {
+      id: "bundle-42",
+      content_guid: contentId,
+      active: true,
+      size: 1024,
+    };
+    mockRequest.mockResolvedValue(jsonResponse(bundleResponse));
+
+    const bundle = new Uint8Array([0x1f, 0x8b, 0x08]);
+    const client = createClient();
+    const { data } = await client.uploadBundle(contentId, bundle);
+
+    expect(data).toEqual(bundleResponse);
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.url).toBe(`/__api__/v1/content/${contentId}/bundles`);
+    expect(call.method).toBe("POST");
+    expect(call.headers["Content-Type"]).toBe("application/gzip");
+  });
+
+  it("preserves binary payload bytes without mutation", async () => {
+    const gzipBytes = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0xff, 0xfe]);
+    mockRequest.mockResolvedValue(
+      jsonResponse({ id: "b-1", content_guid: contentId, active: true }),
+    );
+
+    const client = createClient();
+    await client.uploadBundle(contentId, gzipBytes);
+
+    const call = mockRequest.mock.calls[0][0];
+    const sent = call.data as Uint8Array;
+    expect(sent).toBeInstanceOf(Uint8Array);
+    expect(sent.length).toBe(gzipBytes.length);
+    expect(Array.from(sent)).toEqual(Array.from(gzipBytes));
+  });
+
+  it("throws on non-2xx", async () => {
+    mockRequest.mockResolvedValue(
+      textResponse("too large", 413, "Payload Too Large"),
+    );
+
+    const client = createClient();
+    await expect(
+      client.uploadBundle(contentId, new Uint8Array([1])),
+    ).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// downloadBundle
+// ---------------------------------------------------------------------------
+
+describe("downloadBundle", () => {
+  const contentId = ContentID("content-123");
+  const bundleId = BundleID("bundle-42");
+
+  it("returns a Uint8Array of the bundle data", async () => {
+    const data = new Uint8Array([1, 2, 3, 4, 5]);
+    mockRequest.mockResolvedValue(binaryResponse(data));
+
+    const client = createClient();
+    const result = await client.downloadBundle(contentId, bundleId);
+
+    expect(result).toEqual(data);
+  });
+
+  it("calls the correct download URL", async () => {
+    mockRequest.mockResolvedValue(binaryResponse(new Uint8Array()));
+
+    const client = createClient();
+    await client.downloadBundle(contentId, bundleId);
+
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.url).toBe(
+      `/__api__/v1/content/${contentId}/bundles/${bundleId}/download`,
+    );
+  });
+
+  it("throws on non-2xx", async () => {
+    mockRequest.mockResolvedValue(textResponse("not found", 404, "Not Found"));
+
+    const client = createClient();
+    await expect(client.downloadBundle(contentId, bundleId)).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// deployBundle
+// ---------------------------------------------------------------------------
+
+describe("deployBundle", () => {
+  const contentId = ContentID("content-123");
+  const bundleId = BundleID("bundle-42");
+
+  it("POSTs {bundle_id} and returns the full deploy output", async () => {
+    const deployResponse = { task_id: "task-99" };
+    mockRequest.mockResolvedValue(jsonResponse(deployResponse));
+
+    const client = createClient();
+    const { data } = await client.deployBundle(contentId, bundleId);
+
+    expect(data).toEqual(deployResponse);
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.url).toBe(`/__api__/v1/content/${contentId}/deploy`);
+    expect(call.method).toBe("POST");
+    expect(call.data).toEqual({ bundle_id: bundleId });
+  });
+
+  it("throws on non-2xx", async () => {
+    mockRequest.mockResolvedValue(
+      textResponse("err", 500, "Internal Server Error"),
+    );
+
+    const client = createClient();
+    await expect(client.deployBundle(contentId, bundleId)).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// waitForTask
+// ---------------------------------------------------------------------------
+
+describe("waitForTask", () => {
+  const taskId = TaskID("task-99");
+
+  it("returns the full TaskDTO when task completes without error", async () => {
+    const taskResponse = {
+      id: taskId,
+      output: ["line 1"],
+      result: null,
+      finished: true,
+      code: 0,
+      error: "",
+      last: 1,
+    };
+    mockRequest.mockResolvedValue(jsonResponse(taskResponse));
+
+    const client = createClient();
+    const result = await client.waitForTask(taskId, 0);
+
+    expect(result).toEqual(taskResponse);
+  });
+
+  it("throws when task finishes with an error", async () => {
+    mockRequest.mockResolvedValue(
+      jsonResponse({
+        id: taskId,
+        output: [],
+        result: null,
+        finished: true,
+        code: 1,
+        error: "deployment failed",
+        last: 0,
+      }),
+    );
+
+    const client = createClient();
+    await expect(client.waitForTask(taskId, 0)).rejects.toThrow(
+      "deployment failed",
+    );
+  });
+
+  it("polls with first= query parameter and follows last cursor", async () => {
+    mockRequest
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: taskId,
+          output: ["line 1"],
+          result: null,
+          finished: false,
+          code: 0,
+          error: "",
+          last: 3,
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: taskId,
+          output: ["line 2"],
+          result: null,
+          finished: true,
+          code: 0,
+          error: "",
+          last: 5,
+        }),
+      );
+
+    const client = createClient();
+    await client.waitForTask(taskId, 0);
+
+    expect(mockRequest).toHaveBeenCalledTimes(2);
+    const call1 = mockRequest.mock.calls[0][0];
+    const call2 = mockRequest.mock.calls[1][0];
+    expect(call1.url).toBe(`/__api__/v1/tasks/${taskId}`);
+    expect(call1.params).toEqual({ first: 0 });
+    expect(call2.url).toBe(`/__api__/v1/tasks/${taskId}`);
+    expect(call2.params).toEqual({ first: 3 });
+  });
+
+  it("calls onOutput with each batch of log lines", async () => {
+    mockRequest
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: taskId,
+          output: ["Building..."],
+          result: null,
+          finished: false,
+          code: 0,
+          error: "",
+          last: 1,
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: taskId,
+          output: ["Installing packages...", "Launching content..."],
+          result: null,
+          finished: true,
+          code: 0,
+          error: "",
+          last: 3,
+        }),
+      );
+
+    const batches: string[][] = [];
+    const onOutput = (lines: string[]) => batches.push(lines);
+
+    const client = createClient();
+    await client.waitForTask(taskId, 0, onOutput);
+
+    expect(batches).toEqual([
+      ["Building..."],
+      ["Installing packages...", "Launching content..."],
+    ]);
+  });
+
+  it("does not call onOutput when output is empty", async () => {
+    mockRequest
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: taskId,
+          output: [],
+          result: null,
+          finished: false,
+          code: 0,
+          error: "",
+          last: 0,
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: taskId,
+          output: ["done"],
+          result: null,
+          finished: true,
+          code: 0,
+          error: "",
+          last: 1,
+        }),
+      );
+
+    const batches: string[][] = [];
+    const onOutput = (lines: string[]) => batches.push(lines);
+
+    const client = createClient();
+    await client.waitForTask(taskId, 0, onOutput);
+
+    expect(batches).toEqual([["done"]]);
+  });
+
+  it("calls onOutput before throwing on task error", async () => {
+    mockRequest.mockResolvedValueOnce(
+      jsonResponse({
+        id: taskId,
+        output: ["error output"],
+        result: null,
+        finished: true,
+        code: 1,
+        error: "deployment failed",
+        last: 1,
+      }),
+    );
+
+    const batches: string[][] = [];
+    const onOutput = (lines: string[]) => batches.push(lines);
+
+    const client = createClient();
+    await expect(client.waitForTask(taskId, 0, onOutput)).rejects.toThrow(
+      "deployment failed",
+    );
+
+    expect(batches).toEqual([["error output"]]);
+  });
+
+  it("works without onOutput (backward compatible)", async () => {
+    mockRequest.mockResolvedValue(
+      jsonResponse({
+        id: taskId,
+        output: ["line 1"],
+        result: null,
+        finished: true,
+        code: 0,
+        error: "",
+        last: 1,
+      }),
+    );
+
+    const client = createClient();
+    const result = await client.waitForTask(taskId, 0);
+
+    expect(result.output).toEqual(["line 1"]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// validateDeployment
+// ---------------------------------------------------------------------------
+
+describe("validateDeployment", () => {
+  const contentId = ContentID("content-123");
+
+  it("returns void on 200", async () => {
+    mockRequest.mockResolvedValue(textResponse("OK", 200));
+
+    const client = createClient();
+    const result = await client.validateDeployment(contentId);
+
+    expect(result).toBeUndefined();
+  });
+
+  it("returns void on 404 (acceptable)", async () => {
+    mockRequest.mockResolvedValue(textResponse("not found", 404, "Not Found"));
+
+    const client = createClient();
+    const result = await client.validateDeployment(contentId);
+
+    expect(result).toBeUndefined();
+  });
+
+  it("throws on 500", async () => {
+    mockRequest.mockResolvedValue(
+      textResponse("server error", 500, "Internal Server Error"),
+    );
+
+    const client = createClient();
+    await expect(client.validateDeployment(contentId)).rejects.toThrow();
+  });
+
+  it("throws on 502", async () => {
+    mockRequest.mockResolvedValue(
+      textResponse("bad gateway", 502, "Bad Gateway"),
+    );
+
+    const client = createClient();
+    await expect(client.validateDeployment(contentId)).rejects.toThrow();
+  });
+
+  it("calls GET /content/:id/", async () => {
+    mockRequest.mockResolvedValue(textResponse("OK", 200));
+
+    const client = createClient();
+    await client.validateDeployment(contentId);
+
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.url).toBe(`/content/${contentId}/`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getIntegrations
+// ---------------------------------------------------------------------------
+
+describe("getIntegrations", () => {
+  it("returns parsed integration array", async () => {
+    const integrations = [
+      {
+        guid: "int-1",
+        name: "GitHub",
+        description: "GitHub integration",
+        auth_type: "oauth2",
+        template: "github",
+        config: {},
+        created_time: "2024-01-01T00:00:00Z",
+      },
+    ];
+    mockRequest.mockResolvedValue(jsonResponse(integrations));
+
+    const client = createClient();
+    const { data } = await client.getIntegrations();
+
+    expect(data).toEqual(integrations);
+  });
+
+  it("calls GET /__api__/v1/oauth/integrations", async () => {
+    mockRequest.mockResolvedValue(jsonResponse([]));
+
+    const client = createClient();
+    await client.getIntegrations();
+
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.url).toBe("/__api__/v1/oauth/integrations");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getSettings
+// ---------------------------------------------------------------------------
+
+describe("getSettings", () => {
+  const userDTO = validUserDTO();
+  const general = {
+    license: {
+      "allow-apis": true,
+      "current-user-execution": false,
+      "enable-launcher": false,
+      "oauth-integrations": false,
+    },
+    runtimes: ["python"],
+    git_enabled: false,
+    git_available: false,
+    execution_type: "native",
+    enable_runtime_constraints: false,
+    enable_image_management: false,
+    default_image_selection_enabled: false,
+    default_environment_management_selection: true,
+    default_r_environment_management: true,
+    default_py_environment_management: true,
+    oauth_integrations_enabled: false,
+  };
+  const application = {
+    access_types: ["acl", "logged_in", "all"],
+    run_as: "",
+    run_as_group: "",
+    run_as_current_user: false,
+  };
+  const scheduler = {
+    min_processes: 0,
+    max_processes: 3,
+    max_conns_per_process: 20,
+    load_factor: 0.5,
+    init_timeout: 60,
+    idle_timeout: 120,
+    min_processes_limit: 0,
+    max_processes_limit: 10,
+    connection_timeout: 5,
+    read_timeout: 30,
+    cpu_request: 0,
+    max_cpu_request: 0,
+    cpu_limit: 0,
+    max_cpu_limit: 0,
+    memory_request: 0,
+    max_memory_request: 0,
+    memory_limit: 0,
+    max_memory_limit: 0,
+    amd_gpu_limit: 0,
+    max_amd_gpu_limit: 0,
+    nvidia_gpu_limit: 0,
+    max_nvidia_gpu_limit: 0,
+  };
+  const python = {
+    installations: [{ version: "3.11.0", cluster_name: "", image_name: "" }],
+    api_enabled: true,
+  };
+  const r = {
+    installations: [{ version: "4.3.0", cluster_name: "", image_name: "" }],
+  };
+  const quarto = {
+    installations: [{ version: "1.4.0", cluster_name: "", image_name: "" }],
+  };
+
+  const urlResponseMap: Record<string, unknown> = {
+    "/__api__/v1/user": userDTO,
+    "/__api__/server_settings": general,
+    "/__api__/server_settings/applications": application,
+    "/__api__/server_settings/scheduler": scheduler,
+    "/__api__/v1/server_settings/python": python,
+    "/__api__/v1/server_settings/r": r,
+    "/__api__/v1/server_settings/quarto": quarto,
+  };
+
+  function mockSettingsRoutes() {
+    mockRequest.mockImplementation((config: { url: string }) =>
+      Promise.resolve(jsonResponse(urlResponseMap[config.url])),
+    );
+  }
+
+  it("makes 7 request calls to the correct URLs", async () => {
+    mockSettingsRoutes();
+
+    const client = createClient();
+    await client.getSettings();
+
+    expect(mockRequest).toHaveBeenCalledTimes(7);
+
+    const urls = mockRequest.mock.calls
+      .map((call: unknown[]) => (call[0] as { url: string }).url)
+      .sort();
+    expect(urls).toEqual(Object.keys(urlResponseMap).sort());
+  });
+
+  it("returns an AllSettings composite object", async () => {
+    mockSettingsRoutes();
+
+    const client = createClient();
+    const settings = await client.getSettings();
+
+    expect(settings.general).toEqual(general);
+    expect(settings.user).toEqual(userDTO);
+    expect(settings.application).toEqual(application);
+    expect(settings.scheduler).toEqual(scheduler);
+    expect(settings.python).toEqual(python);
+    expect(settings.r).toEqual(r);
+    expect(settings.quarto).toEqual(quarto);
+  });
+
+  it("uses app-mode-specific scheduler path when appMode is provided", async () => {
+    const appModeMap: Record<string, unknown> = {
+      ...urlResponseMap,
+      "/__api__/server_settings/scheduler/python-shiny": scheduler,
+    };
+    mockRequest.mockImplementation((config: { url: string }) =>
+      Promise.resolve(jsonResponse(appModeMap[config.url])),
+    );
+
+    const client = createClient();
+    await client.getSettings("python-shiny");
+
+    const urls = mockRequest.mock.calls.map(
+      (call: unknown[]) => (call[0] as { url: string }).url,
+    );
+    expect(urls).toContain("/__api__/server_settings/scheduler/python-shiny");
+    expect(urls).not.toContain("/__api__/server_settings/scheduler");
+  });
+
+  it("uses base scheduler path for static content", async () => {
+    mockSettingsRoutes();
+
+    const client = createClient();
+    await client.getSettings("static");
+
+    const urls = mockRequest.mock.calls.map(
+      (call: unknown[]) => (call[0] as { url: string }).url,
+    );
+    expect(urls).toContain("/__api__/server_settings/scheduler");
+  });
+
+  it("uses base scheduler path for unknown app mode", async () => {
+    mockSettingsRoutes();
+
+    const client = createClient();
+    await client.getSettings("unknown-mode");
+
+    const urls = mockRequest.mock.calls.map(
+      (call: unknown[]) => (call[0] as { url: string }).url,
+    );
+    expect(urls).toContain("/__api__/server_settings/scheduler");
+    expect(urls).not.toContain(
+      "/__api__/server_settings/scheduler/unknown-mode",
+    );
+  });
+
+  it("uses base scheduler path when no appMode is provided", async () => {
+    mockSettingsRoutes();
+
+    const client = createClient();
+    await client.getSettings();
+
+    const urls = mockRequest.mock.calls.map(
+      (call: unknown[]) => (call[0] as { url: string }).url,
+    );
+    expect(urls).toContain("/__api__/server_settings/scheduler");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// registerToken
+// ---------------------------------------------------------------------------
+
+describe("registerToken", () => {
+  it("POSTs token and public key to /__api__/tokens and returns claim URL", async () => {
+    const client = new ConnectAPI({ url: BASE_URL });
+    mockRequest.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          token_claim_url: "https://connect.example.com/connect/#/claim/abc123",
+        },
+        201,
+      ),
+    );
+
+    const result = await client.registerToken(
+      "Tabcdef1234567890",
+      "base64PublicKey==",
+    );
+
+    expect(result).toEqual({
+      token_claim_url: "https://connect.example.com/connect/#/claim/abc123",
+    });
+    expect(mockRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: "POST",
+        url: "/__api__/tokens",
+        data: {
+          token: "Tabcdef1234567890",
+          public_key: "base64PublicKey==",
+          user_id: 0,
+        },
+      }),
+    );
+  });
+
+  it("throws on non-2xx response", async () => {
+    const client = new ConnectAPI({ url: BASE_URL });
+    mockRequest.mockResolvedValueOnce(
+      jsonResponse({ error: "forbidden" }, 403, "Forbidden"),
+    );
+
+    await expect(
+      client.registerToken("Tabcdef1234567890", "base64PublicKey=="),
+    ).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Token authentication
+// ---------------------------------------------------------------------------
+
+function generateTestKeyPair(): {
+  privateKeyBase64: string;
+} {
+  const { privateKey } = crypto.generateKeyPairSync("rsa", {
+    modulusLength: 2048,
+  });
+  const privateKeyDer = privateKey.export({ format: "der", type: "pkcs1" });
+  return {
+    privateKeyBase64: Buffer.from(privateKeyDer).toString("base64"),
+  };
+}
+
+describe("Token authentication", () => {
+  const TOKEN = "Tabc123def456";
+  const { privateKeyBase64: PRIVATE_KEY } = generateTestKeyPair();
+
+  function createTokenClient(): ConnectAPI {
+    return new ConnectAPI({
+      url: BASE_URL,
+      token: TOKEN,
+      privateKey: PRIVATE_KEY,
+    });
+  }
+
+  it("does not set static Authorization header when using token auth", () => {
+    createTokenClient();
+
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.headers).toBeUndefined();
+  });
+
+  it("adds signing headers to requests via interceptor", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(validUserDTO()));
+
+    const client = createTokenClient();
+    await client.getCurrentUser();
+
+    expect(mockRequest).toHaveBeenCalledOnce();
+    const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    const signedHeaders = config._signedHeaders as Record<string, string>;
+
+    expect(signedHeaders).toBeDefined();
+    expect(signedHeaders["X-Auth-Token"]).toBe(TOKEN);
+    expect(signedHeaders["X-Auth-Signature"]).toBeDefined();
+    expect(signedHeaders["X-Content-Checksum"]).toBeDefined();
+    expect(signedHeaders["Date"]).toBeDefined();
+  });
+
+  it("computes checksum from request body for POST requests", async () => {
+    const responseBody = { guid: "new-content-guid", name: "my-app" };
+    mockRequest.mockResolvedValue(jsonResponse(responseBody));
+
+    const client = createTokenClient();
+    await client.createDeployment({ name: "my-app" });
+
+    const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    const signedHeaders = config._signedHeaders as Record<string, string>;
+
+    // Checksum should be MD5 of the JSON body
+    const expectedBody = JSON.stringify({ name: "my-app" });
+    const expectedChecksum = crypto
+      .createHash("md5")
+      .update(expectedBody)
+      .digest("base64");
+    expect(signedHeaders["X-Content-Checksum"]).toBe(expectedChecksum);
+  });
+
+  it("computes checksum from raw bytes for binary uploads", async () => {
+    const bundleResponse = { id: "b-1", content_guid: "c-1", active: true };
+    mockRequest.mockResolvedValue(jsonResponse(bundleResponse));
+
+    const gzipBytes = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0xff, 0xfe]);
+    const client = createTokenClient();
+    await client.uploadBundle(ContentID("c-1"), gzipBytes);
+
+    const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    const signedHeaders = config._signedHeaders as Record<string, string>;
+
+    // Checksum must be MD5 of the raw bytes, not JSON.stringify(bytes)
+    const expectedChecksum = crypto
+      .createHash("md5")
+      .update(gzipBytes)
+      .digest("base64");
+    expect(signedHeaders["X-Content-Checksum"]).toBe(expectedChecksum);
+  });
+
+  it("Date header ends with GMT", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(validUserDTO()));
+
+    const client = createTokenClient();
+    await client.getCurrentUser();
+
+    const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    const signedHeaders = config._signedHeaders as Record<string, string>;
+    expect(signedHeaders["Date"]).toMatch(/GMT$/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Snowflake authentication
+// ---------------------------------------------------------------------------
+
+describe("Snowflake authentication", () => {
+  it("sets Snowflake authorization header", () => {
+    new ConnectAPI({
+      url: BASE_URL,
+      snowflakeToken: "sf-session-token-abc",
+    });
+
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseURL: BASE_URL,
+        headers: expect.objectContaining({
+          Authorization: 'Snowflake Token="sf-session-token-abc"',
+        }),
+      }),
+    );
+  });
+
+  it("does not add signing interceptor", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(validUserDTO()));
+
+    const client = new ConnectAPI({
+      url: BASE_URL,
+      snowflakeToken: "sf-session-token-abc",
+    });
+    await client.getCurrentUser();
+
+    const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(config._signedHeaders).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Constructor validation
+// ---------------------------------------------------------------------------
+
+describe("Constructor validation", () => {
+  it("allows no credentials (for URL reachability checks)", () => {
+    expect(() => new ConnectAPI({ url: BASE_URL })).not.toThrow();
+  });
+
+  it("throws if only token is provided without privateKey", () => {
+    expect(
+      // @ts-expect-error - union type rejects partial token auth at compile time; testing runtime safety net
+      () => new ConnectAPI({ url: BASE_URL, token: "Ttoken123" }),
+    ).toThrow(
+      "ConnectAPI requires both token and privateKey for token authentication",
+    );
+  });
+
+  it("throws if only privateKey is provided without token", () => {
+    expect(
+      // @ts-expect-error - union type rejects partial token auth at compile time; testing runtime safety net
+      () => new ConnectAPI({ url: BASE_URL, privateKey: "somekey" }),
+    ).toThrow(
+      "ConnectAPI requires both token and privateKey for token authentication",
+    );
+  });
+
+  it("accepts apiKey auth", () => {
+    expect(
+      () => new ConnectAPI({ url: BASE_URL, apiKey: API_KEY }),
+    ).not.toThrow();
+  });
+
+  it("accepts token+privateKey auth", () => {
+    const { privateKey } = crypto.generateKeyPairSync("rsa", {
+      modulusLength: 2048,
+    });
+    const privateKeyBase64 = Buffer.from(
+      privateKey.export({ format: "der", type: "pkcs1" }),
+    ).toString("base64");
+
+    expect(
+      () =>
+        new ConnectAPI({
+          url: BASE_URL,
+          token: "Ttoken123",
+          privateKey: privateKeyBase64,
+        }),
+    ).not.toThrow();
+  });
+
+  it("accepts snowflakeToken auth", () => {
+    expect(
+      () => new ConnectAPI({ url: BASE_URL, snowflakeToken: "sf-token" }),
+    ).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cookie jar (session affinity for HA environments)
+// ---------------------------------------------------------------------------
+
+describe("Cookie jar (session affinity)", () => {
+  it("forwards set-cookie from responses to subsequent requests", async () => {
+    mockRequest
+      .mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        data: validUserDTO(),
+        headers: { "set-cookie": ["AWSALB=abc123"] },
+        config: {},
+      })
+      .mockResolvedValueOnce(jsonResponse(validUserDTO()));
+
+    const client = createClient();
+    await client.getCurrentUser(); // response sets the cookie
+    await client.getCurrentUser(); // should forward the cookie
+
+    const secondCall = mockRequest.mock.calls[1][0] as Record<string, unknown>;
+    expect((secondCall.headers as Record<string, string>).Cookie).toBe(
+      "AWSALB=abc123",
+    );
+  });
+
+  it("does not send Cookie header when no set-cookie was received", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(validUserDTO()));
+
+    const client = createClient();
+    await client.getCurrentUser();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect((call.headers as Record<string, string>).Cookie).toBeUndefined();
+  });
+
+  it("updates cookies when a new set-cookie is received", async () => {
+    mockRequest
+      .mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        data: validUserDTO(),
+        headers: { "set-cookie": ["AWSALB=first"] },
+        config: {},
+      })
+      .mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        data: validUserDTO(),
+        headers: { "set-cookie": ["AWSALB=second"] },
+        config: {},
+      })
+      .mockResolvedValueOnce(jsonResponse(validUserDTO()));
+
+    const client = createClient();
+    await client.getCurrentUser();
+    await client.getCurrentUser();
+    await client.getCurrentUser();
+
+    const thirdCall = mockRequest.mock.calls[2][0] as Record<string, unknown>;
+    expect((thirdCall.headers as Record<string, string>).Cookie).toBe(
+      "AWSALB=second",
+    );
+  });
+
+  it("joins multiple cookies with semicolons", async () => {
+    mockRequest
+      .mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        data: validUserDTO(),
+        headers: { "set-cookie": ["AWSALB=abc", "session=xyz"] },
+        config: {},
+      })
+      .mockResolvedValueOnce(jsonResponse(validUserDTO()));
+
+    const client = createClient();
+    await client.getCurrentUser();
+    await client.getCurrentUser();
+
+    const secondCall = mockRequest.mock.calls[1][0] as Record<string, unknown>;
+    expect((secondCall.headers as Record<string, string>).Cookie).toBe(
+      "AWSALB=abc; session=xyz",
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AbortSignal support
+// ---------------------------------------------------------------------------
+
+describe("AbortSignal support", () => {
+  function abortedSignal(): AbortSignal {
+    return AbortSignal.abort();
+  }
+
+  it("testAuthentication forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(client.testAuthentication(abortedSignal())).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("testAuthentication rethrows cancel errors without wrapping", async () => {
+    // Cancel errors should not be wrapped in ConnectAPIError so callers
+    // can distinguish abort from real API failures.
+    const cancelErr = Object.assign(new Error("canceled"), {
+      isAxiosError: true,
+      __CANCEL__: true,
+      response: { status: 0, data: {} },
+    });
+    mockRequest.mockRejectedValue(cancelErr);
+
+    const client = createClient();
+    await expect(client.testAuthentication()).rejects.toBe(cancelErr);
+  });
+
+  it("testAuthentication still wraps non-cancel axios errors", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("Request failed"), {
+        isAxiosError: true,
+        response: { status: 401, data: { error: "Unauthorized" } },
+      }),
+    );
+
+    const client = createClient();
+    await expect(client.testAuthentication()).rejects.toThrow("Unauthorized");
+  });
+
+  it("contentDetails forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.contentDetails(ContentID("c-1"), abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("createDeployment forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.createDeployment({ name: "test" }, abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("updateDeployment forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.updateDeployment(
+        ContentID("c-1"),
+        { title: "test" },
+        abortedSignal(),
+      ),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("getEnvVars forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.getEnvVars(ContentID("c-1"), abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("setEnvVars forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.setEnvVars(ContentID("c-1"), { FOO: "bar" }, abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("uploadBundle forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.uploadBundle(
+        ContentID("c-1"),
+        new Uint8Array([1, 2]),
+        abortedSignal(),
+      ),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("downloadBundle forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.downloadBundle(ContentID("c-1"), BundleID("b-1"), abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("deployBundle forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.deployBundle(ContentID("c-1"), BundleID("b-1"), abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("waitForTask checks signal at start of loop and forwards to axios", async () => {
+    const client = createClient();
+    await expect(
+      client.waitForTask(TaskID("t-1"), 0, undefined, abortedSignal()),
+    ).rejects.toThrow();
+  });
+
+  it("waitForTask continues polling until signal aborts", async () => {
+    const controller = new AbortController();
+
+    mockRequest
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "t-1",
+          output: [],
+          result: null,
+          finished: false,
+          code: 0,
+          error: "",
+          last: 0,
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "t-1",
+          output: [],
+          result: null,
+          finished: false,
+          code: 0,
+          error: "",
+          last: 0,
+        }),
+      )
+      .mockImplementation(() => {
+        controller.abort();
+        return Promise.reject(
+          Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+        );
+      });
+
+    const client = createClient();
+    await expect(
+      client.waitForTask(TaskID("t-1"), 0, undefined, controller.signal),
+    ).rejects.toThrow();
+
+    expect(mockRequest).toHaveBeenCalledTimes(3);
+  });
+
+  it("validateDeployment forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.validateDeployment(ContentID("c-1"), abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("getIntegrations forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(client.getIntegrations(abortedSignal())).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("getSettings forwards signal to all 7 requests", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.getSettings(undefined, abortedSignal()),
+    ).rejects.toThrow();
+
+    // All 7 requests should have been initiated with the signal
+    expect(mockRequest).toHaveBeenCalled();
+    for (const call of mockRequest.mock.calls) {
+      const config = call[0] as Record<string, unknown>;
+      expect(config.signal).toBeDefined();
+    }
+  });
+});

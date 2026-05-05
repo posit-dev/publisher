@@ -1,6 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import { Factory } from "fishery";
+import { ContentID, BundleID, GUID } from "@posit-dev/connect-api";
 import {
   PreContentRecord,
   ContentRecord,
@@ -35,7 +36,6 @@ export const configurationFactory = Factory.define<Configuration>(
     projectDir: `report-GUD${sequence}`,
     configurationName: `configuration-GUD${sequence}`,
     configurationPath: `report/path/configuration-${sequence}`,
-    configurationRelPath: `report/path/configuration-${sequence}`,
   }),
 );
 
@@ -46,12 +46,14 @@ export const interpreterDefaultsFactory = Factory.define<InterpreterDefaults>(
       packageFile: "requirements.txt",
       packageManager: "pip",
       version: "3.11.0",
+      requiresPython: ">=3.11",
     },
     preferredRPath: "usr/bin/R",
     r: {
       packageFile: "renv.lock",
       packageManager: "renv",
       version: "4.4.0",
+      requiresR: ">= 4.4.0",
     },
   }),
 );
@@ -61,7 +63,6 @@ export const preContentRecordFactory = Factory.define<PreContentRecord>(
     $schema: "test-schema-url",
     serverType: ServerType.CONNECT,
     serverUrl: `https://connect-test-${sequence}/connect`,
-    saveName: `Report ${sequence}`,
     createdAt: new Date().toISOString(),
     dismissedAt: "",
     configurationName: `report-GUD${sequence}`,
@@ -78,8 +79,8 @@ export const preContentRecordFactory = Factory.define<PreContentRecord>(
 export const contentRecordFactory = Factory.define<ContentRecord>(
   ({ sequence }) => ({
     $schema: "test-schema-url",
-    id: `GUD${sequence}`,
-    bundleId: `XYZ${sequence}`,
+    id: ContentID(`GUD${sequence}`),
+    bundleId: BundleID(`XYZ${sequence}`),
     bundleUrl: `XYZ${sequence}`,
     dashboardUrl: `https://connect-test-${sequence}/connect`,
     directUrl: `https://connect-test-${sequence}/content/XYZ${sequence}`,
@@ -87,7 +88,6 @@ export const contentRecordFactory = Factory.define<ContentRecord>(
     files: [],
     serverType: ServerType.CONNECT,
     serverUrl: `https://connect-test-${sequence}/connect`,
-    saveName: `Report ${sequence}`,
     createdAt: new Date().toISOString(),
     dismissedAt: "",
     deployedAt: new Date().toISOString(),
@@ -107,19 +107,22 @@ export const contentRecordFactory = Factory.define<ContentRecord>(
       projectDir: "",
     },
     configurationPath: `report/path/configuration-${sequence}`,
-    configurationRelPath: `report/path/configuration-${sequence}`,
     connectCloud: { accountName: "" },
   }),
 );
 
 export const credentialFactory = Factory.define<Credential>(({ sequence }) => ({
-  guid: `44a468b8-09c7-4c6d-a7a3-8cf164ddbaf${sequence}`,
+  guid: GUID(`44a468b8-09c7-4c6d-a7a3-8cf164ddbaf${sequence}`),
   name: `Credential ${sequence}`,
   url: `https://connect.${sequence}.site.com/connect`,
   apiKey: `qwerty-${sequence}`,
+  snowflakeConnection: "",
   accountId: "",
   accountName: "",
   refreshToken: "",
   accessToken: "",
+  cloudEnvironment: "",
+  token: "",
+  privateKey: "",
   serverType: ServerType.CONNECT,
 }));

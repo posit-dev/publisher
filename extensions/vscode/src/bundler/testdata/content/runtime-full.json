@@ -1,0 +1,12 @@
+{
+  "name": "",
+  "title": "Runtime App",
+  "connection_timeout": 10,
+  "read_timeout": 20,
+  "init_timeout": 30,
+  "idle_timeout": 40,
+  "max_processes": 5,
+  "min_processes": 1,
+  "max_conns_per_process": 50,
+  "load_factor": 0.75
+}

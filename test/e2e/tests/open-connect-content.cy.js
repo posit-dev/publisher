@@ -1,6 +1,8 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-describe("Open Connect Content", () => {
+// Disabled: This test is flaky and uninformative.
+// Follow-up: https://github.com/posit-dev/publisher/issues/3688
+describe.skip("Open Connect Content", () => {
   before(() => {
     cy.initializeConnect();
   });

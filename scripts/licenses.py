@@ -2,22 +2,28 @@ import os
 import fnmatch
 import sys
 
+_repo_root = os.path.realpath(
+    os.environ.get(
+        "LICENSES_REPO_ROOT",
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
+)
+
+if not os.path.isdir(_repo_root):
+    print(f"ERROR: LICENSES_REPO_ROOT is not a valid directory: {_repo_root}", file=sys.stderr)
+    sys.exit(1)
+
+# npm workspaces hoist dependencies to the repo root's node_modules/, so a
+# single walk of that tree covers every workspace member's deps (including the
+# extension and its homeView webview). Sub-package node_modules dirs exist
+# but are empty or only hold build caches.
 search_dirs = [
-    "../vendor",
-    "../extensions/vscode/node_modules",
-    "../extensions/vscode/webviews/homeView/node_modules",
+    os.path.join(_repo_root, "node_modules"),
 ]
 
-# Validate required directories exist
-missing_dirs = []
-for dir_path in search_dirs:
-    if not os.path.exists(dir_path):
-        missing_dirs.append(dir_path)
-
-if missing_dirs:
-    print(f"ERROR: Required directories are missing: {', '.join(missing_dirs)}", file=sys.stderr)
-    print("Please ensure all dependencies are installed before generating licenses.", file=sys.stderr)
-    print("Run 'just build' and 'just package' to populate these directories.", file=sys.stderr)
+if not os.path.isdir(search_dirs[0]):
+    print(f"ERROR: Required directory is missing: {search_dirs[0]}", file=sys.stderr)
+    print("Run 'npm install' at the repo root before generating licenses.", file=sys.stderr)
     sys.exit(1)
 
 allowed_license_types = [
@@ -51,32 +57,20 @@ for base in search_dirs:
                 with open(licensePath, "r") as f:
                     licenses[name] = f.read()
 
-# Generate output
-output = ["# Licenses\n"]
-
 # Track non-allowed licenses
 forbidden_licenses = {}
 for name in sorted(licenses.keys()):
-    output.append(f"### {name}")
-    output.append("```")
-    output.append(licenses[name])
-    output.append("```")
-    output.append("")
-    
     # Check if the license is allowed
     license_text = licenses[name].lower()
-    
+
     # Check against allowed license types
     matched_patterns = []
     for allowed_type in allowed_license_types:
         if allowed_type.lower() in license_text:
             matched_patterns.append(allowed_type)
-    
+
     if not matched_patterns:
         forbidden_licenses[name] = ["not in allowed list"]
-
-# Always generate the output content, even if there are errors
-output_content = "\n".join(output)
 
 # Check for forbidden licenses
 if forbidden_licenses:
@@ -91,13 +85,4 @@ if forbidden_licenses:
     print("1. Replace the dependencies with allowed-license alternatives", file=sys.stderr)
     print("2. If this is a false positive, update allowed_license_types in scripts/licenses.py", file=sys.stderr)
     print("\nSee docs/license-compatibility.md for more information.", file=sys.stderr)
-    
-    # Still output the licenses to stdout, so the file isn't erased
-    # This way, if we're redirecting to a file, the content will still be there
-    print(output_content)
-    
-    # Then exit with error code
     sys.exit(1)
-
-# Output the licenses
-print(output_content)

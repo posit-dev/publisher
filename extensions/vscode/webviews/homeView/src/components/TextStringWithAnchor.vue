@@ -1,12 +1,12 @@
 <template>
-  <span v-if="activeOption" :class="$attrs.class">
+  <span v-if="activeOption">
     {{ messageParts[0] }}
     <a class="webview-link" role="button" @click="onClick()">
       {{ activeOption?.anchorStr }}
     </a>
     {{ messageParts[1] }}
   </span>
-  <span v-else :class="$attrs.class">
+  <span v-else>
     {{ message }}
   </span>
 </template>
