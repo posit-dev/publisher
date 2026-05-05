@@ -60,8 +60,9 @@ function readStart(pkg: unknown): string | undefined {
 
 function parseStartScript(start: string): string | undefined {
   const match = start.match(/\bnode\s+(.+)/);
-  if (!match) return undefined;
-  const args = match[1].trim().split(/\s+/);
+  const rest = match?.[1];
+  if (rest === undefined) return undefined;
+  const args = rest.trim().split(/\s+/);
   return args.find((a) => !a.startsWith("-") && hasValidExtension(a));
 }
 
