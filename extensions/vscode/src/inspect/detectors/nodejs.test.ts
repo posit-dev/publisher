@@ -164,16 +164,16 @@ describe("NodejsAppDetector", () => {
 
     test("falls through when start command uses nodemon", async () => {
       writePackageJson({ scripts: { start: "nodemon app.js" } });
-      writeFile("app.js", "");
+      // No fallback files present — should return [] because nodemon isn't
+      // a literal `node` invocation and there is nothing for the fallback to find.
       const configs = await detector.inferType(baseDir);
-      // No fallback files, no main — should return [] because nodemon isn't
-      // a literal `node` invocation.
       expect(configs).toEqual([]);
     });
 
     test("falls through when start command uses npx tsx", async () => {
       writePackageJson({ scripts: { start: "npx tsx app.ts" } });
-      writeFile("app.ts", "");
+      // No fallback files present — should return [] because npx tsx isn't
+      // a literal `node` invocation and there is nothing for the fallback to find.
       const configs = await detector.inferType(baseDir);
       expect(configs).toEqual([]);
     });
@@ -207,6 +207,85 @@ describe("NodejsAppDetector", () => {
       const configs = await detector.inferType(baseDir);
       expect(configs).toEqual([
         { type: ContentType.NODEJS, entrypoint: "server.js" },
+      ]);
+    });
+  });
+
+  describe("conventional file fallback", () => {
+    test("emits server.js when no main or scripts.start", async () => {
+      writePackageJson({});
+      writeFile("server.js", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([
+        { type: ContentType.NODEJS, entrypoint: "server.js" },
+      ]);
+    });
+
+    test("prefers server.js over app.js", async () => {
+      writePackageJson({});
+      writeFile("server.js", "");
+      writeFile("app.js", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs[0]?.entrypoint).toBe("server.js");
+    });
+
+    test("prefers app.js over index.js", async () => {
+      writePackageJson({});
+      writeFile("app.js", "");
+      writeFile("index.js", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs[0]?.entrypoint).toBe("app.js");
+    });
+
+    test("prefers index.js over .ts variants", async () => {
+      writePackageJson({});
+      writeFile("index.js", "");
+      writeFile("server.ts", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs[0]?.entrypoint).toBe("index.js");
+    });
+
+    test("prefers server.ts over app.ts", async () => {
+      writePackageJson({});
+      writeFile("server.ts", "");
+      writeFile("app.ts", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs[0]?.entrypoint).toBe("server.ts");
+    });
+
+    test("prefers app.ts over index.ts", async () => {
+      writePackageJson({});
+      writeFile("app.ts", "");
+      writeFile("index.ts", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs[0]?.entrypoint).toBe("app.ts");
+    });
+
+    test("emits index.ts when it is the only fallback present", async () => {
+      writePackageJson({});
+      writeFile("index.ts", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([
+        { type: ContentType.NODEJS, entrypoint: "index.ts" },
+      ]);
+    });
+
+    test("returns [] when package.json exists but no conventional file is present", async () => {
+      writePackageJson({});
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([]);
+    });
+
+    test("works when baseDir contains spaces", async () => {
+      fs.rmSync(baseDir, { recursive: true, force: true });
+      baseDir = fs.mkdtempSync(
+        path.join(os.tmpdir(), "nodejs detector with spaces "),
+      );
+      writePackageJson({});
+      writeFile("index.js", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([
+        { type: ContentType.NODEJS, entrypoint: "index.js" },
       ]);
     });
   });

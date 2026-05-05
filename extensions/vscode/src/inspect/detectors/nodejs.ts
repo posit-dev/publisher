@@ -14,6 +14,15 @@ const VALID_EXTENSIONS: ReadonlySet<string> = new Set([
   ".cts",
 ]);
 
+const FALLBACK_FILES: readonly string[] = [
+  "server.js",
+  "app.js",
+  "index.js",
+  "server.ts",
+  "app.ts",
+  "index.ts",
+];
+
 function hasValidExtension(filePath: string): boolean {
   return VALID_EXTENSIONS.has(path.extname(filePath));
 }
@@ -111,6 +120,13 @@ export class NodejsAppDetector implements ContentTypeDetector {
         if (resolved !== undefined) {
           return [makeConfig(baseDir, resolved)];
         }
+      }
+    }
+
+    for (const name of FALLBACK_FILES) {
+      const resolved = await resolveCandidate(baseDir, name);
+      if (resolved !== undefined) {
+        return [makeConfig(baseDir, resolved)];
       }
     }
 
