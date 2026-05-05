@@ -129,4 +129,85 @@ describe("NodejsAppDetector", () => {
       expect(configs).toEqual([]);
     });
   });
+
+  describe("package.json scripts.start", () => {
+    test("emits config for simple node <file> command", async () => {
+      writePackageJson({ scripts: { start: "node app.js" } });
+      writeFile("app.js", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([
+        { type: ContentType.NODEJS, entrypoint: "app.js" },
+      ]);
+    });
+
+    test("ignores flags between node and the file", async () => {
+      writePackageJson({
+        scripts: { start: "node --inspect=9229 -r dotenv/config app.js" },
+      });
+      writeFile("app.js", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([
+        { type: ContentType.NODEJS, entrypoint: "app.js" },
+      ]);
+    });
+
+    test("matches node even when env vars are prepended", async () => {
+      writePackageJson({
+        scripts: { start: "NODE_ENV=production node app.js" },
+      });
+      writeFile("app.js", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([
+        { type: ContentType.NODEJS, entrypoint: "app.js" },
+      ]);
+    });
+
+    test("falls through when start command uses nodemon", async () => {
+      writePackageJson({ scripts: { start: "nodemon app.js" } });
+      writeFile("app.js", "");
+      const configs = await detector.inferType(baseDir);
+      // No fallback files, no main — should return [] because nodemon isn't
+      // a literal `node` invocation.
+      expect(configs).toEqual([]);
+    });
+
+    test("falls through when start command uses npx tsx", async () => {
+      writePackageJson({ scripts: { start: "npx tsx app.ts" } });
+      writeFile("app.ts", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([]);
+    });
+
+    test("falls through when start is just `node` with no file", async () => {
+      writePackageJson({ scripts: { start: "node" } });
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([]);
+    });
+
+    test("falls through when first arg has unsupported extension", async () => {
+      writePackageJson({ scripts: { start: "node app.txt" } });
+      writeFile("app.txt", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([]);
+    });
+
+    test("ignores scripts.start when referenced file does not exist", async () => {
+      writePackageJson({ scripts: { start: "node missing.js" } });
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([]);
+    });
+
+    test("prefers main over scripts.start when both resolve", async () => {
+      writePackageJson({
+        main: "server.js",
+        scripts: { start: "node other.js" },
+      });
+      writeFile("server.js", "");
+      writeFile("other.js", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([
+        { type: ContentType.NODEJS, entrypoint: "server.js" },
+      ]);
+    });
+  });
 });

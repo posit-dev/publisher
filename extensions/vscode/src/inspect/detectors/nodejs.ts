@@ -40,6 +40,22 @@ function readMain(pkg: unknown): string | undefined {
   return main;
 }
 
+function readStart(pkg: unknown): string | undefined {
+  if (!isRecord(pkg)) return undefined;
+  const scripts = pkg.scripts;
+  if (!isRecord(scripts)) return undefined;
+  const start = scripts.start;
+  if (typeof start !== "string" || start.length === 0) return undefined;
+  return start;
+}
+
+function parseStartScript(start: string): string | undefined {
+  const match = start.match(/\bnode\s+(.+)/);
+  if (!match) return undefined;
+  const args = match[1].trim().split(/\s+/);
+  return args.find((a) => !a.startsWith("-") && hasValidExtension(a));
+}
+
 async function readPackageJson(baseDir: string): Promise<unknown | undefined> {
   const text = await readFileText(path.join(baseDir, "package.json"));
   if (text === null) return undefined;
@@ -84,6 +100,17 @@ export class NodejsAppDetector implements ContentTypeDetector {
       const resolved = await resolveCandidate(baseDir, main);
       if (resolved !== undefined) {
         return [makeConfig(baseDir, resolved)];
+      }
+    }
+
+    const start = readStart(pkg);
+    if (start !== undefined) {
+      const candidate = parseStartScript(start);
+      if (candidate !== undefined) {
+        const resolved = await resolveCandidate(baseDir, candidate);
+        if (resolved !== undefined) {
+          return [makeConfig(baseDir, resolved)];
+        }
       }
     }
 
