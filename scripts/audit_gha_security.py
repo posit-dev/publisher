@@ -82,7 +82,7 @@ class Output:
     YELLOW = "\033[1;33m"
     NC = "\033[0m"
 
-    def _color(self, color: str, text: str) -> str:
+    def color(self, color: str, text: str) -> str:
         if self.use_colors:
             return f"{color}{text}{self.NC}"
         return text
@@ -97,7 +97,7 @@ class Output:
             print(f"::error{location}::{message}")
         else:
             location = self._format_location(file, line)
-            print(f"{self._color(self.RED, '✗ ERROR:')} {location}{message}")
+            print(f"{self.color(self.RED, '✗ ERROR:')} {location}{message}")
 
     def warning(self, message: str, file: Optional[str] = None, line: Optional[int] = None) -> None:
         if self.github_actions:
@@ -109,7 +109,7 @@ class Output:
             print(f"::warning{location}::{message}")
         else:
             location = self._format_location(file, line)
-            print(f"{self._color(self.YELLOW, '⚠ WARNING:')} {location}{message}")
+            print(f"{self.color(self.YELLOW, '⚠ WARNING:')} {location}{message}")
 
     def _format_location(self, file: Optional[str], line: Optional[int]) -> str:
         """Format file:line prefix for local output."""
@@ -123,7 +123,7 @@ class Output:
         if self.github_actions:
             print(f"::notice::{message}")
         else:
-            print(f"{self._color(self.GREEN, '✓')} {message}")
+            print(f"{self.color(self.GREEN, '✓')} {message}")
 
     def info(self, message: str) -> None:
         print(f"  {message}")
@@ -514,8 +514,8 @@ def check_dangerous_patterns(
             stripped = line.strip()
             indent = len(line) - len(line.lstrip())
 
-            # Detect start of run: block (multiline with |)
-            if re.match(r"(-\s+)?run:\s*\|", stripped):
+            # Detect start of run: block (multiline with |, |+, or |-)
+            if re.match(r"(-\s+)?run:\s*\|[-+]?", stripped):
                 in_run_block = True
                 run_indent = indent
                 continue
@@ -727,8 +727,8 @@ def main() -> int:
             print(f"  {fname}:")
             for f in findings_by_file[fname]:
                 level_str = (
-                    out._color(Output.RED, "ERROR") if f.level == "error"
-                    else out._color(Output.YELLOW, "WARN")
+                    out.color(Output.RED, "ERROR") if f.level == "error"
+                    else out.color(Output.YELLOW, "WARN")
                 )
                 loc = f":{f.line}" if f.line else ""
                 print(f"    [{level_str}] {f.message} ({f.check}{loc})")
