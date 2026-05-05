@@ -73,4 +73,51 @@ describe("NodejsAppDetector", () => {
       }
     });
   });
+
+  describe("package.json main field", () => {
+    test("emits config when main resolves to an existing file", async () => {
+      writePackageJson({ main: "server.js" });
+      writeFile("server.js", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([
+        { type: ContentType.NODEJS, entrypoint: "server.js" },
+      ]);
+    });
+
+    test("preserves subdir paths from main", async () => {
+      writePackageJson({ main: "src/index.js" });
+      writeFile("src/index.js", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([
+        { type: ContentType.NODEJS, entrypoint: "src/index.js" },
+      ]);
+    });
+
+    test("normalizes ./ prefix in main", async () => {
+      writePackageJson({ main: "./dist/server.js" });
+      writeFile("dist/server.js", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([
+        { type: ContentType.NODEJS, entrypoint: "dist/server.js" },
+      ]);
+    });
+
+    test("ignores main when the referenced file does not exist", async () => {
+      writePackageJson({ main: "missing.js" });
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([]);
+    });
+
+    test("ignores empty main string", async () => {
+      writePackageJson({ main: "" });
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([]);
+    });
+
+    test("ignores non-string main", async () => {
+      writePackageJson({ main: 42 });
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([]);
+    });
+  });
 });

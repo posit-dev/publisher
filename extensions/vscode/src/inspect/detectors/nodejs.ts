@@ -2,7 +2,7 @@
 
 import * as path from "path";
 import { ContentType } from "src/api/types/configurations";
-import { fileExistsAt } from "src/interpreters/fsUtils";
+import { fileExistsAt, readFileText } from "src/interpreters/fsUtils";
 import { ContentTypeDetector, PartialConfig } from "../types";
 
 const VALID_EXTENSIONS: ReadonlySet<string> = new Set([
@@ -29,6 +29,35 @@ function makeConfig(baseDir: string, abs: string): PartialConfig {
   };
 }
 
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
+
+function readMain(pkg: unknown): string | undefined {
+  if (!isRecord(pkg)) return undefined;
+  const main = pkg.main;
+  if (typeof main !== "string" || main.length === 0) return undefined;
+  return main;
+}
+
+async function readPackageJson(baseDir: string): Promise<unknown | undefined> {
+  const text = await readFileText(path.join(baseDir, "package.json"));
+  if (text === null) return undefined;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}
+
+async function resolveCandidate(
+  baseDir: string,
+  candidate: string,
+): Promise<string | undefined> {
+  const abs = path.resolve(baseDir, candidate);
+  return (await fileExistsAt(abs)) ? abs : undefined;
+}
+
 export class NodejsAppDetector implements ContentTypeDetector {
   async inferType(
     baseDir: string,
@@ -43,6 +72,19 @@ export class NodejsAppDetector implements ContentTypeDetector {
         return [];
       }
       return [makeConfig(baseDir, resolved)];
+    }
+
+    const pkg = await readPackageJson(baseDir);
+    if (pkg === undefined) {
+      return [];
+    }
+
+    const main = readMain(pkg);
+    if (main !== undefined) {
+      const resolved = await resolveCandidate(baseDir, main);
+      if (resolved !== undefined) {
+        return [makeConfig(baseDir, resolved)];
+      }
     }
 
     return [];
