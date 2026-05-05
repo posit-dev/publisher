@@ -48,7 +48,8 @@ export interface MockConnectServerOptions {
   host?: string;
 }
 
-const FIXTURES_DIR = resolve(
+/** Absolute path to the connect-responses fixtures directory. */
+export const FIXTURES_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
   "..",
   "fixtures",

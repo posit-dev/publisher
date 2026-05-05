@@ -1,5 +1,6 @@
 {
   "name": "@posit-dev/mock-connect",
+  "description": "Mock Connect server for testing. Consumers must use a TypeScript-aware runtime (tsx, vitest, etc.).",
   "private": true,
   "type": "module",
   "exports": {

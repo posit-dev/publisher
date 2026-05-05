@@ -13,6 +13,11 @@
 import { MockConnectServer } from "./mock-connect-server.js";
 
 const port = parseInt(process.env.MOCK_CONNECT_PORT ?? "3939", 10);
+if (isNaN(port)) {
+  throw new Error(
+    `Invalid MOCK_CONNECT_PORT: "${process.env.MOCK_CONNECT_PORT}" is not a number`,
+  );
+}
 const host = process.env.MOCK_CONNECT_HOST ?? "0.0.0.0";
 const server = new MockConnectServer();
 
