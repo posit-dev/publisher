@@ -661,6 +661,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@posit-dev/mock-connect": "*",
     "@types/js-yaml": "^4.0.9",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mocha": "^10.0.2",
