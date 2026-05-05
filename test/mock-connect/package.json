@@ -1,0 +1,16 @@
+{
+  "name": "@posit-dev/mock-connect",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/mock-connect-server.ts"
+  },
+  "scripts": {
+    "serve": "tsx src/serve.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^6.0.3"
+  }
+}

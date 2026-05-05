@@ -1,6 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { MockConnectServer } from "./mock-connect-server";
+import { MockConnectServer } from "@posit-dev/mock-connect";
 
 let mockServer: MockConnectServer | null = null;
 

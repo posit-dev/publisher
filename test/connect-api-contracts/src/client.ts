@@ -1,6 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import type { CapturedRequest } from "./mock-connect-server";
+import type { CapturedRequest } from "@posit-dev/mock-connect";
 
 export const Method = {
   TestAuthentication: "TestAuthentication",

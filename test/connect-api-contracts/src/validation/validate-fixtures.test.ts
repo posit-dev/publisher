@@ -16,7 +16,15 @@ import {
 } from "./swagger-helpers.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const FIXTURES_DIR = join(__dirname, "..", "fixtures", "connect-responses");
+const FIXTURES_DIR = join(
+  __dirname,
+  "..",
+  "..",
+  "..",
+  "mock-connect",
+  "fixtures",
+  "connect-responses",
+);
 
 let spec: SwaggerSpec;
 

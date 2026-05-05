@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@posit-dev/connect-api": "*",
+    "@posit-dev/mock-connect": "*",
     "axios": "^1.16.0"
   },
   "devDependencies": {

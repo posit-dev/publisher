@@ -14,7 +14,7 @@ import type {
   MethodName,
 } from "../client";
 import { Method } from "../client";
-import type { CapturedRequest } from "../mock-connect-server";
+import type { CapturedRequest } from "@posit-dev/mock-connect";
 
 /**
  * Thin adapter that wraps the production ConnectAPI for contract testing.

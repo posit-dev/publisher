@@ -6,6 +6,7 @@
     "packages/*",
     "extensions/vscode",
     "extensions/vscode/webviews/homeView",
+    "test/mock-connect",
     "test/connect-api-contracts",
     "test/extension-contract-tests"
   ],
