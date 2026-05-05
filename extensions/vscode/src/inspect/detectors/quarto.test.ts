@@ -348,6 +348,46 @@ describe("QuartoDetector", () => {
     expect(configs[0]?.files).toContain("/doc.qmd");
   });
 
+  test("fallback when quarto binary missing: .qmd with R chunks detects knitr engine (#3993)", async () => {
+    setupGlobDir(["report.qmd"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue(
+      '---\ntitle: "Report"\n---\n\n```{r}\nsource("helpers.R")\n```\n',
+    );
+
+    // quarto inspect fails (not installed)
+    mockExecFile.mockRejectedValue(
+      Object.assign(new Error("spawn quarto ENOENT"), { code: "ENOENT" }),
+    );
+
+    const configs = await detector.inferType("/project", "report.qmd");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.type).toBe(ContentType.QUARTO_STATIC);
+    expect(configs[0]?.r).toEqual({});
+    expect(configs[0]?.quarto).toEqual({
+      version: "1.7.34",
+      engines: ["knitr"],
+    });
+  });
+
+  test("fallback when quarto binary missing: .qmd with Python chunks detects jupyter engine", async () => {
+    setupGlobDir(["analysis.qmd"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue("```{python}\nimport pandas as pd\n```\n");
+
+    mockExecFile.mockRejectedValue(
+      Object.assign(new Error("spawn quarto ENOENT"), { code: "ENOENT" }),
+    );
+
+    const configs = await detector.inferType("/project", "analysis.qmd");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.python).toEqual({});
+    expect(configs[0]?.quarto).toEqual({
+      version: "1.7.34",
+      engines: ["jupyter"],
+    });
+  });
+
   test("fallback when quarto binary missing: .ipynb", async () => {
     setupGlobDir(["notebook.ipynb"]);
     mockAccess.mockRejectedValue(new Error("ENOENT"));
@@ -384,6 +424,27 @@ describe("QuartoDetector", () => {
       version: "1.7.34",
       engines: ["knitr"],
     });
+  });
+
+  test("directory inspection with empty engines falls back to file scanning (#3993)", async () => {
+    setupGlobDir([]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue('```{r}\nsource("script.R")\n```\n');
+
+    // quarto inspect returns empty engines (simulating older quarto or edge case)
+    const inspectJson = makeInspectOutput({
+      engines: [],
+      files: { input: ["/project/report.qmd"], configResources: [] },
+      formats: {
+        html: { metadata: { title: "Report" }, pandoc: {} },
+      },
+    });
+    mockExecFile.mockResolvedValue({ stdout: inspectJson });
+
+    const configs = await detector.inferType("/project", "_quarto.yml");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.r).toEqual({});
+    expect(configs[0]?.quarto?.engines).toContain("knitr");
   });
 
   test("skips non-quarto entrypoints", async () => {
