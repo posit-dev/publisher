@@ -1,5 +1,8 @@
 vendor
 
+# Claude Code local state (settings, auto-memory, etc.)
+.claude
+
 # VSCode Extension
 extensions/vscode/out
 test/sample-content

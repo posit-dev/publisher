@@ -2,7 +2,6 @@
 
 import { beforeEach } from "vitest";
 import type { ConnectContractClient } from "./client";
-import { GoPublisherClient } from "./clients/go-publisher-client";
 import { TypeScriptDirectClient } from "./clients/ts-direct-client";
 
 export const TEST_API_KEY = "test-api-key-12345";
@@ -15,20 +14,8 @@ let _client: ConnectContractClient | null = null;
 export function getClient(): ConnectContractClient {
   if (_client) return _client;
 
-  const clientType = process.env.__CLIENT_TYPE ?? "go";
-  if (clientType === "go") {
-    const apiBase = process.env.API_BASE;
-    if (!apiBase) {
-      throw new Error(
-        "API_BASE not set. Is the global setup running correctly?",
-      );
-    }
-    const connectUrl = getMockConnectUrl();
-    _client = new GoPublisherClient(apiBase, connectUrl, TEST_API_KEY);
-  } else {
-    const connectUrl = getMockConnectUrl();
-    _client = new TypeScriptDirectClient(connectUrl, TEST_API_KEY);
-  }
+  const connectUrl = getMockConnectUrl();
+  _client = new TypeScriptDirectClient(connectUrl, TEST_API_KEY);
   return _client;
 }
 

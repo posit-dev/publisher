@@ -10,8 +10,5 @@ runs:
       run: cargo install just
     - uses: extractions/setup-just@v3
       if: runner.os != 'Windows' || runner.arch != 'ARM64'
-    - uses: actions/setup-go@v5
-      with:
-        go-version-file: go.mod
     - if: ${{ runner.os == 'Linux' }}
       uses: t1m0thyj/unlock-keyring@v1

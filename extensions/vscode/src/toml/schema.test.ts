@@ -1,9 +1,17 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import fs from "fs";
+import path from "path";
+
 import { describe, expect, it } from "vitest";
 import Ajv2020 from "ajv/dist/2020";
 import addFormats from "ajv-formats";
+import { parse as parseTOML } from "smol-toml";
+
 import schema from "./schemas/posit-publishing-schema-v3.json";
+import recordSchema from "./schemas/posit-publishing-record-schema-v3.json";
+import draftSchema from "./schemas/draft/posit-publishing-schema-v3.json";
+import draftRecordSchema from "./schemas/draft/posit-publishing-record-schema-v3.json";
 
 const ajv = new Ajv2020({ strict: false, allErrors: true });
 addFormats(ajv);
@@ -250,4 +258,66 @@ describe("schema rejects disallowed properties for Connect Cloud", () => {
     data.connect = { kubernetes: {} };
     expectInvalid(data);
   });
+});
+
+describe("example TOML files validate against their schemas", () => {
+  const schemasDir = path.resolve(__dirname, "schemas");
+
+  function loadTOML(relativePath: string): Record<string, unknown> {
+    const content = fs.readFileSync(
+      path.join(schemasDir, relativePath),
+      "utf-8",
+    );
+    return parseTOML(content) as Record<string, unknown>;
+  }
+
+  function compileWithRef(
+    mainSchema: Record<string, unknown>,
+    refSchema: Record<string, unknown>,
+  ) {
+    const localAjv = new Ajv2020({ strict: false, allErrors: true });
+    addFormats(localAjv);
+    localAjv.addSchema(refSchema);
+    return localAjv.compile(mainSchema);
+  }
+
+  // Release config schema
+  const validateConfig = validate;
+  // Release record schema (references config schema via $ref)
+  const validateRecord = compileWithRef(recordSchema, schema);
+  // Draft config schema
+  const validateDraftConfig = (() => {
+    const draftAjv = new Ajv2020({ strict: false, allErrors: true });
+    addFormats(draftAjv);
+    return draftAjv.compile(draftSchema);
+  })();
+  // Draft record schema (references draft config schema via $ref)
+  const validateDraftRecord = compileWithRef(draftRecordSchema, draftSchema);
+
+  const cases: { file: string; validator: ReturnType<typeof ajv.compile> }[] = [
+    { file: "example-config.toml", validator: validateConfig },
+    { file: "example-config-cloud.toml", validator: validateConfig },
+    { file: "example-record.toml", validator: validateRecord },
+    { file: "example-record-cloud.toml", validator: validateRecord },
+    {
+      file: "draft/example-config.toml",
+      validator: validateDraftConfig,
+    },
+    {
+      file: "draft/example-config-cloud.toml",
+      validator: validateDraftConfig,
+    },
+    { file: "draft/example-record.toml", validator: validateDraftRecord },
+  ];
+
+  for (const { file, validator } of cases) {
+    it(file, () => {
+      const data = loadTOML(file);
+      const valid = validator(data);
+      expect(
+        valid,
+        `${file} failed validation: ${JSON.stringify(validator.errors, null, 2)}`,
+      ).toBe(true);
+    });
+  }
 });

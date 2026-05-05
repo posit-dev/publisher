@@ -41,9 +41,9 @@ jobs:
 
       - name: Generate token for GitHub App
         id: generate-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
-          app-id: 1129585
+          client-id: 1129585
           private-key: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
           permission-actions: read
           permission-contents: write
@@ -72,7 +72,7 @@ jobs:
           aws-region: us-east-2
 
       - name: Run Claude Code Action
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@v1.0.92
         with:
           use_bedrock: true
           github_token: ${{ steps.generate-token.outputs.token }}

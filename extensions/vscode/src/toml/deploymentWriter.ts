@@ -3,6 +3,7 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import { stringify as stringifyTOML } from "smol-toml";
+import { ContentID } from "@posit-dev/connect-api";
 
 import {
   ContentRecord,
@@ -15,7 +16,12 @@ import { getConfigPath } from "./configDiscovery";
 import { convertKeysToSnakeCase } from "./convertKeys";
 import { getDeploymentPath } from "./deploymentDiscovery";
 import { loadDeploymentFromFile } from "./deploymentLoader";
-import { stripEmpty, isRecord, relativeProjectDir } from "./tomlHelpers";
+import {
+  stripEmpty,
+  isRecord,
+  relativeProjectDir,
+  expandInlineArrays,
+} from "./tomlHelpers";
 import { getDashboardUrl, getDirectUrl, getLogsUrl } from "./urlHelpers";
 
 const DEPLOYMENT_SCHEMA_URL =
@@ -39,7 +45,6 @@ export type CreateDeploymentOptions = {
 /**
  * Create a new deployment record TOML file.
  *
- * Matches the behavior of Go's PostDeploymentsHandlerFunc:
  * - Deployment must not already exist (throws if it does)
  * - If configName is provided, the config file must exist
  * - Writes the autogen header + TOML content
@@ -76,7 +81,7 @@ export async function createDeploymentRecord(
     }
   }
 
-  // Build deployment record matching Go's deployment.New() + handler logic
+  // Build deployment record
   const record: Record<string, unknown> = {
     $schema: DEPLOYMENT_SCHEMA_URL,
     serverType: opts.serverType,
@@ -107,7 +112,8 @@ export async function createDeploymentRecord(
   }
   stripEmpty(snakeObj);
 
-  const content = AUTOGEN_HEADER + stringifyTOML(snakeObj) + "\n";
+  const content =
+    AUTOGEN_HEADER + expandInlineArrays(stringifyTOML(snakeObj)) + "\n";
 
   await fs.mkdir(path.dirname(deploymentPath), { recursive: true });
   await fs.writeFile(deploymentPath, content, "utf-8");
@@ -127,13 +133,12 @@ export async function createDeploymentRecord(
 
 export type PatchDeploymentOptions = {
   configName?: string;
-  id?: string;
+  id?: ContentID;
 };
 
 /**
  * Patch an existing deployment record TOML file.
  *
- * Matches the behavior of Go's PatchDeploymentHandlerFunc:
  * - Deployment must exist
  * - If configName is provided, the config file must exist
  * - If id is provided, recomputes dashboard/direct/logs URLs
@@ -187,13 +192,21 @@ export async function patchDeploymentRecord(
   // Re-add configurationName as a plain field (not from Configuration type)
   toWrite.configurationName = existing.configurationName;
 
+  // Remove non-TOML fields from nested configuration
+  if (isRecord(toWrite.configuration)) {
+    delete toWrite.configuration.comments;
+    delete toWrite.configuration.alternatives;
+    delete toWrite.configuration.entrypointObjectRef;
+  }
+
   const snakeObj = convertKeysToSnakeCase(toWrite);
   if (!isRecord(snakeObj)) {
     throw new Error("unexpected: snake_case conversion did not return object");
   }
   stripEmpty(snakeObj);
 
-  const content = AUTOGEN_HEADER + stringifyTOML(snakeObj) + "\n";
+  const content =
+    AUTOGEN_HEADER + expandInlineArrays(stringifyTOML(snakeObj)) + "\n";
   await fs.writeFile(deploymentPath, content, "utf-8");
 
   // Re-load to return the canonical representation

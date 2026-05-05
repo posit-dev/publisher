@@ -1,49 +1,65 @@
 # Project Overview
 
-Posit Publisher is a VSCode/Positron extension that enables deploying Python and R projects to Posit Connect. The project consists of:
+Posit Publisher is a VSCode/Positron extension that enables deploying Python and R projects to Posit Connect. It is a pure TypeScript project — all functionality (bundling, TOML handling, content inspection, interpreter detection, publishing to Connect and Connect Cloud, credential storage, Snowflake discovery) runs directly in the extension.
 
-- **Go backend** (`cmd/publisher/`, `internal/`) - API server that handles deployments, configuration, and Connect server communication
-- **VSCode extension** (`extensions/vscode/`) - TypeScript extension providing the UI
-- **Webviews** (`extensions/vscode/webviews/homeView/`) - Vue 3 UI components for the extension sidebar
+## Repository Layout
+
+- `extensions/vscode/` — The VSCode extension itself. Contains the TypeScript source (`src/`), Vue webview (`webviews/homeView/`), and extension-specific build tooling.
+- `packages/connect-api/` — Shared npm package: TypeScript client for the Posit Connect REST API (axios-based). Consumed by the extension for standard Connect publishing.
+- `packages/connect-cloud-api/` — Shared npm package: TypeScript client for Connect Cloud with OAuth authentication. Consumed by the extension for Connect Cloud device auth flows.
+- `test/` — Integration test suites:
+  - `test/e2e/` — Cypress-driven end-to-end tests (require Docker).
+  - `test/extension-contract-tests/` — Vitest tests validating the extension's use of VSCode/Positron APIs against mocks.
+  - `test/connect-api-contracts/` — Contract tests for the Connect API client.
+  - `test/sample-content/` — Sample projects used by tests and manual debugging.
+- `docs/` — User-facing documentation.
+- `scripts/` — Repo-level Python scripts (license checker, release prep, etc.).
 
 # Build Commands
 
-The project uses [Just](https://github.com/casey/just) as the build tool. Run `just -l` to see all available commands.
+The project uses [Just](https://github.com/casey/just) as the build tool. Run `just -l` to see all available recipes.
 
 ```bash
-# Full build (clean, build Go binary, package VSCode extension)
+# Default recipe — builds and packages the VSCode extension.
 just
 
-# Build Go binary only
-just build
+# Run a recipe in extensions/vscode/ (e.g., lint, test, package).
+just vscode <target>
 
-# Run Go unit tests (excludes functional tests)
-just test
-
-# Run all tests including functional tests
-just test ./...
-
-# Run a single Go test
-go test -run TestName ./internal/package/...
-
-# Lint Go code
-just lint
-
-# View test coverage in browser
-just cover
-
-# Format all code
+# Format all code (Prettier, etc.).
 just format
+
+# Check formatting without writing.
+just check-format
+
+# Run extension contract tests (validates extension uses of VSCode/Positron APIs).
+just test-extension-contracts
+
+# Run Connect API contract tests.
+just test-connect-contracts
+
+# Run Python script tests (license checker, prepare-release, etc.).
+just test-scripts
+
+# Validate Connect API fixtures against the public Swagger spec.
+just validate-fixtures
+
+# Print pre-release status based on the version.
+just pre-release
+
+# Print the version.
+just version
 ```
 
 ## VSCode Extension Development
 
+From `extensions/vscode/`:
+
 ```bash
-# From extensions/vscode/ directory:
 just                    # Clean, configure, and package
 just deps               # Install npm dependencies
 just lint               # Run ESLint
-just test               # Run extension tests (Mocha + Vitest)
+just test               # Run extension tests (Mocha integration + Vitest unit)
 just package            # Package .vsix file
 
 # Rebuild webviews after changes
@@ -52,8 +68,8 @@ npm run build --prefix webviews/homeView
 
 To run the extension in development:
 
-1. Open `extensions/vscode/` as workspace in VSCode
-2. Run "Run Extension" debug configuration (F5)
+1. Open `extensions/vscode/` as workspace in VSCode.
+2. Run the "Run Extension" debug configuration (F5).
 
 ## E2E Tests
 
@@ -63,76 +79,37 @@ E2E tests use Cypress and require Docker. From `test/e2e/`:
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 just build-images       # Build Docker images (first time)
-just dev                # Build publisher + run Cypress interactively
+just dev                # Run Cypress interactively
 just stop               # Stop Docker containers
 ```
-
-# Architecture
-
-## Go Backend (`internal/`)
-
-Key packages:
-
-- `accounts/` - Server account/credential management
-- `bundles/` - Deployment bundle creation and manifest generation
-- `clients/` - HTTP clients for Connect API communication
-- `config/` - Configuration file parsing (`.posit/publish/*.toml`)
-- `credentials/` - Credential storage (keyring or file-based)
-- `deployment/` - Deployment record management (`.posit/publish/deployments/`)
-- `events/` - Server-Sent Events for real-time UI updates
-- `inspect/` - Project inspection (detect Python/R/Quarto content)
-- `interpreters/` - Python/R interpreter detection and version management
-- `publish/` - Core publishing logic to Connect servers
-- `schema/` - JSON schemas for configuration validation
-
-The CLI entry point (`cmd/publisher/main.go`) uses [Kong](https://github.com/alecthomas/kong) for command parsing. The `ui` command starts an HTTP API server that the VSCode extension communicates with.
-
-## VSCode Extension (`extensions/vscode/src/`)
-
-The extension spawns the Go binary as a subprocess and communicates via HTTP API. Key areas:
-
-- Views and webviews for the sidebar UI
-- File watchers for configuration changes
-- Authentication provider for Connect credentials
-
-## Configuration Files
-
-User projects contain:
-
-- `.posit/publish/*.toml` - Deployment configurations (schema: `posit-publishing-schema-v3.json`)
-- `.posit/publish/deployments/*.toml` - Deployment records tracking where content was deployed
 
 # Additional Documentation
 
 Subdirectories contain more detailed CLAUDE.md files:
 
-- `extensions/vscode/CLAUDE.md` - VSCode extension development
-- `extensions/vscode/webviews/homeView/CLAUDE.md` - Vue webview development
+- `extensions/vscode/CLAUDE.md` — VSCode extension development
+- `extensions/vscode/webviews/homeView/CLAUDE.md` — Vue webview development
 
 # Testing Conventions
 
-- Go tests use [Testify](https://github.com/stretchr/testify) for assertions and mocking
-- Tests with external dependencies are skipped when using `-short` flag (e.g., `go test -short ./...`)
-- VSCode extension uses Mocha for integration tests, Vitest for unit tests
-- Mock files follow `*_mock.go` or `mock_*.go` naming
+- The VSCode extension uses Mocha for integration tests (`src/test/`) and Vitest for unit tests (`src/**/*.test.ts`).
+- TypeScript packages (`packages/`) use Vitest.
+- E2E tests use Cypress (`test/e2e/`).
+- Python script tests use `pytest` (`scripts/`).
 
 # Updating Dependencies
-
-## Go dependencies
-
-```bash
-go get <dependency>@<version>
-go mod vendor
-# Commit all vendor changes
-```
 
 ## NPM dependencies
 
 Handled via Dependabot PRs or manual updates. Install hooks before committing:
 
 ```bash
+# Installs every workspace (extension, homeView webview, shared packages, TS tests).
 npm install
-npm install --prefix="test/e2e"
+
+# e2e tests are not in the workspace because of their Cypress install weight and
+# postinstall hook — install separately when needed:
+npm install --prefix=test/e2e
 ```
 
 # Git Workflow
@@ -160,9 +137,9 @@ When adding entries to CHANGELOG.md:
 
 # Schema Updates
 
-Schemas in `internal/schema/schemas/`:
+Schemas live at `extensions/vscode/src/toml/schemas/`:
 
-- `posit-publishing-schema-v3.json` - Configuration schema
-- `posit-publishing-record-schema-v3.json` - Deployment record schema
+- `posit-publishing-schema-v3.json` — Configuration schema
+- `posit-publishing-record-schema-v3.json` — Deployment record schema
 
 Non-breaking changes don't require version bumps. Update the schema file, corresponding example file, and verify unit tests pass.

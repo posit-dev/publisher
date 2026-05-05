@@ -6,12 +6,7 @@ on:
 permissions:
   contents: read
 jobs:
-  agent:
-    uses: ./.github/workflows/agent.yaml
-  build:
-    uses: ./.github/workflows/build.yaml
   package:
-    needs: build
     uses: ./.github/workflows/package.yaml
   e2e:
     needs: [package]
@@ -35,20 +30,12 @@ jobs:
   # Slack notification on failure
   slack-notification:
     needs:
-      [
-        agent,
-        build,
-        package,
-        e2e,
-        vscode,
-        extension-contract-tests,
-        connect-contract-tests,
-      ]
+      [package, e2e, vscode, extension-contract-tests, connect-contract-tests]
     if: failure()
     runs-on: ubuntu-latest
     steps:
       - name: Notify Slack of nightly test failure
-        uses: slackapi/slack-github-action@v2.1.1
+        uses: slackapi/slack-github-action@v3.0.3
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK }}
           webhook-type: incoming-webhook
@@ -63,21 +50,13 @@ jobs:
   # Slack notification when nightly tests recover from failure
   slack-notification-resolved:
     needs:
-      [
-        agent,
-        build,
-        package,
-        e2e,
-        vscode,
-        extension-contract-tests,
-        connect-contract-tests,
-      ]
+      [package, e2e, vscode, extension-contract-tests, connect-contract-tests]
     if: success()
     runs-on: ubuntu-latest
     steps:
       - name: Check if previous run failed
         id: check-previous
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const runs = await github.rest.actions.listWorkflowRuns({
@@ -98,7 +77,7 @@ jobs:
           result-encoding: string
       - name: Notify Slack of nightly test recovery
         if: steps.check-previous.outputs.result == 'true'
-        uses: slackapi/slack-github-action@v2.1.1
+        uses: slackapi/slack-github-action@v3.0.3
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK }}
           webhook-type: incoming-webhook

@@ -52,8 +52,6 @@ export async function addSecret(
  *
  * If the secret is not present, this is a no-op.
  *
- * Matches Go's `Config.RemoveSecret` behavior.
- *
  * @param configName - Name of the configuration (without .toml extension)
  * @param secretName - The secret name to remove
  * @param projectDir - Relative project directory (e.g., "." or "subdir")

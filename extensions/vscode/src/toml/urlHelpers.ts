@@ -1,6 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-// Connect URL helpers. Ports Go's util.GetDashboardURL, GetLogsURL, GetDirectURL.
+// Connect URL helpers.
 
 export function getDashboardUrl(serverUrl: string, contentId: string): string {
   return `${serverUrl}/connect/#/apps/${contentId}`;

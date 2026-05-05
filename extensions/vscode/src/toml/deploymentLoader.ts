@@ -98,7 +98,7 @@ export async function loadDeploymentFromFile(
   // Convert keys to camelCase
   const converted = convertKeysToCamelCase(parsed) as Record<string, unknown>;
 
-  // Apply defaults matching Go's PopulateDefaults()
+  // Apply defaults
   if (
     !converted.logsUrl &&
     typeof converted.id === "string" &&

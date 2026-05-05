@@ -32,12 +32,12 @@
         }"
       />
       <CodeCheckbox
-        :checked="checked"
+        :state="state"
         :disabled="disabled"
         :disable-opacity="disableOpacity"
         variant="has-text-click"
         class="tree-item-checkbox"
-        @changed="checked ? $emit('uncheck') : $emit('check')"
+        @toggle="state === 'checked' ? $emit('uncheck') : $emit('check')"
         @text-click="handleTitleClick"
       >
         <span class="tree-item-title">{{ title }}</span>
@@ -63,7 +63,7 @@
 import { computed } from "vue";
 
 import ActionToolbar, { ActionButton } from "src/components/ActionToolbar.vue";
-import CodeCheckbox from "src/components/CodeCheckbox.vue";
+import CodeCheckbox, { type CheckState } from "src/components/CodeCheckbox.vue";
 
 export type TreeItemStyle = "emphasized" | "default" | "deemphasized";
 
@@ -71,7 +71,7 @@ const expanded = defineModel("expanded", { required: false, default: false });
 
 interface Props {
   title: string;
-  checked: boolean;
+  state: CheckState;
   disabled?: boolean;
   listStyle?: TreeItemStyle;
   description?: string;

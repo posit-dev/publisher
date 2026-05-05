@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "internal/schema/schemas/*.json"
+      - "extensions/vscode/src/toml/schemas/*.json"
   workflow_dispatch:
 
 permissions:
@@ -25,7 +25,8 @@ jobs:
 
       - name: Upload schemas to S3
         run: |
-          aws s3 sync internal/schema/schemas/ s3://posit-publisher/publisher/schemas/ \
+          SCHEMA_DIR=extensions/vscode/src/toml/schemas
+          aws s3 sync ${SCHEMA_DIR}/ s3://posit-publisher/publisher/schemas/ \
             --exclude "*" \
             --include "posit-publishing-*.json"
 

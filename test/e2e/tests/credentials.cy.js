@@ -12,12 +12,14 @@ describe("Credentials Section", () => {
   });
 
   beforeEach(() => {
-    // Reset credentials for clean slate, but skip heavy Connect reset
-    cy.resetCredentials();
+    // VS Code may unload the publisher webview between tests (e.g. after
+    // quick-input flows shift focus). A full page reload reliably resets
+    // the UI state.
     cy.visit("/");
     cy.getPublisherSidebarIcon().click();
     cy.waitForPublisherIframe();
     cy.debugIframes();
+    cy.resetCredentials();
   });
 
   it("New PCS Credential", () => {
@@ -80,7 +82,7 @@ describe("Credentials Section", () => {
     cy.addPCCCredential(user, "connect-cloud-credential");
 
     // Verify the credential appears in the list
-    cy.toggleCredentialsSection();
+    cy.ensureCredentialsSectionExpanded();
     cy.refreshCredentials();
 
     cy.findInPublisherWebview(
@@ -91,9 +93,9 @@ describe("Credentials Section", () => {
   });
 
   it("Existing Credentials Load", () => {
-    // Seeds two dummy credentials and validates they render correctly in the list.
-    cy.setDummyCredentials();
-    cy.toggleCredentialsSection();
+    // Creates admin credential via UI and validates it renders correctly in the list.
+    cy.setAdminCredentials();
+    cy.ensureCredentialsSectionExpanded();
     cy.refreshCredentials();
 
     cy.publisherWebview()
@@ -101,28 +103,21 @@ describe("Credentials Section", () => {
       .should("not.exist");
 
     cy.findUniqueInPublisherWebview(
-      '[data-automation="dummy-credential-one-list"]',
+      '[data-automation="admin-code-server-list"]',
     )
       .find(".tree-item-title")
       .should("exist")
-      .and("have.text", "dummy-credential-one");
-
-    cy.findUniqueInPublisherWebview(
-      '[data-automation="dummy-credential-two-list"]',
-    )
-      .find(".tree-item-title")
-      .should("exist")
-      .and("have.text", "dummy-credential-two");
+      .and("have.text", "admin-code-server");
   });
 
   it("Delete Credential", () => {
-    // Hovers to reveal delete action, confirms, and asserts removal from the list.
-    cy.setDummyCredentials();
-    cy.toggleCredentialsSection();
+    // Creates admin credential, hovers to reveal delete action, confirms, and asserts removal.
+    cy.setAdminCredentials();
+    cy.ensureCredentialsSectionExpanded();
     cy.refreshCredentials();
 
     cy.findUniqueInPublisherWebview(
-      '[data-automation="dummy-credential-one-list"]',
+      '[data-automation="admin-code-server-list"]',
     ).then(($credRecord) => {
       cy.wrap($credRecord).should("be.visible").trigger("mouseover");
       cy.wrap($credRecord)
@@ -131,6 +126,6 @@ describe("Credentials Section", () => {
     });
 
     cy.get(".dialog-buttons").findByText("Delete").should("be.visible").click();
-    cy.get('[data-automation="dummy-credential-one-list"]').should("not.exist");
+    cy.get('[data-automation="admin-code-server-list"]').should("not.exist");
   });
 });

@@ -2,13 +2,8 @@
 
 import * as path from "path";
 import { execFile } from "child_process";
-import { AxiosResponse } from "axios";
-import { ContentRecordFile } from "../api/types/files";
+import { fileExistsAt } from "../interpreters/fsUtils";
 import { runTerminalCommand } from "./window";
-
-interface FilesApi {
-  get: () => Promise<AxiosResponse<ContentRecordFile>>;
-}
 
 export class ErrorNoQuarto extends Error {
   constructor() {
@@ -25,18 +20,11 @@ export class ErrorQuartoRender extends Error {
 }
 
 export class QuartoProjectHelper {
-  readonly filesApi: FilesApi;
   readonly source: string;
   readonly renderedEntrypoint: string;
   readonly projectDir: string;
 
-  constructor(
-    filesApi: FilesApi,
-    source: string,
-    renderedEntrypoint: string,
-    projectDir: string,
-  ) {
-    this.filesApi = filesApi;
+  constructor(source: string, renderedEntrypoint: string, projectDir: string) {
     this.source = source;
     this.renderedEntrypoint = renderedEntrypoint;
     this.projectDir = projectDir;
@@ -45,8 +33,6 @@ export class QuartoProjectHelper {
   async render() {
     const quartoAvaliable = await this.isQuartoBinAvailable();
     if (!quartoAvaliable) {
-      // Quarto is not available on the system,
-      // just return and let the user continue, nothing we can do
       return Promise.reject(new ErrorNoQuarto());
     }
 
@@ -62,15 +48,15 @@ export class QuartoProjectHelper {
     }
   }
 
-  async isQuartoYmlPresent() {
+  async isQuartoYmlPresent(): Promise<boolean> {
     if (this.source.includes("_quarto.yml")) {
       return true;
     }
-    const filesResponse = await this.filesApi.get();
-    return this.fileExistsInProjectDir(filesResponse.data.files, "_quarto.yml");
+    const quartoYmlPath = path.join(this.projectDir, "_quarto.yml");
+    return await fileExistsAt(quartoYmlPath);
   }
 
-  async isQuartoBinAvailable(): Promise<boolean> {
+  isQuartoBinAvailable(): Promise<boolean> {
     return new Promise((resolve) => {
       execFile("quarto", ["--version"], (error) => {
         resolve(!error);
@@ -78,55 +64,14 @@ export class QuartoProjectHelper {
     });
   }
 
-  fileExistsInProjectDir(
-    files: ContentRecordFile[],
-    filename: string,
-  ): boolean {
-    let fullEntryPath = filename;
-    if (this.projectDir !== ".") {
-      fullEntryPath = path.join(this.projectDir, filename);
-    }
-
-    // Split the full rendered entrypoint path to lookup for the rendering
-    const pathSplit = fullEntryPath.split(path.sep);
-
-    // Path consists of only the filename,
-    // then, look for the rendering on the first level of files.
-    if (pathSplit.length === 1) {
-      return files.some((file) => file.id === pathSplit[0]);
-    }
-
-    // Rendered entrypoint is nested in workspace directory levels
-    const fileToFind = pathSplit.pop();
-    const foundFile = this.findFile(files, pathSplit, fileToFind!);
-    return Boolean(foundFile);
-  }
-
-  findFile(
-    filesTree: ContentRecordFile[],
-    dirsChain: string[],
-    fileToFind: string,
-  ): ContentRecordFile | void {
-    if (!dirsChain.length) {
-      return filesTree.find((file) => file.id === fileToFind);
-    }
-
-    const dirChainLink = dirsChain.shift();
-    for (const branch of filesTree) {
-      if (branch.id === dirChainLink) {
-        return this.findFile(branch.files, dirsChain, fileToFind);
-      }
-    }
-  }
-
   renderProject() {
-    const command = `quarto render ${this.projectDir} --to html`;
+    const command = `quarto render "${this.projectDir}"`;
     return runTerminalCommand(command);
   }
 
   renderDocument() {
     const fullEntryPath = path.join(this.projectDir, this.source);
-    const command = `quarto render ${fullEntryPath} --to html`;
+    const command = `quarto render "${fullEntryPath}"`;
     return runTerminalCommand(command);
   }
 }

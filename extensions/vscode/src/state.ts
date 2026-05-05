@@ -22,20 +22,13 @@ import {
   PreContentRecord,
   PreContentRecordWithConfig,
   ServerType,
-  UpdateAllConfigsWithDefaults,
   UpdateConfigWithDefaults,
-  useApi,
 } from "src/api";
 import { normalizeURL } from "src/utils/url";
 import { getInterpreterDefaults } from "src/interpreters";
 import { showProgress } from "src/utils/progress";
 import { getSummaryStringFromError } from "src/utils/errors";
-import {
-  isErrCredentialsCorrupted,
-  errCredentialsCorruptedMessage,
-  isErrCannotBackupCredentialsFile,
-  errCannotBackupCredentialsFileMessage,
-} from "src/utils/errorTypes";
+import { CredentialsService } from "src/credentials/service";
 import {
   loadConfiguration,
   loadAllConfigurationsRecursive,
@@ -52,7 +45,6 @@ import {
   isConnectCloudProduct,
 } from "./utils/multiStepHelpers";
 import { recordAddConnectCloudUrlParams } from "./utils/connectCloudHelpers";
-import { syncAllCredentials } from "./credentialSecretStorage";
 
 function findContentRecord<
   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
@@ -126,9 +118,11 @@ export class PublisherState implements Disposable {
   > = [];
   configurations: Array<Configuration | ConfigurationError> = [];
   credentials: Credential[] = [];
+  readonly credentialsService: CredentialsService;
 
   constructor(context: extensionContext) {
     this.context = context;
+    this.credentialsService = new CredentialsService(context.secrets);
   }
 
   dispose() {
@@ -345,12 +339,23 @@ export class PublisherState implements Disposable {
           const r = await getRInterpreterPath();
 
           const configs = await loadAllConfigurationsRecursive(root);
-          const defaults = await getInterpreterDefaults(
-            root,
-            python?.pythonPath,
-            r?.rPath,
-          );
-          this.configurations = UpdateAllConfigsWithDefaults(configs, defaults);
+          // Compute defaults per-config so each project subdirectory's
+          // package files (requirements.txt, renv.lock) are detected correctly.
+          const updated: (Configuration | ConfigurationError)[] = [];
+          for (const config of configs) {
+            if (isConfigurationError(config)) {
+              updated.push(config);
+              continue;
+            }
+            const projectDir = path.join(root, config.projectDir);
+            const defaults = await getInterpreterDefaults(
+              projectDir,
+              python?.pythonPath,
+              r?.rPath,
+            );
+            updated.push(UpdateConfigWithDefaults(config, defaults));
+          }
+          this.configurations = updated;
         },
       );
     } catch (error: unknown) {
@@ -373,6 +378,11 @@ export class PublisherState implements Disposable {
     return findConfiguration(name, projectDir, this.configurations);
   }
 
+  // WARNING: the returned config may have stale data (empty interpreter
+  // fields, outdated files list) if the file watcher hasn't finished
+  // refreshing yet. Safe for UI display, but code that needs the
+  // current config for correctness (e.g. publish) should read fresh
+  // from disk via loadConfiguration() instead.
   findValidConfig(name: string, projectDir: string) {
     return findConfiguration(name, projectDir, this.validConfigs);
   }
@@ -389,17 +399,10 @@ export class PublisherState implements Disposable {
     const oldCredentials = this.credentials;
     try {
       await showProgress("Refreshing Credentials", Views.HomeView, async () => {
-        const api = await useApi();
-        const response = await api.credentials.list();
-        this.credentials = response.data;
+        this.credentials = await this.credentialsService.list();
       });
-      await syncAllCredentials(this.context.secrets, this.credentials);
       this.credentialRefresh.fire({ oldCredentials: oldCredentials });
     } catch (error: unknown) {
-      if (isErrCredentialsCorrupted(error)) {
-        this.resetCredentials();
-        return;
-      }
       const summary = getSummaryStringFromError("refreshCredentials", error);
       window.showErrorMessage(summary);
     }
@@ -410,20 +413,11 @@ export class PublisherState implements Disposable {
   async resetCredentials() {
     const oldCredentials = this.credentials;
     try {
-      const api = await useApi();
-      const response = await api.credentials.reset();
-      const warnMsg = errCredentialsCorruptedMessage(response.data.backupFile);
-      window.showWarningMessage(warnMsg);
-
-      const listResponse = await api.credentials.list();
-      this.credentials = listResponse.data;
-      await syncAllCredentials(this.context.secrets, this.credentials);
+      await this.credentialsService.reset();
+      this.credentials = [];
+      window.showWarningMessage("Credentials have been reset.");
       this.credentialRefresh.fire({ oldCredentials: oldCredentials });
     } catch (err: unknown) {
-      if (isErrCannotBackupCredentialsFile(err)) {
-        window.showErrorMessage(errCannotBackupCredentialsFileMessage(err));
-        return;
-      }
       const summary = getSummaryStringFromError("resetCredentials", err);
       window.showErrorMessage(summary);
     }

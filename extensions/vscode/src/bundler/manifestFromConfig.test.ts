@@ -1,7 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { describe, expect, it } from "vitest";
-import { appModeFromType } from "./appMode";
+import { appModeFromType, contentTypeFromAppMode } from "./appMode";
 import { manifestFromConfig } from "./manifestFromConfig";
 import { ContentType, ConfigurationDetails } from "../api/types/configurations";
 import { ProductType } from "../api/types/contentRecords";
@@ -48,6 +48,40 @@ describe("appModeFromType", () => {
 
   it("passes through ContentType.UNKNOWN as 'unknown'", () => {
     expect(appModeFromType(ContentType.UNKNOWN)).toBe("unknown");
+  });
+});
+
+describe("contentTypeFromAppMode", () => {
+  it.each([
+    ["static", ContentType.HTML],
+    ["jupyter-static", ContentType.JUPYTER_NOTEBOOK],
+    ["jupyter-voila", ContentType.JUPYTER_VOILA],
+    ["python-shiny", ContentType.PYTHON_SHINY],
+    ["python-fastapi", ContentType.PYTHON_FASTAPI],
+    ["quarto-shiny", ContentType.QUARTO_SHINY],
+    ["shiny", ContentType.R_SHINY],
+    ["api", ContentType.R_PLUMBER],
+    ["rmd-static", ContentType.RMD],
+  ])("maps %s → %s", (appMode, expected) => {
+    expect(contentTypeFromAppMode(appMode)).toBe(expected);
+  });
+
+  // QUARTO and QUARTO_STATIC both map to "quarto-static" in the forward
+  // direction; the reverse map resolves to QUARTO.
+  it("resolves quarto-static to QUARTO (not QUARTO_STATIC)", () => {
+    expect(contentTypeFromAppMode("quarto-static")).toBe(ContentType.QUARTO);
+  });
+
+  it("passes through unknown app modes as-is", () => {
+    expect(contentTypeFromAppMode("unknown-xyz")).toBe("unknown-xyz");
+  });
+
+  it('passes through "unknown" as-is', () => {
+    expect(contentTypeFromAppMode("unknown")).toBe("unknown");
+  });
+
+  it('passes through "" (empty string) as-is', () => {
+    expect(contentTypeFromAppMode("")).toBe("");
   });
 });
 
@@ -356,6 +390,18 @@ describe("manifestFromConfig", () => {
     it("does not set integration_requests when absent", () => {
       const m = manifestFromConfig(minimalConfig());
       expect(m.integration_requests).toBeUndefined();
+    });
+  });
+
+  describe("content_category", () => {
+    it("does not set content_category from entrypoint path", () => {
+      const m = manifestFromConfig(
+        minimalConfig({
+          type: ContentType.HTML,
+          entrypoint: "_site/index.html",
+        }),
+      );
+      expect(m.metadata.content_category).toBeUndefined();
     });
   });
 

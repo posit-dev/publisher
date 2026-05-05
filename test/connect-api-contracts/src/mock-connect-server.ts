@@ -5,11 +5,11 @@
  *
  * This is a lightweight Node.js HTTP server that simulates the Posit Connect
  * API. It serves canned JSON responses from fixture files for every Connect
- * endpoint that Publisher's Go client calls. Routes are matched by HTTP method
- * and path regex, with more specific patterns registered before generic ones.
+ * endpoint that Publisher calls. Routes are matched by HTTP method and path
+ * regex, with more specific patterns registered before generic ones.
  *
  * Every incoming request (except control requests) is captured so that tests
- * can assert on the exact HTTP method, path, headers, and body that the Go
+ * can assert on the exact HTTP method, path, headers, and body that the
  * client sent. The captured requests are exposed via `/__test__/requests`.
  *
  * Tests can also register per-test response overrides via

@@ -1,0 +1,116 @@
+{
+  "method": "GET",
+  "path": "/v1/accounts/00000000-0000-0000-0000-000000000001",
+  "query": "",
+  "request_body": null,
+  "status_code": 200,
+  "response_body": {
+    "account_type": "individual",
+    "created_time": "2026-03-20T15:44:19.730182Z",
+    "display_name": "Redacted User",
+    "github_apps": [],
+    "id": "00000000-0000-0000-0000-000000000001",
+    "idp_id": null,
+    "license": {
+      "id": "00000000-0000-0000-0000-000000000004",
+      "created_time": "2026-03-20T15:44:19.742129Z",
+      "updated_time": "2026-03-20T15:44:19.742129Z",
+      "type": "free",
+      "status": "active",
+      "suspended_until": null,
+      "suspension_reason": null,
+      "account_id": "00000000-0000-0000-0000-000000000001",
+      "cycle_anchor": "2026-03-20T15:44:19.733749Z",
+      "activates": "2026-03-20T15:44:19.733749Z",
+      "cancels": null,
+      "entitlements": {
+        "account_apps_max": {
+          "type": "account_apps_max",
+          "license_id": "00000000-0000-0000-0000-000000000004",
+          "max": 5
+        },
+        "account_cpu_max": {
+          "type": "account_cpu_max",
+          "license_id": "00000000-0000-0000-0000-000000000004",
+          "default_value": 1.0,
+          "max": 1.0
+        },
+        "account_memory_max": {
+          "type": "account_memory_max",
+          "license_id": "00000000-0000-0000-0000-000000000004",
+          "default_value": 4096,
+          "max": 4096
+        },
+        "account_private_content_flag": {
+          "type": "account_private_content_flag",
+          "license_id": "00000000-0000-0000-0000-000000000004",
+          "enabled": false
+        },
+        "account_publish_private_repo_flag": {
+          "type": "account_publish_private_repo_flag",
+          "license_id": "00000000-0000-0000-0000-000000000004",
+          "enabled": false
+        },
+        "account_private_link_flag": {
+          "type": "account_private_link_flag",
+          "license_id": "00000000-0000-0000-0000-000000000004",
+          "enabled": false
+        },
+        "account_domain_max": {
+          "type": "account_domain_max",
+          "license_id": "00000000-0000-0000-0000-000000000004",
+          "max": 0
+        },
+        "account_bundle_max_bytes": {
+          "type": "account_bundle_max_bytes",
+          "license_id": "00000000-0000-0000-0000-000000000004",
+          "max": 1073741824
+        },
+        "account_content_schedule_flag": {
+          "type": "account_content_schedule_flag",
+          "license_id": "00000000-0000-0000-0000-000000000004",
+          "enabled": false
+        },
+        "account_oauth_integration_max": {
+          "type": "account_oauth_integration_max",
+          "license_id": "00000000-0000-0000-0000-000000000004",
+          "max": 0
+        }
+      },
+      "cycle_start_date": "2026-03-20T15:44:19.733749Z",
+      "cycle_end_date": "2026-04-20T15:44:19.733749Z"
+    },
+    "linked_github": false,
+    "name": "redacted-user",
+    "owner_id": "00000000-0000-0000-0000-000000000003",
+    "permissions": [
+      "account.invitation:accept",
+      "account.invitation:create",
+      "account.invitation:delete",
+      "account.invitation:read",
+      "account.invitation:update",
+      "account.license:read",
+      "account.license:update",
+      "account.roles.email:read",
+      "account.roles:delete",
+      "account.roles:read",
+      "account.roles:update",
+      "account.roles:update:to_owner",
+      "account.source_provider:search",
+      "account:delete:soft",
+      "account:read",
+      "account:update",
+      "content:create",
+      "domain:create",
+      "integration:create"
+    ],
+    "role": "owner",
+    "sso_enabled": false,
+    "state": "active",
+    "suspended_by": null,
+    "suspended_on": null,
+    "suspended_reason": null,
+    "suspended_reason_code": null,
+    "updated_time": "2026-03-20T15:44:19.739059Z"
+  }
+}

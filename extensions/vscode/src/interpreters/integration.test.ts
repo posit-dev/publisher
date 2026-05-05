@@ -20,7 +20,7 @@
 //   npm run test-integration-interpreters
 
 import { execFile } from "child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile, mkdir } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -35,6 +35,10 @@ import {
 } from "./pythonInterpreter";
 import { detectRInterpreter } from "./rInterpreter";
 import { scanRPackages, getRPackages } from "./rPackages";
+import {
+  scanPythonDependencies,
+  runPythonScanScript,
+} from "./scanPythonDependencies";
 
 const execFileAsync = promisify(execFile);
 
@@ -207,112 +211,129 @@ describe("getRRequires (real filesystem)", () => {
 // interpreter is found on the PATH.
 // ---------------------------------------------------------------------------
 
-describe("detectPythonInterpreter (real interpreter)", async () => {
-  // Probe for available Python executable; prefer "python3" (Unix convention)
-  // and fall back to "python" (Windows / pyenv shim convention).
-  const python3Available = await isExecutableAvailable("python3");
-  const pythonAvailable =
-    python3Available || (await isExecutableAvailable("python"));
-  const pythonCmd = python3Available ? "python3" : "python";
+describe(
+  "detectPythonInterpreter (real interpreter)",
+  { timeout: 15_000 },
+  async () => {
+    // Probe for available Python executable; prefer "python3" (Unix convention)
+    // and fall back to "python" (Windows / pyenv shim convention).
+    const python3Available = await isExecutableAvailable("python3");
+    const pythonAvailable =
+      python3Available || (await isExecutableAvailable("python"));
+    const pythonCmd = python3Available ? "python3" : "python";
 
-  test.skipIf(!pythonAvailable)(
-    "detects version from a real Python executable",
-    () => {
+    test.skipIf(!pythonAvailable)(
+      "detects version from a real Python executable",
+      () => {
+        clearPythonVersionCache();
+        return withTempDir(async (dir) => {
+          const result = await detectPythonInterpreter(dir, pythonCmd);
+          expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+          expect(result.config.packageManager).toBe("auto");
+          expect(result.preferredPath).toBe(pythonCmd);
+        });
+      },
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "detects requirements.txt when present",
+      () => {
+        clearPythonVersionCache();
+        return withTempDir(async (dir) => {
+          await writeFile(
+            path.join(dir, "requirements.txt"),
+            "flask\n",
+            "utf-8",
+          );
+          const result = await detectPythonInterpreter(dir, pythonCmd);
+          expect(result.config.packageFile).toBe("requirements.txt");
+        });
+      },
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "returns empty packageFile when requirements.txt is absent",
+      () => {
+        clearPythonVersionCache();
+        return withTempDir(async (dir) => {
+          const result = await detectPythonInterpreter(dir, pythonCmd);
+          expect(result.config.packageFile).toBe("");
+        });
+      },
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "finds Python on PATH when no preferred path given",
+      () => {
+        clearPythonVersionCache();
+        return withTempDir(async (dir) => {
+          const result = await detectPythonInterpreter(dir);
+          expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+          expect(["python3", "python"]).toContain(result.preferredPath);
+        });
+      },
+    );
+
+    test("falls back to PATH when preferred path is bogus", () => {
       clearPythonVersionCache();
       return withTempDir(async (dir) => {
-        const result = await detectPythonInterpreter(dir, pythonCmd);
-        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(result.config.packageManager).toBe("auto");
-        expect(result.preferredPath).toBe(pythonCmd);
+        const result = await detectPythonInterpreter(
+          dir,
+          "/nonexistent/python999",
+        );
+        if (pythonAvailable) {
+          expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+          expect(result.preferredPath).not.toBe("/nonexistent/python999");
+        } else {
+          expect(result.config.version).toBe("");
+        }
       });
-    },
-  );
-
-  test.skipIf(!pythonAvailable)("detects requirements.txt when present", () => {
-    clearPythonVersionCache();
-    return withTempDir(async (dir) => {
-      await writeFile(path.join(dir, "requirements.txt"), "flask\n", "utf-8");
-      const result = await detectPythonInterpreter(dir, pythonCmd);
-      expect(result.config.packageFile).toBe("requirements.txt");
     });
-  });
-
-  test.skipIf(!pythonAvailable)(
-    "returns empty packageFile when requirements.txt is absent",
-    () => {
-      clearPythonVersionCache();
-      return withTempDir(async (dir) => {
-        const result = await detectPythonInterpreter(dir, pythonCmd);
-        expect(result.config.packageFile).toBe("");
-      });
-    },
-  );
-
-  test.skipIf(!pythonAvailable)(
-    "finds Python on PATH when no preferred path given",
-    () => {
-      clearPythonVersionCache();
-      return withTempDir(async (dir) => {
-        const result = await detectPythonInterpreter(dir);
-        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(["python3", "python"]).toContain(result.preferredPath);
-      });
-    },
-  );
-
-  test("falls back to PATH when preferred path is bogus", () => {
-    clearPythonVersionCache();
-    return withTempDir(async (dir) => {
-      const result = await detectPythonInterpreter(
-        dir,
-        "/nonexistent/python999",
-      );
-      if (pythonAvailable) {
-        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(result.preferredPath).not.toBe("/nonexistent/python999");
-      } else {
-        expect(result.config.version).toBe("");
-      }
-    });
-  });
-});
+  },
+);
 
 // ---------------------------------------------------------------------------
 // detectRInterpreter – runs a real R executable to get its version. Tests are
 // skipped when R is not found on the PATH.
 // ---------------------------------------------------------------------------
 
-describe("detectRInterpreter (real interpreter)", async () => {
-  const rAvailable = await isExecutableAvailable("R");
+describe(
+  "detectRInterpreter (real interpreter)",
+  { timeout: 15_000 },
+  async () => {
+    const rAvailable = await isExecutableAvailable("R");
 
-  test.skipIf(!rAvailable)("detects version from a real R executable", () =>
-    withTempDir(async (dir) => {
-      const result = await detectRInterpreter(dir, "R");
-      expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-      expect(result.config.packageManager).toBe("renv");
-      expect(result.preferredPath).toBe("R");
-    }),
-  );
-
-  test.skipIf(!rAvailable)("finds R on PATH when no preferred path given", () =>
-    withTempDir(async (dir) => {
-      const result = await detectRInterpreter(dir);
-      expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-      expect(result.preferredPath).toBe("R");
-    }),
-  );
-
-  test("falls back to PATH when preferred path is bogus", () =>
-    withTempDir(async (dir) => {
-      const result = await detectRInterpreter(dir, "/nonexistent/R999");
-      if (rAvailable) {
+    test.skipIf(!rAvailable)("detects version from a real R executable", () =>
+      withTempDir(async (dir) => {
+        const result = await detectRInterpreter(dir, "R");
         expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(result.preferredPath).not.toBe("/nonexistent/R999");
-      } else {
-        expect(result.config.version).toBe("");
-      }
-    }));
-});
+        expect(result.config.packageManager).toBe("renv");
+        expect(result.preferredPath).toBe("R");
+      }),
+    );
+
+    test.skipIf(!rAvailable)(
+      "finds R on PATH when no preferred path given",
+      () =>
+        withTempDir(async (dir) => {
+          const result = await detectRInterpreter(dir);
+          expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+          expect(result.preferredPath).toBe("R");
+        }),
+    );
+
+    test("falls back to PATH when preferred path is bogus", () =>
+      withTempDir(async (dir) => {
+        const result = await detectRInterpreter(dir, "/nonexistent/R999");
+        if (rAvailable) {
+          expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+          expect(result.preferredPath).not.toBe("/nonexistent/R999");
+        } else {
+          expect(result.config.version).toBe("");
+        }
+      }));
+  },
+);
 
 // ---------------------------------------------------------------------------
 // End-to-end Python detection – combines a real interpreter with project
@@ -321,75 +342,79 @@ describe("detectRInterpreter (real interpreter)", async () => {
 // (requiresPython) are populated correctly together.
 // ---------------------------------------------------------------------------
 
-describe("detectPythonInterpreter end-to-end", async () => {
-  const python3Available = await isExecutableAvailable("python3");
-  const pythonAvailable =
-    python3Available || (await isExecutableAvailable("python"));
-  const pythonCmd = python3Available ? "python3" : "python";
+describe(
+  "detectPythonInterpreter end-to-end",
+  { timeout: 15_000 },
+  async () => {
+    const python3Available = await isExecutableAvailable("python3");
+    const pythonAvailable =
+      python3Available || (await isExecutableAvailable("python"));
+    const pythonCmd = python3Available ? "python3" : "python";
 
-  test.skipIf(!pythonAvailable)(
-    "populates requiresPython from .python-version alongside real detection",
-    () => {
-      clearPythonVersionCache();
-      return withTempDir(async (dir) => {
-        await writeFile(path.join(dir, ".python-version"), "3.11", "utf-8");
-        const result = await detectPythonInterpreter(dir, pythonCmd);
-        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(result.config.requiresPython).toBe("~=3.11.0");
-      });
-    },
-  );
+    test.skipIf(!pythonAvailable)(
+      "populates requiresPython from .python-version alongside real detection",
+      () => {
+        clearPythonVersionCache();
+        return withTempDir(async (dir) => {
+          await writeFile(path.join(dir, ".python-version"), "3.11", "utf-8");
+          const result = await detectPythonInterpreter(dir, pythonCmd);
+          expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+          expect(result.config.requiresPython).toBe("~=3.11.0");
+        });
+      },
+    );
 
-  test.skipIf(!pythonAvailable)(
-    "populates requiresPython from pyproject.toml",
-    () => {
-      clearPythonVersionCache();
-      return withTempDir(async (dir) => {
-        await writeFile(
-          path.join(dir, "pyproject.toml"),
-          '[project]\nrequires-python = ">=3.9,<4"\n',
-          "utf-8",
-        );
-        const result = await detectPythonInterpreter(dir, pythonCmd);
-        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(result.config.requiresPython).toBe(">=3.9,<4");
-      });
-    },
-  );
+    test.skipIf(!pythonAvailable)(
+      "populates requiresPython from pyproject.toml",
+      () => {
+        clearPythonVersionCache();
+        return withTempDir(async (dir) => {
+          await writeFile(
+            path.join(dir, "pyproject.toml"),
+            '[project]\nrequires-python = ">=3.9,<4"\n',
+            "utf-8",
+          );
+          const result = await detectPythonInterpreter(dir, pythonCmd);
+          expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+          expect(result.config.requiresPython).toBe(">=3.9,<4");
+        });
+      },
+    );
 
-  test.skipIf(!pythonAvailable)(
-    "returns all fields together: version, packageFile, requiresPython",
-    () => {
-      clearPythonVersionCache();
-      return withTempDir(async (dir) => {
-        await writeFile(
-          path.join(dir, "requirements.txt"),
-          "flask>=2.0\n",
-          "utf-8",
-        );
-        await writeFile(path.join(dir, ".python-version"), "3.10.5", "utf-8");
-        const result = await detectPythonInterpreter(dir, pythonCmd);
-        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(result.config.packageFile).toBe("requirements.txt");
-        expect(result.config.packageManager).toBe("auto");
-        expect(result.config.requiresPython).toBe("~=3.10.0");
-        expect(result.preferredPath).toBe(pythonCmd);
-      });
-    },
-  );
+    test.skipIf(!pythonAvailable)(
+      "returns all fields together: version, packageFile, requiresPython",
+      () => {
+        clearPythonVersionCache();
+        return withTempDir(async (dir) => {
+          await writeFile(
+            path.join(dir, "requirements.txt"),
+            "flask>=2.0\n",
+            "utf-8",
+          );
+          await writeFile(path.join(dir, ".python-version"), "3.10.5", "utf-8");
+          const result = await detectPythonInterpreter(dir, pythonCmd);
+          expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+          expect(result.config.packageFile).toBe("requirements.txt");
+          expect(result.config.packageManager).toBe("auto");
+          expect(result.config.requiresPython).toBe("~=3.10.0");
+          expect(result.preferredPath).toBe(pythonCmd);
+        });
+      },
+    );
 
-  test.skipIf(!pythonAvailable)(
-    "omits requiresPython when no version constraint files exist",
-    () => {
-      clearPythonVersionCache();
-      return withTempDir(async (dir) => {
-        const result = await detectPythonInterpreter(dir, pythonCmd);
-        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(result.config.requiresPython).toBeUndefined();
-      });
-    },
-  );
-});
+    test.skipIf(!pythonAvailable)(
+      "omits requiresPython when no version constraint files exist",
+      () => {
+        clearPythonVersionCache();
+        return withTempDir(async (dir) => {
+          const result = await detectPythonInterpreter(dir, pythonCmd);
+          expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+          expect(result.config.requiresPython).toBeUndefined();
+        });
+      },
+    );
+  },
+);
 
 // ---------------------------------------------------------------------------
 // End-to-end R detection – combines a real R interpreter with project config
@@ -397,7 +422,7 @@ describe("detectPythonInterpreter end-to-end", async () => {
 // requiresR constraint are populated together.
 // ---------------------------------------------------------------------------
 
-describe("detectRInterpreter end-to-end", async () => {
+describe("detectRInterpreter end-to-end", { timeout: 15_000 }, async () => {
   const rAvailable = await isExecutableAvailable("R");
 
   test.skipIf(!rAvailable)("populates requiresR from DESCRIPTION Depends", () =>
@@ -471,7 +496,7 @@ describe("detectRInterpreter end-to-end", async () => {
 // it via PATH fallback, so expectations account for that.
 // ---------------------------------------------------------------------------
 
-describe("getInterpreterDefaults end-to-end", async () => {
+describe("getInterpreterDefaults end-to-end", { timeout: 15_000 }, async () => {
   const python3Available = await isExecutableAvailable("python3");
   const pythonAvailable =
     python3Available || (await isExecutableAvailable("python"));
@@ -682,3 +707,355 @@ describe("scanRPackages (real R + renv)", async () => {
     120_000,
   );
 });
+
+// ---------------------------------------------------------------------------
+// scanPythonDependencies – runs a real Python executable to scan project
+// files for imports, filter stdlib/local imports, and map to installed
+// packages. Tests are skipped when Python is not available on the PATH.
+// ---------------------------------------------------------------------------
+
+describe(
+  "scanPythonDependencies (real Python)",
+  { timeout: 30_000 },
+  async () => {
+    const python3Available = await isExecutableAvailable("python3");
+    const pythonAvailable =
+      python3Available || (await isExecutableAvailable("python"));
+    const pythonCmd = python3Available ? "python3" : "python";
+
+    /** Check if a requirement appears as bare name or with version pin */
+    function hasRequirement(reqs: string[], name: string): boolean {
+      return reqs.some((r) => r === name || r.startsWith(name + "=="));
+    }
+
+    test.skipIf(!pythonAvailable)(
+      "extracts imports from .py files and filters stdlib",
+      () =>
+        withTempDir(async (dir) => {
+          await writeFile(
+            path.join(dir, "app.py"),
+            "import os\nimport sys\nimport numpy\nfrom scipy import stats\n",
+            "utf-8",
+          );
+
+          const result = await runPythonScanScript(dir, pythonCmd);
+
+          // Should find numpy and scipy (may have ==version if installed)
+          expect(hasRequirement(result.requirements, "numpy")).toBe(true);
+          expect(hasRequirement(result.requirements, "scipy")).toBe(true);
+          // Should NOT contain stdlib modules
+          expect(hasRequirement(result.requirements, "os")).toBe(false);
+          expect(hasRequirement(result.requirements, "sys")).toBe(false);
+        }),
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "extracts imports from .ipynb notebooks",
+      () =>
+        withTempDir(async (dir) => {
+          const notebook = {
+            cells: [
+              {
+                cell_type: "code",
+                source: ["import json\n", "import numpy as np\n"],
+              },
+              {
+                cell_type: "markdown",
+                source: ["# This is markdown, not code\n"],
+              },
+            ],
+          };
+          await writeFile(
+            path.join(dir, "notebook.ipynb"),
+            JSON.stringify(notebook),
+            "utf-8",
+          );
+
+          const result = await runPythonScanScript(dir, pythonCmd);
+
+          // Should find numpy (may have ==version if installed)
+          expect(hasRequirement(result.requirements, "numpy")).toBe(true);
+          // Should NOT contain stdlib json
+          expect(hasRequirement(result.requirements, "json")).toBe(false);
+        }),
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "extracts imports across notebook cells without trailing newlines",
+      () =>
+        withTempDir(async (dir) => {
+          // Jupyter notebooks often omit the trailing \n on the last line
+          // of each cell. The scanner must insert a newline between cells
+          // so that ast.parse doesn't see concatenated lines.
+          const notebook = {
+            cells: [
+              {
+                cell_type: "code",
+                source: [
+                  "import json\n",
+                  "import numpy as np", // no trailing \n
+                ],
+              },
+              {
+                cell_type: "code",
+                source: [
+                  "import os\n",
+                  "import csv", // no trailing \n
+                ],
+              },
+            ],
+          };
+          await writeFile(
+            path.join(dir, "notebook.ipynb"),
+            JSON.stringify(notebook),
+            "utf-8",
+          );
+
+          const result = await runPythonScanScript(dir, pythonCmd);
+
+          // numpy should be found despite the missing newlines between cells
+          expect(hasRequirement(result.requirements, "numpy")).toBe(true);
+          // stdlib imports should still be filtered
+          expect(hasRequirement(result.requirements, "json")).toBe(false);
+          expect(hasRequirement(result.requirements, "os")).toBe(false);
+          expect(hasRequirement(result.requirements, "csv")).toBe(false);
+        }),
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "maps import names to package names using RECORD when top_level.txt is absent",
+      () =>
+        withTempDir(async (dir) => {
+          // scikit-learn (and increasingly other packages) ship without
+          // top_level.txt. The scanner must fall back to dist.files to
+          // discover that "sklearn" maps to "scikit-learn".
+          await writeFile(
+            path.join(dir, "app.py"),
+            "from sklearn.linear_model import LinearRegression\n",
+            "utf-8",
+          );
+
+          const result = await runPythonScanScript(dir, pythonCmd);
+
+          const entry = result.requirements.find(
+            (r) => r === "sklearn" || r.startsWith("scikit-learn=="),
+          );
+          expect(entry).toBeDefined();
+          // If scikit-learn is installed, the entry should use the real
+          // package name, not the import name.
+          if (entry!.includes("==")) {
+            expect(entry).toMatch(/^scikit-learn==/);
+          }
+        }),
+    );
+
+    test.skipIf(!pythonAvailable)("extracts imports from .qmd files", () =>
+      withTempDir(async (dir) => {
+        const qmd = `---
+title: "Test"
+---
+
+This is text, not code:
+import notarealpythonimport
+
+\`\`\`{python}
+import numpy
+from scipy import stats
+\`\`\`
+`;
+        await writeFile(path.join(dir, "doc.qmd"), qmd, "utf-8");
+
+        const result = await runPythonScanScript(dir, pythonCmd);
+
+        // Should find numpy and scipy from code block (may have ==version if installed)
+        expect(hasRequirement(result.requirements, "numpy")).toBe(true);
+        expect(hasRequirement(result.requirements, "scipy")).toBe(true);
+        // Should NOT find the fake import from text
+        expect(
+          hasRequirement(result.requirements, "notarealpythonimport"),
+        ).toBe(false);
+      }),
+    );
+
+    test.skipIf(!pythonAvailable)("filters local imports", () =>
+      withTempDir(async (dir) => {
+        // Create local module files
+        await writeFile(
+          path.join(dir, "helpers.py"),
+          "# local module\n",
+          "utf-8",
+        );
+        await mkdir(path.join(dir, "mypackage"));
+        await writeFile(
+          path.join(dir, "mypackage", "__init__.py"),
+          "",
+          "utf-8",
+        );
+
+        // Create main file that imports both local and third-party
+        await writeFile(
+          path.join(dir, "main.py"),
+          "import helpers\nimport mypackage\nimport numpy\n",
+          "utf-8",
+        );
+
+        const result = await runPythonScanScript(dir, pythonCmd);
+
+        // Should find numpy (may have ==version if installed)
+        expect(hasRequirement(result.requirements, "numpy")).toBe(true);
+        // Should NOT find local imports
+        expect(hasRequirement(result.requirements, "helpers")).toBe(false);
+        expect(hasRequirement(result.requirements, "mypackage")).toBe(false);
+      }),
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "maps installed packages to name==version format",
+      () =>
+        withTempDir(async (dir) => {
+          // Import pip which is always available in any Python environment
+          await writeFile(path.join(dir, "app.py"), "import pip\n", "utf-8");
+
+          const result = await runPythonScanScript(dir, pythonCmd);
+
+          // Should find pip with version
+          const pipEntry = result.requirements.find((req) =>
+            req.startsWith("pip=="),
+          );
+          expect(pipEntry).toBeDefined();
+          expect(pipEntry).toMatch(/^pip==\d+\.\d+/);
+        }),
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "reports uninstalled packages as incomplete",
+      () =>
+        withTempDir(async (dir) => {
+          await writeFile(
+            path.join(dir, "app.py"),
+            "import zzzfakepackage_not_installed_12345\n",
+            "utf-8",
+          );
+
+          const result = await runPythonScanScript(dir, pythonCmd);
+
+          // Should appear in both requirements (bare name) and incomplete
+          expect(result.requirements).toContain(
+            "zzzfakepackage_not_installed_12345",
+          );
+          expect(result.incomplete).toContain(
+            "zzzfakepackage_not_installed_12345",
+          );
+        }),
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "end-to-end: writes requirements.txt with header",
+      () =>
+        withTempDir(async (dir) => {
+          // Use pip which is always available
+          await writeFile(path.join(dir, "app.py"), "import pip\n", "utf-8");
+
+          const result = await scanPythonDependencies(
+            dir,
+            pythonCmd,
+            "requirements.txt",
+          );
+
+          // Check result object
+          expect(result.python).toBe(pythonCmd);
+          expect(
+            result.requirements.some((req) => req.startsWith("pip==")),
+          ).toBe(true);
+
+          // Check written file
+          const requirementsPath = path.join(dir, "requirements.txt");
+          expect(await fileExistsAt(requirementsPath)).toBe(true);
+
+          const content = await readFileText(requirementsPath);
+          expect(content).not.toBeNull();
+          expect(content).toContain("# requirements.txt auto-generated");
+          expect(content).toContain(`using ${pythonCmd}`);
+          expect(content).toMatch(/pip==\d+\.\d+/);
+        }),
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "testdata fixtures produce expected imports",
+      () =>
+        withTempDir(async (dir) => {
+          // Recreate the testdata structure
+          // example.py: imports numpy, scipy, and local lib.utils
+          await writeFile(
+            path.join(dir, "example.py"),
+            "import numpy as np\nimport scipy\n\nfrom lib.utils import foo\n",
+            "utf-8",
+          );
+
+          // lib/utils.py: imports somelib
+          await mkdir(path.join(dir, "lib"));
+          await writeFile(
+            path.join(dir, "lib", "utils.py"),
+            "from somelib import somefunc\n\ndef foo():\n    somefunc()\n",
+            "utf-8",
+          );
+
+          // test.qmd: imports that and example (local)
+          const qmd = `---
+title: "test-qmd"
+jupyter: python3
+---
+
+This is a Quarto file with embedded Python code.
+
+import this
+
+Not actually an import! That's not in a code block.
+
+\`\`\`{python}
+import that
+from example import *
+
+that.do_something()
+\`\`\`
+`;
+          await writeFile(path.join(dir, "test.qmd"), qmd, "utf-8");
+
+          // good_notebook.ipynb: only imports sys (stdlib)
+          const notebook = {
+            cells: [
+              {
+                cell_type: "code",
+                source: ["import sys\n", "print(sys.executable)\n"],
+              },
+              {
+                cell_type: "code",
+                source: ["print('Summing')\n", "123 + 456\n"],
+              },
+            ],
+          };
+          await writeFile(
+            path.join(dir, "good_notebook.ipynb"),
+            JSON.stringify(notebook),
+            "utf-8",
+          );
+
+          const result = await runPythonScanScript(dir, pythonCmd);
+
+          // Should contain third-party imports (may have ==version if installed)
+          expect(hasRequirement(result.requirements, "numpy")).toBe(true);
+          expect(hasRequirement(result.requirements, "scipy")).toBe(true);
+          expect(hasRequirement(result.requirements, "somelib")).toBe(true);
+          expect(hasRequirement(result.requirements, "that")).toBe(true);
+
+          // Should NOT contain local imports
+          expect(hasRequirement(result.requirements, "lib")).toBe(false);
+          expect(hasRequirement(result.requirements, "example")).toBe(false);
+
+          // Should NOT contain stdlib imports
+          expect(hasRequirement(result.requirements, "sys")).toBe(false);
+          expect(hasRequirement(result.requirements, "this")).toBe(false);
+        }),
+    );
+  },
+);

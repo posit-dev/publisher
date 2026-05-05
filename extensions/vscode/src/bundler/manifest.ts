@@ -28,7 +28,7 @@ export function addFile(manifest: Manifest, path: string, md5: Buffer): void {
 }
 
 export function manifestToJSON(manifest: Manifest): Buffer {
-  // Match Go's json.Encoder: tab indentation, no HTML escaping
+  // Tab indentation, no HTML escaping
   const json = JSON.stringify(manifest, null, "\t") + "\n";
   return Buffer.from(json, "utf-8");
 }

@@ -17,10 +17,10 @@ fi
 
 # Find the VSIX file directly from the mounted volume
 echo "Looking for VSIX file in container..."
-VSIX_FILENAME=$(docker exec publisher-e2e.workbench-$SERVICE bash -c "ls -Art /vsix-tmp | grep linux-amd64 | tail -n 1")
+VSIX_FILENAME=$(docker exec publisher-e2e.workbench-$SERVICE bash -c "ls -Art /vsix-tmp/*.vsix 2>/dev/null | xargs -n1 basename | tail -n 1")
 
 if [ -z "$VSIX_FILENAME" ]; then
-    echo "ERROR: No linux-amd64 Publisher VSIX found in container."
+    echo "ERROR: No Publisher VSIX found in container."
     echo "Contents of /vsix-tmp:"
     docker exec publisher-e2e.workbench-$SERVICE bash -c "ls -la /vsix-tmp"
     exit 1
@@ -51,7 +51,7 @@ INSTALL_LOG="./logs/workbench-extension/workbench-extension-installation.log"
 
 # Run installation command as the rstudio user to ensure proper permissions
 echo "Running installation command..." | tee "$INSTALL_LOG"
-docker exec -u rstudio publisher-e2e.workbench-$SERVICE bash -c "cd /usr/lib/rstudio-server/bin/positron-server && ./bin/positron-server --install-extension /vsix-tmp/$VSIX_FILENAME --force" | tee -a "$INSTALL_LOG" || {
+docker exec -u rstudio publisher-e2e.workbench-$SERVICE bash -c "cd /usr/lib/rstudio-server/bin/positron-server && ./bundled/bin/positron-server --install-extension /vsix-tmp/$VSIX_FILENAME --force" | tee -a "$INSTALL_LOG" || {
     echo "Installation command failed" | tee -a "$INSTALL_LOG"
     exit 2
 }

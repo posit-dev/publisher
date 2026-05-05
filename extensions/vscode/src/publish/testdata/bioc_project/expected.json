@@ -1,0 +1,15 @@
+{
+  "Biobase": {
+    "Source": "Bioconductor",
+    "Repository": "https://bioconductor.org/packages/3.18/bioc",
+    "description": {
+      "Package": "Biobase",
+      "Version": "2.62.0",
+      "Type": "Package",
+      "Title": "Bioconductor R package",
+      "Hash": "38252a34e82d3ff6bb46b4e2252d2dce",
+      "Depends": "BiocGenerics, R, methods, utils",
+      "Repository": "https://bioconductor.org/packages/3.18/bioc"
+    }
+  }
+}

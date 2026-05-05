@@ -1,5 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import crypto from "crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConnectAPI } from "./client.js";
 import { ContentID, BundleID, TaskID } from "./types.js";
@@ -11,39 +12,104 @@ import type { UserDTO, ContentDetailsDTO } from "./types.js";
 
 const mockRequest = vi.fn();
 
+type RequestInterceptor = (
+  config: Record<string, unknown>,
+) => Record<string, unknown>;
+
 vi.mock("axios", () => {
-  async function request(config: Record<string, unknown>) {
-    const resp = await mockRequest(config);
-    const validate =
-      (config.validateStatus as ((s: number) => boolean) | undefined) ??
-      ((s: number) => s >= 200 && s < 300);
-    if (!validate(resp.status as number)) {
-      throw Object.assign(
-        new Error(`Request failed with status code ${resp.status}`),
-        { isAxiosError: true, response: resp },
-      );
-    }
-    return resp;
+  type InterceptorFn = (
+    value: Record<string, unknown>,
+  ) => Record<string, unknown>;
+
+  function createInterceptorManager() {
+    const handlers: InterceptorFn[] = [];
+    return {
+      use: (fn: InterceptorFn) => {
+        handlers.push(fn);
+      },
+      _handlers: handlers,
+    };
   }
 
   return {
     default: {
-      create: vi.fn(() => ({
-        request,
-        get: (url: string, config?: Record<string, unknown>) =>
-          request({ method: "GET", url, ...config }),
-        post: (url: string, data?: unknown, config?: Record<string, unknown>) =>
-          request({ method: "POST", url, data, ...config }),
-        patch: (
-          url: string,
-          data?: unknown,
-          config?: Record<string, unknown>,
-        ) => request({ method: "PATCH", url, data, ...config }),
-      })),
+      create: vi.fn(() => {
+        const reqInterceptors = createInterceptorManager();
+        const resInterceptors = createInterceptorManager();
+
+        async function request(config: Record<string, unknown>) {
+          // Add a mock headers object with .set() to simulate AxiosHeaders
+          const headerStore: Record<string, string> = {};
+          const baseHeaders = (config.headers ?? {}) as Record<string, unknown>;
+          const headers: Record<string, unknown> = {
+            ...baseHeaders,
+            set: (key: string, value: string) => {
+              headerStore[key] = value;
+            },
+          };
+
+          let cfg: Record<string, unknown> = {
+            ...config,
+            headers,
+          };
+
+          // Apply request interceptors
+          for (const handler of reqInterceptors._handlers) {
+            cfg = handler(cfg);
+          }
+
+          // Merge headerStore into cfg so tests can inspect signed headers
+          if (Object.keys(headerStore).length > 0) {
+            cfg._signedHeaders = headerStore;
+          }
+
+          let resp = await mockRequest(cfg);
+          const validate =
+            (cfg.validateStatus as ((s: number) => boolean) | undefined) ??
+            ((s: number) => s >= 200 && s < 300);
+          if (!validate(resp.status as number)) {
+            throw Object.assign(
+              new Error(`Request failed with status code ${resp.status}`),
+              { isAxiosError: true, response: resp },
+            );
+          }
+
+          // Apply response interceptors
+          for (const handler of resInterceptors._handlers) {
+            resp = handler(resp);
+          }
+
+          return resp;
+        }
+
+        return {
+          request,
+          get: (url: string, config?: Record<string, unknown>) =>
+            request({ method: "GET", url, ...config }),
+          post: (
+            url: string,
+            data?: unknown,
+            config?: Record<string, unknown>,
+          ) => request({ method: "POST", url, data, ...config }),
+          patch: (
+            url: string,
+            data?: unknown,
+            config?: Record<string, unknown>,
+          ) => request({ method: "PATCH", url, data, ...config }),
+          interceptors: {
+            request: reqInterceptors,
+            response: resInterceptors,
+          },
+        };
+      }),
       isAxiosError: (err: unknown): boolean =>
         typeof err === "object" &&
         err !== null &&
         (err as Record<string, unknown>).isAxiosError === true,
+      isCancel: (err: unknown): boolean =>
+        typeof err === "object" &&
+        err !== null &&
+        (err as Record<string, unknown>).__CANCEL__ === true,
     },
   };
 });
@@ -175,6 +241,63 @@ describe("Authorization header", () => {
 });
 
 // ---------------------------------------------------------------------------
+// TLS certificate verification
+// ---------------------------------------------------------------------------
+
+describe("TLS certificate verification", () => {
+  it("does not set httpsAgent when rejectUnauthorized is not specified", () => {
+    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY });
+
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.httpsAgent).toBeUndefined();
+  });
+
+  it("does not set httpsAgent when rejectUnauthorized is true", () => {
+    new ConnectAPI({
+      url: BASE_URL,
+      apiKey: API_KEY,
+      rejectUnauthorized: true,
+    });
+
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.httpsAgent).toBeUndefined();
+  });
+
+  it("sets httpsAgent with rejectUnauthorized: false when option is false", () => {
+    new ConnectAPI({
+      url: BASE_URL,
+      apiKey: API_KEY,
+      rejectUnauthorized: false,
+    });
+
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.httpsAgent).toBeDefined();
+    expect(call?.httpsAgent?.options?.rejectUnauthorized).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Timeout option
+// ---------------------------------------------------------------------------
+
+describe("timeout option", () => {
+  it("passes timeout when specified", () => {
+    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY, timeout: 5000 });
+
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({ timeout: 5000 }),
+    );
+  });
+
+  it("does not pass timeout when omitted", () => {
+    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY });
+
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.timeout).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // testAuthentication
 // ---------------------------------------------------------------------------
 
@@ -252,6 +375,79 @@ describe("testAuthentication", () => {
 
     const client = createClient();
     await expect(client.testAuthentication()).rejects.toThrow("HTTP 403");
+  });
+
+  it("throws clear network error when server is unreachable (no response)", async () => {
+    // Simulate a network error (e.g. VPN disconnected, DNS failure) —
+    // axios throws an AxiosError with no `response` property.
+    const networkErr = Object.assign(new Error("connect ECONNREFUSED"), {
+      isAxiosError: true,
+      code: "ECONNREFUSED",
+      // No `response` — this is what triggers "HTTP undefined" without the fix
+    });
+    mockRequest.mockRejectedValue(networkErr);
+
+    const client = createClient();
+    await expect(client.testAuthentication()).rejects.toThrow(
+      /Unable to reach the server/,
+    );
+  });
+
+  it("network error throws ConnectAPIError with no httpStatus", async () => {
+    const { ConnectAPIError } = await import("./client.js");
+    const networkErr = Object.assign(new Error("Network Error"), {
+      isAxiosError: true,
+      code: "ERR_NETWORK",
+    });
+    mockRequest.mockRejectedValue(networkErr);
+
+    const client = createClient();
+    try {
+      await client.testAuthentication();
+      expect.unreachable("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ConnectAPIError);
+      expect(
+        (err as InstanceType<typeof ConnectAPIError>).httpStatus,
+      ).toBeUndefined();
+    }
+  });
+
+  it.each([
+    "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+    "DEPTH_ZERO_SELF_SIGNED_CERT",
+    "SELF_SIGNED_CERT_IN_CHAIN",
+    "ERR_TLS_CERT_ALTNAME_INVALID",
+    "CERT_HAS_EXPIRED",
+  ])("certificate error (%s) is not wrapped as network error", async (code) => {
+    // TLS/certificate errors also have no `response`, but they should NOT
+    // be caught by the network-error check — callers need the original
+    // error code to classify them as certificate verification failures.
+    const certErr = Object.assign(new Error(`cert error: ${code}`), {
+      isAxiosError: true,
+      code,
+    });
+    mockRequest.mockRejectedValue(certErr);
+
+    const client = createClient();
+    // The original error is rethrown as-is (not wrapped in ConnectAPIError)
+    // so callers can inspect the error code for certificate classification.
+    await expect(client.testAuthentication()).rejects.toThrow(
+      `cert error: ${code}`,
+    );
+  });
+
+  it("throws clear error when auth proxy returns HTML on 200", async () => {
+    // An authenticating proxy may return a 200 with an HTML login page
+    // instead of a JSON user object. The guard should catch this.
+    mockRequest.mockResolvedValue(
+      textResponse("<html><body>Login required</body></html>"),
+    );
+
+    const client = createClient();
+    await expect(client.testAuthentication()).rejects.toThrow(
+      /did not return a valid JSON response/,
+    );
   });
 });
 
@@ -525,6 +721,22 @@ describe("uploadBundle", () => {
     expect(call.headers["Content-Type"]).toBe("application/gzip");
   });
 
+  it("preserves binary payload bytes without mutation", async () => {
+    const gzipBytes = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0xff, 0xfe]);
+    mockRequest.mockResolvedValue(
+      jsonResponse({ id: "b-1", content_guid: contentId, active: true }),
+    );
+
+    const client = createClient();
+    await client.uploadBundle(contentId, gzipBytes);
+
+    const call = mockRequest.mock.calls[0][0];
+    const sent = call.data as Uint8Array;
+    expect(sent).toBeInstanceOf(Uint8Array);
+    expect(sent.length).toBe(gzipBytes.length);
+    expect(Array.from(sent)).toEqual(Array.from(gzipBytes));
+  });
+
   it("throws on non-2xx", async () => {
     mockRequest.mockResolvedValue(
       textResponse("too large", 413, "Payload Too Large"),
@@ -686,6 +898,120 @@ describe("waitForTask", () => {
     expect(call1.params).toEqual({ first: 0 });
     expect(call2.url).toBe(`/__api__/v1/tasks/${taskId}`);
     expect(call2.params).toEqual({ first: 3 });
+  });
+
+  it("calls onOutput with each batch of log lines", async () => {
+    mockRequest
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: taskId,
+          output: ["Building..."],
+          result: null,
+          finished: false,
+          code: 0,
+          error: "",
+          last: 1,
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: taskId,
+          output: ["Installing packages...", "Launching content..."],
+          result: null,
+          finished: true,
+          code: 0,
+          error: "",
+          last: 3,
+        }),
+      );
+
+    const batches: string[][] = [];
+    const onOutput = (lines: string[]) => batches.push(lines);
+
+    const client = createClient();
+    await client.waitForTask(taskId, 0, onOutput);
+
+    expect(batches).toEqual([
+      ["Building..."],
+      ["Installing packages...", "Launching content..."],
+    ]);
+  });
+
+  it("does not call onOutput when output is empty", async () => {
+    mockRequest
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: taskId,
+          output: [],
+          result: null,
+          finished: false,
+          code: 0,
+          error: "",
+          last: 0,
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: taskId,
+          output: ["done"],
+          result: null,
+          finished: true,
+          code: 0,
+          error: "",
+          last: 1,
+        }),
+      );
+
+    const batches: string[][] = [];
+    const onOutput = (lines: string[]) => batches.push(lines);
+
+    const client = createClient();
+    await client.waitForTask(taskId, 0, onOutput);
+
+    expect(batches).toEqual([["done"]]);
+  });
+
+  it("calls onOutput before throwing on task error", async () => {
+    mockRequest.mockResolvedValueOnce(
+      jsonResponse({
+        id: taskId,
+        output: ["error output"],
+        result: null,
+        finished: true,
+        code: 1,
+        error: "deployment failed",
+        last: 1,
+      }),
+    );
+
+    const batches: string[][] = [];
+    const onOutput = (lines: string[]) => batches.push(lines);
+
+    const client = createClient();
+    await expect(client.waitForTask(taskId, 0, onOutput)).rejects.toThrow(
+      "deployment failed",
+    );
+
+    expect(batches).toEqual([["error output"]]);
+  });
+
+  it("works without onOutput (backward compatible)", async () => {
+    mockRequest.mockResolvedValue(
+      jsonResponse({
+        id: taskId,
+        output: ["line 1"],
+        result: null,
+        finished: true,
+        code: 0,
+        error: "",
+        last: 1,
+      }),
+    );
+
+    const client = createClient();
+    const result = await client.waitForTask(taskId, 0);
+
+    expect(result.output).toEqual(["line 1"]);
   });
 });
 
@@ -888,5 +1214,654 @@ describe("getSettings", () => {
     expect(settings.python).toEqual(python);
     expect(settings.r).toEqual(r);
     expect(settings.quarto).toEqual(quarto);
+  });
+
+  it("uses app-mode-specific scheduler path when appMode is provided", async () => {
+    const appModeMap: Record<string, unknown> = {
+      ...urlResponseMap,
+      "/__api__/server_settings/scheduler/python-shiny": scheduler,
+    };
+    mockRequest.mockImplementation((config: { url: string }) =>
+      Promise.resolve(jsonResponse(appModeMap[config.url])),
+    );
+
+    const client = createClient();
+    await client.getSettings("python-shiny");
+
+    const urls = mockRequest.mock.calls.map(
+      (call: unknown[]) => (call[0] as { url: string }).url,
+    );
+    expect(urls).toContain("/__api__/server_settings/scheduler/python-shiny");
+    expect(urls).not.toContain("/__api__/server_settings/scheduler");
+  });
+
+  it("uses base scheduler path for static content", async () => {
+    mockSettingsRoutes();
+
+    const client = createClient();
+    await client.getSettings("static");
+
+    const urls = mockRequest.mock.calls.map(
+      (call: unknown[]) => (call[0] as { url: string }).url,
+    );
+    expect(urls).toContain("/__api__/server_settings/scheduler");
+  });
+
+  it("uses base scheduler path for unknown app mode", async () => {
+    mockSettingsRoutes();
+
+    const client = createClient();
+    await client.getSettings("unknown-mode");
+
+    const urls = mockRequest.mock.calls.map(
+      (call: unknown[]) => (call[0] as { url: string }).url,
+    );
+    expect(urls).toContain("/__api__/server_settings/scheduler");
+    expect(urls).not.toContain(
+      "/__api__/server_settings/scheduler/unknown-mode",
+    );
+  });
+
+  it("uses base scheduler path when no appMode is provided", async () => {
+    mockSettingsRoutes();
+
+    const client = createClient();
+    await client.getSettings();
+
+    const urls = mockRequest.mock.calls.map(
+      (call: unknown[]) => (call[0] as { url: string }).url,
+    );
+    expect(urls).toContain("/__api__/server_settings/scheduler");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// registerToken
+// ---------------------------------------------------------------------------
+
+describe("registerToken", () => {
+  it("POSTs token and public key to /__api__/tokens and returns claim URL", async () => {
+    const client = new ConnectAPI({ url: BASE_URL });
+    mockRequest.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          token_claim_url: "https://connect.example.com/connect/#/claim/abc123",
+        },
+        201,
+      ),
+    );
+
+    const result = await client.registerToken(
+      "Tabcdef1234567890",
+      "base64PublicKey==",
+    );
+
+    expect(result).toEqual({
+      token_claim_url: "https://connect.example.com/connect/#/claim/abc123",
+    });
+    expect(mockRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: "POST",
+        url: "/__api__/tokens",
+        data: {
+          token: "Tabcdef1234567890",
+          public_key: "base64PublicKey==",
+          user_id: 0,
+        },
+      }),
+    );
+  });
+
+  it("throws on non-2xx response", async () => {
+    const client = new ConnectAPI({ url: BASE_URL });
+    mockRequest.mockResolvedValueOnce(
+      jsonResponse({ error: "forbidden" }, 403, "Forbidden"),
+    );
+
+    await expect(
+      client.registerToken("Tabcdef1234567890", "base64PublicKey=="),
+    ).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Token authentication
+// ---------------------------------------------------------------------------
+
+function generateTestKeyPair(): {
+  privateKeyBase64: string;
+} {
+  const { privateKey } = crypto.generateKeyPairSync("rsa", {
+    modulusLength: 2048,
+  });
+  const privateKeyDer = privateKey.export({ format: "der", type: "pkcs1" });
+  return {
+    privateKeyBase64: Buffer.from(privateKeyDer).toString("base64"),
+  };
+}
+
+describe("Token authentication", () => {
+  const TOKEN = "Tabc123def456";
+  const { privateKeyBase64: PRIVATE_KEY } = generateTestKeyPair();
+
+  function createTokenClient(): ConnectAPI {
+    return new ConnectAPI({
+      url: BASE_URL,
+      token: TOKEN,
+      privateKey: PRIVATE_KEY,
+    });
+  }
+
+  it("does not set static Authorization header when using token auth", () => {
+    createTokenClient();
+
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.headers).toBeUndefined();
+  });
+
+  it("adds signing headers to requests via interceptor", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(validUserDTO()));
+
+    const client = createTokenClient();
+    await client.getCurrentUser();
+
+    expect(mockRequest).toHaveBeenCalledOnce();
+    const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    const signedHeaders = config._signedHeaders as Record<string, string>;
+
+    expect(signedHeaders).toBeDefined();
+    expect(signedHeaders["X-Auth-Token"]).toBe(TOKEN);
+    expect(signedHeaders["X-Auth-Signature"]).toBeDefined();
+    expect(signedHeaders["X-Content-Checksum"]).toBeDefined();
+    expect(signedHeaders["Date"]).toBeDefined();
+  });
+
+  it("computes checksum from request body for POST requests", async () => {
+    const responseBody = { guid: "new-content-guid", name: "my-app" };
+    mockRequest.mockResolvedValue(jsonResponse(responseBody));
+
+    const client = createTokenClient();
+    await client.createDeployment({ name: "my-app" });
+
+    const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    const signedHeaders = config._signedHeaders as Record<string, string>;
+
+    // Checksum should be MD5 of the JSON body
+    const expectedBody = JSON.stringify({ name: "my-app" });
+    const expectedChecksum = crypto
+      .createHash("md5")
+      .update(expectedBody)
+      .digest("base64");
+    expect(signedHeaders["X-Content-Checksum"]).toBe(expectedChecksum);
+  });
+
+  it("computes checksum from raw bytes for binary uploads", async () => {
+    const bundleResponse = { id: "b-1", content_guid: "c-1", active: true };
+    mockRequest.mockResolvedValue(jsonResponse(bundleResponse));
+
+    const gzipBytes = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0xff, 0xfe]);
+    const client = createTokenClient();
+    await client.uploadBundle(ContentID("c-1"), gzipBytes);
+
+    const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    const signedHeaders = config._signedHeaders as Record<string, string>;
+
+    // Checksum must be MD5 of the raw bytes, not JSON.stringify(bytes)
+    const expectedChecksum = crypto
+      .createHash("md5")
+      .update(gzipBytes)
+      .digest("base64");
+    expect(signedHeaders["X-Content-Checksum"]).toBe(expectedChecksum);
+  });
+
+  it("Date header ends with GMT", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(validUserDTO()));
+
+    const client = createTokenClient();
+    await client.getCurrentUser();
+
+    const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    const signedHeaders = config._signedHeaders as Record<string, string>;
+    expect(signedHeaders["Date"]).toMatch(/GMT$/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Snowflake authentication
+// ---------------------------------------------------------------------------
+
+describe("Snowflake authentication", () => {
+  it("sets Snowflake authorization header", () => {
+    new ConnectAPI({
+      url: BASE_URL,
+      snowflakeToken: "sf-session-token-abc",
+    });
+
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseURL: BASE_URL,
+        headers: expect.objectContaining({
+          Authorization: 'Snowflake Token="sf-session-token-abc"',
+        }),
+      }),
+    );
+  });
+
+  it("does not add signing interceptor", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(validUserDTO()));
+
+    const client = new ConnectAPI({
+      url: BASE_URL,
+      snowflakeToken: "sf-session-token-abc",
+    });
+    await client.getCurrentUser();
+
+    const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(config._signedHeaders).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Constructor validation
+// ---------------------------------------------------------------------------
+
+describe("Constructor validation", () => {
+  it("allows no credentials (for URL reachability checks)", () => {
+    expect(() => new ConnectAPI({ url: BASE_URL })).not.toThrow();
+  });
+
+  it("throws if only token is provided without privateKey", () => {
+    expect(
+      // @ts-expect-error - union type rejects partial token auth at compile time; testing runtime safety net
+      () => new ConnectAPI({ url: BASE_URL, token: "Ttoken123" }),
+    ).toThrow(
+      "ConnectAPI requires both token and privateKey for token authentication",
+    );
+  });
+
+  it("throws if only privateKey is provided without token", () => {
+    expect(
+      // @ts-expect-error - union type rejects partial token auth at compile time; testing runtime safety net
+      () => new ConnectAPI({ url: BASE_URL, privateKey: "somekey" }),
+    ).toThrow(
+      "ConnectAPI requires both token and privateKey for token authentication",
+    );
+  });
+
+  it("accepts apiKey auth", () => {
+    expect(
+      () => new ConnectAPI({ url: BASE_URL, apiKey: API_KEY }),
+    ).not.toThrow();
+  });
+
+  it("accepts token+privateKey auth", () => {
+    const { privateKey } = crypto.generateKeyPairSync("rsa", {
+      modulusLength: 2048,
+    });
+    const privateKeyBase64 = Buffer.from(
+      privateKey.export({ format: "der", type: "pkcs1" }),
+    ).toString("base64");
+
+    expect(
+      () =>
+        new ConnectAPI({
+          url: BASE_URL,
+          token: "Ttoken123",
+          privateKey: privateKeyBase64,
+        }),
+    ).not.toThrow();
+  });
+
+  it("accepts snowflakeToken auth", () => {
+    expect(
+      () => new ConnectAPI({ url: BASE_URL, snowflakeToken: "sf-token" }),
+    ).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cookie jar (session affinity for HA environments)
+// ---------------------------------------------------------------------------
+
+describe("Cookie jar (session affinity)", () => {
+  it("forwards set-cookie from responses to subsequent requests", async () => {
+    mockRequest
+      .mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        data: validUserDTO(),
+        headers: { "set-cookie": ["AWSALB=abc123"] },
+        config: {},
+      })
+      .mockResolvedValueOnce(jsonResponse(validUserDTO()));
+
+    const client = createClient();
+    await client.getCurrentUser(); // response sets the cookie
+    await client.getCurrentUser(); // should forward the cookie
+
+    const secondCall = mockRequest.mock.calls[1][0] as Record<string, unknown>;
+    expect((secondCall.headers as Record<string, string>).Cookie).toBe(
+      "AWSALB=abc123",
+    );
+  });
+
+  it("does not send Cookie header when no set-cookie was received", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(validUserDTO()));
+
+    const client = createClient();
+    await client.getCurrentUser();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect((call.headers as Record<string, string>).Cookie).toBeUndefined();
+  });
+
+  it("updates cookies when a new set-cookie is received", async () => {
+    mockRequest
+      .mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        data: validUserDTO(),
+        headers: { "set-cookie": ["AWSALB=first"] },
+        config: {},
+      })
+      .mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        data: validUserDTO(),
+        headers: { "set-cookie": ["AWSALB=second"] },
+        config: {},
+      })
+      .mockResolvedValueOnce(jsonResponse(validUserDTO()));
+
+    const client = createClient();
+    await client.getCurrentUser();
+    await client.getCurrentUser();
+    await client.getCurrentUser();
+
+    const thirdCall = mockRequest.mock.calls[2][0] as Record<string, unknown>;
+    expect((thirdCall.headers as Record<string, string>).Cookie).toBe(
+      "AWSALB=second",
+    );
+  });
+
+  it("joins multiple cookies with semicolons", async () => {
+    mockRequest
+      .mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        data: validUserDTO(),
+        headers: { "set-cookie": ["AWSALB=abc", "session=xyz"] },
+        config: {},
+      })
+      .mockResolvedValueOnce(jsonResponse(validUserDTO()));
+
+    const client = createClient();
+    await client.getCurrentUser();
+    await client.getCurrentUser();
+
+    const secondCall = mockRequest.mock.calls[1][0] as Record<string, unknown>;
+    expect((secondCall.headers as Record<string, string>).Cookie).toBe(
+      "AWSALB=abc; session=xyz",
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AbortSignal support
+// ---------------------------------------------------------------------------
+
+describe("AbortSignal support", () => {
+  function abortedSignal(): AbortSignal {
+    return AbortSignal.abort();
+  }
+
+  it("testAuthentication forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(client.testAuthentication(abortedSignal())).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("testAuthentication rethrows cancel errors without wrapping", async () => {
+    // Cancel errors should not be wrapped in ConnectAPIError so callers
+    // can distinguish abort from real API failures.
+    const cancelErr = Object.assign(new Error("canceled"), {
+      isAxiosError: true,
+      __CANCEL__: true,
+      response: { status: 0, data: {} },
+    });
+    mockRequest.mockRejectedValue(cancelErr);
+
+    const client = createClient();
+    await expect(client.testAuthentication()).rejects.toBe(cancelErr);
+  });
+
+  it("testAuthentication still wraps non-cancel axios errors", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("Request failed"), {
+        isAxiosError: true,
+        response: { status: 401, data: { error: "Unauthorized" } },
+      }),
+    );
+
+    const client = createClient();
+    await expect(client.testAuthentication()).rejects.toThrow("Unauthorized");
+  });
+
+  it("contentDetails forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.contentDetails(ContentID("c-1"), abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("createDeployment forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.createDeployment({ name: "test" }, abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("updateDeployment forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.updateDeployment(
+        ContentID("c-1"),
+        { title: "test" },
+        abortedSignal(),
+      ),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("getEnvVars forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.getEnvVars(ContentID("c-1"), abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("setEnvVars forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.setEnvVars(ContentID("c-1"), { FOO: "bar" }, abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("uploadBundle forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.uploadBundle(
+        ContentID("c-1"),
+        new Uint8Array([1, 2]),
+        abortedSignal(),
+      ),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("downloadBundle forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.downloadBundle(ContentID("c-1"), BundleID("b-1"), abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("deployBundle forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.deployBundle(ContentID("c-1"), BundleID("b-1"), abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("waitForTask checks signal at start of loop and forwards to axios", async () => {
+    const client = createClient();
+    await expect(
+      client.waitForTask(TaskID("t-1"), 0, undefined, abortedSignal()),
+    ).rejects.toThrow();
+  });
+
+  it("waitForTask continues polling until signal aborts", async () => {
+    const controller = new AbortController();
+
+    mockRequest
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "t-1",
+          output: [],
+          result: null,
+          finished: false,
+          code: 0,
+          error: "",
+          last: 0,
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "t-1",
+          output: [],
+          result: null,
+          finished: false,
+          code: 0,
+          error: "",
+          last: 0,
+        }),
+      )
+      .mockImplementation(() => {
+        controller.abort();
+        return Promise.reject(
+          Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+        );
+      });
+
+    const client = createClient();
+    await expect(
+      client.waitForTask(TaskID("t-1"), 0, undefined, controller.signal),
+    ).rejects.toThrow();
+
+    expect(mockRequest).toHaveBeenCalledTimes(3);
+  });
+
+  it("validateDeployment forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.validateDeployment(ContentID("c-1"), abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("getIntegrations forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(client.getIntegrations(abortedSignal())).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("getSettings forwards signal to all 7 requests", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.getSettings(undefined, abortedSignal()),
+    ).rejects.toThrow();
+
+    // All 7 requests should have been initiated with the signal
+    expect(mockRequest).toHaveBeenCalled();
+    for (const call of mockRequest.mock.calls) {
+      const config = call[0] as Record<string, unknown>;
+      expect(config.signal).toBeDefined();
+    }
   });
 });

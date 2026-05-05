@@ -129,7 +129,7 @@ describe("formatValidationErrors", () => {
   });
 
   it("keeps unevaluatedProperties alongside sibling errors at the same path", () => {
-    // Go's key for unevaluatedProperties includes the property name
+    // unevaluatedProperties errors include the property name in the key
     // (e.g., "python.garbage"), so a sibling error at "python.version"
     // does NOT cause filtering — only a deeper error at
     // "python.garbage.something" would.

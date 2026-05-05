@@ -17,9 +17,12 @@ vi.mock("node:fs/promises", () => ({
       Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
     );
   }),
-  access: vi.fn((filePath: string) => {
+  stat: vi.fn((filePath: string) => {
     if (filePath === "/exists.txt") {
-      return Promise.resolve();
+      return Promise.resolve({ isFile: () => true });
+    }
+    if (filePath === "/exists-dir") {
+      return Promise.resolve({ isFile: () => false });
     }
     return Promise.reject(
       Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
@@ -51,6 +54,11 @@ describe("fileExistsAt", () => {
 
   test("returns false when file does not exist", async () => {
     const result = await fileExistsAt("/missing.txt");
+    expect(result).toBe(false);
+  });
+
+  test("returns false when path is a directory", async () => {
+    const result = await fileExistsAt("/exists-dir");
     expect(result).toBe(false);
   });
 });

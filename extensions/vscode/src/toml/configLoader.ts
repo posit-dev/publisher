@@ -68,11 +68,11 @@ export async function loadConfigFromFile(
     throw loadError(createSchemaValidationError(configPath, messages));
   }
 
-  // Extract leading comments from the raw file content (matches Go's readLeadingComments).
+  // Extract leading comments from the raw file content.
   // TOML strips comments during parsing, so we read them from the raw text.
   const comments = readLeadingComments(content);
 
-  // Convert keys to camelCase and apply defaults to match Go's New() + PopulateDefaults().
+  // Convert keys to camelCase and apply defaults.
   // The assertion is justified: the JSON schema validation above confirmed the object
   // structure, and convertKeysToCamelCase only renames keys without changing the shape.
   const converted = convertKeysToCamelCase(parsed) as ConfigurationDetails;
@@ -88,9 +88,8 @@ export async function loadConfigFromFile(
     converted.files = [];
   }
   // Business validation beyond schema: reject Connect Cloud configs with
-  // unsupported content types. Matches Go's validate() in config.go.
-  // This might make more sense as a deployment-time concern later, but for
-  // now we match Go's FromFile behavior which rejects at load time.
+  // unsupported content types. This might make more sense as a deployment-time
+  // concern later, but for now we reject at load time.
   if (converted.productType === ProductType.CONNECT_CLOUD) {
     if (!connectCloudSupportedTypes.has(converted.type)) {
       throw loadError(
@@ -109,7 +108,6 @@ export async function loadConfigFromFile(
 }
 
 // Content types that have a mapping in Connect Cloud.
-// Keep in sync with Go's CloudContentTypeFromPublisherType in internal/clients/types/types.go
 const connectCloudSupportedTypes = new Set<ContentType>([
   ContentType.JUPYTER_NOTEBOOK,
   ContentType.PYTHON_BOKEH,

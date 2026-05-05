@@ -1,3 +1,0 @@
-
-licenses:
-    python3 ../scripts/licenses.py > licenses.md

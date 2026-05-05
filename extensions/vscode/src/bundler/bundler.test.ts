@@ -8,8 +8,11 @@ import * as zlib from "zlib";
 import { extract as tarExtract, Headers } from "tar-stream";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createBundle } from "./bundler";
+import { manifestFromConfig } from "./manifestFromConfig";
 import { newManifest } from "./manifest";
-import { Manifest } from "./types";
+import { ContentType } from "../api/types/configurations";
+import { ProductType } from "../api/types/contentRecords";
+import { Manifest, BundleProgressEvent } from "./types";
 
 let tmpDir: string;
 
@@ -282,4 +285,176 @@ describe("createBundle", () => {
       expect(shHeader.mode).toBe(0o755);
     },
   );
+
+  it("invokes onProgress callback with sourceDir, file, and summary events", async () => {
+    makeFile("app.py", "import dash");
+    makeFile("data.csv", "a,b,c");
+
+    const events: BundleProgressEvent[] = [];
+    const onProgress = (event: BundleProgressEvent) => events.push(event);
+
+    const result = await createBundle({
+      projectPath: tmpDir,
+      manifest: newManifest(),
+      onProgress,
+    });
+
+    // sourceDir first
+    expect(events[0]).toEqual({ kind: "sourceDir", sourceDir: tmpDir });
+
+    // One file event per non-directory file
+    const fileEvents = events.filter((e) => e.kind === "file");
+    expect(fileEvents).toHaveLength(result.fileCount);
+
+    // Each file event has path and size
+    for (const evt of fileEvents) {
+      if (evt.kind === "file") {
+        expect(evt.path).toBeDefined();
+        expect(evt.size).toBeGreaterThanOrEqual(0);
+      }
+    }
+
+    // Summary last (before we return)
+    const last = events[events.length - 1];
+    expect(last).toEqual({
+      kind: "summary",
+      files: result.fileCount,
+      totalBytes: result.totalSize,
+    });
+  });
+
+  it("reports archive path (not source path) for remapped renv.lock", async () => {
+    makeFile("app.R", "library(shiny)");
+    makeFile(".posit/publish/deployments/renv.lock", '{"R":{}}');
+
+    const events: BundleProgressEvent[] = [];
+    await createBundle({
+      projectPath: tmpDir,
+      manifest: newManifest(),
+      onProgress: (event) => events.push(event),
+    });
+
+    const fileEvents = events.filter((e) => e.kind === "file");
+    const renvEvent = fileEvents.find(
+      (e) => e.kind === "file" && e.path === "renv.lock",
+    );
+    expect(renvEvent).toBeDefined();
+
+    // Should NOT report the staged path
+    const stagedEvent = fileEvents.find(
+      (e) =>
+        e.kind === "file" && e.path === ".posit/publish/deployments/renv.lock",
+    );
+    expect(stagedEvent).toBeUndefined();
+  });
+
+  it("works without onProgress callback", async () => {
+    makeFile("app.py");
+
+    // No onProgress — should not throw
+    const result = await createBundle({
+      projectPath: tmpDir,
+      manifest: newManifest(),
+    });
+    expect(result.fileCount).toBe(1);
+  });
+
+  it("includes synthetic files in the bundle", async () => {
+    makeFile("app.py", "import dash");
+
+    const syntheticFiles = new Map<string, Buffer>();
+    syntheticFiles.set("requirements.txt", Buffer.from("dash==2.0\n"));
+
+    const result = await createBundle({
+      projectPath: tmpDir,
+      manifest: newManifest(),
+      syntheticFiles,
+    });
+
+    // Synthetic file should be in the tar
+    const entries = await extractTarEntries(result.bundle);
+    expect(entries.has("requirements.txt")).toBe(true);
+    expect(entries.get("requirements.txt")!.data.toString()).toBe(
+      "dash==2.0\n",
+    );
+
+    // Synthetic file should be in the manifest with a valid checksum
+    expect(result.manifest.files["requirements.txt"]).toBeDefined();
+    expect(result.manifest.files["requirements.txt"]?.checksum).toMatch(
+      /^[0-9a-f]+$/,
+    );
+
+    // Counts should include the synthetic file
+    expect(result.fileCount).toBe(2); // app.py + requirements.txt
+  });
+
+  it("emits onProgress events for synthetic files", async () => {
+    makeFile("app.py", "import dash");
+
+    const syntheticFiles = new Map<string, Buffer>();
+    syntheticFiles.set("requirements.txt", Buffer.from("dash==2.0\n"));
+
+    const events: BundleProgressEvent[] = [];
+    await createBundle({
+      projectPath: tmpDir,
+      manifest: newManifest(),
+      syntheticFiles,
+      onProgress: (event) => events.push(event),
+    });
+
+    // Should have a file event for the synthetic file
+    const fileEvents = events.filter((e) => e.kind === "file");
+    const syntheticEvent = fileEvents.find(
+      (e) => e.kind === "file" && e.path === "requirements.txt",
+    );
+    expect(syntheticEvent).toBeDefined();
+
+    // Summary should include the synthetic file in its counts
+    const summary = events.find((e) => e.kind === "summary");
+    expect(summary).toBeDefined();
+    if (summary?.kind === "summary") {
+      expect(summary.files).toBe(2); // app.py + requirements.txt
+    }
+  });
+});
+
+describe("pre-rendered Quarto website bundle", () => {
+  it("does not set content_category from entrypoint path", async () => {
+    // Simulate a pre-rendered Quarto website: output lives under _site/
+    makeFile("_site/index.html", "<html><body>Home</body></html>");
+    makeFile(
+      "_site/slides.html",
+      "<html><body>Slides (revealjs)</body></html>",
+    );
+    makeFile("_site/site_libs/revealjs/reveal.js", "/* reveal.js library */");
+
+    const manifest = manifestFromConfig({
+      $schema: "" as never,
+      productType: ProductType.CONNECT,
+      type: ContentType.HTML,
+      entrypoint: "_site/index.html",
+      validate: true,
+      files: ["/_site"],
+    });
+
+    const result = await createBundle({
+      projectPath: tmpDir,
+      manifest,
+      filePatterns: ["/_site"],
+    });
+
+    const entries = await extractTarEntries(result.bundle);
+    const archivedManifest = JSON.parse(
+      entries.get("manifest.json")!.data.toString(),
+    );
+    // content_category should NOT be set from entrypoint path alone
+    expect(archivedManifest.metadata.content_category).toBeUndefined();
+    expect(archivedManifest.metadata.appmode).toBe("static");
+    expect(archivedManifest.metadata.primary_html).toBe("_site/index.html");
+
+    // All site files should still be present in the bundle
+    expect(entries.has("_site/index.html")).toBe(true);
+    expect(entries.has("_site/slides.html")).toBe(true);
+    expect(entries.has("_site/site_libs/revealjs/reveal.js")).toBe(true);
+  });
 });

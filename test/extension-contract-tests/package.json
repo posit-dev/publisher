@@ -7,9 +7,14 @@
     "test:watch": "vitest",
     "check:conformance": "tsc --noEmit -p tsconfig.conformance.json"
   },
+  "dependencies": {
+    "@posit-dev/connect-cloud-api": "*"
+  },
   "devDependencies": {
-    "@types/vscode": "^1.87.0",
-    "typescript": "^5.7.0",
-    "vitest": "^4.1.0"
+    "@types/js-yaml": "^4.0.9",
+    "@types/vscode": "^1.118.0",
+    "js-yaml": "^4.1.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.4"
   }
 }

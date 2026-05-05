@@ -1,6 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { access, readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 
 /**
  * Read a file as UTF-8 text, returning null if the file doesn't exist.
@@ -26,8 +26,8 @@ function isErrnoException(err: unknown): err is NodeJS.ErrnoException {
  */
 export async function fileExistsAt(filePath: string): Promise<boolean> {
   try {
-    await access(filePath);
-    return true;
+    const info = await stat(filePath);
+    return info.isFile();
   } catch {
     return false;
   }

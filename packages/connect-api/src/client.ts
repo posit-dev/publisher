@@ -1,8 +1,10 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import https from "https";
 import axios from "axios";
-import type { AxiosInstance, AxiosResponse } from "axios";
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 
+import { signRequest } from "./auth.js";
 import type {
   AllSettings,
   ApplicationSettings,
@@ -26,6 +28,44 @@ import type {
 } from "./types.js";
 
 /**
+ * Error thrown by ConnectAPI methods when an HTTP error occurs.
+ * Preserves the HTTP status code for callers to inspect.
+ */
+export class ConnectAPIError extends Error {
+  constructor(
+    message: string,
+    public readonly httpStatus?: number,
+  ) {
+    super(message);
+    this.name = "ConnectAPIError";
+  }
+}
+
+/**
+ * Known Connect app modes that have app-specific scheduler settings
+ * (excluding "static" which has no scheduler settings). Unknown strings
+ * fall back to the base /server_settings/scheduler endpoint.
+ */
+const knownAppModes = new Set([
+  "jupyter-static",
+  "jupyter-voila",
+  "python-bokeh",
+  "python-dash",
+  "python-fastapi",
+  "python-api",
+  "python-shiny",
+  "python-streamlit",
+  "python-gradio",
+  "python-panel",
+  "quarto-shiny",
+  "quarto-static",
+  "api",
+  "shiny",
+  "rmd-shiny",
+  "rmd-static",
+]);
+
+/**
  * TypeScript client for the Posit Connect API.
  *
  * Uses axios for HTTP requests. Non-2xx responses throw AxiosError by default.
@@ -35,34 +75,157 @@ export class ConnectAPI {
   private readonly client: AxiosInstance;
 
   constructor(options: ConnectAPIOptions) {
-    this.client = axios.create({
+    const hasApiKey = !!options.apiKey;
+    const hasToken = !!options.token && !!options.privateKey;
+
+    // Allow no credentials (for URL reachability checks), but reject
+    // partial token auth (token without privateKey or vice versa).
+    if (!hasApiKey && !hasToken && (options.token || options.privateKey)) {
+      throw new Error(
+        "ConnectAPI requires both token and privateKey for token authentication",
+      );
+    }
+
+    const config: AxiosRequestConfig = {
       baseURL: options.url,
-      headers: {
+    };
+
+    if (hasApiKey) {
+      config.headers = {
         Authorization: `Key ${options.apiKey}`,
-      },
+      };
+    }
+
+    if (options.snowflakeToken) {
+      config.headers = {
+        Authorization: `Snowflake Token="${options.snowflakeToken}"`,
+      };
+    }
+
+    // Support disabling TLS certificate verification (for self-signed certs)
+    if (options.rejectUnauthorized === false) {
+      config.httpsAgent = new https.Agent({
+        rejectUnauthorized: false,
+      });
+    }
+
+    if (options.timeout !== undefined) {
+      config.timeout = options.timeout;
+    }
+
+    this.client = axios.create(config);
+
+    // For token auth, add a request interceptor that computes per-request signing headers
+    if (hasToken) {
+      const token = options.token!;
+      const privateKey = options.privateKey!;
+
+      this.client.interceptors.request.use((reqConfig) => {
+        const method = (reqConfig.method ?? "GET").toUpperCase();
+        // Extract the path from the url (which is relative to baseURL)
+        const path = reqConfig.url ?? "/";
+        // For binary bodies (bundle uploads), pass raw bytes to signRequest
+        // so the MD5 checksum matches what Connect receives. JSON.stringify
+        // on a Uint8Array produces {"0":31,"1":139,...} which is wrong.
+        const body: string | Buffer | Uint8Array | undefined =
+          reqConfig.data == null
+            ? undefined
+            : Buffer.isBuffer(reqConfig.data) ||
+                reqConfig.data instanceof Uint8Array
+              ? reqConfig.data
+              : JSON.stringify(reqConfig.data);
+
+        const headers = signRequest(method, path, body, token, privateKey);
+        for (const [key, value] of Object.entries(headers)) {
+          reqConfig.headers.set(key, value);
+        }
+        return reqConfig;
+      });
+    }
+
+    // Cookie jar for session affinity in HA environments.
+    // Load balancers set cookies to pin requests to a backend node;
+    // without forwarding them, polling requests (e.g. waitForTask) can
+    // land on different nodes and get spurious 404s.
+    let cookies: string[] = [];
+
+    this.client.interceptors.response.use((response) => {
+      const setCookie = response.headers["set-cookie"];
+      if (setCookie) {
+        cookies = setCookie;
+      }
+      return response;
+    });
+
+    this.client.interceptors.request.use((config) => {
+      if (cookies.length > 0) {
+        config.headers["Cookie"] = cookies.join("; ");
+      }
+      return config;
     });
   }
 
   /**
    * Validates credentials and checks user state (locked, confirmed, role).
    * Returns { user, error: null } on success; throws on HTTP errors or invalid state.
+   *
+   * When the client is constructed without credentials (for URL reachability
+   * checks), this method will throw a {@link ConnectAPIError} with
+   * `httpStatus: 401`. Callers should handle that case explicitly.
    */
-  async testAuthentication(): Promise<{ user: User; error: null }> {
+  async testAuthentication(
+    signal?: AbortSignal,
+  ): Promise<{ user: User; error: null }> {
     let data: UserDTO;
     try {
-      ({ data } = await this.client.get<UserDTO>("/__api__/v1/user"));
+      ({ data } = await this.client.get<UserDTO>("/__api__/v1/user", {
+        signal,
+      }));
     } catch (err) {
+      // Let cancellation errors propagate without wrapping, so callers
+      // can distinguish abort from real API failures.
+      if (axios.isCancel(err)) {
+        throw err;
+      }
       if (axios.isAxiosError(err)) {
-        const errorBody = err.response?.data;
+        // No response at all — a connection-level failure.
+        if (!err.response) {
+          // TLS/certificate errors: rethrow as-is so callers can identify
+          // them (e.g. testCredentials classifies them as
+          // errorCertificateVerification).
+          if (isCertificateError(err)) {
+            throw err;
+          }
+          // Other network errors (DNS failure, VPN disconnected, etc.)
+          throw new ConnectAPIError(
+            "Unable to reach the server. " +
+              "Check your network connection, VPN, and server URL.",
+          );
+        }
+        const errorBody = err.response.data;
         const msg =
           typeof errorBody?.error === "string"
             ? errorBody.error
-            : `HTTP ${err.response?.status}`;
-        throw new Error(msg);
+            : `HTTP ${err.response.status}`;
+        throw new ConnectAPIError(msg, err.response.status);
       }
       throw err;
     }
 
+    // Guard against non-JSON responses (e.g., an auth proxy returning HTML).
+    // Axios returns the raw string when content-type isn't JSON, so `data`
+    // would be a string instead of an object.
+    if (typeof data !== "object" || data === null || !("guid" in data)) {
+      throw new ConnectAPIError(
+        "The server did not return a valid JSON response. " +
+          "Check the server URL and credentials.",
+        undefined,
+      );
+    }
+
+    // TODO: These business-logic errors throw plain Error while HTTP errors
+    // throw ConnectAPIError. Consider using a typed error (e.g. ConnectAPIError
+    // or a dedicated subclass) for consistency with catch-by-type patterns.
     if (data.locked) {
       throw new Error(`user account ${data.username} is locked`);
     }
@@ -90,8 +253,10 @@ export class ConnectAPI {
   }
 
   /** Retrieves the current authenticated user without validation checks. */
-  async getCurrentUser(): Promise<User> {
-    const { data } = await this.client.get<UserDTO>("/__api__/v1/user");
+  async getCurrentUser(signal?: AbortSignal): Promise<User> {
+    const { data } = await this.client.get<UserDTO>("/__api__/v1/user", {
+      signal,
+    });
     return {
       id: data.guid,
       username: data.username,
@@ -104,31 +269,43 @@ export class ConnectAPI {
   /** Fetches details for a content item by ID. */
   async contentDetails(
     contentId: ContentID,
+    signal?: AbortSignal,
   ): Promise<AxiosResponse<ContentDetailsDTO>> {
     return this.client.get<ContentDetailsDTO>(
       `/__api__/v1/content/${contentId}`,
+      { signal },
     );
   }
 
   /** Creates a new content item and returns the full content details. */
   async createDeployment(
     body: ConnectContent,
+    signal?: AbortSignal,
   ): Promise<AxiosResponse<ContentDetailsDTO>> {
-    return this.client.post<ContentDetailsDTO>("/__api__/v1/content", body);
+    return this.client.post<ContentDetailsDTO>("/__api__/v1/content", body, {
+      signal,
+    });
   }
 
   /** Updates an existing content item. */
   async updateDeployment(
     contentId: ContentID,
     body: ConnectContent,
+    signal?: AbortSignal,
   ): Promise<void> {
-    await this.client.patch(`/__api__/v1/content/${contentId}`, body);
+    await this.client.patch(`/__api__/v1/content/${contentId}`, body, {
+      signal,
+    });
   }
 
   /** Retrieves environment variable names for a content item. */
-  async getEnvVars(contentId: ContentID): Promise<AxiosResponse<string[]>> {
+  async getEnvVars(
+    contentId: ContentID,
+    signal?: AbortSignal,
+  ): Promise<AxiosResponse<string[]>> {
     return this.client.get<string[]>(
       `/__api__/v1/content/${contentId}/environment`,
+      { signal },
     );
   }
 
@@ -136,10 +313,12 @@ export class ConnectAPI {
   async setEnvVars(
     contentId: ContentID,
     env: Record<string, string>,
+    signal?: AbortSignal,
   ): Promise<void> {
     await this.client.patch(
       `/__api__/v1/content/${contentId}/environment`,
       Object.entries(env).map(([name, value]) => ({ name, value })),
+      { signal },
     );
   }
 
@@ -147,11 +326,12 @@ export class ConnectAPI {
   async uploadBundle(
     contentId: ContentID,
     bundle: Uint8Array,
+    signal?: AbortSignal,
   ): Promise<AxiosResponse<BundleDTO>> {
     return this.client.post<BundleDTO>(
       `/__api__/v1/content/${contentId}/bundles`,
       bundle,
-      { headers: { "Content-Type": "application/gzip" } },
+      { headers: { "Content-Type": "application/gzip" }, signal },
     );
   }
 
@@ -159,10 +339,11 @@ export class ConnectAPI {
   async downloadBundle(
     contentId: ContentID,
     bundleId: BundleID,
+    signal?: AbortSignal,
   ): Promise<Uint8Array> {
     const { data } = await this.client.get<ArrayBuffer>(
       `/__api__/v1/content/${contentId}/bundles/${bundleId}/download`,
-      { responseType: "arraybuffer" },
+      { responseType: "arraybuffer", signal },
     );
     return new Uint8Array(data);
   }
@@ -171,25 +352,40 @@ export class ConnectAPI {
   async deployBundle(
     contentId: ContentID,
     bundleId: BundleID,
+    signal?: AbortSignal,
   ): Promise<AxiosResponse<DeployOutput>> {
     return this.client.post<DeployOutput>(
       `/__api__/v1/content/${contentId}/deploy`,
       { bundle_id: bundleId },
+      { signal },
     );
   }
 
   /**
    * Polls for task completion.
    * @param pollIntervalMs - milliseconds between polls (default 500, pass 0 for tests)
+   * @param onOutput - optional callback invoked with each batch of new log lines as they arrive
+   * @param signal - optional abort signal to cancel polling
    */
-  async waitForTask(taskId: TaskID, pollIntervalMs = 500): Promise<TaskDTO> {
+  async waitForTask(
+    taskId: TaskID,
+    pollIntervalMs = 500,
+    onOutput?: (lines: string[]) => void,
+    signal?: AbortSignal,
+  ): Promise<TaskDTO> {
     let firstLine = 0;
 
     while (true) {
+      signal?.throwIfAborted();
+
       const { data: task } = await this.client.get<TaskDTO>(
         `/__api__/v1/tasks/${taskId}`,
-        { params: { first: firstLine } },
+        { params: { first: firstLine }, signal },
       );
+
+      if (onOutput && task.output.length > 0) {
+        onOutput(task.output);
+      }
 
       if (task.finished) {
         if (task.error) {
@@ -210,22 +406,68 @@ export class ConnectAPI {
    * Validates that deployed content is reachable by hitting its content URL.
    * Status >= 500 throws; 404 and other codes are acceptable.
    */
-  async validateDeployment(contentId: ContentID): Promise<void> {
+  async validateDeployment(
+    contentId: ContentID,
+    signal?: AbortSignal,
+  ): Promise<void> {
     await this.client.get(`/content/${contentId}/`, {
       validateStatus: (status: number) => status < 500,
+      signal,
     });
   }
 
+  /**
+   * Registers a new authentication token with Connect.
+   * This is a public endpoint — no credentials are required.
+   * The user must then visit the returned claim URL to associate the token
+   * with their account.
+   */
+  async registerToken(
+    token: string,
+    publicKey: string,
+  ): Promise<{ token_claim_url: string }> {
+    const { data } = await this.client.post<{ token_claim_url: string }>(
+      "/__api__/tokens",
+      {
+        token,
+        public_key: publicKey,
+        user_id: 0,
+      },
+    );
+    return data;
+  }
+
   /** Retrieves OAuth integrations from the server. */
-  async getIntegrations(): Promise<AxiosResponse<Integration[]>> {
-    return this.client.get<Integration[]>("/__api__/v1/oauth/integrations");
+  async getIntegrations(
+    signal?: AbortSignal,
+  ): Promise<AxiosResponse<Integration[]>> {
+    return this.client.get<Integration[]>("/__api__/v1/oauth/integrations", {
+      signal,
+    });
   }
 
   /**
-   * Fetches composite server settings from 7 separate endpoints,
-   * mirroring the Go client's GetSettings behavior.
+   * Fetches composite server settings from 7 separate endpoints.
+   *
+   * @param appMode - Connect app mode string (e.g. "python-shiny", "static").
+   *   When provided and not "static", the scheduler endpoint is fetched with
+   *   an app-mode-specific path (`/scheduler/{appMode}`) to get limits that
+   *   apply to that content type. The app-mode path is skipped for static and
+   *   unknown content types.
+   * @param signal - optional abort signal to cancel all settings requests
    */
-  async getSettings(): Promise<AllSettings> {
+  async getSettings(
+    appMode?: string,
+    signal?: AbortSignal,
+  ): Promise<AllSettings> {
+    // Use the app-mode-specific scheduler path for known, non-static types.
+    // "static" content has no scheduler settings; unknown types would produce
+    // invalid API paths.
+    const schedulerPath =
+      appMode && knownAppModes.has(appMode)
+        ? `/__api__/server_settings/scheduler/${appMode}`
+        : "/__api__/server_settings/scheduler";
+
     const [
       { data: user },
       { data: general },
@@ -235,17 +477,32 @@ export class ConnectAPI {
       { data: r },
       { data: quarto },
     ] = await Promise.all([
-      this.client.get<UserDTO>("/__api__/v1/user"),
-      this.client.get<ServerSettings>("/__api__/server_settings"),
+      this.client.get<UserDTO>("/__api__/v1/user", { signal }),
+      this.client.get<ServerSettings>("/__api__/server_settings", { signal }),
       this.client.get<ApplicationSettings>(
         "/__api__/server_settings/applications",
+        { signal },
       ),
-      this.client.get<SchedulerSettings>("/__api__/server_settings/scheduler"),
-      this.client.get<PyInfo>("/__api__/v1/server_settings/python"),
-      this.client.get<RInfo>("/__api__/v1/server_settings/r"),
-      this.client.get<QuartoInfo>("/__api__/v1/server_settings/quarto"),
+      this.client.get<SchedulerSettings>(schedulerPath, { signal }),
+      this.client.get<PyInfo>("/__api__/v1/server_settings/python", { signal }),
+      this.client.get<RInfo>("/__api__/v1/server_settings/r", { signal }),
+      this.client.get<QuartoInfo>("/__api__/v1/server_settings/quarto", {
+        signal,
+      }),
     ]);
 
     return { general, user, application, scheduler, python, r, quarto };
   }
+}
+
+/** Detect TLS/certificate errors from axios error codes. */
+export function isCertificateError(err: { code?: string }): boolean {
+  const certCodes = [
+    "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+    "DEPTH_ZERO_SELF_SIGNED_CERT",
+    "SELF_SIGNED_CERT_IN_CHAIN",
+    "ERR_TLS_CERT_ALTNAME_INVALID",
+    "CERT_HAS_EXPIRED",
+  ];
+  return !!err.code && certCodes.includes(err.code);
 }

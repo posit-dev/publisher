@@ -354,6 +354,28 @@ export const window = {
   onDidCloseTerminal: vi.fn((listener: any) =>
     _onDidCloseTerminal.event(listener),
   ),
+  // Output channel creation — the extension uses this to create output channels
+  // for logging. The second overload with { log: true } returns a LogOutputChannel
+  // which adds level-based logging methods (trace, debug, info, warn, error).
+  createOutputChannel: vi.fn((_name: string, _options?: any) => ({
+    name: _name,
+    // OutputChannel methods
+    append: vi.fn(),
+    appendLine: vi.fn(),
+    replace: vi.fn(),
+    clear: vi.fn(),
+    show: vi.fn(),
+    hide: vi.fn(),
+    dispose: vi.fn(),
+    // LogOutputChannel methods (returned when options is { log: true })
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    logLevel: 3, // LogLevel.Info
+    onDidChangeLogLevel: vi.fn(() => new Disposable(() => {})),
+  })),
   // Current editor state — tests can set these before importing extension code
   // to simulate an already-open editor.
   activeTextEditor: undefined as any,

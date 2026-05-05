@@ -18,7 +18,7 @@ import type { PositronRSettings } from "../api/types/positron";
 const DEFAULT_RENV_LOCKFILE = "renv.lock";
 const R_SCAN_TIMEOUT = 300_000; // 5 minutes — renv operations can be slow
 
-// --- Lockfile reading (migrated from Go GET /configurations/$NAME/packages/r) ---
+// --- Lockfile reading ---
 
 // Raw types matching the PascalCase keys in renv.lock JSON files.
 interface RenvLockfile {
@@ -94,11 +94,10 @@ export async function getRPackages(
   return result;
 }
 
-// --- R dependency scanning (migrated from Go POST /packages/r/scan) ---
+// --- R dependency scanning ---
 
 /**
  * Compute the CRAN repository URL from Positron R settings.
- * Mirrors the Go `RepoURLFromOptions` / `repoURLFrom` logic.
  */
 export function repoURLFromOptions(settings?: PositronRSettings): string {
   if (!settings) {

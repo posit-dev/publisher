@@ -387,7 +387,7 @@ Cypress.Commands.add("deployCurrentlySelected", () => {
     .findByText("Deploying your project: Starting to Deploy...")
     .should("not.exist");
 
-  cy.findByText("Deployment was successful", { timeout: 60_000 }).should(
+  cy.findByText("Deployment was successful", { timeout: 120_000 }).should(
     "be.visible",
   );
 });

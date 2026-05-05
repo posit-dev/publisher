@@ -79,25 +79,8 @@ vi.mock("vscode", () => {
   };
 });
 
-// Mock API client
-const mockGenerateToken = vi.fn();
-const mockVerifyToken = vi.fn();
-const mockConnectCreate = vi.fn();
-const mockTest = vi.fn();
-const mockList = vi.fn();
-
 vi.mock("src/api", () => {
   return {
-    useApi: () =>
-      Promise.resolve({
-        credentials: {
-          generateToken: mockGenerateToken,
-          verifyToken: mockVerifyToken,
-          connectCreate: mockConnectCreate,
-          test: mockTest,
-          list: mockList,
-        },
-      }),
     ServerType: { CONNECT: "connect" },
     ProductName: { CONNECT: "Posit Connect" },
     PlatformName: { CONNECT: "Posit Connect" },
@@ -105,6 +88,18 @@ vi.mock("src/api", () => {
     ProductType: { CONNECT: "connect", CONNECT_CLOUD: "connect_cloud" },
   };
 });
+
+// Mock CredentialsService
+const mockCredentialsServiceList = vi.fn();
+const mockCredentialsServiceCreate = vi.fn();
+const mockCredentialsService = {
+  list: mockCredentialsServiceList,
+  create: mockCredentialsServiceCreate,
+};
+
+vi.mock("src/credentials/service", () => ({
+  CredentialsService: vi.fn(),
+}));
 
 //Removed logging mock since we're using vscode OutputChannel directly
 
@@ -119,31 +114,13 @@ describe("newConnectCredential API calls", () => {
     vi.clearAllMocks();
 
     // Setup default responses
-    mockList.mockResolvedValue({ data: [] });
-    mockTest.mockResolvedValue({
-      status: 200,
-      data: { serverType: ServerType.CONNECT, error: null },
-    });
-    mockGenerateToken.mockResolvedValue({
-      data: {
-        token: "test-token-123",
-        claimUrl: "https://example.com/claim/token-123",
-        privateKey: "test-private-key-123",
-      },
-    });
-    mockVerifyToken.mockResolvedValue({
-      status: 200,
-      data: { username: "testuser", guid: "user-123" },
-    });
-    mockConnectCreate.mockResolvedValue({
-      status: 201,
-      data: {
-        guid: "credential-123",
-        name: "My Connect Server",
-        url: "https://connect.example.com",
-        apiKey: "",
-        serverType: ServerType.CONNECT,
-      },
+    mockCredentialsServiceList.mockResolvedValue([]);
+    mockCredentialsServiceCreate.mockResolvedValue({
+      guid: "credential-123",
+      name: "My Connect Server",
+      url: "https://connect.example.com",
+      apiKey: "",
+      serverType: ServerType.CONNECT,
     });
   });
 
@@ -151,52 +128,32 @@ describe("newConnectCredential API calls", () => {
     vi.clearAllMocks();
   });
 
-  test("token authentication APIs are called", async () => {
-    // Call newConnectCredential
+  test("credential creation flow can be initiated", async () => {
+    // Call newConnectCredential with credentialsService
     try {
-      await newConnectCredential("test-view-id", "Create a New Credential");
+      await newConnectCredential(
+        "test-view-id",
+        "Create a New Credential",
+        mockCredentialsService as unknown as import("src/credentials/service").CredentialsService,
+      );
     } catch {
       /* the user dismissed this flow, do nothing more */
     }
 
-    // Since we mocked MultiStepInput.run to do nothing, we need to
-    // mock the credential creation process directly by calling the API methods
-    // that would be called in a real token auth flow
-    await mockGenerateToken({
-      serverUrl: "https://connect.example.com",
+    // Since MultiStepInput.run is mocked to do nothing, verify the flow
+    // initializes without error and the credentials service is available
+    await mockCredentialsServiceCreate({
+      name: "My Connect Server",
+      url: "https://connect.example.com",
+      serverType: ServerType.CONNECT,
+      apiKey: "test-api-key",
     });
-    await mockVerifyToken({
-      serverUrl: "https://connect.example.com",
-      token: "test-token-123",
-      privateKey: "test-private-key-123",
-    });
-    await mockConnectCreate(
-      "My Connect Server",
-      "https://connect.example.com",
-      "",
-      "test-token-123",
-      "test-private-key-123",
-      "",
-      ServerType.CONNECT,
-    );
 
-    // Verify API calls were made with expected parameters
-    expect(mockGenerateToken).toHaveBeenCalledWith({
-      serverUrl: "https://connect.example.com",
+    expect(mockCredentialsServiceCreate).toHaveBeenCalledWith({
+      name: "My Connect Server",
+      url: "https://connect.example.com",
+      serverType: ServerType.CONNECT,
+      apiKey: "test-api-key",
     });
-    expect(mockVerifyToken).toHaveBeenCalledWith({
-      serverUrl: "https://connect.example.com",
-      token: "test-token-123",
-      privateKey: "test-private-key-123",
-    });
-    expect(mockConnectCreate).toHaveBeenCalledWith(
-      "My Connect Server",
-      "https://connect.example.com",
-      "",
-      "test-token-123",
-      "test-private-key-123",
-      "",
-      ServerType.CONNECT,
-    );
   });
 });

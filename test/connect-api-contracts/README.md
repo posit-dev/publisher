@@ -1,19 +1,20 @@
 # Connect API Contract Tests
 
-Contract tests that validate the HTTP requests Publisher sends **to Posit Connect** and how it parses Connect's responses. These ensure a future TypeScript ConnectClient produces identical behavior to the Go implementation.
+Contract tests that validate the HTTP requests Publisher sends **to Posit Connect** and how it parses Connect's responses. Tests run against a Node.js mock Connect server and exercise the shared `@posit-dev/connect-api` client (the same client the extension uses in production).
 
 ## Architecture
 
 ```
-Test code  →  Go harness (POST /call)  →  Mock Connect server (Node.js)
-               { method: "CreateDeployment",    POST /__api__/v1/content
-                 body: {...} }                   (canned Connect response)
+Test code  →  TypeScriptDirectClient  →  @posit-dev/connect-api  →  Mock Connect server (Node.js)
+                                                                      POST /__api__/v1/content
+                                                                      (canned Connect response)
 ```
 
-Two servers are involved:
+One server is involved:
 
-1. **Mock Connect server** — A Node.js HTTP server that simulates Connect's API endpoints with canned JSON responses and captures all incoming requests for assertion.
-2. **Go harness** — A thin HTTP server with a single `POST /call` endpoint that dispatches to `APIClient` methods by name. Each request creates a fresh `ConnectClient` pointed at the mock, calls the target method, and returns the result plus captured requests as JSON.
+- **Mock Connect server** — A Node.js HTTP server (`src/mock-connect-server.ts`) that simulates Connect's API endpoints with canned JSON responses and captures all incoming requests for assertion.
+
+Tests construct a `TypeScriptDirectClient` pointed at the mock. The client dispatches `call(method, params)` to the corresponding method on the shared `@posit-dev/connect-api` client, which issues real HTTP requests to the mock. Captured requests and responses flow back to the test for assertion.
 
 The mock exposes control endpoints for tests:
 
@@ -24,7 +25,7 @@ The mock exposes control endpoints for tests:
 
 ## What's tested
 
-All 15 methods on the Go `APIClient` interface have corresponding test files, mock routes, and fixtures.
+All 15 entries in the `Method` constant have corresponding test files, mock routes, and fixtures.
 
 | Method               | Connect Path                                        |
 | -------------------- | --------------------------------------------------- |
@@ -51,28 +52,18 @@ Each test validates both:
 - **Request correctness** — method, path, `Authorization: Key <apiKey>` header
 - **Response parsing** — Publisher correctly transforms Connect's DTO into its internal types
 
-## Client implementations
+## Client
 
-| Client                   | Description                                                              |
-| ------------------------ | ------------------------------------------------------------------------ |
-| `GoPublisherClient`      | Calls the Go harness `POST /call`, which internally calls mock Connect   |
-| `TypeScriptDirectClient` | Stub for future TS ConnectClient (`call()` throws "Not implemented yet") |
-
-Both implement a single `call(method, params?)` interface. The `connectUrl` and `apiKey` are injected at construction time, so tests only pass method-specific params. Method names are typed via the `Method` constant and `MethodName` type exported from `src/client.ts` (e.g. `Method.CreateDeployment` instead of a raw string).
-
-Set `API_BACKEND=typescript` to run against the TS client once implemented.
+`TypeScriptDirectClient` (`src/clients/ts-direct-client.ts`) implements the `ConnectContractClient` interface. It wraps the shared `@posit-dev/connect-api` package and dispatches `call(method, params?)` to the corresponding SDK method. The `connectUrl` and `apiKey` are injected at construction time, so tests only pass method-specific params. Method names are typed via the `Method` constant and `MethodName` type exported from `src/client.ts` (e.g. `Method.CreateDeployment` instead of a raw string).
 
 ## Running
 
 ```bash
-# Run Connect contract tests (harness is built automatically)
+# Run Connect contract tests
 just test-connect-contracts
 
 # Or directly
 cd test/connect-api-contracts && npm test
-
-# Build the harness binary manually
-just build-connect-harness
 
 # Update snapshots (currently only one inline snapshot in authentication.test.ts)
 cd test/connect-api-contracts && npm run test:update
@@ -97,7 +88,7 @@ Fixture-to-endpoint mappings are defined in `src/validation/fixture-map.ts`. Whe
 
 ## Adding tests
 
-1. Add a case to the `dispatch()` switch in the Go harness (`harness/main.go`)
+1. Add a new entry to the `Method` constant in `src/client.ts` and dispatch it inside the `dispatch()` switch in `TypeScriptDirectClient` (`src/clients/ts-direct-client.ts`)
 2. Add a route handler in `src/mock-connect-server.ts` with a canned response fixture
 3. Create a test file in `src/endpoints/` using `setupContractTest()`:
 
@@ -121,17 +112,10 @@ describe("NewMethod", () => {
 ## Project structure
 
 - `src/client.ts` — `Method` constants, `MethodName` type, and `ConnectContractClient` interface
+- `src/clients/ts-direct-client.ts` — `TypeScriptDirectClient` implementation wrapping `@posit-dev/connect-api`
 - `src/mock-connect-server.ts` — `MockConnectServer` class with route-based dispatch and test control endpoints
 - `src/helpers.ts` — `setupContractTest()` helper for test setup/teardown
-- `src/endpoints/` — One test file per `APIClient` method
+- `src/endpoints/` — One test file per `Method` entry
 - `src/fixtures/connect-responses/` — Canned JSON responses for Connect API endpoints
 - `src/fixtures/workspace/` — Minimal project files (used by GetSettings for config)
 - `src/validation/` — Swagger spec validation for fixtures
-- `harness/main.go` — Go test harness binary
-
-## Future expansion
-
-When the TS ConnectClient is built:
-
-1. Implement the `call()` dispatcher in `ts-direct-client.ts` to route methods to the TS client
-2. Both Go and TS paths validate against the same snapshots and request expectations

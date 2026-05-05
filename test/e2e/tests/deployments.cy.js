@@ -5,18 +5,18 @@
 // - PCC Shiny Python: creates a PCC deployment, selects additional files,
 //   modifies TOML for public access, deploys, and confirms published app via Playwright.
 describe("Deployments Section", () => {
-  // Global setup for all deployment tests
   before(() => {
-    cy.initializeConnect();
+    cy.clearupDeployments();
   });
 
   describe("Connect Server Deployments", () => {
     beforeEach(() => {
-      // Only light reset operations
       cy.visit("/");
       cy.getPublisherSidebarIcon().click();
       cy.waitForPublisherIframe();
       cy.debugIframes();
+      cy.resetCredentials();
+      cy.setAdminCredentials();
     });
 
     afterEach(() => {
@@ -83,13 +83,19 @@ describe("Deployments Section", () => {
   describe("Connect Cloud Deployments", () => {
     it("PCC Shiny Python Deployment @pcc", () => {
       // Setup - moved from beforeEach to avoid running when @pcc tests are filtered
-      cy.resetCredentials();
       cy.clearupDeployments();
       cy.visit("/");
+      cy.getPublisherSidebarIcon().click();
+      cy.waitForPublisherIframe();
+      cy.resetCredentials();
       const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-      cy.log("PCC user for setPCCCredential: " + JSON.stringify(user));
-      cy.setPCCCredential(user, "pcc-deploy-credential");
-      cy.toggleCredentialsSection();
+      cy.log("PCC user for addPCCCredential: " + JSON.stringify(user));
+      cy.addPCCCredential(user, "pcc-deploy-credential", {
+        assertEmpty: false,
+      });
+
+      // Verify credential is ready before proceeding
+      cy.ensureCredentialsSectionExpanded();
       cy.refreshCredentials();
       cy.findInPublisherWebview(
         '[data-automation="pcc-deploy-credential-list"]',

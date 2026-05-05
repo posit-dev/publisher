@@ -22,10 +22,8 @@ import type { CapturedRequest } from "../mock-connect-server";
  * contract result shapes ({ contentId }, { bundleId }, etc.).
  *
  * NOTE: The dispatch() method manually reshapes responses (e.g. extracting
- * `data.guid` as `contentId`, `data.id` as `bundleId`) to produce output
- * that matches the Go client's contract results for apples-to-apples
- * comparison. Once the Go implementation is migrated to use the TypeScript
- * client, this adapter can be reorganized to remove the reshaping layer.
+ * `data.guid` as `contentId`, `data.id` as `bundleId`) for consistency
+ * with the contract test expectations.
  */
 export class TypeScriptDirectClient implements ConnectContractClient {
   private readonly connectClient: ConnectAPI;
@@ -51,7 +49,7 @@ export class TypeScriptDirectClient implements ConnectContractClient {
       result = await this.dispatch(method, params ?? {});
     } catch (err) {
       status = "error";
-      // Reshape error into { user, error } to match Go contract shape
+      // Reshape error into { user, error } to match contract expectations
       if (method === Method.TestAuthentication && err instanceof Error) {
         const msg = err.message;
         result = { user: null, error: { msg } };
@@ -83,12 +81,12 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         return c.getCurrentUser();
 
       case Method.ContentDetails:
-        // Unwrap AxiosResponse to match Go contract shape
+        // Unwrap AxiosResponse to match contract expectations
         return (await c.contentDetails(ContentID(params.contentId as string)))
           .data;
 
       case Method.CreateDeployment: {
-        // Map guid → contentId to match Go contract shape
+        // Map guid → contentId to match contract expectations
         const { data } = await c.createDeployment(
           (params.body as Record<string, unknown>) ?? {},
         );
@@ -103,7 +101,7 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         return undefined;
 
       case Method.GetEnvVars:
-        // Unwrap AxiosResponse to match Go contract shape
+        // Unwrap AxiosResponse to match contract expectations
         return (await c.getEnvVars(ContentID(params.contentId as string))).data;
 
       case Method.SetEnvVars:
@@ -114,7 +112,7 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         return undefined;
 
       case Method.UploadBundle: {
-        // Map id → bundleId to match Go contract shape
+        // Map id → bundleId to match contract expectations
         const { data } = await c.uploadBundle(
           ContentID(params.contentId as string),
           params.bundleData as Uint8Array,
@@ -124,7 +122,7 @@ export class TypeScriptDirectClient implements ConnectContractClient {
 
       case Method.LatestBundleID: {
         // Uses contentDetails since there's no dedicated endpoint;
-        // maps bundle_id → bundleId to match Go contract shape
+        // maps bundle_id → bundleId to match contract expectations
         const { data } = await c.contentDetails(
           ContentID(params.contentId as string),
         );
@@ -138,7 +136,7 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         );
 
       case Method.DeployBundle: {
-        // Map task_id → taskId to match Go contract shape
+        // Map task_id → taskId to match contract expectations
         const { data } = await c.deployBundle(
           ContentID(params.contentId as string),
           BundleID(params.bundleId as string),
@@ -154,7 +152,7 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         return undefined;
 
       case Method.GetIntegrations:
-        // Unwrap AxiosResponse to match Go contract shape
+        // Unwrap AxiosResponse to match contract expectations
         return (await c.getIntegrations()).data;
 
       case Method.GetSettings:

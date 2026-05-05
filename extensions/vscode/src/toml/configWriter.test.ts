@@ -56,6 +56,11 @@ describe("writeConfigToFile", () => {
     const content = fs.readFileSync(configPath("myapp"), "utf-8");
     expect(content).toContain('type = "python-dash"');
     expect(content).toContain('entrypoint = "app.py"');
+
+    // Arrays should be written multiline
+    expect(content).toContain(
+      'files = [\n    "app.py",\n    "requirements.txt",\n]',
+    );
   });
 
   it("creates directory if it does not exist", async () => {

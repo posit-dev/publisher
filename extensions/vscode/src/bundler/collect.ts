@@ -7,7 +7,7 @@ import picomatch from "picomatch";
 
 import { FileEntry } from "./types";
 
-// Standard exclusions matching the Go bundler's walker.go.
+// Standard exclusions applied after user patterns.
 // These are always appended after user patterns, so they take precedence.
 export const STANDARD_EXCLUSIONS = [
   // From rsconnect-python
@@ -138,10 +138,20 @@ function compilePatterns(userPatterns: string[]): PatternRule[] {
   return rules;
 }
 
+// Get ancestor directory paths for a relative path.
+// e.g. "a/b/c.txt" => ["a", "a/b"]
+function getAncestorPaths(relativePath: string): string[] {
+  const parts = relativePath.split("/");
+  const ancestors: string[] = [];
+  for (let i = 1; i < parts.length; i++) {
+    ancestors.push(parts.slice(0, i).join("/"));
+  }
+  return ancestors;
+}
+
 // Determine if a path should be included.
 // For files: must have a positive (non-exclude) match.
 // For directories: returns false only if explicitly excluded.
-// This matches the Go walker's behavior.
 function shouldInclude(
   relativePath: string,
   isDirectory: boolean,
@@ -150,7 +160,19 @@ function shouldInclude(
   let lastMatch: "include" | "exclude" | null = null;
 
   for (const rule of rules) {
-    // Directory-only patterns should not match files
+    // For files, check if a parent directory matches the pattern.
+    // A pattern matching a directory includes its contents, whether
+    // specified as "data/" (matchesDir) or "data" (bare path).
+    if (!isDirectory) {
+      const ancestors = getAncestorPaths(relativePath);
+      for (const ancestor of ancestors) {
+        if (rule.matchesPath(ancestor)) {
+          lastMatch = rule.exclude ? "exclude" : "include";
+        }
+      }
+    }
+
+    // Directory-only patterns (trailing slash) skip direct file matching
     if (rule.matchesDir && !isDirectory) {
       continue;
     }
@@ -208,7 +230,7 @@ async function walkDirectory(
         // Mask off the file type bits, keeping only permission bits (rwxrwxrwx)
         symlinkMode = stats.mode & 0o777;
       } catch {
-        // Broken symlink — skip silently (matches Go behavior)
+        // Broken symlink — skip silently
         continue;
       }
     } else {

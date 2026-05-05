@@ -1,5 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
+import { ContentID, BundleID } from "@posit-dev/connect-api";
+
 import { AgentError } from "./error";
 import {
   Configuration,
@@ -47,7 +49,7 @@ export type ContentRecordError = {
 } & ContentRecordLocation;
 
 type OptionalPreDeploymentFields = {
-  id?: string;
+  id?: ContentID;
   bundleUrl?: string;
   dashboardUrl?: string;
   directUrl?: string;
@@ -58,6 +60,24 @@ type ConnectCloud = {
   accountName: string;
 };
 
+/**
+ * Error recorded in a deployment record file.
+ *
+ * This is distinct from AgentError (which uses "msg"). Deployment records
+ * use "message" (matching the deployment record JSON schema).
+ */
+export type DeploymentRecordError = {
+  code: string;
+  message: string;
+  operation: string;
+};
+
+export function isDeploymentErrorContentNotRunning(
+  error: DeploymentRecordError | null | undefined,
+): boolean {
+  return error?.code === "deployedContentNotRunning";
+}
+
 type ContentRecordRecord = {
   $schema: SchemaURL;
   serverType: ServerType;
@@ -66,7 +86,7 @@ type ContentRecordRecord = {
   dismissedAt: string;
   configurationName: string;
   type: ContentType;
-  deploymentError: AgentError | null;
+  deploymentError: DeploymentRecordError | null;
   connectCloud: ConnectCloud | null;
 } & ContentRecordLocation;
 
@@ -100,8 +120,8 @@ export type RenvLockfile = {
 };
 
 export type ContentRecord = {
-  id: string;
-  bundleId: string;
+  id: ContentID;
+  bundleId: BundleID;
   bundleUrl: string;
   dashboardUrl: string;
   directUrl: string;
@@ -119,8 +139,6 @@ export type AllContentRecordTypes =
   | PreContentRecord
   | PreContentRecordWithConfig
   | ContentRecordError;
-
-export type Environment = Array<string>;
 
 export function isSuccessful(
   d: AllContentRecordTypes | undefined,

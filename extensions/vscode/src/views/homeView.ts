@@ -30,19 +30,26 @@ import {
   FileAction,
   PreContentRecord,
   isConfigurationError,
+  isContentRecord,
   isContentRecordError,
   isPreContentRecord,
   isPreContentRecordWithConfig,
-  useApi,
   AllContentRecordTypes,
   EnvironmentConfig,
-  PreContentRecordWithConfig,
   ProductName,
   ServerType,
   IntegrationRequest,
+  UpdateConfigWithDefaults,
 } from "src/api";
-import { ConnectAPI } from "@posit-dev/connect-api";
+import { ConnectAPI, GUID } from "@posit-dev/connect-api";
 import type { Integration } from "@posit-dev/connect-api";
+import {
+  ConnectCloudAPI,
+  ContentID,
+  cloudEnvironmentBaseUrls,
+} from "@posit-dev/connect-cloud-api";
+import { connectAPIOptionsFromCredential } from "src/credentials/service";
+import { storeCredential } from "src/credentials/storage";
 import { updateFileList as updateFileListInConfig } from "src/configFiles";
 import {
   addSecret as addSecretToConfig,
@@ -51,6 +58,8 @@ import {
 import {
   loadAllConfigurations,
   loadAllDeployments,
+  loadConfiguration,
+  ConfigurationLoadError,
   patchDeploymentRecord,
 } from "src/toml";
 import {
@@ -59,13 +68,18 @@ import {
   removeIntegrationRequest,
 } from "src/integrations";
 import * as workspaces from "src/workspaces";
+import { getConfigurationFiles } from "src/projectFiles";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
+import { getInterpreterDefaults } from "src/interpreters";
 import { scanRPackages } from "src/interpreters/rPackages";
+import { scanPythonDependencies } from "src/interpreters/scanPythonDependencies";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
-import { deployProject } from "src/views/deployProgress";
+import { runDeployWithProgress } from "src/views/deployProgress";
+import { connectPublish } from "src/publish/connectPublish";
+import { connectCloudPublish } from "src/publish/connectCloudPublish";
 import { renderQuartoContent } from "src/views/renders";
 import { WebviewConduit } from "src/utils/webviewConduit";
 import { fileExists, relativeDir, isRelativePathRoot } from "src/utils/files";
@@ -102,6 +116,7 @@ import {
 import {
   BooleanContextValues,
   Commands,
+  CONNECT_CLOUD_ENVIRONMENT,
   Contexts,
   DebounceDelaysMS,
   Views,
@@ -113,7 +128,6 @@ import { throttleWithLastPending } from "src/utils/throttle";
 import { showAssociateGUID } from "src/actions/showAssociateGUID";
 import { extensionSettings } from "src/extension";
 import { openFileInEditor } from "src/commands";
-import { showImmediateDeploymentFailureMessage } from "./publishFailures";
 import {
   SelectionCredentialMatch,
   setSelectionHasCredentialMatch,
@@ -275,10 +289,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
+    // Resolve projectDir to an absolute path. activeConfig.projectDir is
+    // relative to the workspace root (e.g. "."), but QuartoProjectHelper
+    // needs an absolute path for filesystem checks and quarto render commands.
+    const root = this.root?.uri.fsPath;
+    if (!root) {
+      window.showErrorMessage("No workspace folder open.");
+      return;
+    }
+    const absProjectDir = path.resolve(root, projectDir);
+
     // Currently we only support rendering content with Quarto
     renderQuartoContent(
       this.webviewConduit,
-      projectDir,
+      absProjectDir,
       sourceEntrypoint,
       renderedEntrypoint,
     );
@@ -300,6 +324,51 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     return await setSelectionIsPreContentRecord(match);
   }
 
+  // Read a config fresh from disk and apply interpreter defaults.
+  // Returns undefined (with an error message shown) if the config
+  // cannot be loaded.
+  private async loadFreshConfig(
+    configurationName: string,
+    projectDir: string,
+    rootDir: string,
+    absProjectDir: string,
+    pythonPath?: string,
+    rPath?: string,
+  ): Promise<Configuration | undefined> {
+    try {
+      const loaded = await loadConfiguration(
+        configurationName,
+        projectDir,
+        rootDir,
+      );
+      const defaults = await getInterpreterDefaults(
+        absProjectDir,
+        pythonPath,
+        rPath,
+      );
+      UpdateConfigWithDefaults(loaded, defaults);
+      return loaded;
+    } catch (error: unknown) {
+      if (error instanceof ConfigurationLoadError) {
+        window.showErrorMessage(
+          `Invalid configuration ${configurationName}: ${error.configurationError.error.msg}`,
+        );
+        return undefined;
+      }
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ) {
+        window.showErrorMessage(
+          `Configuration not found: ${configurationName}`,
+        );
+        return undefined;
+      }
+      throw error;
+    }
+  }
+
   private async initiateDeployment(
     deploymentName: string,
     credentialName: string,
@@ -308,35 +377,145 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     secrets?: Record<string, string>,
   ) {
     try {
-      const api = await useApi();
-      const r = await getRInterpreterPath();
+      const credential = this.state.findCredential(credentialName);
+
+      if (!credential) {
+        window.showErrorMessage(`Credential not found: ${credentialName}`);
+        return;
+      }
+
+      const root = this.root?.uri.fsPath;
+      if (!root) {
+        window.showErrorMessage("No workspace folder open.");
+        return;
+      }
+      const absProjectDir = path.resolve(root, projectDir);
+      const rel = path.relative(root, absProjectDir);
+      // Check that the resolved path stays within the workspace.
+      // We can't just use rel.startsWith("..") because a directory
+      // literally named ".." would be a false positive.
+      if (
+        rel === ".." ||
+        rel.startsWith(".." + path.sep) ||
+        path.isAbsolute(rel)
+      ) {
+        window.showErrorMessage("Project directory is outside the workspace.");
+        return;
+      }
+
       const python = await getPythonInterpreterPath();
+      const r = await getRInterpreterPath();
 
-      // Collect IDE-controlled repo settings
-      const positron = getPositronRepoSettings();
-
-      const response = await api.contentRecords.publish(
-        deploymentName,
-        credentialName,
+      // Always read the config fresh from disk rather than using the
+      // in-memory cache. After a new deployment is created, the cached
+      // config may be stale — missing TOML files in the files list and
+      // missing interpreter defaults like r.version. The file watcher
+      // will eventually refresh the cache, but the user can click Deploy
+      // before that completes.
+      const config = await this.loadFreshConfig(
         configurationName,
-        !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
         projectDir,
-        r,
-        python,
-        secrets,
-        positron,
+        root,
+        absProjectDir,
+        python?.pythonPath,
+        r?.rPath,
       );
-      deployProject(
+      if (!config) {
+        return;
+      }
+
+      const contentRecord = this.state.findContentRecord(
         deploymentName,
         projectDir,
-        response.data.localId,
-        this.stream,
-        this.updateActiveContentRecordLocally.bind(this),
       );
-    } catch (error: unknown) {
-      // Most failures will occur on the event stream. These are the ones which
-      // are immediately rejected as part of the API request to initiate deployment.
-      showImmediateDeploymentFailureMessage(error);
+      const existingContentId = contentRecord?.id;
+      const existingCreatedAt = contentRecord?.createdAt;
+
+      const positron = getPositronRepoSettings();
+      const clientVersion =
+        this.context.extension.packageJSON.version || "unknown";
+
+      const progressOptions = {
+        onComplete: () => this.refreshContentRecords(),
+        onCancel: () => {
+          this.webviewConduit.sendMsg({
+            kind: HostToWebviewMessageType.PUBLISH_CANCEL,
+          });
+        },
+        stream: this.stream,
+        serverUrl: credential.url,
+        title: deploymentName,
+      };
+
+      if (credential.serverType === ServerType.CONNECT_CLOUD) {
+        const cloudApi = new ConnectCloudAPI({
+          apiBaseUrl: cloudEnvironmentBaseUrls[CONNECT_CLOUD_ENVIRONMENT],
+          accessToken: credential.accessToken,
+          refreshToken: credential.refreshToken,
+          environment: CONNECT_CLOUD_ENVIRONMENT,
+          onTokenRefresh: async (tokens) => {
+            credential.accessToken = tokens.access_token;
+            credential.refreshToken = tokens.refresh_token;
+            await storeCredential(this.context.secrets, credential);
+          },
+        });
+
+        runDeployWithProgress({
+          deploy: (onProgress, signal) =>
+            connectCloudPublish({
+              api: cloudApi,
+              projectDir: absProjectDir,
+              saveName: deploymentName,
+              config: config.configuration,
+              configName: config.configurationName,
+              serverType: credential.serverType,
+              credential: {
+                accountId: credential.accountId,
+                accountName: credential.accountName,
+                environment: CONNECT_CLOUD_ENVIRONMENT,
+              },
+              existingContentId: existingContentId
+                ? ContentID(existingContentId)
+                : undefined,
+              existingCreatedAt,
+              secrets,
+              rPath: r?.rPath,
+              positronR: positron.r,
+              clientVersion,
+              onProgress,
+              signal,
+            }),
+          ...progressOptions,
+        });
+      } else {
+        const connectApi = new ConnectAPI(
+          await connectAPIOptionsFromCredential(credential, {
+            rejectUnauthorized: extensionSettings.verifyCertificates(),
+          }),
+        );
+
+        runDeployWithProgress({
+          deploy: (onProgress, signal) =>
+            connectPublish({
+              api: connectApi,
+              projectDir: absProjectDir,
+              saveName: deploymentName,
+              config: config.configuration,
+              configName: config.configurationName,
+              serverUrl: credential.url,
+              serverType: credential.serverType,
+              existingContentId,
+              existingCreatedAt,
+              secrets,
+              rPath: r?.rPath,
+              positronR: positron.r,
+              clientVersion,
+              onProgress,
+              signal,
+            }),
+          ...progressOptions,
+        });
+      }
     } finally {
       this.webviewConduit.sendMsg({
         kind: HostToWebviewMessageType.PUBLISH_INIT,
@@ -462,19 +641,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
-  private updateActiveContentRecordLocally(
-    activeContentRecord:
-      | ContentRecord
-      | PreContentRecord
-      | PreContentRecordWithConfig,
-  ) {
-    // update our local state, so we don't wait on file refreshes
-    this.state.updateContentRecord(activeContentRecord);
-
-    // refresh the webview
-    this.updateWebViewViewContentRecords();
-  }
-
   private onPublishStart() {
     this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.PUBLISH_START,
@@ -490,12 +656,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private onPublishFailure(msg: EventStreamMessage) {
+    this.onPublishFailureMessage(msg.data.message ?? "");
+  }
+
+  private onPublishFailureMessage(message: string) {
     this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.PUBLISH_FINISH_FAILURE,
       content: {
-        data: {
-          message: msg.data.message ?? "",
-        },
+        data: { message },
       },
     });
   }
@@ -647,10 +815,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       if (!pythonSection) {
         pythonProject = false;
       } else {
-        packageFile = pythonSection.packageFile;
         packageMgr = pythonSection.packageManager;
 
-        const resolvedPackageFile = packageFile || "requirements.txt";
+        // Use the config's packageFile if set, otherwise fall back to
+        // "requirements.txt". The config value can be "" when interpreter
+        // defaults were computed before the file existed, so we must
+        // resolve it before both reading the file and reporting to the UI.
+        const resolvedPackageFile =
+          pythonSection.packageFile || "requirements.txt";
+        packageFile = resolvedPackageFile;
         const root = workspaces.path();
         if (!root) {
           return;
@@ -733,11 +906,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           ? this.state.findCredential(credentialName)
           : undefined;
         let integrations: Integration[] = [];
-        if (credential?.url && credential?.apiKey) {
-          const connectApi = new ConnectAPI({
-            url: credential.url,
-            apiKey: credential.apiKey,
-          });
+        if (
+          credential?.url &&
+          (credential?.apiKey || (credential?.token && credential?.privateKey))
+        ) {
+          const connectApi = new ConnectAPI(
+            await connectAPIOptionsFromCredential(credential, {
+              rejectUnauthorized: extensionSettings.verifyCertificates(),
+            }),
+          );
           const response = await connectApi.getIntegrations();
           integrations = response.data ?? [];
         }
@@ -785,10 +962,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       if (!rSection) {
         rProject = false;
       } else {
-        packageFile = rSection.packageFile;
         packageMgr = rSection.packageManager;
 
-        const resolvedPackageFile = packageFile || "renv.lock";
+        // Use the config's packageFile if set, otherwise fall back to
+        // "renv.lock". The config value can be "" when interpreter
+        // defaults were computed before the file existed.
+        const resolvedPackageFile = rSection.packageFile || "renv.lock";
+        packageFile = resolvedPackageFile;
         const root = workspaces.path();
         if (!root) {
           return;
@@ -841,28 +1021,41 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async refreshConnectServerSettings() {
+    const clearServerSettings = () => {
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.REFRESH_SERVER_SETTINGS,
+        content: {
+          serverSettings: undefined,
+        },
+      });
+    };
+
     const activeContentRecord = await this.state.getSelectedContentRecord();
     if (activeContentRecord === undefined) {
+      clearServerSettings();
       return;
     }
 
     const serverType = activeContentRecord.serverType || ServerType.CONNECT;
     const productType = getProductType(serverType);
     if (!isConnectProduct(productType)) {
+      clearServerSettings();
       return;
     }
 
     const credential =
       this.state.findCredentialForContentRecord(activeContentRecord);
     if (credential === undefined) {
+      clearServerSettings();
       return;
     }
 
     try {
-      const connectApi = new ConnectAPI({
-        url: credential.url,
-        apiKey: credential.apiKey,
-      });
+      const connectApi = new ConnectAPI(
+        await connectAPIOptionsFromCredential(credential, {
+          rejectUnauthorized: extensionSettings.verifyCertificates(),
+        }),
+      );
       const allSettings = await connectApi.getSettings();
 
       this.webviewConduit.sendMsg({
@@ -872,7 +1065,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         },
       });
     } catch (_: unknown) {
-      console.error(`Failed to fetch server-settings for [${credential.name}]`);
+      clearServerSettings();
     }
   }
 
@@ -914,7 +1107,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     const relPathPackageFile =
-      activeConfiguration.configuration.python.packageFile;
+      activeConfiguration.configuration.python.packageFile ||
+      "requirements.txt";
 
     const fileUri = Uri.joinPath(
       this.root.uri,
@@ -932,22 +1126,32 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     try {
-      const response = await showProgress(
+      const data = await showProgress(
         "Refreshing Python Requirements File",
         Views.HomeView,
         async () => {
-          const api = await useApi();
           const python = await getPythonInterpreterPath();
-          return await api.packages.createPythonRequirementsFile(
+          const pythonPath = python?.pythonPath ?? "python3";
+          const projectDir = path.join(
+            this.root!.uri.fsPath,
             activeConfiguration.projectDir,
-            python,
+          );
+          return await scanPythonDependencies(
+            projectDir,
+            pythonPath,
             relPathPackageFile,
           );
         },
       );
 
-      const data = response.data;
       await commands.executeCommand("vscode.open", fileUri);
+
+      // Best-effort refresh so a transient UI error doesn't mask
+      // a successful scan. File watchers will retry on their own.
+      await Promise.allSettled([
+        this.refreshPythonPackages(),
+        this.sendRefreshedFilesLists(),
+      ]);
 
       if (data.incomplete.length > 0) {
         const importList = data.incomplete.join(", ");
@@ -1023,6 +1227,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         },
       );
       await commands.executeCommand("vscode.open", fileUri);
+
+      // Best-effort refresh so a transient UI error doesn't mask
+      // a successful scan. File watchers will retry on their own.
+      await Promise.allSettled([
+        this.refreshRPackages(),
+        this.sendRefreshedFilesLists(),
+      ]);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "homeView::onScanForRPackageRequirements",
@@ -1133,6 +1344,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       });
       const deploymentObjects = await newDeployment(
         viewId,
+        this.state.credentialsService,
         projectDir,
         entryPointFile,
       );
@@ -1344,10 +1556,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         "Retrieving Integrations from deployment server",
         Views.HomeView,
         async () => {
-          const connectApi = new ConnectAPI({
-            url: credential.url,
-            apiKey: credential.apiKey,
-          });
+          const connectApi = new ConnectAPI(
+            await connectAPIOptionsFromCredential(credential, {
+              rejectUnauthorized: extensionSettings.verifyCertificates(),
+            }),
+          );
           const response = await connectApi.getIntegrations();
           integrations = response.data;
         },
@@ -1521,6 +1734,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const credential = await newCredential(
         Views.HomeView,
         createNewCredentialLabel,
+        this.state.credentialsService,
         startingServerUrl,
       );
       if (credential) {
@@ -1545,8 +1759,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
     try {
-      const api = await useApi();
-      await api.credentials.delete(context.credentialGUID);
+      await this.state.credentialsService.delete(GUID(context.credentialGUID));
       window.setStatusBarMessage(
         `Credential for ${context.credentialName} has been erased from our memory!`,
       );
@@ -1895,12 +2108,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       "dist",
       "index.js",
     ]);
-    // The codicon css (and related tff file) are needing to be loaded for icons
+    // The codicon css (and related ttf file) ship via the copy-codicons
+    // build step because vsce can't pack workspace-hoisted node_modules
+    // (see https://github.com/microsoft/vscode-vsce/issues/580).
     const codiconsUri = getUri(webview, extensionUri, [
-      "node_modules",
-      "@vscode",
-      "codicons",
       "dist",
+      "codicons",
       "codicon.css",
     ]);
     // Custom Posit Publisher font
@@ -2003,14 +2216,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig && !isConfigurationError(activeConfig)) {
       try {
-        const response = await showProgress(
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const projectDir = path.join(root, activeConfig.projectDir);
+
+        const files = await showProgress(
           "Refreshing Files",
           Views.HomeView,
           async () => {
-            const api = await useApi();
-            return await api.files.getByConfiguration(
+            return await getConfigurationFiles(
+              projectDir,
               activeConfig.configurationName,
-              activeConfig.projectDir,
             );
           },
         );
@@ -2018,12 +2236,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         this.webviewConduit.sendMsg({
           kind: HostToWebviewMessageType.REFRESH_FILES,
           content: {
-            files: response.data,
+            files,
           },
         });
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
-          "sendRefreshedFilesLists, files.getByConfiguration",
+          "sendRefreshedFilesLists, getConfigurationFiles",
           error,
         );
         window.showErrorMessage(`Failed to refresh files. ${summary}`);
@@ -2033,37 +2251,49 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   };
 
   public updateServerEnvironment = async () => {
-    const deployment = await this.state.getSelectedContentRecord();
-    if (deployment && !isContentRecordError(deployment)) {
-      // We have a valid deployment to call
-      try {
-        const response = await showProgress(
-          "Getting Deployment Environment",
-          Views.HomeView,
-          async () => {
-            const api = await useApi();
-            return await api.contentRecords.getEnv(
-              deployment.deploymentName,
-              deployment.projectDir,
-            );
-          },
-        );
+    const clearEnvironment = () => {
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT,
+        content: {
+          environment: [],
+        },
+      });
+    };
 
-        this.webviewConduit.sendMsg({
-          kind: HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT,
-          content: {
-            environment: response.data,
-          },
-        });
-      } catch (_error: unknown) {
-        // No matter the error we clear the environment
-        this.webviewConduit.sendMsg({
-          kind: HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT,
-          content: {
-            environment: [],
-          },
-        });
-      }
+    const deployment = await this.state.getSelectedContentRecord();
+    if (!deployment || !isContentRecord(deployment)) {
+      clearEnvironment();
+      return;
+    }
+
+    const credential = this.state.findCredentialForContentRecord(deployment);
+    if (credential === undefined) {
+      clearEnvironment();
+      return;
+    }
+
+    try {
+      const response = await showProgress(
+        "Getting Deployment Environment",
+        Views.HomeView,
+        async () => {
+          const connectApi = new ConnectAPI(
+            await connectAPIOptionsFromCredential(credential, {
+              rejectUnauthorized: extensionSettings.verifyCertificates(),
+            }),
+          );
+          return connectApi.getEnvVars(deployment.id);
+        },
+      );
+
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT,
+        content: {
+          environment: response.data,
+        },
+      });
+    } catch (_error: unknown) {
+      clearEnvironment();
     }
   };
 
@@ -2206,6 +2436,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           const credential = await newCredential(
             Views.HomeView,
             createNewCredentialLabel,
+            this.state.credentialsService,
             contentRecord.serverUrl,
           );
           credentialName = credential?.name;
@@ -2257,6 +2488,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         const credential = await newCredential(
           Views.HomeView,
           createNewCredentialLabel,
+          this.state.credentialsService,
           currentContentRecord.serverUrl,
         );
         credentialName = credential?.name;

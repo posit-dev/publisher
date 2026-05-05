@@ -28,6 +28,7 @@
   "owner_guid": "40d1c1dc-d554-4905-99f1-359517e1a7c0",
   "content_url": "https://connect.example.com/content/a1b2c3d4-e5f6-7890-abcd-ef1234567890/",
   "dashboard_url": "https://connect.example.com/connect/#/apps/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "locked": false,
   "app_role": "owner",
   "id": "42"
 }
