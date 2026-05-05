@@ -23,12 +23,19 @@ import {
 let server: MockConnectServer;
 let baseUrl: string;
 let spec: SwaggerSpec;
+let ajv: Ajv;
 
 beforeAll(async () => {
   server = new MockConnectServer();
   await server.start();
   baseUrl = server.url;
   spec = await getSwaggerSpec();
+  ajv = new Ajv({
+    allErrors: true,
+    strict: false,
+    validateFormats: true,
+  });
+  addFormats(ajv);
 });
 
 afterAll(async () => {
@@ -36,14 +43,15 @@ afterAll(async () => {
 });
 
 /**
- * Convert a Swagger path like "/v1/content/{guid}/bundles" into
- * a concrete URL path like "/__api__/v1/content/test-guid-1234/bundles".
+ * Convert a Swagger path like "/v1/content/{guid}/bundles/{id}" into
+ * a concrete URL path with unique placeholders per parameter position.
  */
 function swaggerPathToUrl(swaggerPath: string): string {
-  const concrete = swaggerPath.replace(
-    /\{[^}]+\}/g,
-    "test-guid-00000000-0000-0000-0000-000000000000",
-  );
+  let paramIndex = 0;
+  const concrete = swaggerPath.replace(/\{[^}]+\}/g, () => {
+    paramIndex++;
+    return `test-param-${paramIndex}-00000000-0000-0000-0000-000000000000`;
+  });
   return `/__api__${concrete}`;
 }
 
@@ -72,6 +80,14 @@ function allowAdditionalProperties(schema: JsonSchema): JsonSchema {
 
   if (result.allOf) {
     result.allOf = result.allOf.map(allowAdditionalProperties);
+  }
+
+  if (result.oneOf) {
+    result.oneOf = result.oneOf.map(allowAdditionalProperties);
+  }
+
+  if (result.anyOf) {
+    result.anyOf = result.anyOf.map(allowAdditionalProperties);
   }
 
   return result;
@@ -130,13 +146,6 @@ describe("Mock server responses match Swagger spec", () => {
       }
 
       const schemaWithAdditional = allowAdditionalProperties(schema);
-
-      const ajv = new Ajv({
-        allErrors: true,
-        strict: false,
-        validateFormats: true,
-      });
-      addFormats(ajv);
 
       const validate = ajv.compile(schemaWithAdditional);
       const valid = validate(body);
