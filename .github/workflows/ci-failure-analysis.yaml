@@ -16,6 +16,9 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   analyze-failure:
     # Run when CI fails or is cancelled on main, OR when manually triggered with a run_id.

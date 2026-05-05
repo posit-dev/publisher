@@ -4,6 +4,9 @@ on:
   pull_request:
     types: [opened, reopened, ready_for_review]
 
+permissions:
+  contents: read
+
 jobs:
   auto-review:
     # Skip draft PRs, Dependabot PRs, and release PRs opened by bots
