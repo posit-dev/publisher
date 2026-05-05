@@ -14,15 +14,16 @@ describe("Multi-Stepper Negative Cases", () => {
     cy.setAdminCredentials();
   });
 
-  describe("User Cancellation Cases", () => {
-    it("OAuth error handling and cancellation scenarios", () => {
+  describe("OAuth Cancellation Cases", () => {
+    it("OAuth error handling and cancellation scenarios @pcc", () => {
       // Tests OAuth cancellation scenarios:
       // - OAuth cancellation when adding credential (with existing credentials)
       // - OAuth cancellation from clean slate (no existing credentials)
       // - Verifies proper cleanup and state management in both scenarios
 
-      // Set up PCC credential (beforeEach wipes SecretStorage via visit)
+      // Set up PCC credential
       const user = Cypress.env("pccConfig").pcc_user_ccqa3;
+      cy.setPCCCredential(user);
       cy.addPCCCredential(user, "pcc-credential", { assertEmpty: false });
 
       // SCENARIO 1: OAuth cancellation when adding second credential
@@ -133,7 +134,9 @@ describe("Multi-Stepper Negative Cases", () => {
       cy.expectCredentialsSectionEmpty();
       cy.expectPollingDialogGone();
     });
+  });
 
+  describe("User Cancellation Cases", () => {
     it("Deployment creation cancellation with partial input", () => {
       // Tests cancellation during deployment creation workflow
       // - Starts deployment creation flow
