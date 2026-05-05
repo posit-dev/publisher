@@ -4,7 +4,7 @@
   "author": "Posit, PBC",
   "displayName": "Posit Publisher",
   "description": "Publish and share your Python and R content on Posit Connect",
-  "version": "99.0.0",
+  "version": "2.5.1",
   "license": "MIT",
   "icon": "assets/img/posit-publisher.png",
   "repository": {
@@ -34,6 +34,9 @@
     "onFileSystem:connect-content"
   ],
   "main": "./dist/extension.js",
+  "vsce": {
+    "dependencies": false
+  },
   "contributes": {
     "authentication": [
       {
@@ -47,11 +50,6 @@
         "properties": {
           "positPublisher.verifyCertificates": {
             "markdownDescription": "Verify TLS certificates for connections. Only **disable** this setting if you experience certificate verification errors and the Posit Connect server is using a self-signed, expired, or otherwise misconfigured certificate.",
-            "type": "boolean",
-            "default": true
-          },
-          "positPublisher.useKeyChainCredentialStorage": {
-            "markdownDescription": "Controls whether Posit Publisher will use the system keychain to store credentials. When disabled, or on a system without a keychain, `~/.connect-credentials` is used. After changing this setting, you must restart VS Code for it to go into effect.",
             "type": "boolean",
             "default": true
           },
@@ -646,7 +644,8 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run --prefix webviews/homeView build && npm run esbuild-base -- --minify && npm run build-font",
-    "esbuild-base": "tsc --noEmit --project tsconfig.json && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "copy-codicons": "node scripts/copy-codicons.mjs",
+    "esbuild-base": "npm run copy-codicons && tsc --noEmit --project tsconfig.json && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "tsc-watch": "tsc --noEmit --watch --project tsconfig.json",
@@ -655,42 +654,52 @@
     "esbuild-tests": "node ./esbuild.tests.mjs",
     "pretest": "npm run esbuild-tests && npm run esbuild-base",
     "test": "vscode-test",
-    "test-unit": "vitest run"
+    "test-unit": "vitest run",
+    "test-integration-interpreters": "vitest run src/interpreters/integration.test.ts",
+    "test-integration-inspect": "vitest run src/inspect/integration.test.ts",
+    "test-integration-publish": "vitest run src/publish/integration.test.ts"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
+    "@eslint/js": "^10.0.1",
+    "@types/js-yaml": "^4.0.9",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/mocha": "^10.0.2",
-    "@types/mutexify": "^1.2.3",
     "@types/node": "^22.0.0",
+    "@types/picomatch": "^4.0.3",
     "@types/retry": "^0.12.5",
     "@types/tar-stream": "^3.1.4",
     "@types/vscode": "^1.87.0",
     "@types/wait-on": "^5.3.3",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.3.8",
-    "esbuild": "^0.27.3",
-    "eslint": "^9.39.2",
+    "esbuild": "^0.28.0",
+    "eslint": "^10.3.0",
     "eslint-config-prettier": "^10.0.1",
     "fantasticon": "^4.1.0",
     "fishery": "^2.4.0",
-    "globals": "^17.3.0",
+    "globals": "^17.6.0",
     "mocha": "^11.1.0",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.55.0",
-    "vitest": "^4.0.18"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.1",
+    "vitest": "^4.1.4"
   },
   "dependencies": {
-    "@vscode/codicons": "^0.0.44",
+    "@posit-dev/connect-api": "*",
+    "@posit-dev/connect-cloud-api": "*",
+    "@vscode/codicons": "^0.0.45",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "async-mutex": "^0.5.0",
-    "axios": "^1.13.5",
+    "axios": "^1.16.0",
     "debounce": "^3.0.0",
-    "entities": "^7.0.1",
-    "eventsource": "^4.1.0",
+    "entities": "^8.0.0",
     "filenamify": "^7.0.1",
-    "get-port": "^7.1.0",
-    "mutexify": "^1.4.0",
+    "js-yaml": "^4.1.1",
+    "jsonwebtoken": "^9.0.3",
+    "picomatch": "^4.0.4",
     "retry": "^0.13.1",
-    "tar-stream": "^3.1.7",
+    "smol-toml": "^1.6.1",
+    "tar-stream": "^3.2.0",
     "vscode-uri": "^3.0.8"
   }
 }

@@ -9,18 +9,17 @@
 
 // Uses text-scoped queries with retry to avoid brittle DOM chains.
 describe("Detect errors in config", () => {
-  // Global setup - run once for entire test suite
   before(() => {
     cy.clearupDeployments();
-    cy.setAdminCredentials();
   });
 
   beforeEach(() => {
-    // Light navigation only
     cy.visit("/");
     cy.getPublisherSidebarIcon().click();
     cy.waitForPublisherIframe();
     cy.debugIframes();
+    cy.resetCredentials();
+    cy.setAdminCredentials();
   });
 
   it("Show errors when Config is invalid", () => {
@@ -40,9 +39,17 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // select our error case
-    cy.get(".quick-input-widget")
-      .contains("Unknown Title • Error in quarto-project-8G2B")
+    // Filter the quickpick to the target deployment, then select it.
+    // The quickpick uses a virtualized list that only renders visible rows.
+    // In CI, prior tests may leave extra deployments that push error entries
+    // below the fold. Typing into the filter narrows the list so the target
+    // item is rendered in the DOM and clickable.
+    cy.get(".quick-input-widget input").type("quarto-project-8G2B");
+    cy.get(
+      '.quick-input-list .monaco-list-row[aria-label*="quarto-project-8G2B"]',
+      { timeout: 20000 },
+    )
+      .should("be.visible")
       .click();
 
     // confirm that the selector shows the error
@@ -73,9 +80,14 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // select our error case
-    cy.get(".quick-input-widget")
-      .contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")
+    // Filter the quickpick to the target deployment, then select it.
+    // (See comment in first test for rationale.)
+    cy.get(".quick-input-widget input").type("fastapi-simple-DHJL");
+    cy.get(
+      '.quick-input-list .monaco-list-row[aria-label*="fastapi-simple-DHJL"]',
+      { timeout: 20000 },
+    )
+      .should("be.visible")
       .click();
 
     // confirm that the selector shows the error

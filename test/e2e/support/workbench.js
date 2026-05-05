@@ -84,7 +84,6 @@ Cypress.Commands.add("cleanupWorkbenchData", () => {
     const cleanupPaths = [
       ".cache",
       ".config",
-      ".connect-credentials",
       ".duckdb",
       ".ipython",
       ".local",

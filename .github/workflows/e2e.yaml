@@ -15,9 +15,16 @@ on:
     secrets:
       CONNECT_LICENSE:
         required: true
+      CONNECT_LICENSE_FILE:
+        required: true
       WORKBENCH_LICENSE:
         required: true
-
+      GH_DOWNLOAD_TOKEN:
+        required: false
+      PCC_USER_CCQA3:
+        required: false
+permissions:
+  contents: read
 jobs:
   cypress:
     name: e2e (${{ matrix.name || matrix.connect-version }})
@@ -86,16 +93,23 @@ jobs:
         working-directory: test/e2e
         run: npx playwright install chromium
 
-      - uses: extractions/setup-just@v3
+      - uses: extractions/setup-just@v4
+
+      - name: Enable containerd image store
+        run: |
+          # Enable containerd snapshotter for consistent cache export support across all runners
+          # Some ubuntu-latest runners have this enabled, others don't - this ensures consistency
+          echo '{"features":{"containerd-snapshotter":true}}' | sudo tee /etc/docker/daemon.json
+          sudo systemctl restart docker
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
         with:
           # Use docker driver to keep images in local daemon where docker compose can access them
           driver: docker
 
       - name: Download VSIX artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist
@@ -109,7 +123,7 @@ jobs:
           WORKBENCH_LICENSE: ${{ secrets.WORKBENCH_LICENSE }}
 
       - name: Build e2e base Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: test/e2e
           file: test/e2e/Dockerfile.base
@@ -160,7 +174,7 @@ jobs:
         working-directory: test/e2e
         run: |
           # Install the Publisher extension and set ownership in parallel
-          VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
+          VSIX_FILENAME=$(ls -Art ../../dist/*.vsix | xargs -n1 basename | tail -n 1)
           docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}" &
 
           # Set proper ownership for workspace files while extension installs
@@ -224,7 +238,7 @@ jobs:
           CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
 
       - name: Upload Cypress screenshots on failure
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: cypress-screenshots-${{ matrix.name || matrix.connect-version }}
@@ -232,7 +246,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: "[DEBUG] Upload Cypress videos"
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always() && (env.DEBUG_CYPRESS == 'true' || env.VARS_DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         with:
           name: cypress-videos-${{ matrix.name || matrix.connect-version }}
@@ -312,7 +326,7 @@ jobs:
           sudo chown -R $USER:$USER test/e2e/logs
 
       - name: Save test logs as artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: failure() && steps.run_tests.outcome == 'failure'
         with:
           name: e2e-logs-${{ matrix.name || matrix.connect-version }}

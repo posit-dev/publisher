@@ -5,20 +5,19 @@
 # - R: 4.3, 4.4
 # - Quarto: 1.6, 1.7
 
-FROM ubuntu:22.04 AS base
+FROM ubuntu:24.04 AS base
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG OS_IDENTIFIER=ubuntu-2204
+ARG OS_IDENTIFIER=ubuntu-2404
 
 # Configure apt-get mirror and install prerequisites in single layer
-RUN sed -i "s/archive.ubuntu.com/us-east-1.ec2.archive.ubuntu.com/g" /etc/apt/sources.list && \
+RUN sed -i "s|URIs: http://archive.ubuntu.com|URIs: http://us-east-1.ec2.archive.ubuntu.com|g" /etc/apt/sources.list.d/ubuntu.sources && \
     export TZ=America/New_York && \
     apt-get update && \
     apt-get install -y \
     build-essential \
     curl \
     dnsutils \
-    dpkg-sig \
     gawk \
     gfortran \
     git \
@@ -38,7 +37,9 @@ RUN sed -i "s/archive.ubuntu.com/us-east-1.ec2.archive.ubuntu.com/g" /etc/apt/so
     libsodium-dev \
     libsqlite3-dev \
     libssl-dev \
-    libtinfo5 \
+    libtinfo6 \
+    libtirpc-dev \
+    libxt6t64 \
     libxml2-dev \
     libzmq3-dev \
     llvm \
@@ -67,6 +68,7 @@ FROM base AS python-3.11.11
 ARG PYTHON_VERSION=3.11.11
 RUN curl -fsSL -O https://cdn.rstudio.com/python/${OS_IDENTIFIER}/pkgs/python-${PYTHON_VERSION}_1_amd64.deb \
     && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
     && apt-get install -f -y ./python-${PYTHON_VERSION}_1_amd64.deb \
     && rm python-${PYTHON_VERSION}_1_amd64.deb \
     && /opt/python/${PYTHON_VERSION}/bin/pip install --no-cache-dir --upgrade pip setuptools wheel \
@@ -76,6 +78,7 @@ FROM base AS python-3.12.9
 ARG PYTHON_VERSION=3.12.9
 RUN curl -fsSL -O https://cdn.rstudio.com/python/${OS_IDENTIFIER}/pkgs/python-${PYTHON_VERSION}_1_amd64.deb \
     && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
     && apt-get install -f -y ./python-${PYTHON_VERSION}_1_amd64.deb \
     && rm python-${PYTHON_VERSION}_1_amd64.deb \
     && /opt/python/${PYTHON_VERSION}/bin/pip install --no-cache-dir --upgrade pip setuptools wheel \
@@ -88,6 +91,7 @@ RUN curl -fsSL -O https://cdn.rstudio.com/python/${OS_IDENTIFIER}/pkgs/python-${
 FROM base AS r-4.3.3
 ARG R_VERSION=4.3.3
 RUN curl -O https://cdn.rstudio.com/r/${OS_IDENTIFIER}/pkgs/r-${R_VERSION}_1_amd64.deb \
+    && apt-get update \
     && apt-get install -y ./r-${R_VERSION}_1_amd64.deb \
     && rm ./r-${R_VERSION}_1_amd64.deb \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
@@ -95,6 +99,7 @@ RUN curl -O https://cdn.rstudio.com/r/${OS_IDENTIFIER}/pkgs/r-${R_VERSION}_1_amd
 FROM base AS r-4.4.2
 ARG R_VERSION=4.4.2
 RUN curl -O https://cdn.rstudio.com/r/${OS_IDENTIFIER}/pkgs/r-${R_VERSION}_1_amd64.deb \
+    && apt-get update \
     && apt-get install -y ./r-${R_VERSION}_1_amd64.deb \
     && rm ./r-${R_VERSION}_1_amd64.deb \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/*

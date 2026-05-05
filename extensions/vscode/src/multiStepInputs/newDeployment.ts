@@ -11,7 +11,7 @@ import {
 } from "src/multiStepInputs/multiStepHelper";
 import {
   commands,
-  env,
+  extensions,
   InputBoxValidationSeverity,
   QuickPickItem,
   QuickPickItemKind,
@@ -28,20 +28,26 @@ import {
   ConfigurationInspectionResult,
   ContentType,
   contentTypeStrings,
+  getContentTypeLabel,
   Credential,
-  EntryPointPath,
   FileAction,
   PreContentRecord,
   ProductName,
-  useApi,
 } from "src/api";
 import {
   getPythonInterpreterPath,
   getRInterpreterPath,
 } from "src/utils/vscode";
 import { getSummaryStringFromError } from "src/utils/errors";
-import { isAxiosErrorWithJson } from "src/utils/errorTypes";
 import { newConfigFileNameFromTitle, newDeploymentName } from "src/utils/names";
+import { updateFileList } from "src/configFiles";
+import {
+  createDeploymentRecord,
+  loadAllConfigurations,
+  loadAllDeploymentsRecursive,
+  writeConfigToFile,
+} from "src/toml";
+import * as workspaces from "src/workspaces";
 import { DeploymentObjects } from "src/types/shared";
 import { showProgress } from "src/utils/progress";
 import {
@@ -58,20 +64,21 @@ import {
   isConnectCloud,
   getProductType,
 } from "src/utils/multiStepHelpers";
+import { CredentialsService } from "src/credentials/service";
 import { extensionSettings } from "src/extension";
-import { recordAddConnectCloudUrlParams } from "src/utils/connectCloudHelpers";
+import { inspectProject } from "src/inspect";
 
 const viewTitle = "Create a New Deployment";
 
 export async function newDeployment(
   viewId: string,
+  credentialsService: CredentialsService,
   projectDir = ".",
   entryPointFile?: string,
 ): Promise<DeploymentObjects> {
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
-  const api = await useApi();
 
   // local step history that gets passed down to any sub-flows
   const stepHistory: InputStep[] = [];
@@ -101,7 +108,6 @@ export async function newDeployment(
   let credentialListItems: QuickPickItem[] = [];
 
   const entryPointListItems: QuickPickItem[] = [];
-  let inspectionResults: ConfigurationInspectionResult[] = [];
   let inspectionQuickPicks: QuickPickItemWithInspectionResult[] = [];
   const contentRecordNames = new Map<string, string[]>();
 
@@ -176,7 +182,7 @@ export async function newDeployment(
   };
 
   const getConfigurationInspectionQuickPicks = async (
-    relEntryPoint: EntryPointPath,
+    relEntryPoint: string,
   ): Promise<QuickPickItemWithInspectionResult[]> => {
     const inspectionListItems: QuickPickItemWithInspectionResult[] = [];
 
@@ -186,33 +192,33 @@ export async function newDeployment(
       const relEntryPointDir = path.dirname(relEntryPoint);
       const relEntryPointFile = path.basename(relEntryPoint);
 
-      const inspectResponse = await api.configurations.inspect(
-        relEntryPointDir,
-        python,
-        r,
-        {
-          entrypoint: relEntryPointFile,
-        },
-      );
+      const root = workspaces.path();
+      const absoluteDir = root
+        ? path.resolve(root, relEntryPointDir)
+        : relEntryPointDir;
 
-      inspectionResults = inspectResponse.data;
+      const inspectionResults = await inspectProject({
+        projectDir: absoluteDir,
+        pythonPath: python?.pythonPath,
+        rPath: r?.rPath,
+        entrypoint: relEntryPointFile,
+        relativeDir: relEntryPointDir,
+      });
+
       inspectionResults.forEach((result) => {
         const config = result.configuration;
         if (config.entrypoint) {
           inspectionListItems.push({
             iconPath: new ThemeIcon("gear"),
-            label: config.type.toString(),
+            label: getContentTypeLabel(config.type),
             description: `(${contentTypeStrings[config.type]})`,
             inspectionResult: result,
           });
         }
       });
     } catch (error: unknown) {
-      if (isAxiosErrorWithJson(error)) {
-        throw error;
-      }
       const summary = getSummaryStringFromError(
-        "newDeployment, configurations.inspect",
+        "newDeployment, inspectProject",
         error,
       );
       window.showErrorMessage(
@@ -230,8 +236,7 @@ export async function newDeployment(
 
   const getCredentials = async (): Promise<void> => {
     try {
-      const response = await api.credentials.list();
-      let credentialsList = response.data;
+      let credentialsList = await credentialsService.list();
 
       // Filter out Connect Cloud credentials if disabled
       if (!extensionSettings.enableConnectCloud()) {
@@ -311,17 +316,14 @@ export async function newDeployment(
 
   const getContentRecords = async () => {
     try {
-      const response = await api.contentRecords.getAll(
-        projectDir ? projectDir : ".",
-        {
-          recursive: true,
-        },
-      );
-      const contentRecordList = response.data.map((record) =>
-        recordAddConnectCloudUrlParams(record, env.appName),
-      );
+      const root = workspaces.path();
+      if (!root) {
+        return;
+      }
+      const startDir = path.resolve(root, projectDir || ".");
+      const allRecords = await loadAllDeploymentsRecursive(startDir, root);
       // Note.. we want all of the contentRecord filenames regardless if they are valid or not.
-      contentRecordList.forEach((contentRecord) => {
+      allRecords.forEach((contentRecord) => {
         let existingList = contentRecordNames.get(contentRecord.projectDir);
         if (existingList === undefined) {
           existingList = [];
@@ -331,7 +333,7 @@ export async function newDeployment(
       });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "newContentRecord, contentRecords.getAll",
+        "newContentRecord, loadAllDeploymentsRecursive",
         error,
       );
       window.showInformationMessage(
@@ -453,7 +455,7 @@ export async function newDeployment(
       });
     }
 
-    let selectedEntrypointFile: string | undefined = undefined;
+    let selectedEntrypointFile: string | undefined;
     do {
       const pick = await input.showQuickPick({
         title: state.title,
@@ -760,6 +762,7 @@ export async function newDeployment(
       newOrSelectedCredential = await newCredential(
         viewId,
         viewTitle,
+        credentialsService,
         undefined,
         stepHistory,
       );
@@ -842,12 +845,17 @@ export async function newDeployment(
   newDeploymentData.entrypoint.inspectionResult.configuration.title =
     newDeploymentData.title;
 
+  const root = workspaces.path();
+  if (!root) {
+    return getDeploymentObjects();
+  }
+
   try {
-    const existingNames = (
-      await api.configurations.getAll(
-        newDeploymentData.entrypoint.inspectionResult.projectDir,
-      )
-    ).data.map((config) => config.configurationName);
+    const relProjectDir =
+      newDeploymentData.entrypoint.inspectionResult.projectDir;
+
+    const allConfigs = await loadAllConfigurations(relProjectDir, root);
+    const existingNames = allConfigs.map((config) => config.configurationName);
 
     configName = newConfigFileNameFromTitle(
       newDeploymentData.title,
@@ -857,19 +865,18 @@ export async function newDeployment(
     newDeploymentData.entrypoint.inspectionResult.configuration.productType =
       getProductType(newOrSelectedCredential.serverType);
 
-    configCreateResponse = (
-      await api.configurations.createOrUpdate(
-        configName,
-        newDeploymentData.entrypoint.inspectionResult.configuration,
-        newDeploymentData.entrypoint.inspectionResult.projectDir,
-      )
-    ).data;
+    configCreateResponse = await writeConfigToFile(
+      configName,
+      relProjectDir,
+      root,
+      newDeploymentData.entrypoint.inspectionResult.configuration,
+    );
     const fileUri = Uri.file(configCreateResponse.configurationPath);
     newConfig = configCreateResponse;
     await commands.executeCommand("vscode.open", fileUri);
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
-      "newDeployment, configurations.createOrUpdate",
+      "newDeployment, writeConfigToFile",
       error,
     );
     window.showErrorMessage(`Failed to create config file. ${summary}`);
@@ -879,11 +886,12 @@ export async function newDeployment(
   try {
     // Attempt to add the Config file to the files for deployment
     // If the configuration is invalid, for example 'unknown', this will fail
-    await api.files.updateFileList(
+    await updateFileList(
       configName,
       getRelPathForConfig(configCreateResponse.configurationPath),
       FileAction.INCLUDE,
       newDeploymentData.entrypoint.inspectionResult.projectDir,
+      root,
     );
   } catch (_error: unknown) {
     // continue on as it is not necessary to include .posit files for deployment
@@ -901,16 +909,22 @@ export async function newDeployment(
       existingNames = [];
     }
     const contentRecordName = newDeploymentName(existingNames);
-    const response = await api.contentRecords.createNew(
-      newDeploymentData.entrypoint.inspectionResult.projectDir,
-      newOrSelectedCredential.name,
+    const clientVersion =
+      extensions.getExtension("posit.publisher")?.packageJSON.version ||
+      "unknown";
+    newContentRecord = await createDeploymentRecord({
+      saveName: contentRecordName,
+      projectDir: newDeploymentData.entrypoint.inspectionResult.projectDir,
+      rootDir: root,
+      serverUrl: newOrSelectedCredential.url,
+      serverType: newOrSelectedCredential.serverType,
       configName,
-      contentRecordName,
-    );
-    newContentRecord = response.data;
+      cloudAccountName: newOrSelectedCredential.accountName,
+      clientVersion,
+    });
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
-      "newDeployment, contentRecords.createNew",
+      "newDeployment, createDeploymentRecord",
       error,
     );
     window.showErrorMessage(
@@ -928,11 +942,12 @@ export async function newDeployment(
         "Unable to determine the relative path for the content record.",
       );
     }
-    await api.files.updateFileList(
+    await updateFileList(
       configName,
       getRelPathForContentRecord(contentRecordPath),
       FileAction.INCLUDE,
       newDeploymentData.entrypoint.inspectionResult.projectDir,
+      root,
     );
   } catch (_error: unknown) {
     // continue on as it is not necessary to include .posit files for deployment

@@ -6,6 +6,73 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0]
+
+### Fixed
+
+- Fixed re-deploying static HTML content (e.g., Quarto sites) failing with Connect error 110 when the content was originally deployed without `content_category`. (#4110)
+- Fixed deployment and credential testing showing "HTTP undefined" when the server is unreachable. Now displays a clear message asking the user to check their network connection, VPN, and server URL. (#4096)
+- Fixed Quarto dashboards with `server: shiny` being misdetected as static content, causing deployment to fail with an `output-dir` error on Connect. (#3991)
+- Fixed content URLs (View Content, dashboard, logs) being unreachable when the configured server URL differs from the external hostname. This scenario can happen when publishing from Workbench to Connect within the Posit Team Native App in Snowpark Container Services. (#3698)
+
+## [2.2.0]
+
+### Fixed
+
+- Fixed Connect Cloud redeploy wiping previously set secrets. (#4082)
+
+## [2.0.0]
+
+### Added
+
+- Added support for deploying projects with dependencies recorded in pylock.toml (PEP 751), uv.lock, or pyproject.toml files. When requirements.txt is not present, these files are automatically detected and used in that priority order. (#2824)
+- Directory checkboxes in Project Files now show an indeterminate state when some, but not all, children are included in the deployment. Directories also now show as checked when all children are included. (#3472)
+
+### Fixed
+
+- Fixed deployment records being written with an empty `created_at` timestamp after publishing. (#3718)
+- Fixed configuration schema to use `auth_type` (snake_case) for integration requests, matching the format the extension actually produces. Added strict property validation to integration request items. (#3651)
+- Fixed a bug with cancellation that could cause redeployment to create a new content item instead of updating the existing one. (#3305)
+- Fixed the Python/R Packages panel showing "file does not exist" after scanning when the package file was absent at startup. (#3963)
+
+### Removed
+
+- Removed the Go backend. Publisher is now a pure TypeScript extension; all functionality that previously went through the Go binary (credential CRUD, publishing, SSE streaming) runs natively in the extension. (#3484, #3693, #3713, #3821)
+- Removed the `positPublisher.useKeyChainCredentialStorage` setting. Credentials are now stored exclusively by Positron's and VS Code's SecretStorage, which handles OS-level storage automatically. (#3649)
+
+## [1.36.0]
+
+### Fixed
+
+- Connect Cloud users who have permissions to publish to multiple accounts are able to create credentials again. (#3446)
+
+## [1.34.0]
+
+### Changed
+
+- Updated Go from 1.25 to 1.26. (#3554)
+
+### Fixed
+
+- Fixed credential operations failing silently when the Publisher agent is unreachable or doesn't respond. The extension now shows warning messages when the agent is unavailable during credential listing, server URL validation, or API key validation. (#3396)
+
+## [1.32.0]
+
+### Changed
+
+- Updated Go from 1.24 to 1.25. (#3520)
+
+### Added
+
+- Improved performance of generating manifests for projects that do not already have an renv.lock file. (#3442)
+
+### Fixed
+
+- Python projects using rpy2 now correctly include an [r] section in the configuration since R is required at runtime. (#3425)
+- Fixed deploy button not appearing for Jupyter notebooks, Quarto visual mode, and diff viewers. (#2785, #3146, #3469)
+- Fixed unhelpful "Unknown Error" popup appearing on every file open/save when the Publisher backend is unavailable during startup or shutdown. (#3452)
+- Fixed the agent process auto-restarting during intentional shutdown (e.g., when VS Code closes). (#3195)
+
 ## [1.30.0]
 
 ### Added
@@ -33,7 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - RMarkdown parsing no longer errors if there is a later horizontal rule (`---`) in the document body. (#3409)
 - Removed the requirement that the local python version exist on the server when deploying (#3368)
 
-# Changed
+### Changed
 
 - Files in the Project Files view now open the file when clicking the file name. Directories expand or collapse. (#3187)
 
@@ -87,7 +154,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   packages hosted in Github. (#3194)
 - Projects referencing packages with RemoteRepos by name and not URL do not hang when deploying. (#3209)
 
-# Changed
+### Changed
 
 - When opening the full deployment log record, it opens as a new unsaved file. (#2996)
 

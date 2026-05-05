@@ -1,0 +1,13 @@
+{
+  "name": "",
+  "memory_request": 1024,
+  "memory_limit": 2048,
+  "cpu_request": 0.5,
+  "cpu_limit": 2,
+  "amd_gpu_limit": 1,
+  "nvidia_gpu_limit": 2,
+  "service_account_name": "my-sa",
+  "default_image_name": "my-image:latest",
+  "default_r_environment_management": true,
+  "default_py_environment_management": false
+}

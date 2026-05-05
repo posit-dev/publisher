@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "isolatedModules": true,
     "esModuleInterop": true,
     "module": "preserve",
@@ -8,6 +7,7 @@
     "target": "ES2023",
     "outDir": "out",
     "lib": ["ES2023", "DOM"],
+    "resolveJsonModule": true,
     "sourceMap": true,
     "rootDir": "src",
     /* Linting */
@@ -19,7 +19,13 @@
     "noUncheckedIndexedAccess": true,
     "paths": {
       "src/*": ["./src/*"]
-    }
+    },
+    "types": ["mocha", "node"]
   },
-  "exclude": ["node_modules", "webviews", "vitest.config.ts"]
+  "exclude": [
+    "node_modules",
+    "webviews",
+    "vitest.config.ts",
+    "src/**/*.e2e.test.ts"
+  ]
 }

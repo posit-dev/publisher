@@ -35,12 +35,6 @@ vi.mock("vscode", () => {
   };
 });
 
-vi.mock("src/api", () => ({
-  useApi() {
-    return { files: {} };
-  },
-}));
-
 const quartoHelperRenderSpy = vi.fn();
 vi.mock("src/utils/quartoProjectHelper", async (importOriginal) => {
   const actual =

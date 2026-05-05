@@ -13,20 +13,6 @@
       "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "preLaunchTask": "${defaultBuildTask}",
       "env": {
-        "POSIT_PUBLISHER_USE_EXTERNAL_AGENT": "FALSE",
-        "CONNECT_CLOUD_ENV": "staging"
-      },
-      "cwd": "${workspaceFolder}/../../test/sample-content"
-    },
-    {
-      "name": "Run Extension using external API agent on 9001",
-      "type": "extensionHost",
-      "request": "launch",
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
-      "preLaunchTask": "${defaultBuildTask}",
-      "env": {
-        "POSIT_PUBLISHER_USE_EXTERNAL_AGENT": "TRUE",
         "CONNECT_CLOUD_ENV": "staging"
       },
       "cwd": "${workspaceFolder}/../../test/sample-content"

@@ -1,42 +1,41 @@
 name: Publish Extension
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*.*.*"
-  workflow_dispatch: # TODO: testing
+permissions:
+  contents: read
 jobs:
-  build:
-    uses: ./.github/workflows/build.yaml
+  # Security: Verify the tag points to a commit on main branch
+  verify-tag:
+    name: Verify tag is on main branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/verify-tag-ancestry
   package:
-    needs:
-      - build
+    needs: verify-tag
     uses: ./.github/workflows/package.yaml
   publish-vscode-marketplace:
     needs:
       - package
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - darwin-amd64
-          - darwin-arm64
-          - linux-amd64
-          - linux-arm64
-          - windows-amd64
     steps:
       - uses: actions/checkout@v6
-      - uses: extractions/setup-just@v3
+      - uses: extractions/setup-just@v4
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist
 
       - id: get-extension-path
-        run: echo "extension_path=dist/$(just name)-$(just version)-${{ matrix.target }}.vsix" >> "$GITHUB_OUTPUT"
+        run: |
+          name="$(jq -r .name extensions/vscode/package.json)"
+          echo "extension_path=dist/${name}-$(just version).vsix" >> "$GITHUB_OUTPUT"
 
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v2
@@ -50,28 +49,21 @@ jobs:
     needs:
       - package
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - darwin-amd64
-          - darwin-arm64
-          - linux-amd64
-          - linux-arm64
-          - windows-amd64
     steps:
       - uses: actions/checkout@v6
-      - uses: extractions/setup-just@v3
+      - uses: extractions/setup-just@v4
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist
 
       - id: get-extension-path
-        run: echo "extension_path=dist/$(just name)-$(just version)-${{ matrix.target }}.vsix" >> "$GITHUB_OUTPUT"
+        run: |
+          name="$(jq -r .name extensions/vscode/package.json)"
+          echo "extension_path=dist/${name}-$(just version).vsix" >> "$GITHUB_OUTPUT"
 
       - name: Publish to Open VSX Registry
         uses: HaaLeo/publish-vscode-extension@v2

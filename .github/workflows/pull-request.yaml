@@ -2,94 +2,134 @@ name: Pull Request
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      debug_cypress:
+        description: "Enable Cypress debug mode (videos, extra logs)"
+        type: boolean
+        default: false
+permissions:
+  contents: read
 concurrency:
   group: ${{ github.head_ref }}
   cancel-in-progress: true
 
 jobs:
-  # Detect if only documentation files changed
+  # Detect if any code files changed (to skip CI for docs-only PRs)
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      docs-only: ${{ steps.filter.outputs.docs-only }}
+      # has-code is true if ANY non-doc file changed
+      has-code: ${{ steps.check.outputs.has-code }}
     steps:
       - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v3
-        id: filter
         with:
-          # docs-only is true when ALL changed files match these patterns
-          predicate-quantifier: every
-          filters: |
-            docs-only:
-              - '**.md'
-              - 'LICENSE'
-              - '.gitignore'
-              - '.gitattributes'
+          fetch-depth: 0 # Need full history for diff
+      - name: Check for code changes
+        id: check
+        run: |
+          # Get the base ref for comparison
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            # For workflow_dispatch, compare with main
+            BASE_SHA="origin/main"
+          fi
+
+          # Get list of changed files
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA"...HEAD 2>/dev/null || git diff --name-only "$BASE_SHA" HEAD)
+
+          if [[ -z "$CHANGED_FILES" ]]; then
+            echo "No files changed"
+            echo "has-code=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+          echo ""
+
+          # Check if any file is NOT a doc file
+          # Doc files: *.md, LICENSE, .gitignore, .gitattributes
+          has_code="false"
+          while IFS= read -r file; do
+            case "$file" in
+              *.md|LICENSE|.gitignore|.gitattributes)
+                # This is a doc file, skip
+                ;;
+              *)
+                # This is a code file
+                echo "Code file found: $file"
+                has_code="true"
+                break
+                ;;
+            esac
+          done <<< "$CHANGED_FILES"
+
+          if [[ "$has_code" == "true" ]]; then
+            echo "has-code=true" >> $GITHUB_OUTPUT
+            echo "Code files changed"
+          else
+            echo "has-code=false" >> $GITHUB_OUTPUT
+            echo "Only documentation files changed"
+          fi
 
   # Linting and formatting - always runs
   lint:
     uses: ./.github/workflows/lint.yaml
 
-  # Unit Tests - skip if docs-only changes
+  # Unit Tests - skip if no code changes
   home-view-unit-tests:
     needs: detect-changes
-    if: needs.detect-changes.outputs.docs-only != 'true'
+    if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/home-view-unit-test.yaml
-
-  agent:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.docs-only != 'true'
-    uses: ./.github/workflows/agent.yaml
 
   vscode:
     needs: detect-changes
-    if: needs.detect-changes.outputs.docs-only != 'true'
+    if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/vscode.yaml
 
-  # Build - skip if docs-only changes
-  build:
+  extension-contract-tests:
     needs: detect-changes
-    if: needs.detect-changes.outputs.docs-only != 'true'
-    uses: ./.github/workflows/build.yaml
+    if: needs.detect-changes.outputs.has-code == 'true'
+    uses: ./.github/workflows/extension-contract-tests.yaml
 
+  connect-contract-tests:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-code == 'true'
+    uses: ./.github/workflows/connect-contract-tests.yaml
+
+  interpreter-integration:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-code == 'true'
+    uses: ./.github/workflows/interpreter-integration.yaml
+
+  # Build - skip if no code changes
   package:
-    needs: [detect-changes, build]
-    if: needs.detect-changes.outputs.docs-only != 'true'
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/package.yaml
 
-  archive:
-    needs: [detect-changes, build]
-    if: needs.detect-changes.outputs.docs-only != 'true'
-    uses: ./.github/workflows/archive.yaml
-
-  # E2E Tests - skip if docs-only changes
+  # E2E Tests - skip if no code changes or if PR is from a fork
   e2e:
-    needs: [detect-changes, home-view-unit-tests, agent, vscode, package]
+    needs: [detect-changes, home-view-unit-tests, vscode, package]
     if: |
       always() &&
-      needs.detect-changes.outputs.docs-only != 'true' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      needs.detect-changes.outputs.has-code == 'true' &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
     uses: ./.github/workflows/e2e.yaml
-    secrets: inherit
-
-  upload:
-    needs: [detect-changes, archive, package]
-    if: |
-      always() &&
-      github.actor != 'dependabot[bot]' &&
-      needs.detect-changes.outputs.docs-only != 'true' &&
-      !contains(needs.*.result, 'failure') &&
-      !contains(needs.*.result, 'cancelled')
-    uses: ./.github/workflows/upload.yaml
-    secrets: inherit
-
-  # License generation - skip if docs-only changes
-  generate-licenses:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.docs-only != 'true'
-    uses: ./.github/workflows/generate-licenses.yaml
     with:
-      pr_changes: false # No PRs on PRs, infinite loop
-      fail_on_forbidden: true
-    secrets: inherit
+      debug_cypress: ${{ inputs.debug_cypress || false }}
+    secrets:
+      CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+      CONNECT_LICENSE_FILE: ${{ secrets.CONNECT_LICENSE_FILE }}
+      WORKBENCH_LICENSE: ${{ secrets.WORKBENCH_LICENSE }}
+      GH_DOWNLOAD_TOKEN: ${{ secrets.GH_DOWNLOAD_TOKEN }}
+      PCC_USER_CCQA3: ${{ secrets.PCC_USER_CCQA3 }}
+
+  # License check - skip if no code changes
+  check-licenses:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-code == 'true'
+    uses: ./.github/workflows/check-licenses.yaml

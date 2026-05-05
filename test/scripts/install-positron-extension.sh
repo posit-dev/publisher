@@ -6,17 +6,6 @@ set -euo pipefail
 
 SERVICE="${1:-release}"
 
-# Read expected version from package.json, with fallback
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PACKAGE_JSON="$SCRIPT_DIR/../../extensions/vscode/package.json"
-
-if [ -f "$PACKAGE_JSON" ]; then
-    EXPECTED_VERSION=$(grep -o '"version": *"[^"]*"' "$PACKAGE_JSON" | cut -d'"' -f4)
-else
-    echo "Warning: package.json not found at $PACKAGE_JSON, falling back to hardcoded version"
-    EXPECTED_VERSION="99.0.0"
-fi
-
 echo "Installing Publisher extension in Workbench $SERVICE container..."
 
 # Check if container is running
@@ -28,16 +17,23 @@ fi
 
 # Find the VSIX file directly from the mounted volume
 echo "Looking for VSIX file in container..."
-VSIX_FILENAME=$(docker exec publisher-e2e.workbench-$SERVICE bash -c "ls -Art /vsix-tmp | grep linux-amd64 | tail -n 1")
+VSIX_FILENAME=$(docker exec publisher-e2e.workbench-$SERVICE bash -c "ls -Art /vsix-tmp/*.vsix 2>/dev/null | xargs -n1 basename | tail -n 1")
 
 if [ -z "$VSIX_FILENAME" ]; then
-    echo "ERROR: No linux-amd64 Publisher VSIX found in container."
+    echo "ERROR: No Publisher VSIX found in container."
     echo "Contents of /vsix-tmp:"
     docker exec publisher-e2e.workbench-$SERVICE bash -c "ls -la /vsix-tmp"
     exit 1
 fi
 
 echo "Using VSIX: $VSIX_FILENAME"
+
+# Read the expected version directly from package.json
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$SCRIPT_DIR/../.."
+EXPECTED_VERSION=$(node -p "require('$REPO_ROOT/extensions/vscode/package.json').version")
+
+echo "Expected installed version: $EXPECTED_VERSION"
 
 # Set proper ownership for the VSIX directory and files
 docker exec publisher-e2e.workbench-$SERVICE bash -c "chown -R rstudio:rstudio /vsix-tmp" || {
@@ -55,7 +51,7 @@ INSTALL_LOG="./logs/workbench-extension/workbench-extension-installation.log"
 
 # Run installation command as the rstudio user to ensure proper permissions
 echo "Running installation command..." | tee "$INSTALL_LOG"
-docker exec -u rstudio publisher-e2e.workbench-$SERVICE bash -c "cd /usr/lib/rstudio-server/bin/positron-server && ./bin/positron-server --install-extension /vsix-tmp/$VSIX_FILENAME --force" | tee -a "$INSTALL_LOG" || {
+docker exec -u rstudio publisher-e2e.workbench-$SERVICE bash -c "cd /usr/lib/rstudio-server/bin/positron-server && ./bundled/bin/positron-server --install-extension /vsix-tmp/$VSIX_FILENAME --force" | tee -a "$INSTALL_LOG" || {
     echo "Installation command failed" | tee -a "$INSTALL_LOG"
     exit 2
 }
