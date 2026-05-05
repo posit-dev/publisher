@@ -72,6 +72,16 @@ describe("NodejsAppDetector", () => {
         ]);
       }
     });
+
+    test("caller-provided entrypoint wins when package.json main points elsewhere", async () => {
+      writePackageJson({ main: "other.js" });
+      writeFile("other.js", "");
+      writeFile("server.js", "");
+      const configs = await detector.inferType(baseDir, "server.js");
+      expect(configs).toEqual([
+        { type: ContentType.NODEJS, entrypoint: "server.js" },
+      ]);
+    });
   });
 
   describe("package.json main field", () => {
@@ -209,6 +219,30 @@ describe("NodejsAppDetector", () => {
         { type: ContentType.NODEJS, entrypoint: "server.js" },
       ]);
     });
+
+    test("falls through from missing main to scripts.start", async () => {
+      writePackageJson({
+        main: "missing.js",
+        scripts: { start: "node app.js" },
+      });
+      writeFile("app.js", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([
+        { type: ContentType.NODEJS, entrypoint: "app.js" },
+      ]);
+    });
+
+    test("matches node within ts-node (mirrors Connect parity)", async () => {
+      writePackageJson({ scripts: { start: "ts-node app.ts" } });
+      writeFile("app.ts", "");
+      const configs = await detector.inferType(baseDir);
+      // The \bnode\s+ regex finds the boundary between '-' and 'n', so this
+      // emits app.ts. Mirrors run_app.js exactly. If Connect's behavior changes,
+      // this test should fail loudly so the detector can be re-aligned.
+      expect(configs).toEqual([
+        { type: ContentType.NODEJS, entrypoint: "app.ts" },
+      ]);
+    });
   });
 
   describe("conventional file fallback", () => {
@@ -286,6 +320,15 @@ describe("NodejsAppDetector", () => {
       const configs = await detector.inferType(baseDir);
       expect(configs).toEqual([
         { type: ContentType.NODEJS, entrypoint: "index.js" },
+      ]);
+    });
+
+    test("falls through from non-node scripts.start to conventional fallback", async () => {
+      writePackageJson({ scripts: { start: "nodemon app.js" } });
+      writeFile("server.js", "");
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([
+        { type: ContentType.NODEJS, entrypoint: "server.js" },
       ]);
     });
   });

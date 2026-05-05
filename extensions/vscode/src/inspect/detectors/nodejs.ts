@@ -65,7 +65,7 @@ function parseStartScript(start: string): string | undefined {
   return args.find((a) => !a.startsWith("-") && hasValidExtension(a));
 }
 
-async function readPackageJson(baseDir: string): Promise<unknown | undefined> {
+async function readPackageJson(baseDir: string): Promise<unknown> {
   const text = await readFileText(path.join(baseDir, "package.json"));
   if (text === null) return undefined;
   try {
