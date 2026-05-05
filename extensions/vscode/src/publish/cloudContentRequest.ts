@@ -373,7 +373,7 @@ function buildRequestRevision(
 function buildSecrets(
   environment: Record<string, string> | undefined,
   secrets: Record<string, string> | undefined,
-): Secret[] {
+): Secret[] | undefined {
   const combined: Record<string, string> = {};
   if (environment) {
     Object.assign(combined, environment);
@@ -382,7 +382,10 @@ function buildSecrets(
     Object.assign(combined, secrets);
   }
 
-  return Object.entries(combined).map(([name, value]) => ({ name, value }));
+  const entries = Object.entries(combined);
+  return entries.length > 0
+    ? entries.map(([name, value]) => ({ name, value }))
+    : undefined;
 }
 
 /**

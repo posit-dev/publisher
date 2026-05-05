@@ -47,12 +47,18 @@ function normalizeErrorMessage(msg: string): string {
   return capitalized + ".";
 }
 
+function isNetworkError(err: unknown): boolean {
+  return err instanceof ConnectAPIError && err.httpStatus === undefined;
+}
+
 function toAgentError(err: unknown): AgentError {
   const msg = err instanceof Error ? err.message : String(err);
 
   const code: ErrorCode = isCertificateError(err)
     ? "errorCertificateVerification"
-    : "unknown";
+    : isNetworkError(err)
+      ? "connectionFailed"
+      : "unknown";
 
   return {
     code,

@@ -170,6 +170,27 @@ describe("testCredentials", () => {
     },
   );
 
+  test("network error — returns error with 'Unable to reach' message", async () => {
+    // ConnectAPIError with no httpStatus indicates a network-level failure
+    // (VPN disconnected, DNS failure, ECONNREFUSED, etc.)
+    mockTestAuthentication.mockRejectedValue(
+      new ConnectAPIError(
+        "Unable to reach the server. Check your network connection, VPN, and server URL.",
+      ),
+    );
+
+    const result = await testCredentials({
+      url: "https://connect.example.com",
+      apiKey: "somekey",
+      insecure: false,
+    });
+
+    expect(result.user).toBeNull();
+    expect(result.error).not.toBeNull();
+    expect(result.error!.msg).toContain("Unable to reach the server");
+    expect(result.error!.code).toBe("connectionFailed");
+  });
+
   test("invalid URL — returns error, null serverType", async () => {
     const result = await testCredentials({
       url: ":bad",

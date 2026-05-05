@@ -8,6 +8,7 @@ import {
   ContentID,
   BundleID,
   TaskID,
+  isCertificateError,
 } from "@posit-dev/connect-api";
 import type { AllSettings } from "@posit-dev/connect-api";
 
@@ -38,7 +39,6 @@ import {
 } from "./publishShared";
 
 import { forceProductTypeCompliance } from "../toml/configCompliance";
-import { getDashboardUrl, getDirectUrl, getLogsUrl } from "../toml/urlHelpers";
 import { DEFAULT_PYTHON_PACKAGE_FILE } from "../constants";
 import { fileExistsAt } from "../interpreters/fsUtils";
 import { generateRequirements } from "../interpreters/pythonDependencySources";
@@ -129,16 +129,18 @@ export async function connectPublish({
   };
 
   let contentId = existingContentId;
+  // Assigned from the API response in both the redeploy (contentDetails)
+  // and first-deploy (createDeployment) branches before any later reads.
+  let contentUrls!: {
+    dashboardUrl: string;
+    directUrl: string;
+    logsUrl: string;
+  };
 
-  // If redeploying, populate URLs from existing content ID
+  // If redeploying, record the content ID now; URLs will be populated
+  // from the API response during the preflight step.
   if (contentId) {
-    setRecordContentInfo(
-      record,
-      contentId,
-      getDashboardUrl(serverUrl, contentId),
-      getDirectUrl(serverUrl, contentId),
-      getLogsUrl(serverUrl, contentId),
-    );
+    record.id = contentId;
   }
 
   // Write initial deployment record
@@ -312,19 +314,36 @@ export async function connectPublish({
         if (isAxiosError(err) && err.response?.status === 404) {
           throw new Error(
             `Cannot deploy content: ID ${contentId} - Content cannot be found.`,
+            { cause: err },
           );
         }
         if (isAxiosError(err) && err.response?.status === 403) {
           throw new Error(
             `Cannot deploy content: ID ${contentId} - ` +
               `You may need to request collaborator permissions or verify the credentials in use.`,
+            { cause: err },
           );
         }
-        const errMsg = err instanceof Error ? err.message : String(err);
         throw new Error(
-          `Cannot deploy content: ID ${contentId} - Unknown error: ${errMsg}`,
+          `Cannot deploy content: ID ${contentId} - Unknown error: ${err instanceof Error ? err.message : String(err)}`,
+          { cause: err },
         );
       }
+
+      // Update record URLs from API-provided values (resolves correctly
+      // when the configured serverUrl is an internal hostname).
+      contentUrls = {
+        dashboardUrl: existing.dashboard_url,
+        directUrl: existing.content_url,
+        logsUrl: logsUrlFrom(existing.dashboard_url),
+      };
+      setRecordContentInfo(
+        record,
+        contentId,
+        contentUrls.dashboardUrl,
+        contentUrls.directUrl,
+        contentUrls.logsUrl,
+      );
 
       onProgress({
         step: "preflight",
@@ -385,12 +404,17 @@ export async function connectPublish({
         signal,
       );
       contentId = created.guid;
+      contentUrls = {
+        dashboardUrl: created.dashboard_url,
+        directUrl: created.content_url,
+        logsUrl: logsUrlFrom(created.dashboard_url),
+      };
       setRecordContentInfo(
         record,
         contentId,
-        getDashboardUrl(serverUrl, contentId),
-        getDirectUrl(serverUrl, contentId),
-        getLogsUrl(serverUrl, contentId),
+        contentUrls.dashboardUrl,
+        contentUrls.directUrl,
+        contentUrls.logsUrl,
       );
       onProgress({
         step: "createNewDeployment",
@@ -635,7 +659,7 @@ export async function connectPublish({
       onProgress({
         step: "validateDeployment",
         status: "start",
-        data: { url: getDirectUrl(serverUrl, contentId) },
+        data: { url: contentUrls.directUrl },
       });
       // Log events are emitted before the HTTP call so the logger writes
       // "Testing URL…" before the request is made.
@@ -666,9 +690,9 @@ export async function connectPublish({
 
     return {
       contentId,
-      dashboardUrl: record.dashboardUrl!,
-      directUrl: record.directUrl!,
-      logsUrl: record.logsUrl!,
+      dashboardUrl: contentUrls.dashboardUrl,
+      directUrl: contentUrls.directUrl,
+      logsUrl: contentUrls.logsUrl,
       bundleId: bundleDTO.id,
     };
   } catch (err) {
@@ -752,12 +776,25 @@ function classifyDeploymentError(
   const fallbackMessage = err instanceof Error ? err.message : String(err);
 
   // Certificate verification errors (any step)
+  // Must be checked before the generic network error check below, because
+  // TLS failures also have no `response`.
   if (isAxiosError(err) && isCertificateError(err)) {
     return {
       code: "errorCertificateVerification",
       message:
         "Certificate verification failed. " +
         "Check the server's TLS certificate or disable verification.",
+    };
+  }
+
+  // Network errors (no response received) — server unreachable due to
+  // DNS failure, VPN disconnected, firewall, etc.
+  if (isAxiosError(err) && !err.response) {
+    return {
+      code: "connectionFailed",
+      message:
+        "Unable to reach the server. " +
+        "Check your network connection, VPN, and server URL.",
     };
   }
 
@@ -845,18 +882,6 @@ function classifyDeploymentError(
   }
 
   return { code: "unknown", message: fallbackMessage };
-}
-
-/** Detect TLS/certificate errors from axios error codes. */
-function isCertificateError(err: { code?: string }): boolean {
-  const certCodes = [
-    "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
-    "DEPTH_ZERO_SELF_SIGNED_CERT",
-    "SELF_SIGNED_CERT_IN_CHAIN",
-    "ERR_TLS_CERT_ALTNAME_INVALID",
-    "CERT_HAS_EXPIRED",
-  ];
-  return !!err.code && certCodes.includes(err.code);
 }
 
 // ---------------------------------------------------------------------------
@@ -1081,6 +1106,10 @@ function checkMinMax(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function logsUrlFrom(dashboardUrl: string): string {
+  return dashboardUrl.replace(/\/+$/, "") + "/logs";
+}
 
 function getBundleUrl(
   serverUrl: string,

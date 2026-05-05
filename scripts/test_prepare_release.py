@@ -264,6 +264,77 @@ class TestSyncVscodeChangelog(unittest.TestCase):
             self.assertEqual(content.count("# Changelog"), 1)
 
 
+class TestDowngradeGuard(unittest.TestCase):
+    """Tests for the no-downgrade guard."""
+
+    def _setup_release_dir(self, tmpdir, package_version):
+        root_changelog = Path(tmpdir) / "CHANGELOG.md"
+        vscode_dir = Path(tmpdir) / "extensions" / "vscode"
+        vscode_dir.mkdir(parents=True)
+        vscode_changelog = vscode_dir / "CHANGELOG.md"
+        package_json = vscode_dir / "package.json"
+
+        root_changelog.write_text(SAMPLE_ROOT_CHANGELOG)
+        vscode_changelog.write_text(SAMPLE_VSCODE_CHANGELOG)
+        package_json.write_text(f'{{\n  "version": "{package_version}"\n}}\n')
+        return package_json
+
+    def test_downgrade_rejected_by_default(self):
+        """Requesting a version lower than package.json should fail."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self._setup_release_dir(tmpdir, "2.1.1")
+
+            result = subprocess.run(
+                ["python3", str(Path(__file__).parent / "prepare-release.py"), "2.0.2"],
+                cwd=tmpdir,
+                capture_output=True,
+                text=True,
+                input="y\n",
+            )
+
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("--allow-downgrade", result.stderr)
+
+    def test_downgrade_allowed_with_flag(self):
+        """--allow-downgrade should let a lower version through."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            package_json = self._setup_release_dir(tmpdir, "2.1.1")
+
+            result = subprocess.run(
+                [
+                    "python3",
+                    str(Path(__file__).parent / "prepare-release.py"),
+                    "2.0.2",
+                    "--allow-downgrade",
+                ],
+                cwd=tmpdir,
+                capture_output=True,
+                text=True,
+                input="y\n",
+            )
+
+            self.assertEqual(result.returncode, 0, f"Script failed: {result.stderr}")
+            pkg_data = json.loads(package_json.read_text())
+            self.assertEqual(pkg_data["version"], "2.0.2")
+
+    def test_same_version_allowed(self):
+        """Requesting the same version as package.json is not a downgrade."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            package_json = self._setup_release_dir(tmpdir, "2.0.0")
+
+            result = subprocess.run(
+                ["python3", str(Path(__file__).parent / "prepare-release.py"), "2.0.0"],
+                cwd=tmpdir,
+                capture_output=True,
+                text=True,
+                input="y\n",
+            )
+
+            self.assertEqual(result.returncode, 0, f"Script failed: {result.stderr}")
+            pkg_data = json.loads(package_json.read_text())
+            self.assertEqual(pkg_data["version"], "2.0.0")
+
+
 class TestFullReleasePreparation(unittest.TestCase):
     """Tests for full release preparation flow."""
 

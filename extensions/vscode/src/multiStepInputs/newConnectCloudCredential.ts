@@ -378,7 +378,7 @@ export async function newConnectCloudCredential(
   // ***************************************************************
   function determineAccountFlow(_: MultiStepInput, state: MultiStepState) {
     const accounts = getAvailableAccounts();
-    let name: string = "";
+    let name: string;
     let stepFunc: (input: MultiStepInput) => Thenable<InputStep | void>;
     let skipStepHistory: boolean | undefined;
 

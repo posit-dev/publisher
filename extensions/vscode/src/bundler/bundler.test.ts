@@ -8,7 +8,10 @@ import * as zlib from "zlib";
 import { extract as tarExtract, Headers } from "tar-stream";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createBundle } from "./bundler";
+import { manifestFromConfig } from "./manifestFromConfig";
 import { newManifest } from "./manifest";
+import { ContentType } from "../api/types/configurations";
+import { ProductType } from "../api/types/contentRecords";
 import { Manifest, BundleProgressEvent } from "./types";
 
 let tmpDir: string;
@@ -412,5 +415,46 @@ describe("createBundle", () => {
     if (summary?.kind === "summary") {
       expect(summary.files).toBe(2); // app.py + requirements.txt
     }
+  });
+});
+
+describe("pre-rendered Quarto website bundle", () => {
+  it("does not set content_category from entrypoint path", async () => {
+    // Simulate a pre-rendered Quarto website: output lives under _site/
+    makeFile("_site/index.html", "<html><body>Home</body></html>");
+    makeFile(
+      "_site/slides.html",
+      "<html><body>Slides (revealjs)</body></html>",
+    );
+    makeFile("_site/site_libs/revealjs/reveal.js", "/* reveal.js library */");
+
+    const manifest = manifestFromConfig({
+      $schema: "" as never,
+      productType: ProductType.CONNECT,
+      type: ContentType.HTML,
+      entrypoint: "_site/index.html",
+      validate: true,
+      files: ["/_site"],
+    });
+
+    const result = await createBundle({
+      projectPath: tmpDir,
+      manifest,
+      filePatterns: ["/_site"],
+    });
+
+    const entries = await extractTarEntries(result.bundle);
+    const archivedManifest = JSON.parse(
+      entries.get("manifest.json")!.data.toString(),
+    );
+    // content_category should NOT be set from entrypoint path alone
+    expect(archivedManifest.metadata.content_category).toBeUndefined();
+    expect(archivedManifest.metadata.appmode).toBe("static");
+    expect(archivedManifest.metadata.primary_html).toBe("_site/index.html");
+
+    // All site files should still be present in the bundle
+    expect(entries.has("_site/index.html")).toBe(true);
+    expect(entries.has("_site/slides.html")).toBe(true);
+    expect(entries.has("_site/site_libs/revealjs/reveal.js")).toBe(true);
   });
 });

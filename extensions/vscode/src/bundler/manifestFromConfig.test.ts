@@ -393,6 +393,18 @@ describe("manifestFromConfig", () => {
     });
   });
 
+  describe("content_category", () => {
+    it("does not set content_category from entrypoint path", () => {
+      const m = manifestFromConfig(
+        minimalConfig({
+          type: ContentType.HTML,
+          entrypoint: "_site/index.html",
+        }),
+      );
+      expect(m.metadata.content_category).toBeUndefined();
+    });
+  });
+
   describe("combined R and Python environment", () => {
     it("sets both environment.r and environment.python", () => {
       const m = manifestFromConfig(

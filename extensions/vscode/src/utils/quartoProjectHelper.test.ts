@@ -38,7 +38,7 @@ describe("QuartoProjectHelper", () => {
       const helper = new QuartoProjectHelper("index.qmd", "index.html", ".");
       await helper.render();
       expect(mockRenderCmd).toHaveBeenCalledWith(
-        `quarto render "${path.join(".", "index.qmd")}" --to html`,
+        `quarto render "${path.join(".", "index.qmd")}"`,
       );
     });
 
@@ -47,7 +47,7 @@ describe("QuartoProjectHelper", () => {
 
       const helper = new QuartoProjectHelper("index.qmd", "index.html", ".");
       await helper.render();
-      expect(mockRenderCmd).toHaveBeenCalledWith(`quarto render "." --to html`);
+      expect(mockRenderCmd).toHaveBeenCalledWith(`quarto render "."`);
     });
 
     test("source is _quarto.yml, renders as a project (uses dir)", async () => {
@@ -55,7 +55,7 @@ describe("QuartoProjectHelper", () => {
       await helper.render();
       // No need to check on files if source is already the .yml
       expect(mockFileExistsAt).not.toHaveBeenCalled();
-      expect(mockRenderCmd).toHaveBeenCalledWith(`quarto render "." --to html`);
+      expect(mockRenderCmd).toHaveBeenCalledWith(`quarto render "."`);
     });
   });
 
@@ -73,7 +73,7 @@ describe("QuartoProjectHelper", () => {
       );
       await helper.render();
       expect(mockRenderCmd).toHaveBeenCalledWith(
-        `quarto render "${path.join(projectDir, sourceEntrypoint)}" --to html`,
+        `quarto render "${path.join(projectDir, sourceEntrypoint)}"`,
       );
     });
 
@@ -87,7 +87,7 @@ describe("QuartoProjectHelper", () => {
       );
       await helper.render();
       expect(mockRenderCmd).toHaveBeenCalledWith(
-        `quarto render "${projectDir}" --to html`,
+        `quarto render "${projectDir}"`,
       );
     });
 
@@ -101,13 +101,13 @@ describe("QuartoProjectHelper", () => {
       // No need to check on files if source is already the .yml
       expect(mockFileExistsAt).not.toHaveBeenCalled();
       expect(mockRenderCmd).toHaveBeenCalledWith(
-        `quarto render "${projectDir}" --to html`,
+        `quarto render "${projectDir}"`,
       );
     });
   });
 
   describe("rootDir resolves relative projectDir", () => {
-    const rootDir = path.join(path.sep, "workspace", "my project");
+    const rootDir = path.resolve(path.sep, "workspace", "my project");
 
     test("relative projectDir is resolved against rootDir", async () => {
       mockFileExistsAt.mockResolvedValue(false);
@@ -121,7 +121,7 @@ describe("QuartoProjectHelper", () => {
       expect(helper.projectDir).toBe(rootDir);
       await helper.render();
       expect(mockRenderCmd).toHaveBeenCalledWith(
-        `quarto render "${path.join(rootDir, "index.qmd")}" --to html`,
+        `quarto render "${path.join(rootDir, "index.qmd")}"`,
       );
     });
 
@@ -138,13 +138,11 @@ describe("QuartoProjectHelper", () => {
       const expected = path.resolve(rootDir, relProjectDir);
       expect(helper.projectDir).toBe(expected);
       await helper.render();
-      expect(mockRenderCmd).toHaveBeenCalledWith(
-        `quarto render "${expected}" --to html`,
-      );
+      expect(mockRenderCmd).toHaveBeenCalledWith(`quarto render "${expected}"`);
     });
 
     test("absolute projectDir is unchanged when rootDir is provided", () => {
-      const absProjectDir = path.join(path.sep, "already", "absolute");
+      const absProjectDir = path.resolve(path.sep, "already", "absolute");
       const helper = new QuartoProjectHelper(
         "index.qmd",
         "index.html",
