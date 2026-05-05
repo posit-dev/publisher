@@ -96,7 +96,8 @@ class Output:
                     location += f",line={line}"
             print(f"::error{location}::{message}")
         else:
-            print(f"{self._color(self.RED, '✗ ERROR:')} {message}")
+            location = self._format_location(file, line)
+            print(f"{self._color(self.RED, '✗ ERROR:')} {location}{message}")
 
     def warning(self, message: str, file: Optional[str] = None, line: Optional[int] = None) -> None:
         if self.github_actions:
@@ -107,7 +108,16 @@ class Output:
                     location += f",line={line}"
             print(f"::warning{location}::{message}")
         else:
-            print(f"{self._color(self.YELLOW, '⚠ WARNING:')} {message}")
+            location = self._format_location(file, line)
+            print(f"{self._color(self.YELLOW, '⚠ WARNING:')} {location}{message}")
+
+    def _format_location(self, file: Optional[str], line: Optional[int]) -> str:
+        """Format file:line prefix for local output."""
+        if not file:
+            return ""
+        if line:
+            return f"{file}:{line} — "
+        return f"{file} — "
 
     def success(self, message: str) -> None:
         if self.github_actions:
@@ -495,21 +505,62 @@ def check_dangerous_patterns(
         content = workflow.read_text()
         filename = workflow.name
 
-        # Check for direct use of untrusted input
-        match = untrusted_input_pattern.search(content)
-        if match:
-            line_num = find_line_number(content, match.group(0))
-            finding = Finding(
-                level="error",
-                check="dangerous-patterns",
-                file=filename,
-                message="Potentially uses untrusted input directly (possible injection)",
-                line=line_num,
-                suggestion="Use an intermediate environment variable to sanitize input",
-            )
-            result.errors.append(finding)
-            out.error(finding.message, file=filename, line=line_num)
-            dangerous_found = True
+        # Check for direct use of untrusted input in run: blocks (not env: assignments)
+        # Using untrusted input in env: is the SAFE pattern (intermediate variable)
+        lines = content.splitlines()
+        in_run_block = False
+        run_indent = 0
+        for i, line in enumerate(lines, 1):
+            stripped = line.strip()
+            indent = len(line) - len(line.lstrip())
+
+            # Detect start of run: block (multiline with |)
+            if re.match(r"(-\s+)?run:\s*\|", stripped):
+                in_run_block = True
+                run_indent = indent
+                continue
+
+            # Detect inline run: (single line, e.g. `- run: echo "..."`)
+            inline_run_match = re.match(r"(-\s+)?run:\s+(?!\|)", stripped)
+            if inline_run_match:
+                match = untrusted_input_pattern.search(line)
+                if match:
+                    finding = Finding(
+                        level="error",
+                        check="dangerous-patterns",
+                        file=filename,
+                        message="Potentially uses untrusted input directly in run: block (possible injection)",
+                        line=i,
+                        suggestion="Use an intermediate environment variable to sanitize input",
+                    )
+                    result.errors.append(finding)
+                    out.error(finding.message, file=filename, line=i)
+                    dangerous_found = True
+                in_run_block = False
+                continue
+
+            # If we're in a multiline run block, check if we've exited
+            if in_run_block:
+                # Empty lines are part of the block
+                if not stripped:
+                    continue
+                # If indentation is at or below the run: key level, we've left the block
+                if indent <= run_indent:
+                    in_run_block = False
+                else:
+                    match = untrusted_input_pattern.search(line)
+                    if match:
+                        finding = Finding(
+                            level="error",
+                            check="dangerous-patterns",
+                            file=filename,
+                            message="Potentially uses untrusted input directly in run: block (possible injection)",
+                            line=i,
+                            suggestion="Use an intermediate environment variable to sanitize input",
+                        )
+                        result.errors.append(finding)
+                        out.error(finding.message, file=filename, line=i)
+                        dangerous_found = True
 
         # Check for pull_request_target with checkout of PR code
         if "pull_request_target" in content:
@@ -650,16 +701,40 @@ def main() -> int:
         return 1 if result.has_errors else 0
 
     # Summary
-    print("=" * 40)
+    print("=" * 60)
     print("Audit Summary")
-    print("=" * 40)
+    print("=" * 60)
     if use_colors:
         print(f"Errors:   {Output.RED}{result.error_count}{Output.NC}")
         print(f"Warnings: {Output.YELLOW}{result.warning_count}{Output.NC}")
+        print(f"Passed:   {Output.GREEN}{len(result.passed)}{Output.NC}")
     else:
         print(f"Errors:   {result.error_count}")
         print(f"Warnings: {result.warning_count}")
+        print(f"Passed:   {len(result.passed)}")
     print()
+
+    # Print grouped findings for actionability
+    if result.errors or result.warnings:
+        # Group findings by file
+        findings_by_file: dict[str, list[Finding]] = {}
+        for f in result.errors + result.warnings:
+            findings_by_file.setdefault(f.file, []).append(f)
+
+        print("Findings by file:")
+        print("-" * 60)
+        for fname in sorted(findings_by_file.keys()):
+            print(f"  {fname}:")
+            for f in findings_by_file[fname]:
+                level_str = (
+                    out._color(Output.RED, "ERROR") if f.level == "error"
+                    else out._color(Output.YELLOW, "WARN")
+                )
+                loc = f":{f.line}" if f.line else ""
+                print(f"    [{level_str}] {f.message} ({f.check}{loc})")
+                if f.suggestion:
+                    print(f"           Fix: {f.suggestion}")
+            print()
 
     # GitHub Actions outputs and summary
     if is_github_actions:
