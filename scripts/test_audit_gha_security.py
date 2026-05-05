@@ -672,6 +672,100 @@ jobs:
 
             self.assertEqual(len(result.errors), 1)
 
+    def test_safe_env_assignment_not_flagged(self):
+        """Using untrusted input in env: (intermediate variable) is the safe pattern."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            workflow = create_workflow(
+                Path(tmpdir),
+                "safe.yaml",
+                """name: Safe
+on:
+  issues:
+    types: [opened]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          echo "$ISSUE_TITLE"
+          echo "$ISSUE_BODY"
+""",
+            )
+            result = AuditResult()
+            out = create_silent_output()
+
+            sys.stdout = io.StringIO()
+            check_dangerous_patterns([workflow], result, out)
+            sys.stdout = sys.__stdout__
+
+            self.assertEqual(len(result.errors), 0)
+
+    def test_fails_on_untrusted_input_in_multiline_run(self):
+        """Untrusted input directly in a multiline run: | block should be flagged."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            workflow = create_workflow(
+                Path(tmpdir),
+                "bad.yaml",
+                """name: Bad
+on:
+  issues:
+    types: [opened]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dangerous
+        run: |
+          echo "Title: ${{ github.event.issue.title }}"
+          echo "done"
+""",
+            )
+            result = AuditResult()
+            out = create_silent_output()
+
+            sys.stdout = io.StringIO()
+            check_dangerous_patterns([workflow], result, out)
+            sys.stdout = sys.__stdout__
+
+            self.assertEqual(len(result.errors), 1)
+            self.assertIn("untrusted input", result.errors[0].message)
+
+    def test_mixed_safe_env_and_unsafe_run(self):
+        """Workflow with safe env: usage in one step and unsafe run: in another."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            workflow = create_workflow(
+                Path(tmpdir),
+                "mixed.yaml",
+                """name: Mixed
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Safe step
+        env:
+          COMMENT: ${{ github.event.comment.body }}
+        run: echo "$COMMENT"
+      - name: Unsafe step
+        run: echo "${{ github.event.comment.body }}"
+""",
+            )
+            result = AuditResult()
+            out = create_silent_output()
+
+            sys.stdout = io.StringIO()
+            check_dangerous_patterns([workflow], result, out)
+            sys.stdout = sys.__stdout__
+
+            self.assertEqual(len(result.errors), 1)
+            self.assertIn("untrusted input", result.errors[0].message)
+
     def test_warns_on_pull_request_target(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             workflow = create_workflow(
