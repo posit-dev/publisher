@@ -120,4 +120,13 @@ describe("NodejsAppDetector", () => {
       expect(configs).toEqual([]);
     });
   });
+
+  describe("malformed package.json", () => {
+    test("returns [] silently and does NOT fall through to conventional files", async () => {
+      writeFile("package.json", "{ this is not json");
+      writeFile("server.js", ""); // present but should NOT be picked up.
+      const configs = await detector.inferType(baseDir);
+      expect(configs).toEqual([]);
+    });
+  });
 });
