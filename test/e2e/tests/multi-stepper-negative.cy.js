@@ -15,125 +15,131 @@ describe("Multi-Stepper Negative Cases", () => {
   });
 
   describe("OAuth Cancellation Cases", () => {
-    it("OAuth error handling and cancellation scenarios @pcc", () => {
-      // Tests OAuth cancellation scenarios:
-      // - OAuth cancellation when adding credential (with existing credentials)
-      // - OAuth cancellation from clean slate (no existing credentials)
-      // - Verifies proper cleanup and state management in both scenarios
+    it(
+      "OAuth error handling and cancellation scenarios",
+      { tags: "@pcc" },
+      () => {
+        // Tests OAuth cancellation scenarios:
+        // - OAuth cancellation when adding credential (with existing credentials)
+        // - OAuth cancellation from clean slate (no existing credentials)
+        // - Verifies proper cleanup and state management in both scenarios
 
-      // Set up PCC credential
-      const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-      cy.setPCCCredential(user);
-      cy.addPCCCredential(user, "pcc-credential", { assertEmpty: false });
+        // Set up PCC credential
+        const user = Cypress.env("pccConfig").pcc_user_ccqa3;
+        cy.setPCCCredential(user);
+        cy.addPCCCredential(user, "pcc-credential", { assertEmpty: false });
 
-      // SCENARIO 1: OAuth cancellation when adding second credential
-      // Restore window.open stub left by addPCCCredential before creating a new one
-      cy.window().then((win) => {
-        if (win.open && win.open.restore) {
-          win.open.restore();
-        }
-      });
+        // SCENARIO 1: OAuth cancellation when adding second credential
+        // Restore window.open stub left by addPCCCredential before creating a new one
+        cy.window().then((win) => {
+          if (win.open && win.open.restore) {
+            win.open.restore();
+          }
+        });
 
-      cy.ensureCredentialsSectionExpanded();
-      cy.clickSectionAction("New Credential");
-      cy.get(".quick-input-widget").should("be.visible");
+        cy.ensureCredentialsSectionExpanded();
+        cy.clickSectionAction("New Credential");
+        cy.get(".quick-input-widget").should("be.visible");
 
-      cy.get(".quick-input-titlebar").should(
-        "have.text",
-        "Create a New Credential",
-      );
+        cy.get(".quick-input-titlebar").should(
+          "have.text",
+          "Create a New Credential",
+        );
 
-      cy.get(".quick-input-list-row")
-        .contains("Posit Connect Cloud")
-        .should("be.visible")
-        .click();
+        cy.get(".quick-input-list-row")
+          .contains("Posit Connect Cloud")
+          .should("be.visible")
+          .click();
 
-      cy.get(".monaco-dialog-box")
-        .should("be.visible")
-        .should("have.attr", "aria-modal", "true");
+        cy.get(".monaco-dialog-box")
+          .should("be.visible")
+          .should("have.attr", "aria-modal", "true");
 
-      // Handle OAuth popup window
-      cy.window().then((win) => {
-        cy.stub(win, "open")
-          .callsFake((url) => {
-            win.oauthUrl = url;
-            const mockWindow = {
-              closed: false,
-              close: function () {
-                this.closed = true;
-                setTimeout(() => {
-                  win.dispatchEvent(new Event("focus"));
-                }, 100);
-              },
-              focus: () => {},
-              postMessage: () => {},
-            };
-            win.mockOAuthWindow = mockWindow;
-            return mockWindow;
-          })
-          .as("windowOpen");
-      });
+        // Handle OAuth popup window
+        cy.window().then((win) => {
+          cy.stub(win, "open")
+            .callsFake((url) => {
+              win.oauthUrl = url;
+              const mockWindow = {
+                closed: false,
+                close: function () {
+                  this.closed = true;
+                  setTimeout(() => {
+                    win.dispatchEvent(new Event("focus"));
+                  }, 100);
+                },
+                focus: () => {},
+                postMessage: () => {},
+              };
+              win.mockOAuthWindow = mockWindow;
+              return mockWindow;
+            })
+            .as("windowOpen");
+        });
 
-      // Click "Open" to start OAuth flow
-      cy.get(".monaco-dialog-box .dialog-buttons a.monaco-button")
-        .contains("Open")
-        .should("be.visible")
-        .click();
+        // Click "Open" to start OAuth flow
+        cy.get(".monaco-dialog-box .dialog-buttons a.monaco-button")
+          .contains("Open")
+          .should("be.visible")
+          .click();
 
-      cy.get("@windowOpen").should("have.been.calledOnce");
+        cy.get("@windowOpen").should("have.been.calledOnce");
 
-      // Simulate OAuth cancellation: close window without completing auth
-      cy.task("closeOAuthWindow", {});
+        // Simulate OAuth cancellation: close window without completing auth
+        cy.task("closeOAuthWindow", {});
 
-      // User hits ESC to cancel the ongoing OAuth polling in VS Code
-      cy.get("body").type("{esc}");
+        // User hits ESC to cancel the ongoing OAuth polling in VS Code
+        cy.get("body").type("{esc}");
 
-      // Ensure credentials list reflects the pre-existing PCC credential
-      cy.refreshCredentials();
-      cy.ensureCredentialsSectionExpanded();
-      cy.findUniqueInPublisherWebview('[data-automation="pcc-credential-list"]')
-        .find(".tree-item-title")
-        .should("have.text", "pcc-credential");
+        // Ensure credentials list reflects the pre-existing PCC credential
+        cy.refreshCredentials();
+        cy.ensureCredentialsSectionExpanded();
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="pcc-credential-list"]',
+        )
+          .find(".tree-item-title")
+          .should("have.text", "pcc-credential");
 
-      cy.expectPollingDialogGone();
+        cy.expectPollingDialogGone();
 
-      // SCENARIO 2: OAuth cancellation from clean slate
-      cy.resetCredentials();
-      cy.refreshCredentials();
+        // SCENARIO 2: OAuth cancellation from clean slate
+        cy.resetCredentials();
+        cy.refreshCredentials();
 
-      // Restore the window.open stub before creating a new one
-      cy.window().then((win) => {
-        if (win.open && win.open.restore) {
-          win.open.restore();
-        }
-      });
+        // Restore the window.open stub before creating a new one
+        cy.window().then((win) => {
+          if (win.open && win.open.restore) {
+            win.open.restore();
+          }
+        });
 
-      cy.startPCCOAuthFlow();
+        cy.startPCCOAuthFlow();
 
-      // Click "Open" to start OAuth flow
-      cy.get(".monaco-dialog-box .dialog-buttons a.monaco-button")
-        .contains("Open")
-        .should("be.visible")
-        .click();
+        // Click "Open" to start OAuth flow
+        cy.get(".monaco-dialog-box .dialog-buttons a.monaco-button")
+          .contains("Open")
+          .should("be.visible")
+          .click();
 
-      cy.get("@windowOpen").should("have.been.called");
+        cy.get("@windowOpen").should("have.been.called");
 
-      // Simulate user canceling by closing OAuth window
-      cy.window().then((win) => {
-        if (win.mockOAuthWindow) {
-          win.mockOAuthWindow.close();
-        }
-      });
+        // Simulate user canceling by closing OAuth window
+        cy.window().then((win) => {
+          if (win.mockOAuthWindow) {
+            win.mockOAuthWindow.close();
+          }
+        });
 
-      // User hits ESC to cancel OAuth polling
-      cy.get("body").type("{esc}");
+        // User hits ESC to cancel OAuth polling
+        cy.get("body").type("{esc}");
 
-      // Verify clean state after cancellation
-      cy.get(".monaco-dialog-box").should("not.exist");
-      cy.ensureCredentialsSectionExpanded();
-      cy.expectCredentialsSectionEmpty();
-      cy.expectPollingDialogGone();
-    });
+        // Verify clean state after cancellation
+        cy.get(".monaco-dialog-box").should("not.exist");
+        cy.ensureCredentialsSectionExpanded();
+        cy.expectCredentialsSectionEmpty();
+        cy.expectPollingDialogGone();
+      },
+    );
   });
 
   describe("User Cancellation Cases", () => {

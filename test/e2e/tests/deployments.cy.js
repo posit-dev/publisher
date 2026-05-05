@@ -81,7 +81,7 @@ describe("Deployments Section", () => {
   });
 
   describe("Connect Cloud Deployments", () => {
-    it("PCC Shiny Python Deployment @pcc", () => {
+    it("PCC Shiny Python Deployment", { tags: "@pcc" }, () => {
       // Setup - moved from beforeEach to avoid running when @pcc tests are filtered
       cy.clearupDeployments();
       cy.visit("/");
