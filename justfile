@@ -92,13 +92,13 @@ test-connect-contracts:
 
     cd test/connect-api-contracts && npm test
 
-# Validate Connect API fixtures against the public Swagger spec
+# Validate mock Connect server fixtures and responses against the public Swagger spec
 validate-fixtures:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
-    cd test/connect-api-contracts && npm run validate-fixtures
+    cd test/mock-connect && npm run validate
 
 # Execute Python script tests (licenses, prepare-release, etc.)
 test-scripts:

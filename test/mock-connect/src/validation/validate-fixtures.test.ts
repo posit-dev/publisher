@@ -20,8 +20,6 @@ const FIXTURES_DIR = join(
   __dirname,
   "..",
   "..",
-  "..",
-  "mock-connect",
   "fixtures",
   "connect-responses",
 );

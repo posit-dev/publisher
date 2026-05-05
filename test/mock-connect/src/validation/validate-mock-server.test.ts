@@ -11,7 +11,7 @@
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { MockConnectServer } from "@posit-dev/mock-connect";
+import { MockConnectServer } from "../mock-connect-server.js";
 import { fixtureMappings } from "./fixture-map.js";
 import {
   getSwaggerSpec,
