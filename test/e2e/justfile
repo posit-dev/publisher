@@ -187,6 +187,8 @@ e2e-mock *cypress_args:
     # Run Cypress excluding @pcc tests (which require real OAuth).
     # CYPRESS_MOCK_CONNECT triggers grep filtering via cypress.config.js expose section.
     export CYPRESS_MOCK_CONNECT=true
+    # The mock server accepts any key, but the extension validates the format:
+    # exactly 32 alphanumeric characters (see src/utils/apiKeys.ts).
     export CYPRESS_BOOTSTRAP_ADMIN_API_KEY=abcdefghijklmnopqrstuvwxyz012345
     npx cypress run {{cypress_args}}
 
@@ -203,6 +205,8 @@ e2e-mock-open:
     docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
 
     export CYPRESS_MOCK_CONNECT=true
+    # The mock server accepts any key, but the extension validates the format:
+    # exactly 32 alphanumeric characters (see src/utils/apiKeys.ts).
     export CYPRESS_BOOTSTRAP_ADMIN_API_KEY=abcdefghijklmnopqrstuvwxyz012345
     npx cypress open
 
