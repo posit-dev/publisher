@@ -37,7 +37,7 @@ Once you are ready, deploy your content to Posit Connect (as shown in the screen
 
 Configure your content with ease.
 
-[Configuration files](https://github.com/posit-dev/publisher/blob/main/docs/configuration.md)
+[Configuration files](https://posit-dev.github.io/publisher/configuration.html)
 allow setting up how you want your content to look and run — from
 choosing a title and description to
 [Runtime process settings](https://docs.posit.co/connect/user/content-settings/#content-runtime).
@@ -67,7 +67,7 @@ using just the content's URL. Note: This is only supported for Posit Connect, no
 Posit Connect Cloud.
 
 See the
-[Updating Previously Deployed Content](https://github.com/posit-dev/publisher/blob/main/docs/vscode.md#updating-previously-deployed-content)
+[Updating Previously Deployed Content](https://posit-dev.github.io/publisher/vscode.html#updating-previously-deployed-content)
 documentation for more information.
 
 ### Seamless collaboration
@@ -75,7 +75,7 @@ documentation for more information.
 Collaborate with your team using shared configurations and deployments. Easily
 pick up where others left off with deployed content.
 
-See [Collaborative Publishing with Posit Publisher](https://github.com/posit-dev/publisher/blob/main/docs/collaboration.md)
+See [Collaborative Publishing with Posit Publisher](https://posit-dev.github.io/publisher/collaboration.html)
 for more information.
 
 ### Multiple deployments and configurations
@@ -98,8 +98,8 @@ Specify OAuth Integrations requirements directly in the "Integration Requests" p
 
 ## Help and feedback
 
-Documentation can be found in the
-[open source repository](https://github.com/posit-dev/publisher/blob/main/docs/index.md).
+Documentation can be found on the
+[Posit Publisher documentation site](https://posit-dev.github.io/publisher/).
 
 Report bugs or request features using
 [GitHub Issues](https://github.com/posit-dev/publisher/issues).
