@@ -9,13 +9,17 @@ const e2eConfig = require("./config/e2e.json");
 
 const DEBUG_CYPRESS = process.env.DEBUG_CYPRESS === "true";
 const ACTIONS_STEP_DEBUG = process.env.ACTIONS_STEP_DEBUG === "true";
+const isMockMode = process.env.CYPRESS_MOCK_CONNECT === "true";
 
 // Load PCC config and inject into Cypress env
 const configPath = path.resolve(__dirname, "config/staging-pccqa.json");
 const pccConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
 
-// Rewrite placeholder password with actual secret and handle failures
-if (process.env.CI === "true" && process.env.PCC_USER_CCQA3) {
+// Rewrite placeholder password with actual secret and handle failures.
+// Skip in mock mode — PCC/OAuth tests are excluded and secrets are unavailable.
+if (isMockMode) {
+  // No-op: leave pccConfig password as-is (tests tagged @pcc are excluded)
+} else if (process.env.CI === "true" && process.env.PCC_USER_CCQA3) {
   pccConfig.pcc_user_ccqa3.auth.password = process.env.PCC_USER_CCQA3;
 } else if (pccConfig.pcc_user_ccqa3.auth.password === "UPDATE") {
   // Update as needed with correct 1pass vault and item names
@@ -81,11 +85,20 @@ module.exports = defineConfig({
     BOOTSTRAP_ADMIN_API_KEY: process.env.CYPRESS_BOOTSTRAP_ADMIN_API_KEY || "",
     CI: process.env.CI === "true" ? "true" : "false",
     DEBUG_CYPRESS: process.env.DEBUG_CYPRESS || "false",
+    MOCK_CONNECT: process.env.CYPRESS_MOCK_CONNECT || "false",
     CONNECT_SERVER_URL: "http://localhost:3939",
     CONNECT_CLOUD_ENV: process.env.CONNECT_CLOUD_ENV || "staging",
     WORKBENCH_URL: "http://localhost:8787",
     pccConfig,
   },
+  // When running in mock mode, exclude @pcc tests via @cypress/grep
+  ...(isMockMode && {
+    expose: {
+      grepTags: "-@pcc",
+      grepFilterSpecs: true,
+      grepOmitFiltered: true,
+    },
+  }),
   chromeWebSecurity: false,
   video: DEBUG_CYPRESS || ACTIONS_STEP_DEBUG,
   // Keep memory usage low - tests shouldn't rely on cross-test state

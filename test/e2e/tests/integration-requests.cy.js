@@ -35,29 +35,33 @@ describe("IntegrationRequests Section", () => {
   });
 
   describe("Connect Cloud", () => {
-    it("PCC deployment hides Integration Requests Section @pcc", () => {
-      // Setup - moved from before/beforeEach to avoid running when @pcc tests are filtered
-      cy.initializeConnect();
+    it(
+      "PCC deployment hides Integration Requests Section",
+      { tags: "@pcc" },
+      () => {
+        // Setup - moved from before/beforeEach to avoid running when @pcc tests are filtered
+        cy.initializeConnect();
 
-      const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-      cy.addPCCCredential(user, "connect-cloud-deployment-test", {
-        assertEmpty: false,
-      });
+        const user = Cypress.env("pccConfig").pcc_user_ccqa3;
+        cy.addPCCCredential(user, "connect-cloud-deployment-test", {
+          assertEmpty: false,
+        });
 
-      cy.expectInitialPublisherState();
+        cy.expectInitialPublisherState();
 
-      cy.createPCCDeployment(
-        "static",
-        "index.html",
-        "static-pcc",
-        (tomlFiles) => tomlFiles,
-        [],
-        "connect-cloud-deployment-test",
-      );
+        cy.createPCCDeployment(
+          "static",
+          "index.html",
+          "static-pcc",
+          (tomlFiles) => tomlFiles,
+          [],
+          "connect-cloud-deployment-test",
+        );
 
-      cy.publisherWebview()
-        .findByText("Integration Requests")
-        .should("not.exist");
-    });
+        cy.publisherWebview()
+          .findByText("Integration Requests")
+          .should("not.exist");
+      },
+    );
   });
 });
