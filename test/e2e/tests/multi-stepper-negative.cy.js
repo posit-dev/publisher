@@ -24,9 +24,8 @@ describe("Multi-Stepper Negative Cases", () => {
         // - OAuth cancellation from clean slate (no existing credentials)
         // - Verifies proper cleanup and state management in both scenarios
 
-        // Set up PCC credential
+        // Set up PCC credential via UI OAuth flow
         const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-        cy.setPCCCredential(user);
         cy.addPCCCredential(user, "pcc-credential", { assertEmpty: false });
 
         // SCENARIO 1: OAuth cancellation when adding second credential
