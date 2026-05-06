@@ -8,6 +8,7 @@ import {
   ContentID,
   BundleID,
   TaskID,
+  isCertificateError,
 } from "@posit-dev/connect-api";
 import type { AllSettings } from "@posit-dev/connect-api";
 
@@ -313,17 +314,19 @@ export async function connectPublish({
         if (isAxiosError(err) && err.response?.status === 404) {
           throw new Error(
             `Cannot deploy content: ID ${contentId} - Content cannot be found.`,
+            { cause: err },
           );
         }
         if (isAxiosError(err) && err.response?.status === 403) {
           throw new Error(
             `Cannot deploy content: ID ${contentId} - ` +
               `You may need to request collaborator permissions or verify the credentials in use.`,
+            { cause: err },
           );
         }
-        const errMsg = err instanceof Error ? err.message : String(err);
         throw new Error(
-          `Cannot deploy content: ID ${contentId} - Unknown error: ${errMsg}`,
+          `Cannot deploy content: ID ${contentId} - Unknown error: ${err instanceof Error ? err.message : String(err)}`,
+          { cause: err },
         );
       }
 
@@ -773,12 +776,25 @@ function classifyDeploymentError(
   const fallbackMessage = err instanceof Error ? err.message : String(err);
 
   // Certificate verification errors (any step)
+  // Must be checked before the generic network error check below, because
+  // TLS failures also have no `response`.
   if (isAxiosError(err) && isCertificateError(err)) {
     return {
       code: "errorCertificateVerification",
       message:
         "Certificate verification failed. " +
         "Check the server's TLS certificate or disable verification.",
+    };
+  }
+
+  // Network errors (no response received) — server unreachable due to
+  // DNS failure, VPN disconnected, firewall, etc.
+  if (isAxiosError(err) && !err.response) {
+    return {
+      code: "connectionFailed",
+      message:
+        "Unable to reach the server. " +
+        "Check your network connection, VPN, and server URL.",
     };
   }
 
@@ -866,18 +882,6 @@ function classifyDeploymentError(
   }
 
   return { code: "unknown", message: fallbackMessage };
-}
-
-/** Detect TLS/certificate errors from axios error codes. */
-function isCertificateError(err: { code?: string }): boolean {
-  const certCodes = [
-    "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
-    "DEPTH_ZERO_SELF_SIGNED_CERT",
-    "SELF_SIGNED_CERT_IN_CHAIN",
-    "ERR_TLS_CERT_ALTNAME_INVALID",
-    "CERT_HAS_EXPIRED",
-  ];
-  return !!err.code && certCodes.includes(err.code);
 }
 
 // ---------------------------------------------------------------------------

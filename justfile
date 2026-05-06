@@ -92,13 +92,13 @@ test-connect-contracts:
 
     cd test/connect-api-contracts && npm test
 
-# Validate Connect API fixtures against the public Swagger spec
+# Validate mock Connect server fixtures and responses against the public Swagger spec
 validate-fixtures:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
-    cd test/connect-api-contracts && npm run validate-fixtures
+    cd test/mock-connect && npm run validate
 
 # Execute Python script tests (licenses, prepare-release, etc.)
 test-scripts:
@@ -108,6 +108,7 @@ test-scripts:
 
     python3 scripts/test_licenses.py
     python3 scripts/test_prepare_release.py
+    cd scripts && python3 -m unittest test_audit_gha_security -v
 
 # Prints the pre-release status based on the version (see `just version`).
 pre-release:
@@ -116,6 +117,15 @@ pre-release:
     {{ _with_debug }}
 
     ./scripts/is-pre-release.bash
+
+# Audit GitHub Actions workflows for security best practices
+audit-gha-security:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    python3 scripts/audit_gha_security.py
+
 
 # Print the version.
 version:

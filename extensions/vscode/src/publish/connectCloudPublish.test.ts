@@ -742,6 +742,64 @@ describe("connectCloudPublish", () => {
     expect(failureEvent!.errCode).toBe("requirementsFileReadingError");
   });
 
+  test("network error (no response) classifies as connectionFailed", async () => {
+    const { AxiosError } = await import("axios");
+    const api = createMockApi();
+    // Simulate a network error — axios throws with no `response` property
+    // (e.g. VPN disconnected, DNS failure, ECONNREFUSED)
+    const networkErr = new AxiosError(
+      "connect ECONNREFUSED",
+      "ECONNREFUSED",
+      undefined,
+      undefined,
+      undefined, // no response
+    );
+    vi.mocked(api.createContent).mockRejectedValue(networkErr);
+
+    const onProgress = vi.fn();
+    const opts = baseOptions({ api, onProgress });
+
+    const resultPromise = connectCloudPublish(opts);
+    const assertion = expect(resultPromise).rejects.toThrow();
+    await vi.runAllTimersAsync();
+    await assertion;
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as CloudPublishEvent,
+    );
+    const failureEvent = events.find((e) => e.status === "failure");
+
+    expect(failureEvent).toBeDefined();
+    expect(failureEvent!.errCode).toBe("connectionFailed");
+    expect(failureEvent!.message).toContain("Unable to reach the server");
+  });
+
+  test("certificate error classifies as errorCertificateVerification with Cloud-specific message", async () => {
+    const { AxiosError } = await import("axios");
+    const api = createMockApi();
+    const certErr = new AxiosError("certificate error");
+    certErr.code = "DEPTH_ZERO_SELF_SIGNED_CERT";
+    vi.mocked(api.createContent).mockRejectedValue(certErr);
+
+    const onProgress = vi.fn();
+    const opts = baseOptions({ api, onProgress });
+
+    const resultPromise = connectCloudPublish(opts);
+    const assertion = expect(resultPromise).rejects.toThrow();
+    await vi.runAllTimersAsync();
+    await assertion;
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as CloudPublishEvent,
+    );
+    const failureEvent = events.find((e) => e.status === "failure");
+
+    expect(failureEvent).toBeDefined();
+    expect(failureEvent!.errCode).toBe("errorCertificateVerification");
+    expect(failureEvent!.message).toContain("contact Posit support");
+    expect(failureEvent!.message).not.toContain("disable verification");
+  });
+
   test("HTTP error includes server response body in message", async () => {
     const { AxiosError, AxiosHeaders } = await import("axios");
     const api = createMockApi();

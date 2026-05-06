@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "target": "ES2023",
     "module": "preserve",
     "moduleResolution": "bundler",

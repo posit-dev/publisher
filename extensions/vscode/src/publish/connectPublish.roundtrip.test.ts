@@ -193,6 +193,25 @@ describe("writePublishRecord round-trip through loadDeploymentFromFile", () => {
     });
   });
 
+  it("round-trips a Node.js record", async () => {
+    const record: PublishRecord = {
+      schema: SCHEMA_URL,
+      serverType: "connect",
+      serverUrl: "https://connect.example.com",
+      clientVersion: "1.0.0",
+      createdAt: "2024-06-01T12:00:00.000Z",
+      type: "nodejs",
+      configName: "production",
+    };
+
+    const dp = deploymentPath("nodejs");
+    await writePublishRecord(dp, record);
+
+    const loaded = await loadDeploymentFromFile(dp, tmpDir);
+    expect(loaded.state).toBe(ContentRecordState.DEPLOYED);
+    expect(loaded.type).toBe("nodejs");
+  });
+
   it("round-trips a record with embedded configuration", async () => {
     const record: PublishRecord = {
       schema: SCHEMA_URL,

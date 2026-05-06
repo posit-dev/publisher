@@ -236,6 +236,36 @@ describe("QuartoDetector", () => {
     expect(configs[0]?.title).toBe("posit::conf(2024)");
   });
 
+  test("detects dashboard shiny (format: dashboard)", async () => {
+    setupGlobDir(["dashboard.qmd"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    const qmdContent = "```{r}\nlibrary(shiny)\n```\n";
+    mockReadFile.mockResolvedValue(qmdContent);
+
+    const inspectJson = makeInspectOutput({
+      engines: ["knitr"],
+      files: { input: ["/project/dashboard.qmd"], configResources: [] },
+      formats: {
+        dashboard: {
+          metadata: {
+            title: "Diamonds Explorer",
+            format: "dashboard",
+            server: "shiny",
+          },
+          pandoc: {},
+        },
+      },
+    });
+    mockExecFile.mockResolvedValue({ stdout: inspectJson });
+
+    const configs = await detector.inferType("/project", "dashboard.qmd");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.type).toBe(ContentType.QUARTO_SHINY);
+    expect(configs[0]?.title).toBe("Diamonds Explorer");
+    expect(configs[0]?.alternatives).toBeUndefined();
+  });
+
   test("website project with output-dir generates static alternative", async () => {
     setupGlobDir(["index.qmd"]);
     mockAccess.mockRejectedValue(new Error("ENOENT"));

@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "isolatedModules": true,
     "esModuleInterop": true,
     "module": "preserve",
@@ -20,7 +19,8 @@
     "noUncheckedIndexedAccess": true,
     "paths": {
       "src/*": ["./src/*"]
-    }
+    },
+    "types": ["mocha", "node"]
   },
   "exclude": [
     "node_modules",

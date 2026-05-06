@@ -1,0 +1,21 @@
+{
+  "name": "@posit-dev/mock-connect",
+  "description": "Mock Connect server for testing. Consumers must use a TypeScript-aware runtime (tsx, vitest, etc.).",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/mock-connect-server.ts"
+  },
+  "scripts": {
+    "serve": "tsx src/serve.ts",
+    "validate": "vitest run --config vitest.validate.config.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "tsx": "^4.0.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.4"
+  }
+}

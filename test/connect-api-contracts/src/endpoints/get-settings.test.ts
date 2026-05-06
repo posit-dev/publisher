@@ -3,7 +3,7 @@
 import { describe, it, expect } from "vitest";
 import { Method } from "../client";
 import { setupContractTest, TEST_API_KEY } from "../helpers";
-import type { CapturedRequest } from "../mock-connect-server";
+import type { CapturedRequest } from "@posit-dev/mock-connect";
 
 describe("GetSettings", () => {
   const { client } = setupContractTest();
