@@ -12,7 +12,7 @@ Key concepts:
 - Records of where you have deployed are kept in `.posit/publish/deployments`.
 
 For a full list of features and supported content types, see the
-[extension README](../extensions/vscode/README.md).
+[extension README](https://github.com/posit-dev/publisher/blob/main/extensions/vscode/README.md).
 
 ## Installation
 
