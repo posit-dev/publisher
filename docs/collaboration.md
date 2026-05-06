@@ -1,4 +1,6 @@
-# Collaborative Publishing with Posit Publisher
+---
+title: "Collaborative Publishing"
+---
 
 This workflow guide explains how to collaborate with others on deployed content.
 
