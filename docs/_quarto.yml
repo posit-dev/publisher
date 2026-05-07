@@ -1,6 +1,8 @@
 project:
   type: posit-docs
-  pre-render: python3 ../scripts/generate_llms_txt.py
+  pre-render:
+    - ./_prerender.sh
+    - python3 ../scripts/generate_llms_txt.py
   resources:
     - llms.txt
     - llms-full.txt
@@ -20,5 +22,8 @@ website:
         href: collaboration.md
       - text: "Troubleshooting"
         href: troubleshooting.md
+    tools:
+      - icon: github
+        href: https://github.com/posit-dev/publisher
   search:
     keyboard-shortcut: ["/"]
