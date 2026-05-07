@@ -1,6 +1,6 @@
 project:
   type: posit-docs
-  pre-render: python3 generate-llms-txt.py
+  pre-render: python3 ../scripts/generate_llms_txt.py
   resources:
     - llms.txt
     - llms-full.txt

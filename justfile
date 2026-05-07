@@ -109,6 +109,7 @@ test-scripts:
     python3 scripts/test_licenses.py
     python3 scripts/test_prepare_release.py
     cd scripts && python3 -m unittest test_audit_gha_security -v
+    cd scripts && python3 -m unittest test_generate_llms_txt -v
 
 # Prints the pre-release status based on the version (see `just version`).
 pre-release:

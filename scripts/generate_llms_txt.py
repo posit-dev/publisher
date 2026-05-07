@@ -11,7 +11,7 @@ produces:
 import re
 from pathlib import Path
 
-DOCS_DIR = Path(__file__).parent
+DOCS_DIR = Path(__file__).parent.parent / "docs"
 SITE_URL = "https://posit-dev.github.io/publisher"
 
 # Pages in display order: (source_file, nav_title, description)
