@@ -1,0 +1,46 @@
+# Posit Publisher
+
+> Posit Publisher is a VS Code and Positron extension that enables deploying Python and R projects to Posit Connect.
+
+Publisher presents a UI within the VS Code and Positron sidebar. Deployment options are set via configuration files in `.posit/publish/`, and records of deployments are kept in `.posit/publish/deployments`.
+
+## Docs
+
+- [VS Code Extension Guide](https://posit-dev.github.io/publisher/vscode.html): Tutorial and reference for using the Posit Publisher extension in VS Code and Positron, including setup, deployment, credentials, project files, secrets, and packages.
+- [Configuration File Reference](https://posit-dev.github.io/publisher/configuration.html): Complete reference for the .posit/publish/*.toml configuration file format, including all fields for Python, R, Quarto, Jupyter, Connect, and Connect Cloud settings.
+- [Collaborative Publishing](https://posit-dev.github.io/publisher/collaboration.html): Guide for collaborating with others on deployed content using configuration and deployment files with or without source control.
+- [Troubleshooting](https://posit-dev.github.io/publisher/troubleshooting.html): Common issues and solutions for Posit Publisher, including schema errors, network issues, renv problems, and deployment type mismatches.
+
+## Installation
+
+Install via the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Posit.publisher) or search for "Posit Publisher" in the VS Code Extensions view.
+
+Also available on the [Open VSX Registry](https://open-vsx.org/extension/posit/publisher).
+
+## Supported Content Types
+
+- html
+- jupyter-notebook
+- jupyter-voila
+- python-bokeh
+- python-dash
+- python-fastapi
+- python-flask
+- python-gradio
+- python-panel
+- python-shiny
+- python-streamlit
+- quarto-shiny
+- quarto-static
+- r-plumber
+- r-shiny
+- rmd-shiny
+- rmd
+
+## Links
+
+- [GitHub Repository](https://github.com/posit-dev/publisher)
+- [GitHub Issues](https://github.com/posit-dev/publisher/issues)
+- [GitHub Discussions](https://github.com/posit-dev/publisher/discussions)
+- [Posit Connect Documentation](https://docs.posit.co/connect/)
+- [Posit Connect Cloud Documentation](https://docs.posit.co/connect-cloud/)
