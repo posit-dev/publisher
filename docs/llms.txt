@@ -7,7 +7,7 @@ Publisher presents a UI within the VS Code and Positron sidebar. Deployment opti
 ## Docs
 
 - [VS Code Extension Guide](https://posit-dev.github.io/publisher/vscode.html): Tutorial and reference for using the Posit Publisher extension in VS Code and Positron, including setup, deployment, credentials, project files, secrets, and packages.
-- [Configuration File Reference](https://posit-dev.github.io/publisher/configuration.html): Complete reference for the `.posit/publish/*.toml` configuration file format, including all fields for Python, R, Quarto, Jupyter, Connect, and Connect Cloud settings.
+- [Configuration File Reference](https://posit-dev.github.io/publisher/configuration.html): Complete reference for the .posit/publish/*.toml configuration file format, including all fields for Python, R, Quarto, Jupyter, Connect, and Connect Cloud settings.
 - [Collaborative Publishing](https://posit-dev.github.io/publisher/collaboration.html): Guide for collaborating with others on deployed content using configuration and deployment files with or without source control.
 - [Troubleshooting](https://posit-dev.github.io/publisher/troubleshooting.html): Common issues and solutions for Posit Publisher, including schema errors, network issues, renv problems, and deployment type mismatches.
 
