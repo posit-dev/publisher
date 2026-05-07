@@ -1,6 +1,6 @@
 project:
   type: posit-docs
-  pre-render: _prerender.sh
+  pre-render: ./_prerender.sh
 
 website:
   title: "Posit Publisher"
