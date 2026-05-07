@@ -1,5 +1,8 @@
 project:
   type: posit-docs
+  resources:
+    - llms.txt
+    - llms-full.txt
 
 website:
   title: "Posit Publisher"
