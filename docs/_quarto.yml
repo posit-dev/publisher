@@ -1,5 +1,6 @@
 project:
   type: posit-docs
+  pre-render: _prerender.sh
 
 website:
   title: "Posit Publisher"
@@ -16,5 +17,8 @@ website:
         href: collaboration.md
       - text: "Troubleshooting"
         href: troubleshooting.md
+    tools:
+      - icon: github
+        href: https://github.com/posit-dev/publisher
   search:
     keyboard-shortcut: ["/"]

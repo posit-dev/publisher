@@ -2,6 +2,8 @@
 title: "Posit Publisher"
 ---
 
+**Current version: {{< var version >}}** | [Release notes](https://github.com/posit-dev/publisher/releases)
+
 Posit Publisher lets you deploy projects to Connect from VS Code and Positron.
 
 Key concepts:
