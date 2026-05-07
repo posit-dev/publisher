@@ -172,7 +172,7 @@
     "href": "index.html",
     "title": "Posit Publisher",
     "section": "",
-    "text": "Posit Publisher lets you deploy projects to Connect from VS Code and Positron.\nKey concepts:\nFor a full list of features and supported content types, see the extension README."
+    "text": "Current version: 2.4.0 | Changelog\nPosit Publisher lets you deploy projects to Connect from VS Code and Positron.\nKey concepts:\nFor a full list of features and supported content types, see the extension README."
   },
   {
     "objectID": "index.html#installation",
