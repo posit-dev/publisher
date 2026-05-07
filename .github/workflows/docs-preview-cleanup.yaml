@@ -9,8 +9,9 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
-concurrency: preview-${{ github.ref }}
+concurrency: preview-${{ github.event.pull_request.number }}
 
 jobs:
   cleanup:
