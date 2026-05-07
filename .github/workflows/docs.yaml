@@ -22,6 +22,8 @@ jobs:
 
       - name: Render
         run: quarto render docs
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - uses: peaceiris/actions-gh-pages@v4
         with:
