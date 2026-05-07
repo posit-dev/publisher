@@ -1,0 +1,25 @@
+name: Docs PR Preview Cleanup
+
+on:
+  pull_request_target:
+    types: [closed]
+    paths:
+      - "docs/**"
+      - ".github/workflows/docs-preview.yaml"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency: preview-${{ github.event.pull_request.number }}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: rossjrw/pr-preview-action@v1
+        with:
+          source-dir: docs/_site
+          action: remove
