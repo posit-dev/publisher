@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed Quarto availability check opening a visible terminal and showing a confusing "process exited with code 1" error when Quarto is not installed. The check now runs silently in the background. (#3801)
+
 ## [2.4.0]
 
 ### Fixed
