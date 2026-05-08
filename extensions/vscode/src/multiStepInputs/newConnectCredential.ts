@@ -347,21 +347,21 @@ export async function newConnectCredential(
     // url should always be defined by the time we get to this step
     const serverUrl = typeof state.data.url === "string" ? state.data.url : "";
 
-    // For Snowflake-proxied servers, generate a fresh session token so
-    // the token registration request can reach Connect through the proxy.
-    let snowflakeToken: string | undefined;
-    const connName = state.data.snowflakeConnection;
-    if (isSnowflake(serverType) && typeof connName === "string") {
-      const connections = listConnections();
-      const config = connections[connName];
-      if (config) {
-        const provider = createTokenProvider(config);
-        const hostname = new URL(serverUrl).hostname;
-        snowflakeToken = await provider.getToken(hostname);
-      }
-    }
-
     try {
+      // For Snowflake-proxied servers, generate a fresh session token so
+      // the token registration request can reach Connect through the proxy.
+      let snowflakeToken: string | undefined;
+      const connName = state.data.snowflakeConnection;
+      if (isSnowflake(serverType) && typeof connName === "string") {
+        const connections = listConnections();
+        const config = connections[connName];
+        if (config) {
+          const provider = createTokenProvider(config);
+          const hostname = new URL(serverUrl).hostname;
+          snowflakeToken = await provider.getToken(hostname);
+        }
+      }
+
       // Create the token activator
       const tokenActivator = new ConnectAuthTokenActivator(
         serverUrl,
