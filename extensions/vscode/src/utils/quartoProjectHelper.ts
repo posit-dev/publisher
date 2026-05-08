@@ -1,8 +1,12 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import * as path from "path";
+import { execFile } from "child_process";
+import { promisify } from "util";
 import { fileExistsAt } from "../interpreters/fsUtils";
 import { runTerminalCommand } from "./window";
+
+const execFileAsync = promisify(execFile);
 
 export class ErrorNoQuarto extends Error {
   constructor() {
@@ -57,10 +61,10 @@ export class QuartoProjectHelper {
 
   async isQuartoBinAvailable(): Promise<boolean> {
     try {
-      await runTerminalCommand("quarto --version");
-      return Promise.resolve(true);
+      await execFileAsync("quarto", ["--version"]);
+      return true;
     } catch {
-      return Promise.resolve(false);
+      return false;
     }
   }
 

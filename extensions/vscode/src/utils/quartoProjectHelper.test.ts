@@ -8,14 +8,15 @@ import {
   QuartoProjectHelper,
 } from "./quartoProjectHelper";
 
-const mockQuartoCheck = vi.fn().mockResolvedValue(0);
+const mockExecFile = vi.fn();
+vi.mock("child_process", () => ({
+  execFile: (...args: unknown[]) => mockExecFile(...args),
+}));
+
 const mockRenderCmd = vi.fn().mockResolvedValue(0);
 vi.mock("./window", () => {
   return {
     runTerminalCommand: vi.fn().mockImplementation((cmd: string) => {
-      if (cmd === "quarto --version") {
-        return mockQuartoCheck(cmd);
-      }
       return mockRenderCmd(cmd);
     }),
   };
@@ -29,6 +30,16 @@ vi.mock("../interpreters/fsUtils", () => ({
 describe("QuartoProjectHelper", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default: quarto is available (callback with no error)
+    mockExecFile.mockImplementation(
+      (
+        _cmd: string,
+        _args: string[],
+        callback: (error: Error | null) => void,
+      ) => {
+        callback(null);
+      },
+    );
   });
 
   describe("one level workspace", () => {
@@ -109,7 +120,15 @@ describe("QuartoProjectHelper", () => {
   describe("errors", () => {
     test("there is no quarto binary", async () => {
       mockFileExistsAt.mockResolvedValue(false);
-      mockQuartoCheck.mockRejectedValueOnce(new Error("oops"));
+      mockExecFile.mockImplementation(
+        (
+          _cmd: string,
+          _args: string[],
+          callback: (error: Error | null) => void,
+        ) => {
+          callback(new Error("quarto not found"));
+        },
+      );
 
       const helper = new QuartoProjectHelper("index.qmd", "index.html", ".");
 

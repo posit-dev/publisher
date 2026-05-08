@@ -14,6 +14,17 @@ vi.mock("./window", () => ({
   runTerminalCommand: (...args: unknown[]) => mockRunTerminalCommand(...args),
 }));
 
+// Mock child_process.execFile used by isQuartoBinAvailable.
+// Preserve exec/execSync for use in the real-quarto-render tests.
+const mockExecFile = vi.fn();
+vi.mock("child_process", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:child_process")>();
+  return {
+    ...actual,
+    execFile: (...args: unknown[]) => mockExecFile(...args),
+  };
+});
+
 // Do NOT mock fsUtils — these smoke tests use the real filesystem.
 
 function isQuartoInstalled(): boolean {
@@ -32,13 +43,18 @@ let tmpDir: string;
 beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "quarto-smoke-"));
   vi.clearAllMocks();
-  // Default: quarto --version check succeeds
-  mockRunTerminalCommand.mockImplementation((cmd: string) => {
-    if (cmd === "quarto --version") {
-      return Promise.resolve(0);
-    }
-    return Promise.resolve(0);
-  });
+  // Default: execFile quarto --version succeeds (no error in callback)
+  mockExecFile.mockImplementation(
+    (
+      _cmd: string,
+      _args: string[],
+      callback: (error: Error | null) => void,
+    ) => {
+      callback(null);
+    },
+  );
+  // Default: render commands succeed
+  mockRunTerminalCommand.mockResolvedValue(0);
 });
 
 afterEach(() => {
@@ -244,9 +260,6 @@ describe("QuartoProjectHelper - relative vs absolute projectDir", () => {
 
     let capturedCommand: string | undefined;
     mockRunTerminalCommand.mockImplementation((cmd: string) => {
-      if (cmd === "quarto --version") {
-        return Promise.resolve(0);
-      }
       capturedCommand = cmd;
       return Promise.resolve(0);
     });
@@ -265,9 +278,6 @@ describe("QuartoProjectHelper - command construction smoke test", () => {
   beforeEach(() => {
     capturedCommand = undefined;
     mockRunTerminalCommand.mockImplementation((cmd: string) => {
-      if (cmd === "quarto --version") {
-        return Promise.resolve(0);
-      }
       capturedCommand = cmd;
       return Promise.resolve(0);
     });
