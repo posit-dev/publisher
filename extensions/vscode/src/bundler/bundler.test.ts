@@ -177,6 +177,51 @@ describe("createBundle", () => {
     expect(entries.has("node_modules/pkg/index.js")).toBe(false);
   });
 
+  it("bundles a Node.js project with package files and no packages block", async () => {
+    makeFile("index.js", "console.log('hi');");
+    makeFile("package.json", '{"name":"app","version":"1.0.0"}');
+    makeFile("package-lock.json", '{"lockfileVersion":3}');
+    makeFile("node_modules/foo/index.js", "module.exports = {};");
+
+    const manifest = manifestFromConfig({
+      $schema: "" as never,
+      productType: ProductType.CONNECT,
+      type: ContentType.NODEJS,
+      entrypoint: "index.js",
+      validate: true,
+    });
+
+    const result = await createBundle({
+      projectPath: tmpDir,
+      manifest,
+      filePatterns: ["/index.js", "/package.json", "/package-lock.json"],
+    });
+
+    // Package files are present in the manifest with valid checksums
+    expect(result.manifest.files["index.js"]?.checksum).toMatch(/^[0-9a-f]+$/);
+    expect(result.manifest.files["package.json"]?.checksum).toMatch(
+      /^[0-9a-f]+$/,
+    );
+    expect(result.manifest.files["package-lock.json"]?.checksum).toMatch(
+      /^[0-9a-f]+$/,
+    );
+
+    // node_modules/ is excluded
+    expect(
+      Object.keys(result.manifest.files).some((k) =>
+        k.startsWith("node_modules/"),
+      ),
+    ).toBe(false);
+
+    // The bundled manifest.json has no packages block (Node.js manifests omit it)
+    const entries = await extractTarEntries(result.bundle);
+    const manifestContent = JSON.parse(
+      entries.get("manifest.json")!.data.toString(),
+    );
+    expect(manifestContent.metadata.appmode).toBe("nodejs");
+    expect(manifestContent.packages).toBeUndefined();
+  });
+
   it("creates a bundle from a single file path", async () => {
     makeFile("app.py", "main app");
     makeFile("other.py", "other file");
