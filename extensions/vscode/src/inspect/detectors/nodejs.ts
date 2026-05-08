@@ -23,14 +23,21 @@ const FALLBACK_FILES: readonly string[] = [
   "index.ts",
 ];
 
+/** True if `filePath` ends with a Node.js source extension we can detect. */
 function hasValidExtension(filePath: string): boolean {
   return VALID_EXTENSIONS.has(path.extname(filePath));
 }
 
+/**
+ * Convert an absolute path to a baseDir-relative path with forward slashes,
+ * regardless of host platform — entrypoints are persisted in TOML and must be
+ * portable across macOS, Linux, and Windows.
+ */
 function toRelForwardSlash(baseDir: string, abs: string): string {
   return path.relative(baseDir, abs).split(path.sep).join("/");
 }
 
+/** Build the detector's output for a resolved Node.js entrypoint. */
 function makeConfig(baseDir: string, abs: string): PartialConfig {
   return {
     type: ContentType.NODEJS,
@@ -38,10 +45,15 @@ function makeConfig(baseDir: string, abs: string): PartialConfig {
   };
 }
 
+/** Type guard narrowing parsed JSON to a plain object before field access. */
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
 }
 
+/**
+ * Read a non-empty string `main` field from a parsed package.json, or
+ * `undefined` if absent or not a usable string.
+ */
 function readMain(pkg: unknown): string | undefined {
   if (!isRecord(pkg)) return undefined;
   const main = pkg.main;
@@ -49,6 +61,10 @@ function readMain(pkg: unknown): string | undefined {
   return main;
 }
 
+/**
+ * Read a non-empty `scripts.start` string from a parsed package.json, or
+ * `undefined` if absent or not a usable string.
+ */
 function readStart(pkg: unknown): string | undefined {
   if (!isRecord(pkg)) return undefined;
   const scripts = pkg.scripts;
@@ -58,6 +74,12 @@ function readStart(pkg: unknown): string | undefined {
   return start;
 }
 
+/**
+ * Find the script file in a `scripts.start` command. Locates `node` (with a
+ * word boundary so `ts-node` also matches — Connect parity, see test) and
+ * returns the first following non-flag argument with a valid extension.
+ * Returns `undefined` if no matching argument is found.
+ */
 function parseStartScript(start: string): string | undefined {
   const match = start.match(/\bnode\s+(.+)/);
   const rest = match?.[1];
@@ -66,6 +88,12 @@ function parseStartScript(start: string): string | undefined {
   return args.find((a) => !a.startsWith("-") && hasValidExtension(a));
 }
 
+/**
+ * Read and parse `<baseDir>/package.json`. Returns `undefined` when the file
+ * is missing or unparseable so the caller treats both as "no package.json
+ * signal" — Connect's runtime warns and falls through, but in detection we
+ * prefer Unknown over guessing.
+ */
 async function readPackageJson(baseDir: string): Promise<unknown> {
   const text = await readFileText(path.join(baseDir, "package.json"));
   if (text === null) return undefined;
@@ -76,6 +104,10 @@ async function readPackageJson(baseDir: string): Promise<unknown> {
   }
 }
 
+/**
+ * Resolve a relative path against `baseDir` and return the absolute path if
+ * the file exists, otherwise `undefined`.
+ */
 async function resolveCandidate(
   baseDir: string,
   candidate: string,
