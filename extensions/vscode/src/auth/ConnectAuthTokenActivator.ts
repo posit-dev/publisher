@@ -24,18 +24,21 @@ export class ConnectAuthTokenActivator {
   private readonly viewId: string;
   private readonly maxAttempts: number;
   private readonly insecure?: boolean;
+  private readonly snowflakeToken?: string;
 
   constructor(
     serverUrl: string,
     viewId: string,
     maxAttempts: number = 60,
     insecure?: boolean,
+    snowflakeToken?: string,
   ) {
     this.serverUrl = serverUrl;
     this.viewId = viewId;
     // default: 60 = 30 seconds with 500ms between attempts
     this.maxAttempts = maxAttempts;
     this.insecure = insecure;
+    this.snowflakeToken = snowflakeToken;
   }
 
   async activateToken(): Promise<TokenAuthResult> {
@@ -71,7 +74,11 @@ export class ConnectAuthTokenActivator {
       "Generating authentication token",
       this.viewId,
       async () => {
-        return await generateToken(this.serverUrl, this.insecure);
+        return await generateToken(
+          this.serverUrl,
+          this.insecure,
+          this.snowflakeToken,
+        );
       },
     );
   }
@@ -98,6 +105,7 @@ export class ConnectAuthTokenActivator {
           url: serverUrl,
           token,
           privateKey,
+          snowflakeToken: this.snowflakeToken,
           rejectUnauthorized: this.insecure ? false : undefined,
         });
 

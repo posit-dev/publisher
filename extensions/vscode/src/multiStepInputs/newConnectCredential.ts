@@ -28,6 +28,8 @@ import {
 } from "src/multiStepInputs/common";
 import { CredentialsService } from "src/credentials/service";
 import { isConnect, isSnowflake } from "../utils/multiStepHelpers";
+import { listConnections } from "src/snowflake/connections";
+import { createTokenProvider } from "src/snowflake/tokenProviders";
 import { openConfigurationCommand } from "src/commands";
 import { extensionSettings } from "src/extension";
 import { formatURL } from "src/utils/url";
@@ -345,6 +347,20 @@ export async function newConnectCredential(
     // url should always be defined by the time we get to this step
     const serverUrl = typeof state.data.url === "string" ? state.data.url : "";
 
+    // For Snowflake-proxied servers, generate a fresh session token so
+    // the token registration request can reach Connect through the proxy.
+    let snowflakeToken: string | undefined;
+    const connName = state.data.snowflakeConnection;
+    if (isSnowflake(serverType) && typeof connName === "string") {
+      const connections = listConnections();
+      const config = connections[connName];
+      if (config) {
+        const provider = createTokenProvider(config);
+        const hostname = new URL(serverUrl).hostname;
+        snowflakeToken = await provider.getToken(hostname);
+      }
+    }
+
     try {
       // Create the token activator
       const tokenActivator = new ConnectAuthTokenActivator(
@@ -352,6 +368,7 @@ export async function newConnectCredential(
         viewId,
         undefined,
         !extensionSettings.verifyCertificates(),
+        snowflakeToken,
       );
 
       const resp = await input.showInfoMessage<
