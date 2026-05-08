@@ -11,7 +11,7 @@ export type Manifest = {
   jupyter?: ManifestJupyter;
   quarto?: ManifestQuarto;
   environment?: ManifestEnvironment;
-  packages: Record<string, ManifestPackage>;
+  packages?: Record<string, ManifestPackage>;
   files: Record<string, ManifestFile>;
   integration_requests?: ManifestIntegrationRequest[];
 };

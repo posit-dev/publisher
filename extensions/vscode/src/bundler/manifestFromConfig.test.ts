@@ -407,6 +407,50 @@ describe("manifestFromConfig", () => {
     });
   });
 
+  describe("Node.js section", () => {
+    it("sets appmode to nodejs and entrypoint", () => {
+      const m = manifestFromConfig(
+        minimalConfig({
+          type: ContentType.NODEJS,
+          entrypoint: "index.js",
+        }),
+      );
+      expect(m.metadata.appmode).toBe("nodejs");
+      expect(m.metadata.entrypoint).toBe("index.js");
+    });
+
+    it("omits packages block for NODEJS", () => {
+      const m = manifestFromConfig(
+        minimalConfig({
+          type: ContentType.NODEJS,
+          entrypoint: "index.js",
+        }),
+      );
+      expect(m.packages).toBeUndefined();
+    });
+
+    it("does not set python, jupyter, quarto, environment, or platform for NODEJS", () => {
+      const m = manifestFromConfig(
+        minimalConfig({
+          type: ContentType.NODEJS,
+          entrypoint: "index.js",
+        }),
+      );
+      expect(m.python).toBeUndefined();
+      expect(m.jupyter).toBeUndefined();
+      expect(m.quarto).toBeUndefined();
+      expect(m.environment).toBeUndefined();
+      expect(m.platform).toBeUndefined();
+    });
+
+    it("emits packages: {} for non-NODEJS types", () => {
+      const m = manifestFromConfig(
+        minimalConfig({ type: ContentType.PYTHON_DASH }),
+      );
+      expect(m.packages).toEqual({});
+    });
+  });
+
   describe("combined R and Python environment", () => {
     it("sets both environment.r and environment.python", () => {
       const m = manifestFromConfig(
