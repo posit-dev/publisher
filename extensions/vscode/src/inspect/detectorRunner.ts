@@ -17,6 +17,7 @@ import {
   newStreamlitDetector,
   newBokehDetector,
 } from "./detectors/pythonApp";
+import { NodejsAppDetector } from "./detectors/nodejs";
 import { StaticHTMLDetector } from "./detectors/html";
 import { PlumberDetector } from "./detectors/plumber";
 import { RMarkdownDetector } from "./detectors/rmarkdown";
@@ -40,6 +41,7 @@ function createDetectors(): ContentTypeDetector[] {
     newPanelDetector(),
     newStreamlitDetector(),
     newBokehDetector(),
+    new NodejsAppDetector(),
     new StaticHTMLDetector(),
   ];
 }
