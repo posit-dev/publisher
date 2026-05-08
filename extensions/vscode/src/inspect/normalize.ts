@@ -95,6 +95,7 @@ export async function normalizeConfig(
   if (
     !needR &&
     cfg.type !== ContentType.HTML &&
+    cfg.type !== ContentType.NODEJS &&
     !isPythonContentType(cfg.type)
   ) {
     // For non-HTML, non-Python content: check for renv.lock
@@ -124,6 +125,13 @@ export async function normalizeConfig(
     if (result.config.packageFile) {
       files.push(`/${result.config.packageFile}`);
     }
+  }
+
+  // Node.js: bundle package.json and package-lock.json. There is no [node]
+  // section to populate — Connect picks the runtime from package.json's
+  // engines.node at build time.
+  if (cfg.type === ContentType.NODEJS) {
+    files.push("/package.json", "/package-lock.json");
   }
 
   const comments = initialComment.split("\n");

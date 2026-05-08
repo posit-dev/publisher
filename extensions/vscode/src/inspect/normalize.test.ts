@@ -306,6 +306,44 @@ describe("normalizeConfig", () => {
     expect(result.alternatives).toBeUndefined();
   });
 
+  test("adds package.json and package-lock.json to files list for NODEJS type", async () => {
+    const cfg: PartialConfig = {
+      type: ContentType.NODEJS,
+      entrypoint: "index.js",
+    };
+    setupDefaultMocks();
+
+    const result = await normalizeConfig(cfg, "/project");
+    expect(result.files).toContain("/index.js");
+    expect(result.files).toContain("/package.json");
+    expect(result.files).toContain("/package-lock.json");
+  });
+
+  test("does not trigger renv.lock R detection for NODEJS type", async () => {
+    const cfg: PartialConfig = {
+      type: ContentType.NODEJS,
+      entrypoint: "index.js",
+    };
+    // renv.lock exists, but NODEJS type should skip renv.lock check
+    mockAccess.mockResolvedValue(undefined);
+    mockReadFile.mockRejectedValue(new Error("ENOENT"));
+
+    const result = await normalizeConfig(cfg, "/project");
+    expect(result.r).toBeUndefined();
+  });
+
+  test("does not set python or r config for NODEJS type", async () => {
+    const cfg: PartialConfig = {
+      type: ContentType.NODEJS,
+      entrypoint: "index.js",
+    };
+    setupDefaultMocks();
+
+    const result = await normalizeConfig(cfg, "/project");
+    expect(result.python).toBeUndefined();
+    expect(result.r).toBeUndefined();
+  });
+
   test("uses entrypoint parameter as fallback when cfg.entrypoint is empty", async () => {
     const cfg: PartialConfig = {
       type: ContentType.UNKNOWN,
