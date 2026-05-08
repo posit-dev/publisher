@@ -2,8 +2,11 @@
 
 import * as path from "path";
 import { execFile } from "child_process";
+import { promisify } from "util";
 import { fileExistsAt } from "../interpreters/fsUtils";
 import { runTerminalCommand } from "./window";
+
+const execFileAsync = promisify(execFile);
 
 export class ErrorNoQuarto extends Error {
   constructor() {
@@ -56,12 +59,13 @@ export class QuartoProjectHelper {
     return await fileExistsAt(quartoYmlPath);
   }
 
-  isQuartoBinAvailable(): Promise<boolean> {
-    return new Promise((resolve) => {
-      execFile("quarto", ["--version"], (error) => {
-        resolve(!error);
-      });
-    });
+  async isQuartoBinAvailable(): Promise<boolean> {
+    try {
+      await execFileAsync("quarto", ["--version"]);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   renderProject() {
