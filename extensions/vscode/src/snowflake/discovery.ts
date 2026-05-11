@@ -10,12 +10,6 @@ import type { SnowflakeConnection } from "./types";
 
 const VALIDATION_TIMEOUT_MS = 30_000;
 
-export interface SnowflakeDiscoveryAuth {
-  apiKey?: string;
-  token?: string;
-  privateKey?: string;
-}
-
 /**
  * Discovers Snowflake connections that can successfully authenticate
  * to the Connect server at the given URL.
