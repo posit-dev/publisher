@@ -509,19 +509,7 @@ export async function newConnectCredential(
 
     try {
       await showProgress("Reading Snowflake connections", viewId, async () => {
-        const connectAuth =
-          typeof state.data.apiKey === "string" && state.data.apiKey
-            ? { apiKey: state.data.apiKey }
-            : typeof state.data.token === "string" &&
-                typeof state.data.privateKey === "string" &&
-                state.data.token &&
-                state.data.privateKey
-              ? {
-                  token: state.data.token,
-                  privateKey: state.data.privateKey,
-                }
-              : undefined;
-        const resp = await fetchSnowflakeConnections(serverUrl, connectAuth);
+        const resp = await fetchSnowflakeConnections(serverUrl);
         connections = resp.connections;
         connectionQuickPicks = resp.connectionQuickPicks;
       });
