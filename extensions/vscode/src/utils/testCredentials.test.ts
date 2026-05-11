@@ -274,4 +274,31 @@ describe("testCredentials", () => {
     expect(result.error).toBeNull();
     expect(mockTestAuthentication).not.toHaveBeenCalled();
   });
+
+  test("Snowflake URL with apiKey and snowflakeToken — tests auth through proxy", async () => {
+    mockTestAuthentication.mockResolvedValue({
+      user: mockUser,
+      error: null,
+    });
+
+    const result = await testCredentials({
+      url: "https://example.snowflakecomputing.app",
+      apiKey: "0123456789abcdef0123456789abcdef",
+      snowflakeToken: "snowflake-session-token",
+      insecure: false,
+    });
+
+    expect(result.user).toEqual(mockUser);
+    expect(result.serverType).toBe(ServerType.SNOWFLAKE);
+    expect(result.error).toBeNull();
+
+    const constructorCalls = (ConnectAPI as unknown as ReturnType<typeof vi.fn>)
+      .mock.calls;
+    expect(constructorCalls[0]![0].snowflakeToken).toBe(
+      "snowflake-session-token",
+    );
+    expect(constructorCalls[0]![0].apiKey).toBe(
+      "0123456789abcdef0123456789abcdef",
+    );
+  });
 });

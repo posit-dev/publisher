@@ -12,6 +12,7 @@ import { serverTypeFromURL, discoverServerURL } from "src/utils/url";
 export interface TestCredentialsParams {
   url: string;
   apiKey?: string;
+  snowflakeToken?: string;
   insecure: boolean;
   timeout?: number; // seconds — minimum 30
 }
@@ -103,11 +104,15 @@ export async function testCredentials(
       rejectUnauthorized: !params.insecure,
       timeout: timeoutMs,
     };
-    const authOptions = params.apiKey ? { apiKey: params.apiKey } : {};
+    const auth = params.snowflakeToken
+      ? { snowflakeToken: params.snowflakeToken, apiKey: params.apiKey! }
+      : params.apiKey
+        ? { apiKey: params.apiKey }
+        : {};
     const client = new ConnectAPI({
       url: urlToTest,
+      ...auth,
       ...baseOptions,
-      ...authOptions,
     });
 
     try {
