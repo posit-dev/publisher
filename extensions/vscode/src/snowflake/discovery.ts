@@ -1,6 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { ConnectAPI } from "@posit-dev/connect-api";
+import { ConnectAPI, ConnectAPIError } from "@posit-dev/connect-api";
 
 import { listConnections } from "./connections";
 import { createTokenProvider } from "./tokenProviders";
@@ -41,7 +41,15 @@ export async function discoverSnowflakeConnections(
           timeout: VALIDATION_TIMEOUT_MS,
         });
 
-        await api.testAuthentication();
+        try {
+          await api.testAuthentication();
+        } catch (e) {
+          // 401 means we got through the Snowflake proxy (good!) but
+          // Connect rejected us (expected when no Connect auth yet).
+          if (!(e instanceof ConnectAPIError && e.httpStatus === 401)) {
+            throw e;
+          }
+        }
 
         results.push({ name, serverUrl: candidateUrl });
         // Stop trying other URLs for this connection
