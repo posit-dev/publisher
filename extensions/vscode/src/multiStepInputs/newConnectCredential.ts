@@ -34,7 +34,7 @@ import { openConfigurationCommand } from "src/commands";
 import { extensionSettings } from "src/extension";
 import { formatURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
-import { testCredentials } from "src/utils/testCredentials";
+import { testServerURL, testAuthentication } from "src/utils/testCredentials";
 import {
   ConnectAuthTokenActivator,
   TokenAuthResult,
@@ -262,7 +262,7 @@ export async function newConnectCredential(
           });
         }
         try {
-          const testResult = await testCredentials({
+          const testResult = await testServerURL({
             url: input,
             insecure: !extensionSettings.verifyCertificates(),
           });
@@ -464,7 +464,7 @@ export async function newConnectCredential(
           typeof state.data.url === "string" ? state.data.url : "";
         try {
           const snowflakeToken = await getSnowflakeToken(state);
-          const testResult = await testCredentials({
+          const testResult = await testAuthentication({
             url: serverUrl,
             apiKey: input,
             snowflakeToken,
@@ -476,8 +476,7 @@ export async function newConnectCredential(
               severity: InputBoxValidationSeverity.Error,
             });
           }
-          // we have success, but testCredentials may have returned a different
-          // url for us to use.
+          // testAuthentication may have discovered a different URL.
           if (testResult.url) {
             state.data.url = testResult.url;
           }
