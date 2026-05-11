@@ -68,7 +68,6 @@ function toAgentError(err: unknown): AgentError {
 export async function testCredentials(
   params: TestCredentialsParams,
 ): Promise<TestResult> {
-  // 1. Detect server type
   let st: ServerType;
   try {
     st = serverTypeFromURL(params.url);
@@ -81,11 +80,11 @@ export async function testCredentials(
     };
   }
 
-  // 2. Snowflake URLs don't expose the Connect API, so skip the
-  //    authentication / reachability probe. The extension does not attempt
-  //    to call /__api__/v1/user on Snowflake servers — it only
-  //    validates the URL format and credential structure.
-  if (st === ServerType.SNOWFLAKE) {
+  const hasCredentials = !!params.apiKey;
+
+  // For Snowflake, we initially skip auth testing and just detect the server type.
+  // Later in the flow when we have an API token, we will do the full test.
+  if (st === ServerType.SNOWFLAKE && !hasCredentials) {
     return {
       user: null,
       url: params.url,
@@ -98,8 +97,6 @@ export async function testCredentials(
   let lastUser: User | null = null;
 
   const timeoutMs = Math.max(params.timeout ?? 30, 30) * 1000;
-
-  const hasCredentials = !!params.apiKey;
 
   const tester = async (urlToTest: string): Promise<void> => {
     const baseOptions = {
