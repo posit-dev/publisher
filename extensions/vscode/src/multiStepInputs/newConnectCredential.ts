@@ -77,7 +77,6 @@ export async function newConnectCredential(
     INPUT_SERVER_URL = "inputServerUrl",
     INPUT_API_KEY = "inputAPIKey",
     INPUT_SNOWFLAKE_CONN = "inputSnowflakeConnection",
-    INPUT_SNOWFLAKE_AUTH_METHOD = "inputSnowflakeAuthMethod",
     INPUT_CRED_NAME = "inputCredentialName",
     INPUT_AUTH_METHOD = "inputAuthMethod",
     INPUT_TOKEN = "inputToken",
@@ -90,7 +89,6 @@ export async function newConnectCredential(
     [step.INPUT_SERVER_URL]: inputServerUrl,
     [step.INPUT_API_KEY]: inputAPIKey,
     [step.INPUT_SNOWFLAKE_CONN]: inputSnowflakeConnection,
-    [step.INPUT_SNOWFLAKE_AUTH_METHOD]: inputSnowflakeAuthMethod,
     [step.INPUT_CRED_NAME]: inputCredentialName,
     [step.INPUT_AUTH_METHOD]: inputAuthMethod,
     [step.INPUT_TOKEN]: inputToken,
@@ -315,7 +313,7 @@ export async function newConnectCredential(
       title: state.title,
       step: 0,
       totalSteps: 0,
-      placeholder: "Select authentication method",
+      placeholder: "Select Posit Connect authentication method",
       items: authMethods,
       activeItem: authMethods[0], // Token authentication is default
       buttons: [],
@@ -326,6 +324,9 @@ export async function newConnectCredential(
     authMethod = getAuthMethod(pick.label as AuthMethodName);
 
     if (isApiKey(authMethod)) {
+      // clear token (in case user navigated back to change auth method)
+      state.data.token = undefined;
+      state.data.privateKey = undefined;
       return {
         name: step.INPUT_API_KEY,
         step: (input: MultiStepInput) =>
@@ -333,6 +334,8 @@ export async function newConnectCredential(
       };
     }
 
+    // clear api key (in case user navigated back to change auth method)
+    state.data.apiKey = undefined;
     return {
       name: step.INPUT_TOKEN,
       step: (input: MultiStepInput) => steps[step.INPUT_TOKEN](input, state),
@@ -549,60 +552,9 @@ export async function newConnectCredential(
     }
 
     return {
-      name: step.INPUT_SNOWFLAKE_AUTH_METHOD,
+      name: step.INPUT_AUTH_METHOD,
       step: (input: MultiStepInput) =>
-        steps[step.INPUT_SNOWFLAKE_AUTH_METHOD](input, state),
-    };
-  }
-
-  // ***************************************************************
-  // Step: Select Connect auth method (Snowflake SPCS only)
-  // ***************************************************************
-  async function inputSnowflakeAuthMethod(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
-    const authMethods = [
-      {
-        label: AuthMethodName.API_KEY,
-        description: "Enter a Connect API key",
-      },
-      {
-        label: AuthMethodName.TOKEN,
-        description: "One-click token authentication",
-      },
-    ];
-
-    const pick = await input.showQuickPick({
-      title: state.title,
-      step: 0,
-      totalSteps: 0,
-      placeholder:
-        "Select how to authenticate with Posit Connect (behind Snowflake)",
-      items: authMethods,
-      activeItem: authMethods[0],
-      buttons: [],
-      shouldResume: () => Promise.resolve(false),
-      ignoreFocusOut: true,
-    });
-
-    authMethod = getAuthMethod(pick.label as AuthMethodName);
-
-    if (isApiKey(authMethod)) {
-      state.data.token = undefined;
-      state.data.privateKey = undefined;
-      return {
-        name: step.INPUT_API_KEY,
-        step: (input: MultiStepInput) =>
-          steps[step.INPUT_API_KEY](input, state),
-      };
-    }
-
-    state.data.apiKey = undefined;
-    return {
-      name: step.INPUT_TOKEN,
-      step: (input: MultiStepInput) => steps[step.INPUT_TOKEN](input, state),
-      skipStepHistory: true,
+        steps[step.INPUT_AUTH_METHOD](input, state),
     };
   }
 
