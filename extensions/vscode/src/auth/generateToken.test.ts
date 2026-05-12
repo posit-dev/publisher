@@ -147,6 +147,30 @@ describe("generateToken", () => {
     );
   });
 
+  test("passes snowflakeToken through to ConnectAPI", async () => {
+    hoistedMockRegisterToken.mockResolvedValue({
+      token_claim_url: "https://connect.example.com/connect/#/claim/abc123",
+    });
+
+    mockDiscoverServerURL.mockImplementation(async (_url, tester) => {
+      await tester("https://connect.example.com");
+      return { url: "https://connect.example.com" };
+    });
+
+    await generateToken(
+      "https://connect.example.com",
+      undefined,
+      "snowflake-session-token",
+    );
+
+    expect(MockConnectAPI).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: "https://connect.example.com",
+        snowflakeToken: "snowflake-session-token",
+      }),
+    );
+  });
+
   test("uses discovered URL (not provided URL) in the result", async () => {
     hoistedMockRegisterToken.mockResolvedValue({
       token_claim_url: "https://connect.example.com/connect/#/claim/abc123",

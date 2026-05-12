@@ -9,15 +9,6 @@ import { TestResult } from "src/api/types/credentials";
 import type { ErrorCode } from "src/utils/errorTypes";
 import { serverTypeFromURL, discoverServerURL } from "src/utils/url";
 
-export interface TestCredentialsParams {
-  url: string;
-  apiKey?: string;
-  token?: string;
-  privateKey?: string;
-  insecure: boolean;
-  timeout?: number; // seconds — minimum 30
-}
-
 const CERTIFICATE_ERROR_PATTERNS = [
   "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
   "DEPTH_ZERO_SELF_SIGNED_CERT",
@@ -36,10 +27,8 @@ function normalizeErrorMessage(msg: string): string {
   const trimmed = msg.trim();
   if (trimmed.length === 0) return trimmed;
 
-  // Capitalize first letter
   const capitalized = trimmed[0]!.toUpperCase() + trimmed.slice(1);
 
-  // Add terminal period if not ending with special punctuation
   const lastChar = capitalized[capitalized.length - 1]!;
   if (["?", "!", ")", "."].includes(lastChar)) {
     return capitalized;
@@ -67,10 +56,20 @@ function toAgentError(err: unknown): AgentError {
   };
 }
 
-export async function testCredentials(
-  params: TestCredentialsParams,
+const DEFAULT_TIMEOUT_MS = 30_000;
+
+export interface TestServerURLParams {
+  url: string;
+  insecure: boolean;
+}
+
+/**
+ * testServerURL validates reachability and detects server type but does not
+ * perform authentication.
+ */
+export async function testServerURL(
+  params: TestServerURLParams,
 ): Promise<TestResult> {
-  // 1. Detect server type
   let st: ServerType;
   try {
     st = serverTypeFromURL(params.url);
@@ -83,10 +82,7 @@ export async function testCredentials(
     };
   }
 
-  // 2. Snowflake URLs don't expose the Connect API, so skip the
-  //    authentication / reachability probe. The extension does not attempt
-  //    to call /__api__/v1/user on Snowflake servers — it only
-  //    validates the URL format and credential structure.
+  // Snowflake URLs don't expose the Connect API directly — skip the probe.
   if (st === ServerType.SNOWFLAKE) {
     return {
       user: null,
@@ -96,49 +92,87 @@ export async function testCredentials(
     };
   }
 
-  // 3. Build a tester function
-  let lastUser: User | null = null;
-
-  const timeoutMs = Math.max(params.timeout ?? 30, 30) * 1000;
-
-  const hasCredentials =
-    !!params.apiKey || (!!params.token && !!params.privateKey);
-
   const tester = async (urlToTest: string): Promise<void> => {
-    const baseOptions = {
-      rejectUnauthorized: !params.insecure,
-      timeout: timeoutMs,
-    };
-    const authOptions =
-      params.token && params.privateKey
-        ? { token: params.token, privateKey: params.privateKey }
-        : params.apiKey
-          ? { apiKey: params.apiKey }
-          : {};
     const client = new ConnectAPI({
       url: urlToTest,
-      ...baseOptions,
-      ...authOptions,
+      rejectUnauthorized: !params.insecure,
+      timeout: DEFAULT_TIMEOUT_MS,
     });
 
     try {
-      const result = await client.testAuthentication();
-      lastUser = result.user;
+      await client.testAuthentication();
     } catch (err) {
-      // When no credentials are provided, treat HTTP 401 as success:
-      // the server is reachable but requires auth.
-      if (
-        !hasCredentials &&
-        err instanceof ConnectAPIError &&
-        err.httpStatus === 401
-      ) {
+      // 401 means the server is reachable but requires auth — that's success.
+      if (err instanceof ConnectAPIError && err.httpStatus === 401) {
         return;
       }
       throw err;
     }
   };
 
-  // 4. Discover server URL
+  const discovery = await discoverServerURL(params.url, tester);
+
+  if (discovery.error === undefined) {
+    return {
+      user: null,
+      url: discovery.url,
+      serverType: st,
+      error: null,
+    };
+  }
+
+  return {
+    user: null,
+    url: params.url,
+    serverType: st,
+    error: toAgentError(discovery.error),
+  };
+}
+
+export interface TestAuthenticationParams {
+  url: string;
+  apiKey: string;
+  snowflakeToken?: string;
+  insecure: boolean;
+}
+
+/**
+ * testAuthentication validates credentials by attempting to authenticate and returns
+ * the authenticated user on success. It also finds the correct URL to authenticate
+ * against (which may be a shortened version of the provided URL).
+ */
+export async function testAuthentication(
+  params: TestAuthenticationParams,
+): Promise<TestResult> {
+  let st: ServerType;
+  try {
+    st = serverTypeFromURL(params.url);
+  } catch (err) {
+    return {
+      user: null,
+      url: null,
+      serverType: null,
+      error: toAgentError(err),
+    };
+  }
+
+  let lastUser: User | null = null;
+
+  const tester = async (urlToTest: string): Promise<void> => {
+    const auth = params.snowflakeToken
+      ? { snowflakeToken: params.snowflakeToken, apiKey: params.apiKey }
+      : { apiKey: params.apiKey };
+    const client = new ConnectAPI({
+      url: urlToTest,
+      ...auth,
+      rejectUnauthorized: !params.insecure,
+      timeout: DEFAULT_TIMEOUT_MS,
+    });
+
+    const result = await client.testAuthentication();
+    lastUser = result.user;
+  };
+
   const discovery = await discoverServerURL(params.url, tester);
 
   if (discovery.error === undefined) {

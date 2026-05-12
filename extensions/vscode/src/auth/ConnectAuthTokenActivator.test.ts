@@ -101,12 +101,14 @@ describe("ConnectAuthTokenActivator", () => {
     expect(mockGenerateToken).toHaveBeenCalledWith(
       "https://connect.example.com",
       undefined,
+      undefined,
     );
     expect(mockOpenExternal).toHaveBeenCalled();
     expect(MockConnectAPI).toHaveBeenCalledWith({
       url: "https://connect.example.com",
       token: "test-token-123",
       privateKey: "test-private-key-123",
+      snowflakeToken: undefined,
       rejectUnauthorized: undefined,
     });
     expect(result).toEqual({
@@ -184,11 +186,13 @@ describe("ConnectAuthTokenActivator", () => {
     expect(mockGenerateToken).toHaveBeenCalledWith(
       "https://connect.example.com",
       true,
+      undefined,
     );
     expect(MockConnectAPI).toHaveBeenCalledWith({
       url: "https://connect.example.com",
       token: "test-token-123",
       privateKey: "test-private-key-123",
+      snowflakeToken: undefined,
       rejectUnauthorized: false,
     });
     expect(result.userName).toBe("testuser");
@@ -224,6 +228,48 @@ describe("ConnectAuthTokenActivator", () => {
 
     expect(hoistedMockTestAuthentication).toHaveBeenCalledTimes(3);
     expect(result.userName).toBe("testuser");
+  });
+
+  test("activateToken() passes snowflakeToken to generateToken and polling client", async () => {
+    mockGenerateToken.mockResolvedValue({
+      token: "test-token-123",
+      claimUrl: "https://connect.example.com/claim/123",
+      privateKey: "test-private-key-123",
+      serverUrl: "https://connect.example.com",
+    });
+
+    hoistedMockTestAuthentication.mockResolvedValue({
+      user: {
+        id: "guid-1",
+        username: "testuser",
+        first_name: "Test",
+        last_name: "User",
+        email: "t@t.com",
+      },
+      error: null,
+    });
+
+    const activator = new ConnectAuthTokenActivator(
+      "https://connect.example.com",
+      "test-view-id",
+      60,
+      undefined,
+      "snowflake-session-token",
+    );
+    await activator.activateToken();
+
+    expect(mockGenerateToken).toHaveBeenCalledWith(
+      "https://connect.example.com",
+      undefined,
+      "snowflake-session-token",
+    );
+    expect(MockConnectAPI).toHaveBeenCalledWith({
+      url: "https://connect.example.com",
+      token: "test-token-123",
+      privateKey: "test-private-key-123",
+      snowflakeToken: "snowflake-session-token",
+      rejectUnauthorized: undefined,
+    });
   });
 
   test("activateToken() handles token generation failure", async () => {

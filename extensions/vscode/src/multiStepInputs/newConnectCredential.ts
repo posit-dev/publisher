@@ -28,11 +28,13 @@ import {
 } from "src/multiStepInputs/common";
 import { CredentialsService } from "src/credentials/service";
 import { isConnect, isSnowflake } from "../utils/multiStepHelpers";
+import { listConnections } from "src/snowflake/connections";
+import { createTokenProvider } from "src/snowflake/tokenProviders";
 import { openConfigurationCommand } from "src/commands";
 import { extensionSettings } from "src/extension";
 import { formatURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
-import { testCredentials } from "src/utils/testCredentials";
+import { testServerURL, testAuthentication } from "src/utils/testCredentials";
 import {
   ConnectAuthTokenActivator,
   TokenAuthResult,
@@ -100,6 +102,24 @@ export async function newConnectCredential(
     return authMethod === AuthMethod.API_KEY;
   };
 
+  async function getSnowflakeToken(
+    state: MultiStepState,
+  ): Promise<string | undefined> {
+    const connName = state.data.snowflakeConnection;
+    if (!isSnowflake(serverType) || typeof connName !== "string") {
+      return undefined;
+    }
+    const connections = listConnections();
+    const config = connections[connName];
+    if (!config) {
+      return undefined;
+    }
+    const serverUrl = typeof state.data.url === "string" ? state.data.url : "";
+    const provider = createTokenProvider(config);
+    const hostname = new URL(serverUrl).hostname;
+    return await provider.getToken(hostname);
+  }
+
   const isValidTokenAuth = () => {
     // for token authentication, require token and privateKey
     return (
@@ -120,8 +140,12 @@ export async function newConnectCredential(
   };
 
   const isValidSnowflakeAuth = () => {
-    // for Snowflake, require snowflakeConnection
-    return isSnowflake(serverType) && isString(state.data.snowflakeConnection);
+    return (
+      isSnowflake(serverType) &&
+      isString(state.data.snowflakeConnection) &&
+      (isString(state.data.apiKey) ||
+        (isString(state.data.token) && isString(state.data.privateKey)))
+    );
   };
 
   // ***************************************************************
@@ -238,7 +262,7 @@ export async function newConnectCredential(
           });
         }
         try {
-          const testResult = await testCredentials({
+          const testResult = await testServerURL({
             url: input,
             insecure: !extensionSettings.verifyCertificates(),
           });
@@ -318,6 +342,9 @@ export async function newConnectCredential(
     authMethod = getAuthMethod(pick.label as AuthMethodName);
 
     if (isApiKey(authMethod)) {
+      // clear token (in case user navigated back to change auth method)
+      state.data.token = undefined;
+      state.data.privateKey = undefined;
       return {
         name: step.INPUT_API_KEY,
         step: (input: MultiStepInput) =>
@@ -325,6 +352,8 @@ export async function newConnectCredential(
       };
     }
 
+    // clear api key (in case user navigated back to change auth method)
+    state.data.apiKey = undefined;
     return {
       name: step.INPUT_TOKEN,
       step: (input: MultiStepInput) => steps[step.INPUT_TOKEN](input, state),
@@ -340,12 +369,15 @@ export async function newConnectCredential(
     const serverUrl = typeof state.data.url === "string" ? state.data.url : "";
 
     try {
+      const snowflakeToken = await getSnowflakeToken(state);
+
       // Create the token activator
       const tokenActivator = new ConnectAuthTokenActivator(
         serverUrl,
         viewId,
         undefined,
         !extensionSettings.verifyCertificates(),
+        snowflakeToken,
       );
 
       const resp = await input.showInfoMessage<
@@ -431,9 +463,11 @@ export async function newConnectCredential(
         const serverUrl =
           typeof state.data.url === "string" ? state.data.url : "";
         try {
-          const testResult = await testCredentials({
+          const snowflakeToken = await getSnowflakeToken(state);
+          const testResult = await testAuthentication({
             url: serverUrl,
             apiKey: input,
+            snowflakeToken,
             insecure: !extensionSettings.verifyCertificates(),
           });
           if (testResult.error) {
@@ -442,8 +476,7 @@ export async function newConnectCredential(
               severity: InputBoxValidationSeverity.Error,
             });
           }
-          // we have success, but testCredentials may have returned a different
-          // url for us to use.
+          // testAuthentication may have discovered a different URL.
           if (testResult.url) {
             state.data.url = testResult.url;
           }
@@ -514,9 +547,9 @@ export async function newConnectCredential(
     }
 
     return {
-      name: step.INPUT_CRED_NAME,
+      name: step.INPUT_AUTH_METHOD,
       step: (input: MultiStepInput) =>
-        steps[step.INPUT_CRED_NAME](input, state),
+        steps[step.INPUT_AUTH_METHOD](input, state),
     };
   }
 

@@ -77,6 +77,7 @@ export class ConnectAPI {
   constructor(options: ConnectAPIOptions) {
     const hasApiKey = !!options.apiKey;
     const hasToken = !!options.token && !!options.privateKey;
+    const hasSnowflake = !!options.snowflakeToken;
 
     // Allow no credentials (for URL reachability checks), but reject
     // partial token auth (token without privateKey or vice versa).
@@ -90,15 +91,16 @@ export class ConnectAPI {
       baseURL: options.url,
     };
 
-    if (hasApiKey) {
-      config.headers = {
-        Authorization: `Key ${options.apiKey}`,
-      };
-    }
-
-    if (options.snowflakeToken) {
+    if (hasSnowflake) {
       config.headers = {
         Authorization: `Snowflake Token="${options.snowflakeToken}"`,
+      };
+      if (hasApiKey) {
+        config.headers["X-RSC-Authorization"] = `Key ${options.apiKey}`;
+      }
+    } else if (hasApiKey) {
+      config.headers = {
+        Authorization: `Key ${options.apiKey}`,
       };
     }
 

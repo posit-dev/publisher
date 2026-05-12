@@ -57,6 +57,7 @@ export interface GenerateTokenResult {
 export async function generateToken(
   serverUrl: string,
   insecure?: boolean,
+  snowflakeToken?: string,
 ): Promise<GenerateTokenResult> {
   const tokenId = generateTokenId();
   const { privateKey, publicKey } = generateKeyPair();
@@ -66,6 +67,7 @@ export async function generateToken(
   const tester = async (urlToTest: string): Promise<void> => {
     const client = new ConnectAPI({
       url: urlToTest,
+      snowflakeToken,
       rejectUnauthorized: insecure ? false : undefined,
     });
 
