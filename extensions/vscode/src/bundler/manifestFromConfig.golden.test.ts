@@ -176,6 +176,16 @@ describe("golden file tests", () => {
     expect(actual).toEqual(loadGolden("html-static"));
   });
 
+  it("nodejs", () => {
+    const actual = buildAndParse(
+      cfg({
+        type: ContentType.NODEJS,
+        entrypoint: "index.js",
+      }),
+    );
+    expect(actual).toEqual(loadGolden("nodejs"));
+  });
+
   it("rmd-shiny", () => {
     const actual = buildAndParse(
       cfg({

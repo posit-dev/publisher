@@ -47,7 +47,7 @@ export function manifestFromConfig(cfg: ConfigurationDetails): Manifest {
       },
     }),
     ...(environment && { environment }),
-    packages: {},
+    ...(cfg.type !== ContentType.NODEJS && { packages: {} }),
     files: {},
     ...(cfg.integrationRequests && {
       integration_requests: cfg.integrationRequests.map((r) => ({
