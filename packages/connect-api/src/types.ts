@@ -67,7 +67,10 @@ interface NoAuth extends ConnectAPIBaseOptions {
   apiKey?: never;
   token?: never;
   privateKey?: never;
-  /** Optional Snowflake token for legacy credentials without Connect auth. */
+  /** Optional Snowflake token for legacy credentials without Connect auth.
+   *  These will not work, but still need to be loadable for users to transition
+   *  to new credentials with Connect auth.
+   */
   snowflakeToken?: string;
 }
 

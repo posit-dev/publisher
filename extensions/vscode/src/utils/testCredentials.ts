@@ -9,10 +9,6 @@ import { TestResult } from "src/api/types/credentials";
 import type { ErrorCode } from "src/utils/errorTypes";
 import { serverTypeFromURL, discoverServerURL } from "src/utils/url";
 
-// ---------------------------------------------------------------------------
-// Shared helpers
-// ---------------------------------------------------------------------------
-
 const CERTIFICATE_ERROR_PATTERNS = [
   "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
   "DEPTH_ZERO_SELF_SIGNED_CERT",
@@ -60,16 +56,16 @@ function toAgentError(err: unknown): AgentError {
   };
 }
 
-// ---------------------------------------------------------------------------
-// testServerURL — validate reachability and detect server type (no auth)
-// ---------------------------------------------------------------------------
-
 export interface TestServerURLParams {
   url: string;
   insecure: boolean;
   timeout?: number;
 }
 
+/**
+ * testServerURL validates reachability and detects server type but does not
+ * perform authentication.
+ */
 export async function testServerURL(
   params: TestServerURLParams,
 ): Promise<TestResult> {
@@ -134,10 +130,6 @@ export async function testServerURL(
   };
 }
 
-// ---------------------------------------------------------------------------
-// testAuthentication — verify credentials authenticate successfully
-// ---------------------------------------------------------------------------
-
 export interface TestAuthenticationParams {
   url: string;
   apiKey: string;
@@ -146,6 +138,11 @@ export interface TestAuthenticationParams {
   timeout?: number;
 }
 
+/**
+ * testAuthentication validates credentials by attempting to authenticate and returns
+ * the authenticated user on success. It also finds the correct URL to authenticate
+ * against (which may be a shortened version of the provided URL).
+ */
 export async function testAuthentication(
   params: TestAuthenticationParams,
 ): Promise<TestResult> {
