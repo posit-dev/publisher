@@ -331,7 +331,7 @@ export async function newConnectCredential(
       title: state.title,
       step: 0,
       totalSteps: 0,
-      placeholder: "Select Posit Connect authentication method",
+      placeholder: "Select authentication method",
       items: authMethods,
       activeItem: authMethods[0], // Token authentication is default
       buttons: [],
