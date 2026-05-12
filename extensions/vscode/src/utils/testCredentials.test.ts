@@ -174,7 +174,7 @@ describe("testServerURL", () => {
     expect(result.error!.code).toBe("connectionFailed");
   });
 
-  test("passes rejectUnauthorized and timeout to ConnectAPI", async () => {
+  test("passes rejectUnauthorized to ConnectAPI", async () => {
     mockTestAuthentication.mockRejectedValue(
       new ConnectAPIError("HTTP 401", 401),
     );
@@ -182,13 +182,11 @@ describe("testServerURL", () => {
     await testServerURL({
       url: "https://connect.example.com",
       insecure: true,
-      timeout: 60,
     });
 
     const constructorCalls = (ConnectAPI as unknown as ReturnType<typeof vi.fn>)
       .mock.calls;
     expect(constructorCalls[0]![0].rejectUnauthorized).toBe(false);
-    expect(constructorCalls[0]![0].timeout).toBe(60000);
   });
 });
 
@@ -288,7 +286,7 @@ describe("testAuthentication", () => {
     );
   });
 
-  test("passes rejectUnauthorized and timeout to ConnectAPI", async () => {
+  test("passes rejectUnauthorized to ConnectAPI", async () => {
     mockTestAuthentication.mockResolvedValue({
       user: mockUser,
       error: null,
@@ -298,13 +296,11 @@ describe("testAuthentication", () => {
       url: "https://connect.example.com",
       apiKey: "key",
       insecure: true,
-      timeout: 60,
     });
 
     const constructorCalls = (ConnectAPI as unknown as ReturnType<typeof vi.fn>)
       .mock.calls;
     expect(constructorCalls[0]![0].rejectUnauthorized).toBe(false);
-    expect(constructorCalls[0]![0].timeout).toBe(60000);
   });
 
   test("invalid URL — returns error, null serverType", async () => {

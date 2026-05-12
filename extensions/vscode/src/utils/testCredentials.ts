@@ -56,10 +56,11 @@ function toAgentError(err: unknown): AgentError {
   };
 }
 
+const DEFAULT_TIMEOUT_MS = 30_000;
+
 export interface TestServerURLParams {
   url: string;
   insecure: boolean;
-  timeout?: number;
 }
 
 /**
@@ -91,13 +92,11 @@ export async function testServerURL(
     };
   }
 
-  const timeoutMs = Math.max(params.timeout ?? 30, 30) * 1000;
-
   const tester = async (urlToTest: string): Promise<void> => {
     const client = new ConnectAPI({
       url: urlToTest,
       rejectUnauthorized: !params.insecure,
-      timeout: timeoutMs,
+      timeout: DEFAULT_TIMEOUT_MS,
     });
 
     try {
@@ -135,7 +134,6 @@ export interface TestAuthenticationParams {
   apiKey: string;
   snowflakeToken?: string;
   insecure: boolean;
-  timeout?: number;
 }
 
 /**
@@ -159,7 +157,6 @@ export async function testAuthentication(
   }
 
   let lastUser: User | null = null;
-  const timeoutMs = Math.max(params.timeout ?? 30, 30) * 1000;
 
   const tester = async (urlToTest: string): Promise<void> => {
     const auth = params.snowflakeToken
@@ -169,7 +166,7 @@ export async function testAuthentication(
       url: urlToTest,
       ...auth,
       rejectUnauthorized: !params.insecure,
-      timeout: timeoutMs,
+      timeout: DEFAULT_TIMEOUT_MS,
     });
 
     const result = await client.testAuthentication();
