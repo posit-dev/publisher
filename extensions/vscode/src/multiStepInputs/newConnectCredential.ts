@@ -117,7 +117,7 @@ export async function newConnectCredential(
     const serverUrl = typeof state.data.url === "string" ? state.data.url : "";
     const provider = createTokenProvider(config);
     const hostname = new URL(serverUrl).hostname;
-    return provider.getToken(hostname);
+    return await provider.getToken(hostname);
   }
 
   const isValidTokenAuth = () => {
