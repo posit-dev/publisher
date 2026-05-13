@@ -299,28 +299,36 @@ export async function connectPublish({
     }
 
     if (config.type === ContentType.NODEJS) {
-      const requiredFiles = ["package.json", "package-lock.json"] as const;
-      for (const fileName of requiredFiles) {
-        const filePath = path.join(projectDir, fileName);
+      const requiredFiles = [
+        {
+          name: "package.json",
+          missingOnDiskHint: "Run `npm init` to create one.",
+        },
+        {
+          name: "package-lock.json",
+          missingOnDiskHint: "Run `npm install` to generate it.",
+        },
+      ] as const;
+      const notIncludedHint =
+        "Add it to the `files` list in your configuration.";
+
+      for (const { name, missingOnDiskHint } of requiredFiles) {
+        const filePath = path.join(projectDir, name);
         const exists = await fileExistsAt(filePath);
         if (!exists) {
-          const hint =
-            fileName === "package-lock.json"
-              ? " Run `npm install` to generate it."
-              : "";
           throw new Error(
-            `Missing dependency file ${fileName}. ` +
-              `This file must be included in the deployment.${hint}`,
+            `Missing ${name} — file not found in the project directory. ` +
+              missingOnDiskHint,
           );
         }
         const filePatterns = config.files ?? [];
         const isIncluded = filePatterns.some((pattern) =>
-          pattern.endsWith(fileName),
+          pattern.endsWith(name),
         );
         if (!isIncluded) {
           throw new Error(
-            `Missing dependency file ${fileName}. ` +
-              `This file must be included in the deployment.`,
+            `Missing ${name} — file is not included in the deployment configuration. ` +
+              notIncludedHint,
           );
         }
       }

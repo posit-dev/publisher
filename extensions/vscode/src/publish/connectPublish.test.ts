@@ -2470,7 +2470,7 @@ describe("connectPublish — server settings validation", () => {
     const opts = makeOptions({ config });
 
     await expect(connectPublish(opts)).rejects.toThrow(
-      "Missing dependency file package.json. This file must be included in the deployment.",
+      "Missing package.json — file not found in the project directory. Run `npm init` to create one.",
     );
   });
 
@@ -2489,11 +2489,11 @@ describe("connectPublish — server settings validation", () => {
     const opts = makeOptions({ config });
 
     await expect(connectPublish(opts)).rejects.toThrow(
-      "Missing dependency file package-lock.json. This file must be included in the deployment. Run `npm install` to generate it.",
+      "Missing package-lock.json — file not found in the project directory. Run `npm install` to generate it.",
     );
   });
 
-  test("nodejs preflight rejects when package.json on disk but absent from files (no hint)", async () => {
+  test("nodejs preflight rejects when package.json on disk but absent from files", async () => {
     const config = makeConfig({
       type: ContentType.NODEJS,
       python: undefined,
@@ -2503,11 +2503,11 @@ describe("connectPublish — server settings validation", () => {
     const opts = makeOptions({ config });
 
     await expect(connectPublish(opts)).rejects.toThrow(
-      "Missing dependency file package.json. This file must be included in the deployment.",
+      "Missing package.json — file is not included in the deployment configuration. Add it to the `files` list in your configuration.",
     );
   });
 
-  test("nodejs preflight rejects when package-lock.json on disk but absent from files (no hint)", async () => {
+  test("nodejs preflight rejects when package-lock.json on disk but absent from files", async () => {
     const config = makeConfig({
       type: ContentType.NODEJS,
       python: undefined,
@@ -2517,11 +2517,11 @@ describe("connectPublish — server settings validation", () => {
     const opts = makeOptions({ config });
 
     await expect(connectPublish(opts)).rejects.toThrow(
-      "Missing dependency file package-lock.json. This file must be included in the deployment.",
+      "Missing package-lock.json — file is not included in the deployment configuration. Add it to the `files` list in your configuration.",
     );
 
-    // Verify the npm-install hint is NOT appended when the failure is
-    // "not in files" rather than "missing on disk".
+    // Confirm the not-in-files failure does NOT include the
+    // missing-on-disk hint (Run `npm install`).
     await expect(connectPublish(opts)).rejects.not.toThrow(/Run `npm install`/);
   });
 
@@ -2535,7 +2535,7 @@ describe("connectPublish — server settings validation", () => {
     const opts = makeOptions({ config });
 
     await expect(connectPublish(opts)).rejects.toThrow(
-      "Missing dependency file package.json. This file must be included in the deployment.",
+      "Missing package.json — file is not included in the deployment configuration. Add it to the `files` list in your configuration.",
     );
   });
 
