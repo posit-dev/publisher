@@ -214,6 +214,47 @@ export function transformNullable(schema: JsonSchema): JsonSchema {
   return result;
 }
 
+// ---------- additionalProperties relaxation ----------
+
+/**
+ * Recursively set `additionalProperties: true` on every object schema so
+ * that extra fields in a payload do not cause validation failures. Callers
+ * decide separately whether to surface extras (e.g. as warnings).
+ */
+export function allowAdditionalProperties(schema: JsonSchema): JsonSchema {
+  const result: JsonSchema = { ...schema };
+
+  if (result.type === "object" || result.properties) {
+    result.additionalProperties = true;
+  }
+
+  if (result.properties) {
+    const props: Record<string, JsonSchema> = {};
+    for (const [key, prop] of Object.entries(result.properties)) {
+      props[key] = allowAdditionalProperties(prop);
+    }
+    result.properties = props;
+  }
+
+  if (result.items && typeof result.items === "object") {
+    result.items = allowAdditionalProperties(result.items);
+  }
+
+  if (result.allOf) {
+    result.allOf = result.allOf.map(allowAdditionalProperties);
+  }
+
+  if (result.oneOf) {
+    result.oneOf = result.oneOf.map(allowAdditionalProperties);
+  }
+
+  if (result.anyOf) {
+    result.anyOf = result.anyOf.map(allowAdditionalProperties);
+  }
+
+  return result;
+}
+
 // ---------- High-level schema extraction ----------
 
 /**

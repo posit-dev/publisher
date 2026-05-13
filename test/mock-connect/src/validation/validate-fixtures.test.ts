@@ -8,11 +8,11 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { FIXTURES_DIR } from "../mock-connect-server.js";
 import { fixtureMappings, skippedFixtures } from "./fixture-map.js";
 import {
+  allowAdditionalProperties,
   getOpenAPISpec,
   getResponseSchema,
   findExtraFields,
   type OpenAPISpec,
-  type JsonSchema,
 } from "./openapi-helpers.js";
 
 let spec: OpenAPISpec;
@@ -91,34 +91,3 @@ describe("Fixture validation against OpenAPI spec", () => {
     });
   }
 });
-
-/**
- * Recursively set `additionalProperties: true` on all object schemas so
- * that extra fixture fields do not cause validation failures. We report
- * extra fields as warnings instead.
- */
-function allowAdditionalProperties(schema: JsonSchema): JsonSchema {
-  const result: JsonSchema = { ...schema };
-
-  if (result.type === "object" || result.properties) {
-    result.additionalProperties = true;
-  }
-
-  if (result.properties) {
-    const props: Record<string, JsonSchema> = {};
-    for (const [key, prop] of Object.entries(result.properties)) {
-      props[key] = allowAdditionalProperties(prop);
-    }
-    result.properties = props;
-  }
-
-  if (result.items && typeof result.items === "object") {
-    result.items = allowAdditionalProperties(result.items);
-  }
-
-  if (result.allOf) {
-    result.allOf = result.allOf.map(allowAdditionalProperties);
-  }
-
-  return result;
-}

@@ -14,10 +14,10 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { MockConnectServer } from "../mock-connect-server.js";
 import { fixtureMappings } from "./fixture-map.js";
 import {
+  allowAdditionalProperties,
   getOpenAPISpec,
   getResponseSchema,
   type OpenAPISpec,
-  type JsonSchema,
 } from "./openapi-helpers.js";
 
 let server: MockConnectServer;
@@ -53,44 +53,6 @@ function openapiPathToUrl(openapiPath: string): string {
     return `test-param-${paramIndex}-00000000-0000-0000-0000-000000000000`;
   });
   return `/__api__${concrete}`;
-}
-
-/**
- * Recursively set `additionalProperties: true` on all object schemas so
- * that extra fixture fields do not cause validation failures.
- */
-function allowAdditionalProperties(schema: JsonSchema): JsonSchema {
-  const result: JsonSchema = { ...schema };
-
-  if (result.type === "object" || result.properties) {
-    result.additionalProperties = true;
-  }
-
-  if (result.properties) {
-    const props: Record<string, JsonSchema> = {};
-    for (const [key, prop] of Object.entries(result.properties)) {
-      props[key] = allowAdditionalProperties(prop);
-    }
-    result.properties = props;
-  }
-
-  if (result.items && typeof result.items === "object") {
-    result.items = allowAdditionalProperties(result.items);
-  }
-
-  if (result.allOf) {
-    result.allOf = result.allOf.map(allowAdditionalProperties);
-  }
-
-  if (result.oneOf) {
-    result.oneOf = result.oneOf.map(allowAdditionalProperties);
-  }
-
-  if (result.anyOf) {
-    result.anyOf = result.anyOf.map(allowAdditionalProperties);
-  }
-
-  return result;
 }
 
 describe("Mock server responses match OpenAPI spec", () => {
