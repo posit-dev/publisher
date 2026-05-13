@@ -2346,6 +2346,8 @@ describe("connectPublish — server settings validation", () => {
     const config = makeConfig({
       type: ContentType.NODEJS,
       python: undefined,
+      files: ["index.js", "package.json", "package-lock.json"],
+      entrypoint: "index.js",
     });
     const opts = makeOptions({ api, config });
 
@@ -2358,6 +2360,8 @@ describe("connectPublish — server settings validation", () => {
     const config = makeConfig({
       type: ContentType.NODEJS,
       python: undefined,
+      files: ["index.js", "package.json", "package-lock.json"],
+      entrypoint: "index.js",
     });
     const opts = makeOptions({ config });
 
@@ -2374,6 +2378,113 @@ describe("connectPublish — server settings validation", () => {
 
     const config = makeConfig({ type: ContentType.PYTHON_SHINY });
     const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).resolves.toBeDefined();
+  });
+
+  // --- Node.js preflight package-file validation ---
+
+  test("nodejs preflight accepts package.json + package-lock.json present and in files", async () => {
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      files: ["index.js", "package.json", "package-lock.json"],
+      entrypoint: "index.js",
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).resolves.toBeDefined();
+  });
+
+  test("nodejs preflight rejects when package.json missing on disk", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockImplementation((p: string) => {
+      return Promise.resolve(!p.endsWith("package.json"));
+    });
+
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      files: ["index.js", "package.json", "package-lock.json"],
+      entrypoint: "index.js",
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Missing dependency file package.json. This file must be included in the deployment.",
+    );
+  });
+
+  test("nodejs preflight rejects when package-lock.json missing on disk with npm install hint", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockImplementation((p: string) => {
+      return Promise.resolve(!p.endsWith("package-lock.json"));
+    });
+
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      files: ["index.js", "package.json", "package-lock.json"],
+      entrypoint: "index.js",
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Missing dependency file package-lock.json. This file must be included in the deployment. Run `npm install` to generate it.",
+    );
+  });
+
+  test("nodejs preflight rejects when package.json on disk but absent from files (no hint)", async () => {
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      files: ["index.js", "package-lock.json"],
+      entrypoint: "index.js",
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Missing dependency file package.json. This file must be included in the deployment.",
+    );
+  });
+
+  test("nodejs preflight rejects when package-lock.json on disk but absent from files (no hint)", async () => {
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      files: ["index.js", "package.json"],
+      entrypoint: "index.js",
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Missing dependency file package-lock.json. This file must be included in the deployment.",
+    );
+
+    // Verify the npm-install hint is NOT appended when the failure is
+    // "not in files" rather than "missing on disk".
+    await expect(connectPublish(opts)).rejects.not.toThrow(/Run `npm install`/);
+  });
+
+  test("nodejs preflight rejects when files is undefined", async () => {
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      files: undefined,
+      entrypoint: "index.js",
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Missing dependency file package.json. This file must be included in the deployment.",
+    );
+  });
+
+  test("nodejs preflight skipped for non-NODEJS content types", async () => {
+    // Default config is python-shiny with no package.json in files.
+    // Confirm preflight does not fail looking for Node.js files.
+    const config = makeConfig({ type: ContentType.PYTHON_SHINY });
+    const opts = makeOptions({ config });
 
     await expect(connectPublish(opts)).resolves.toBeDefined();
   });

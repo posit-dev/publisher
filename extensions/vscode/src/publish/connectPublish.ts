@@ -298,6 +298,34 @@ export async function connectPublish({
       }
     }
 
+    if (config.type === ContentType.NODEJS) {
+      const requiredFiles = ["package.json", "package-lock.json"] as const;
+      for (const fileName of requiredFiles) {
+        const filePath = path.join(projectDir, fileName);
+        const exists = await fileExistsAt(filePath);
+        if (!exists) {
+          const hint =
+            fileName === "package-lock.json"
+              ? " Run `npm install` to generate it."
+              : "";
+          throw new Error(
+            `Missing dependency file ${fileName}. ` +
+              `This file must be included in the deployment.${hint}`,
+          );
+        }
+        const filePatterns = config.files ?? [];
+        const isIncluded = filePatterns.some((pattern) =>
+          pattern.endsWith(fileName),
+        );
+        if (!isIncluded) {
+          throw new Error(
+            `Missing dependency file ${fileName}. ` +
+              `This file must be included in the deployment.`,
+          );
+        }
+      }
+    }
+
     // Fetch server settings and validate config against capabilities
     onProgress({
       step: "preflight",
