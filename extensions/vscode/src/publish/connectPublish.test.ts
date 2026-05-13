@@ -106,10 +106,20 @@ vi.mock("../interpreters/rPackages", () => ({
   repoURLFromOptions: vi.fn().mockReturnValue(""),
 }));
 
-// Mock fsUtils — default to true so preflight requirements check passes
-vi.mock("../interpreters/fsUtils", () => ({
-  fileExistsAt: vi.fn().mockResolvedValue(true),
-}));
+// Mock fsUtils — default to true so preflight requirements check passes.
+// readFileText delegates to the mocked node:fs/promises readFile so per-test
+// `vi.mocked(readFile).mockResolvedValue(...)` overrides still drive the
+// shared inspect/nodejs/packageJson helpers used during createManifest.
+vi.mock("../interpreters/fsUtils", async () => {
+  const fs = await import("node:fs/promises");
+  return {
+    fileExistsAt: vi.fn().mockResolvedValue(true),
+    readFileText: vi.fn(async (filePath: string): Promise<string | null> => {
+      const result = await fs.readFile(filePath, "utf-8");
+      return typeof result === "string" ? result : null;
+    }),
+  };
+});
 
 // Mock dependency source generation (pylock.toml / uv.lock / pyproject.toml fallback)
 vi.mock("../interpreters/pythonDependencySources", () => ({
@@ -2232,6 +2242,95 @@ describe("connectPublish — server settings validation", () => {
     await expect(connectPublish(opts)).rejects.toThrow(
       "API deployment is not licensed",
     );
+  });
+
+  // --- Node.js version constraint log ---
+
+  test("logs Node.js version constraint from engines.node", async () => {
+    const { readFile } = await import("node:fs/promises");
+    vi.mocked(readFile).mockResolvedValue(
+      JSON.stringify({ engines: { node: ">=22.18.0" } }),
+    );
+
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      files: ["index.js", "package.json", "package-lock.json"],
+    });
+    const onProgress = vi.fn();
+    const opts = makeOptions({ config, onProgress });
+
+    await connectPublish(opts);
+
+    const logMessages = onProgress.mock.calls
+      .map((args) => args[0] as PublishEvent)
+      .filter((e) => e.status === "log" && typeof e.message === "string")
+      .map((e) => e.message as string);
+
+    expect(logMessages).toContain("Node.js version constraint >=22.18.0");
+  });
+
+  test("logs Node.js version constraint (any) when engines.node absent", async () => {
+    const { readFile } = await import("node:fs/promises");
+    vi.mocked(readFile).mockResolvedValue(
+      JSON.stringify({ name: "x", version: "0.0.0" }),
+    );
+
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      files: ["index.js", "package.json", "package-lock.json"],
+    });
+    const onProgress = vi.fn();
+    const opts = makeOptions({ config, onProgress });
+
+    await connectPublish(opts);
+
+    const logMessages = onProgress.mock.calls
+      .map((args) => args[0] as PublishEvent)
+      .filter((e) => e.status === "log" && typeof e.message === "string")
+      .map((e) => e.message as string);
+
+    expect(logMessages).toContain("Node.js version constraint (any)");
+  });
+
+  test("logs (any) when package.json is malformed (no throw)", async () => {
+    const { readFile } = await import("node:fs/promises");
+    vi.mocked(readFile).mockResolvedValue("not { valid json");
+
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      files: ["index.js", "package.json", "package-lock.json"],
+    });
+    const onProgress = vi.fn();
+    const opts = makeOptions({ config, onProgress });
+
+    await expect(connectPublish(opts)).resolves.toBeDefined();
+
+    const logMessages = onProgress.mock.calls
+      .map((args) => args[0] as PublishEvent)
+      .filter((e) => e.status === "log" && typeof e.message === "string")
+      .map((e) => e.message as string);
+
+    expect(logMessages).toContain("Node.js version constraint (any)");
+  });
+
+  test("does not log Node.js version constraint for non-NODEJS types", async () => {
+    const config = makeConfig({ type: ContentType.PYTHON_SHINY });
+    const onProgress = vi.fn();
+    const opts = makeOptions({ config, onProgress });
+
+    await connectPublish(opts);
+
+    const logMessages = onProgress.mock.calls
+      .map((args) => args[0] as PublishEvent)
+      .filter((e) => e.status === "log" && typeof e.message === "string")
+      .map((e) => e.message as string);
+
+    expect(
+      logMessages.some((m) => m.startsWith("Node.js version constraint")),
+    ).toBe(false);
   });
 
   // --- Node.js licensing/configuration ---

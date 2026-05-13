@@ -21,6 +21,10 @@ import type { PositronRSettings } from "../api/types/positron";
 import { appModeFromType, contentTypeFromAppMode } from "../bundler/appMode";
 import { connectContentFromConfig } from "../bundler/connectContentFromConfig";
 import { getFilenames } from "../bundler/manifest";
+import {
+  readEnginesNode,
+  readPackageJson,
+} from "../inspect/nodejs/packageJson";
 
 import { readPythonRequirements } from "./dependencies";
 import {
@@ -203,6 +207,16 @@ export async function connectPublish({
         ? `Local Python version ${manifest.python.version}`
         : "Local Python not in use",
     });
+
+    if (config.type === ContentType.NODEJS) {
+      const pkg = await readPackageJson(projectDir);
+      const constraint = readEnginesNode(pkg);
+      onProgress({
+        step: "createManifest",
+        status: "log",
+        message: `Node.js version constraint ${constraint ?? "(any)"}`,
+      });
+    }
 
     onProgress({ step: "createManifest", status: "success" });
 
