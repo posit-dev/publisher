@@ -841,8 +841,7 @@ describe("connectPublish", () => {
     // The deployment record written to disk reflects the Node.js config.
     const writeCalls = mockWriteFile.mock.calls;
     expect(writeCalls.length).toBeGreaterThan(0);
-    const lastWrite = writeCalls[writeCalls.length - 1];
-    const written = String(lastWrite[1]);
+    const written = String(writeCalls.at(-1)?.[1] ?? "");
     expect(written).toContain("nodejs");
   });
 });
