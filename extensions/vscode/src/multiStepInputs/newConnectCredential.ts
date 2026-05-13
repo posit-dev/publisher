@@ -562,6 +562,7 @@ export async function newConnectCredential(
   ) {
     if (!state.data.name && typeof state.data.url === "string") {
       try {
+        // suggest a default name
         const url = new URL(state.data.url);
         state.data.name = url.hostname;
       } catch {
@@ -569,13 +570,19 @@ export async function newConnectCredential(
       }
     }
 
-    state.data.name = await inputCredentialNameStep(
-      input,
-      state,
-      serverType,
-      productName,
-      credentials,
-    );
+    try {
+      state.data.name = await inputCredentialNameStep(
+        input,
+        state,
+        serverType,
+        productName,
+        credentials,
+      );
+    } catch (e) {
+      // the user cancelled - clear the default name so that validation fails and the credential isn't saved
+      state.data.name = undefined;
+      throw e;
+    }
 
     // last step to create a new credential
   }
