@@ -49,6 +49,7 @@ export class ConnectAPIError extends Error {
 const knownAppModes = new Set([
   "jupyter-static",
   "jupyter-voila",
+  "nodejs",
   "python-bokeh",
   "python-dash",
   "python-fastapi",

@@ -1262,6 +1262,25 @@ describe("getSettings", () => {
     );
   });
 
+  it('uses scheduler/nodejs path when appMode is "nodejs"', async () => {
+    const appModeMap: Record<string, unknown> = {
+      ...urlResponseMap,
+      "/__api__/server_settings/scheduler/nodejs": scheduler,
+    };
+    mockRequest.mockImplementation((config: { url: string }) =>
+      Promise.resolve(jsonResponse(appModeMap[config.url])),
+    );
+
+    const client = createClient();
+    await client.getSettings("nodejs");
+
+    const urls = mockRequest.mock.calls.map(
+      (call: unknown[]) => (call[0] as { url: string }).url,
+    );
+    expect(urls).toContain("/__api__/server_settings/scheduler/nodejs");
+    expect(urls).not.toContain("/__api__/server_settings/scheduler");
+  });
+
   it("uses base scheduler path when no appMode is provided", async () => {
     mockSettingsRoutes();
 
