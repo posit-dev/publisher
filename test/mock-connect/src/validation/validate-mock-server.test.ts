@@ -2,7 +2,7 @@
 
 /**
  * Validates that the MockConnectServer's runtime responses match the
- * Swagger spec. This catches:
+ * OpenAPI spec. This catches:
  * - Route-to-fixture mapping errors (wrong fixture served for an endpoint)
  * - Status code mismatches between the mock and the spec
  * - Response bodies that don't conform to the spec schema
@@ -14,22 +14,22 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { MockConnectServer } from "../mock-connect-server.js";
 import { fixtureMappings } from "./fixture-map.js";
 import {
-  getSwaggerSpec,
+  getOpenAPISpec,
   getResponseSchema,
-  type SwaggerSpec,
+  type OpenAPISpec,
   type JsonSchema,
-} from "./swagger-helpers.js";
+} from "./openapi-helpers.js";
 
 let server: MockConnectServer;
 let baseUrl: string;
-let spec: SwaggerSpec;
+let spec: OpenAPISpec;
 let ajv: Ajv;
 
 beforeAll(async () => {
   server = new MockConnectServer();
   await server.start();
   baseUrl = server.url;
-  spec = await getSwaggerSpec();
+  spec = await getOpenAPISpec();
   ajv = new Ajv({
     allErrors: true,
     strict: false,
@@ -43,12 +43,12 @@ afterAll(async () => {
 });
 
 /**
- * Convert a Swagger path like "/v1/content/{guid}/bundles/{id}" into
+ * Convert an OpenAPI path like "/v1/content/{guid}/bundles/{id}" into
  * a concrete URL path with unique placeholders per parameter position.
  */
-function swaggerPathToUrl(swaggerPath: string): string {
+function openapiPathToUrl(openapiPath: string): string {
   let paramIndex = 0;
-  const concrete = swaggerPath.replace(/\{[^}]+\}/g, () => {
+  const concrete = openapiPath.replace(/\{[^}]+\}/g, () => {
     paramIndex++;
     return `test-param-${paramIndex}-00000000-0000-0000-0000-000000000000`;
   });
@@ -93,10 +93,10 @@ function allowAdditionalProperties(schema: JsonSchema): JsonSchema {
   return result;
 }
 
-describe("Mock server responses match Swagger spec", () => {
+describe("Mock server responses match OpenAPI spec", () => {
   for (const mapping of fixtureMappings) {
     it(`${mapping.method.toUpperCase()} ${mapping.path} — ${mapping.description}`, async () => {
-      const url = `${baseUrl}${swaggerPathToUrl(mapping.path)}`;
+      const url = `${baseUrl}${openapiPathToUrl(mapping.path)}`;
 
       const response = await fetch(url, {
         method: mapping.method.toUpperCase(),
@@ -156,7 +156,7 @@ describe("Mock server responses match Swagger spec", () => {
           .join("\n");
         expect.fail(
           `Mock response for ${mapping.method.toUpperCase()} ${mapping.path} ` +
-            `(status ${response.status}) does not match Swagger schema:\n${errors}`,
+            `(status ${response.status}) does not match OpenAPI schema:\n${errors}`,
         );
       }
     });

@@ -12,29 +12,35 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = join(__dirname, "..", "..", ".cache");
-const CACHE_FILE = join(CACHE_DIR, "swagger.json");
-const SWAGGER_URL = "https://docs.posit.co/connect/api/swagger.json";
+const CACHE_FILE = join(CACHE_DIR, "openapi.json");
+const OPENAPI_URL = "https://docs.posit.co/connect/api/openapi.json";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-// ---------- Types for the subset of Swagger 2.0 we care about ----------
+// ---------- Types for the subset of OpenAPI 3.0 we care about ----------
 
-export interface SwaggerSpec {
-  swagger: string;
-  paths: Record<string, SwaggerPathItem>;
-  definitions: Record<string, JsonSchema>;
+export interface OpenAPISpec {
+  openapi: string;
+  paths: Record<string, OpenAPIPathItem>;
+  components: {
+    schemas: Record<string, JsonSchema>;
+  };
 }
 
-export interface SwaggerPathItem {
-  [method: string]: SwaggerOperation;
+export interface OpenAPIPathItem {
+  [method: string]: OpenAPIOperation;
 }
 
-export interface SwaggerOperation {
-  responses: Record<string, SwaggerResponse>;
+export interface OpenAPIOperation {
+  responses: Record<string, OpenAPIResponse>;
 }
 
-export interface SwaggerResponse {
+export interface OpenAPIResponse {
   description?: string;
-  schema?: JsonSchema;
+  content?: {
+    "application/json"?: {
+      schema?: JsonSchema;
+    };
+  };
 }
 
 export interface JsonSchema {
@@ -43,7 +49,7 @@ export interface JsonSchema {
   properties?: Record<string, JsonSchema>;
   required?: string[];
   $ref?: string;
-  "x-nullable"?: boolean;
+  nullable?: boolean;
   additionalProperties?: boolean | JsonSchema;
   allOf?: JsonSchema[];
   oneOf?: JsonSchema[];
@@ -61,15 +67,15 @@ function isCacheValid(): boolean {
   return Date.now() - mtime < CACHE_TTL_MS;
 }
 
-export async function getSwaggerSpec(): Promise<SwaggerSpec> {
+export async function getOpenAPISpec(): Promise<OpenAPISpec> {
   if (isCacheValid()) {
-    return JSON.parse(readFileSync(CACHE_FILE, "utf-8")) as SwaggerSpec;
+    return JSON.parse(readFileSync(CACHE_FILE, "utf-8")) as OpenAPISpec;
   }
 
-  const res = await fetch(SWAGGER_URL);
+  const res = await fetch(OPENAPI_URL);
   if (!res.ok) {
     throw new Error(
-      `Failed to fetch Swagger spec: ${res.status} ${res.statusText}`,
+      `Failed to fetch OpenAPI spec: ${res.status} ${res.statusText}`,
     );
   }
 
@@ -78,37 +84,37 @@ export async function getSwaggerSpec(): Promise<SwaggerSpec> {
   mkdirSync(CACHE_DIR, { recursive: true });
   writeFileSync(CACHE_FILE, text, "utf-8");
 
-  return JSON.parse(text) as SwaggerSpec;
+  return JSON.parse(text) as OpenAPISpec;
 }
 
 // ---------- $ref resolution ----------
 
 /**
  * Recursively resolve all `$ref` pointers in a schema against the spec's
- * `definitions` section. Returns a new schema object with all references
- * inlined (with cycle protection).
+ * `components.schemas` section. Returns a new schema object with all
+ * references inlined (with cycle protection).
  */
 export function dereferenceSchema(
   schema: JsonSchema,
-  definitions: Record<string, JsonSchema>,
+  schemas: Record<string, JsonSchema>,
   seen: Set<string> = new Set(),
 ): JsonSchema {
   if (schema.$ref) {
-    const refPath = schema.$ref; // e.g. "#/definitions/User"
-    const defName = refPath.replace("#/definitions/", "");
+    const refPath = schema.$ref; // e.g. "#/components/schemas/User"
+    const defName = refPath.replace("#/components/schemas/", "");
 
     if (seen.has(defName)) {
       // Cycle detected — return a permissive schema to avoid infinite recursion
       return {};
     }
 
-    const def = definitions[defName];
+    const def = schemas[defName];
     if (!def) {
-      throw new Error(`Missing definition: ${refPath}`);
+      throw new Error(`Missing schema: ${refPath}`);
     }
 
     seen.add(defName);
-    return dereferenceSchema(def, definitions, seen);
+    return dereferenceSchema(def, schemas, seen);
   }
 
   const resolved: JsonSchema = { ...schema };
@@ -116,22 +122,30 @@ export function dereferenceSchema(
   if (resolved.properties) {
     const props: Record<string, JsonSchema> = {};
     for (const [key, prop] of Object.entries(resolved.properties)) {
-      props[key] = dereferenceSchema(prop, definitions, new Set(seen));
+      props[key] = dereferenceSchema(prop, schemas, new Set(seen));
     }
     resolved.properties = props;
   }
 
   if (resolved.items) {
-    resolved.items = dereferenceSchema(
-      resolved.items,
-      definitions,
-      new Set(seen),
-    );
+    resolved.items = dereferenceSchema(resolved.items, schemas, new Set(seen));
   }
 
   if (resolved.allOf) {
     resolved.allOf = resolved.allOf.map((s) =>
-      dereferenceSchema(s, definitions, new Set(seen)),
+      dereferenceSchema(s, schemas, new Set(seen)),
+    );
+  }
+
+  if (resolved.oneOf) {
+    resolved.oneOf = resolved.oneOf.map((s) =>
+      dereferenceSchema(s, schemas, new Set(seen)),
+    );
+  }
+
+  if (resolved.anyOf) {
+    resolved.anyOf = resolved.anyOf.map((s) =>
+      dereferenceSchema(s, schemas, new Set(seen)),
     );
   }
 
@@ -141,7 +155,7 @@ export function dereferenceSchema(
   ) {
     resolved.additionalProperties = dereferenceSchema(
       resolved.additionalProperties as JsonSchema,
-      definitions,
+      schemas,
       new Set(seen),
     );
   }
@@ -149,19 +163,20 @@ export function dereferenceSchema(
   return resolved;
 }
 
-// ---------- x-nullable → JSON Schema nullable ----------
+// ---------- nullable → JSON Schema nullable ----------
 
 /**
- * Recursively transforms Swagger 2.0 `x-nullable: true` into
- * JSON Schema Draft 4 compatible `type: ["<original>", "null"]`.
+ * Recursively transforms OpenAPI 3.0 `nullable: true` into JSON Schema
+ * Draft 4 compatible `type: ["<original>", "null"]`. Ajv does not understand
+ * OpenAPI's `nullable` keyword on its own.
  */
 export function transformNullable(schema: JsonSchema): JsonSchema {
   const result: JsonSchema = { ...schema };
 
-  if (result["x-nullable"] === true && typeof result.type === "string") {
+  if (result.nullable === true && typeof result.type === "string") {
     result.type = [result.type, "null"];
-    delete result["x-nullable"];
   }
+  delete result.nullable;
 
   if (result.properties) {
     const props: Record<string, JsonSchema> = {};
@@ -177,6 +192,14 @@ export function transformNullable(schema: JsonSchema): JsonSchema {
 
   if (result.allOf) {
     result.allOf = result.allOf.map(transformNullable);
+  }
+
+  if (result.oneOf) {
+    result.oneOf = result.oneOf.map(transformNullable);
+  }
+
+  if (result.anyOf) {
+    result.anyOf = result.anyOf.map(transformNullable);
   }
 
   if (
@@ -195,10 +218,10 @@ export function transformNullable(schema: JsonSchema): JsonSchema {
 
 /**
  * Extract the fully resolved and nullable-transformed response schema for
- * a given endpoint from the Swagger spec.
+ * a given endpoint from the OpenAPI spec.
  */
 export function getResponseSchema(
-  spec: SwaggerSpec,
+  spec: OpenAPISpec,
   path: string,
   method: string,
   status: number,
@@ -210,9 +233,10 @@ export function getResponseSchema(
   if (!operation) return null;
 
   const response = operation.responses[String(status)];
-  if (!response?.schema) return null;
+  const schema = response?.content?.["application/json"]?.schema;
+  if (!schema) return null;
 
-  const dereffed = dereferenceSchema(response.schema, spec.definitions);
+  const dereffed = dereferenceSchema(schema, spec.components.schemas);
   return transformNullable(dereffed);
 }
 

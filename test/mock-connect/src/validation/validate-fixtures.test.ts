@@ -8,20 +8,20 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { FIXTURES_DIR } from "../mock-connect-server.js";
 import { fixtureMappings, skippedFixtures } from "./fixture-map.js";
 import {
-  getSwaggerSpec,
+  getOpenAPISpec,
   getResponseSchema,
   findExtraFields,
-  type SwaggerSpec,
+  type OpenAPISpec,
   type JsonSchema,
-} from "./swagger-helpers.js";
+} from "./openapi-helpers.js";
 
-let spec: SwaggerSpec;
+let spec: OpenAPISpec;
 
 beforeAll(async () => {
-  spec = await getSwaggerSpec();
+  spec = await getOpenAPISpec();
 });
 
-describe("Fixture validation against Swagger spec", () => {
+describe("Fixture validation against OpenAPI spec", () => {
   for (const mapping of fixtureMappings) {
     it(`${mapping.description} (${mapping.fixture})`, () => {
       const fixtureRaw = readFileSync(

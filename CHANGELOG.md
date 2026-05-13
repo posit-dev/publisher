@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Updated the mock-connect fixture validator to consume the Connect OpenAPI 3.0 spec (`openapi.json`) instead of the deprecated Swagger 2.0 spec (`swagger.json`). Internal tooling change only. (#4161)
+
 ### Fixed
 
 - Fixed Quarto availability check opening a visible terminal and showing a confusing "process exited with code 1" error when Quarto is not installed. The check now runs silently in the background. (#3801)

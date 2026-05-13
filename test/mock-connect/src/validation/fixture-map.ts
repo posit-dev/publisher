@@ -1,7 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 /**
- * Maps fixture filenames to their corresponding Connect API Swagger spec
+ * Maps fixture filenames to their corresponding Connect API OpenAPI spec
  * endpoint (path + method + status code). Used by the validation tests to
  * look up the expected response schema for each fixture.
  */
@@ -9,7 +9,7 @@
 export interface FixtureMapping {
   /** Fixture filename (relative to connect-responses/) */
   fixture: string;
-  /** Swagger path, e.g. "/v1/user" */
+  /** OpenAPI path, e.g. "/v1/user" */
   path: string;
   /** HTTP method */
   method: "get" | "post" | "put" | "patch" | "delete";
@@ -149,15 +149,15 @@ export const fixtureMappings: FixtureMapping[] = [
 export const skippedFixtures: { fixture: string; reason: string }[] = [
   {
     fixture: "server-settings.json",
-    reason: "Undocumented internal endpoint — not in the public Swagger spec",
+    reason: "Undocumented internal endpoint — not in the public OpenAPI spec",
   },
   {
     fixture: "server-settings-applications.json",
-    reason: "Undocumented internal endpoint — not in the public Swagger spec",
+    reason: "Undocumented internal endpoint — not in the public OpenAPI spec",
   },
   {
     fixture: "server-settings-scheduler.json",
-    reason: "Undocumented internal endpoint — not in the public Swagger spec",
+    reason: "Undocumented internal endpoint — not in the public OpenAPI spec",
   },
   {
     fixture: "error-401.json",
