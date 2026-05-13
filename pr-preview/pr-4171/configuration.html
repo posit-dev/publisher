@@ -628,10 +628,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="node.js-settings" class="level2">
 <h2 class="anchored" data-anchor-id="node.js-settings">Node.js settings</h2>
 <p><em>Only valid when <code>product_type</code> is <code>connect</code></em></p>
-<p>Node.js content is configured entirely through the project’s <code>package.json</code> and <code>package-lock.json</code>. There is no <code>[node]</code> TOML section — <code>type = "nodejs"</code> is the only marker Publisher needs.</p>
+<p><a href="https://docs.posit.co/connect/user/nodejs/">Posit Connect supports deploying Node.js applications</a>.</p>
 <p>Both <code>package.json</code> and <code>package-lock.json</code> must exist in the project and be listed under <code>files</code>. Connect installs dependencies with <code>npm ci</code>, which requires an exact lock file; if <code>package-lock.json</code> is missing, run <code>npm install</code> to generate it.</p>
-<p>If <code>package.json</code> specifies an <code>engines.node</code> constraint, Connect uses it to select a runtime version. Otherwise Connect uses its default Node.js version.</p>
-<p>Node.js deployment requires Connect with an Advanced or Evaluation license tier, and the server administrator must enable Node.js support in Connect’s configuration. Publisher’s preflight reports a Node.js-specific error if the target server does not have Node.js enabled.</p>
+<p>If <code>package.json</code> specifies an <a href="https://docs.npmjs.com/cli/configuring-npm/package-json#engines"><code>engines.node</code></a> constraint, Connect uses it to select a runtime version. Otherwise Connect uses its default Node.js version.</p>
+<p>Node.js deployment requires Connect with an Advanced license tier, and the server administrator must enable Node.js support in Connect’s configuration. Publisher reports if the target server does not have Node.js enabled.</p>
 <p>Connect Cloud does not support Node.js content.</p>
 <p>Example:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="dt">type</span> <span class="op">=</span> <span class="st">"nodejs"</span></span>
