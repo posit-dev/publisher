@@ -71,9 +71,16 @@ describe("GetSettings", () => {
       expect(matched[0].method).toBe("GET");
     });
 
-    it("sends Authorization header on all 7 requests", async () => {
+    it("sends GET to /__api__/v1/server_settings/nodejs", async () => {
       const { all } = await callAndCapture();
-      expect(all.length).toBeGreaterThanOrEqual(7);
+      const matched = filterByPath(all, "/__api__/v1/server_settings/nodejs");
+      expect(matched.length).toBeGreaterThanOrEqual(1);
+      expect(matched[0].method).toBe("GET");
+    });
+
+    it("sends Authorization header on all 8 requests", async () => {
+      const { all } = await callAndCapture();
+      expect(all.length).toBeGreaterThanOrEqual(8);
 
       for (const req of all) {
         expect(req.headers["authorization"]).toBe(`Key ${TEST_API_KEY}`);
