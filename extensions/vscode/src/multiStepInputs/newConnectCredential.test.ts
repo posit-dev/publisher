@@ -10,9 +10,11 @@ class InputFlowAction {
   static resume = new InputFlowAction();
 }
 
-// Track how many showInputBox calls have been made so we can cancel at a specific step
-let showInputBoxCallCount = 0;
-let cancelAtCall = Infinity;
+// Per-step responses for showInputBox, keyed by step name
+const inputBoxResponses: Record<string, string> = {
+  inputServerUrl: "https://connect.example.com",
+  inputAPIKey: "mock-api-key-value",
+};
 
 // Mock the MultiStepInput module with a real step-through implementation
 vi.mock("./multiStepHelper", () => {
@@ -21,45 +23,45 @@ vi.mock("./multiStepHelper", () => {
   return {
     AbortError,
     MultiStepInput: {
-      run: vi.fn(async (start: { step: (input: unknown) => unknown }) => {
-        let currentStep:
-          | { step: (input: unknown) => unknown }
-          | void
-          | undefined = start;
-        const mockInput = {
-          showInputBox: vi.fn(() => {
-            showInputBoxCallCount++;
-            if (showInputBoxCallCount >= cancelAtCall) {
-              return Promise.reject(InputFlowAction.cancel);
-            }
-            // First call is URL step — must be a valid URL so hostname pre-population works
-            if (showInputBoxCallCount === 1) {
-              return Promise.resolve("https://connect.example.com");
-            }
-            return Promise.resolve("mocked-value");
-          }),
-          showQuickPick: vi.fn(({ items }: { items: { label: string }[] }) => {
-            return Promise.resolve(
-              items.find((i) => i.label === "API Key") || items[0],
-            );
-          }),
-          showInfoMessage: vi.fn(() => Promise.resolve()),
-        };
+      run: vi.fn(
+        async (start: { name?: string; step: (input: unknown) => unknown }) => {
+          let currentStep:
+            | { name?: string; step: (input: unknown) => unknown }
+            | void
+            | undefined = start;
 
-        while (currentStep) {
-          try {
-            currentStep = (await currentStep.step(mockInput)) as {
-              step: (input: unknown) => unknown;
-            } | void;
-          } catch (e) {
-            if (e === InputFlowAction.cancel) {
-              currentStep = undefined;
-            } else {
-              throw e;
+          while (currentStep) {
+            const stepName = currentStep.name || "";
+            const mockInput = {
+              showInputBox: vi.fn(() => {
+                const value = inputBoxResponses[stepName] || "mocked-value";
+                return Promise.resolve(value);
+              }),
+              showQuickPick: vi.fn(
+                ({ items }: { items: { label: string }[] }) => {
+                  return Promise.resolve(
+                    items.find((i) => i.label === "API Key") || items[0],
+                  );
+                },
+              ),
+              showInfoMessage: vi.fn(() => Promise.resolve()),
+            };
+
+            try {
+              currentStep = (await currentStep.step(mockInput)) as {
+                name?: string;
+                step: (input: unknown) => unknown;
+              } | void;
+            } catch (e) {
+              if (e === InputFlowAction.cancel) {
+                currentStep = undefined;
+              } else {
+                throw e;
+              }
             }
           }
-        }
-      }),
+        },
+      ),
     },
     assignStep: (
       state: { step: number; promptStepNumbers: Record<string, number> },
@@ -217,8 +219,6 @@ vi.mock("src/utils/errors", () => ({
 describe("newConnectCredential cancellation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    showInputBoxCallCount = 0;
-    cancelAtCall = Infinity;
 
     mockCredentialsServiceList.mockResolvedValue([]);
     mockCredentialsServiceCreate.mockResolvedValue({
@@ -235,10 +235,6 @@ describe("newConnectCredential cancellation", () => {
   });
 
   test("cancelling at credential name step does not save the credential", async () => {
-    // The flow for API key auth is: inputServerUrl (1 showInputBox) → inputAPIKey (1 showInputBox) → inputCredentialName
-    // Cancel at the 3rd showInputBox call (the credential name step)
-    cancelAtCall = 3;
-
     // Mock inputCredentialNameStep to throw cancel (simulating user pressing Escape)
     const { inputCredentialNameStep } =
       await import("src/multiStepInputs/common");

@@ -562,6 +562,7 @@ export async function newConnectCredential(
   ) {
     if (!state.data.name && typeof state.data.url === "string") {
       try {
+        // suggest a default name
         const url = new URL(state.data.url);
         state.data.name = url.hostname;
       } catch {
