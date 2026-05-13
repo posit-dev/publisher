@@ -4,13 +4,61 @@ import { describe, expect, test, vi, beforeEach, afterEach } from "vitest";
 import { ServerType } from "src/api/types/contentRecords";
 import { newConnectCredential } from "./newConnectCredential";
 
-// Mock the MultiStepInput module
+class InputFlowAction {
+  static back = new InputFlowAction();
+  static cancel = new InputFlowAction();
+  static resume = new InputFlowAction();
+}
+
+// Track how many showInputBox calls have been made so we can cancel at a specific step
+let showInputBoxCallCount = 0;
+let cancelAtCall = Infinity;
+
+// Mock the MultiStepInput module with a real step-through implementation
 vi.mock("./multiStepHelper", () => {
+  class AbortError extends Error {}
+
   return {
+    AbortError,
     MultiStepInput: {
-      run: vi.fn((_callback) => {
-        // This simplified mock just returns without executing the callback
-        return Promise.resolve();
+      run: vi.fn(async (start: { step: (input: unknown) => unknown }) => {
+        let currentStep:
+          | { step: (input: unknown) => unknown }
+          | void
+          | undefined = start;
+        const mockInput = {
+          showInputBox: vi.fn(() => {
+            showInputBoxCallCount++;
+            if (showInputBoxCallCount >= cancelAtCall) {
+              return Promise.reject(InputFlowAction.cancel);
+            }
+            // First call is URL step — must be a valid URL so hostname pre-population works
+            if (showInputBoxCallCount === 1) {
+              return Promise.resolve("https://connect.example.com");
+            }
+            return Promise.resolve("mocked-value");
+          }),
+          showQuickPick: vi.fn(({ items }: { items: { label: string }[] }) => {
+            return Promise.resolve(
+              items.find((i) => i.label === "API Key") || items[0],
+            );
+          }),
+          showInfoMessage: vi.fn(() => Promise.resolve()),
+        };
+
+        while (currentStep) {
+          try {
+            currentStep = (await currentStep.step(mockInput)) as {
+              step: (input: unknown) => unknown;
+            } | void;
+          } catch (e) {
+            if (e === InputFlowAction.cancel) {
+              currentStep = undefined;
+            } else {
+              throw e;
+            }
+          }
+        }
       }),
     },
     assignStep: (
@@ -21,14 +69,13 @@ vi.mock("./multiStepHelper", () => {
       state.promptStepNumbers[stepName] = state.step;
       return state.step;
     },
-    isString: vi.fn(() => true),
+    isString: (d: unknown): d is string => typeof d === "string",
     isQuickPickItemWithIndex: vi.fn(() => false),
   };
 });
 
 // Mock vscode
 vi.mock("vscode", () => {
-  // Create a mock for the OutputChannel
   const mockOutputChannel = {
     appendLine: vi.fn(),
     append: vi.fn(),
@@ -54,7 +101,7 @@ vi.mock("vscode", () => {
       Information: 1,
     },
     Uri: {
-      parse: vi.fn((url) => ({ toString: () => url })),
+      parse: vi.fn((url: string) => ({ toString: () => url })),
     },
     ThemeIcon: function (iconId: string) {
       return { id: iconId };
@@ -101,19 +148,78 @@ vi.mock("src/credentials/service", () => ({
   CredentialsService: vi.fn(),
 }));
 
-//Removed logging mock since we're using vscode OutputChannel directly
-
 vi.mock("src/utils/progress", () => {
   return {
-    showProgress: vi.fn((_title, _view, callback) => callback()),
+    showProgress: vi.fn(
+      (_title: string, _view: string, callback: () => unknown) => callback(),
+    ),
   };
 });
 
-describe("newConnectCredential API calls", () => {
+vi.mock("src/multiStepInputs/common", () => {
+  return {
+    findExistingCredentialByURL: vi.fn(() => undefined),
+    fetchSnowflakeConnections: vi.fn(() =>
+      Promise.resolve({ connections: [], connectionQuickPicks: [] }),
+    ),
+    inputCredentialNameStep: vi.fn(() => Promise.resolve("My Credential")),
+    getExistingCredentials: vi.fn(() => Promise.resolve([])),
+  };
+});
+
+vi.mock("src/utils/multiStepHelpers", () => ({
+  isConnect: vi.fn(() => true),
+  isSnowflake: vi.fn(() => false),
+}));
+
+vi.mock("src/snowflake/connections", () => ({
+  listConnections: vi.fn(() => ({})),
+}));
+
+vi.mock("src/snowflake/tokenProviders", () => ({
+  createTokenProvider: vi.fn(),
+}));
+
+vi.mock("src/commands", () => ({
+  openConfigurationCommand: "command:open-config",
+}));
+
+vi.mock("src/extension", () => ({
+  extensionSettings: {
+    defaultConnectServer: vi.fn(() => Promise.resolve("")),
+    verifyCertificates: vi.fn(() => true),
+  },
+}));
+
+vi.mock("src/utils/url", () => ({
+  formatURL: vi.fn((url: string) => url),
+}));
+
+vi.mock("src/utils/apiKeys", () => ({
+  checkSyntaxApiKey: vi.fn(() => undefined),
+}));
+
+vi.mock("src/utils/testCredentials", () => ({
+  testServerURL: vi.fn(() => Promise.resolve({ serverType: "connect" })),
+  testAuthentication: vi.fn(() => Promise.resolve({})),
+}));
+
+vi.mock("src/auth/ConnectAuthTokenActivator", () => ({
+  ConnectAuthTokenActivator: vi.fn(),
+  TokenAuthResult: {},
+}));
+
+vi.mock("src/utils/errors", () => ({
+  getMessageFromError: vi.fn((e: unknown) => String(e)),
+  getSummaryStringFromError: vi.fn((loc: string, e: unknown) => `${loc}: ${e}`),
+}));
+
+describe("newConnectCredential cancellation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    showInputBoxCallCount = 0;
+    cancelAtCall = Infinity;
 
-    // Setup default responses
     mockCredentialsServiceList.mockResolvedValue([]);
     mockCredentialsServiceCreate.mockResolvedValue({
       guid: "credential-123",
@@ -128,32 +234,51 @@ describe("newConnectCredential API calls", () => {
     vi.clearAllMocks();
   });
 
-  test("credential creation flow can be initiated", async () => {
-    // Call newConnectCredential with credentialsService
+  test("cancelling at credential name step does not save the credential", async () => {
+    // The flow for API key auth is: inputServerUrl (1 showInputBox) → inputAPIKey (1 showInputBox) → inputCredentialName
+    // Cancel at the 3rd showInputBox call (the credential name step)
+    cancelAtCall = 3;
+
+    // Mock inputCredentialNameStep to throw cancel (simulating user pressing Escape)
+    const { inputCredentialNameStep } =
+      await import("src/multiStepInputs/common");
+    vi.mocked(inputCredentialNameStep).mockRejectedValue(
+      InputFlowAction.cancel,
+    );
+
+    let threw = false;
     try {
       await newConnectCredential(
         "test-view-id",
         "Create a New Credential",
         mockCredentialsService as unknown as import("src/credentials/service").CredentialsService,
+        "https://connect.example.com",
       );
     } catch {
-      /* the user dismissed this flow, do nothing more */
+      threw = true;
     }
 
-    // Since MultiStepInput.run is mocked to do nothing, verify the flow
-    // initializes without error and the credentials service is available
-    await mockCredentialsServiceCreate({
-      name: "My Connect Server",
-      url: "https://connect.example.com",
-      serverType: ServerType.CONNECT,
-      apiKey: "test-api-key",
-    });
+    expect(threw).toBe(true);
+    expect(mockCredentialsServiceCreate).not.toHaveBeenCalled();
+  });
 
-    expect(mockCredentialsServiceCreate).toHaveBeenCalledWith({
-      name: "My Connect Server",
-      url: "https://connect.example.com",
-      serverType: ServerType.CONNECT,
-      apiKey: "test-api-key",
-    });
+  test("completing credential name step saves the credential", async () => {
+    const { inputCredentialNameStep } =
+      await import("src/multiStepInputs/common");
+    vi.mocked(inputCredentialNameStep).mockResolvedValue("My Server");
+
+    const result = await newConnectCredential(
+      "test-view-id",
+      "Create a New Credential",
+      mockCredentialsService as unknown as import("src/credentials/service").CredentialsService,
+      "https://connect.example.com",
+    );
+
+    expect(mockCredentialsServiceCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "My Server",
+      }),
+    );
+    expect(result).toEqual(expect.objectContaining({ guid: "credential-123" }));
   });
 });
