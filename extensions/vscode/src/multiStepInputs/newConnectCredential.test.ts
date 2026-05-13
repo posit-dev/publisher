@@ -4,11 +4,7 @@ import { describe, expect, test, vi, beforeEach, afterEach } from "vitest";
 import { ServerType } from "src/api/types/contentRecords";
 import { newConnectCredential } from "./newConnectCredential";
 
-class InputFlowAction {
-  static back = new InputFlowAction();
-  static cancel = new InputFlowAction();
-  static resume = new InputFlowAction();
-}
+const CANCEL = Symbol("cancel");
 
 // Per-step responses for showInputBox, keyed by step name
 const inputBoxResponses: Record<string, string> = {
@@ -53,7 +49,7 @@ vi.mock("./multiStepHelper", () => {
                 step: (input: unknown) => unknown;
               } | void;
             } catch (e) {
-              if (e === InputFlowAction.cancel) {
+              if (e === CANCEL) {
                 currentStep = undefined;
               } else {
                 throw e;
@@ -238,9 +234,7 @@ describe("newConnectCredential cancellation", () => {
     // Mock inputCredentialNameStep to throw cancel (simulating user pressing Escape)
     const { inputCredentialNameStep } =
       await import("src/multiStepInputs/common");
-    vi.mocked(inputCredentialNameStep).mockRejectedValue(
-      InputFlowAction.cancel,
-    );
+    vi.mocked(inputCredentialNameStep).mockRejectedValue(CANCEL);
 
     let threw = false;
     try {
