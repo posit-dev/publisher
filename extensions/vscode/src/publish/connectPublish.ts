@@ -897,6 +897,11 @@ function isAPIContentType(contentType: string): boolean {
   );
 }
 
+/** Content types that require Node.js to be enabled and licensed on the server. */
+function isNodeJsContentType(contentType: string): boolean {
+  return contentType === ContentType.NODEJS;
+}
+
 /** App content types that support run_as_current_user. */
 function isAppContentType(contentType: string): boolean {
   return (
@@ -923,6 +928,13 @@ function checkServerSettings(
     !settings.general.license["allow-apis"]
   ) {
     throw new Error("API deployment is not licensed on this Connect server");
+  }
+
+  // Node.js licensing/configuration check
+  if (isNodeJsContentType(config.type) && !settings.nodejs.enabled) {
+    throw new Error(
+      "Node.js content is not enabled or licensed on this Connect server",
+    );
   }
 
   if (config.connect) {
