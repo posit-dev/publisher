@@ -15,6 +15,8 @@ export type {
   EnvVar,
   Integration,
   LicenseStatus,
+  NodejsInfo,
+  NodejsInstallation,
   PyInfo,
   PyInstallation,
   QuartoInfo,

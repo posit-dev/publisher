@@ -1170,6 +1170,10 @@ describe("getSettings", () => {
   const quarto = {
     installations: [{ version: "1.4.0", cluster_name: "", image_name: "" }],
   };
+  const nodejs = {
+    installations: [{ version: "22.11.0", cluster_name: "", image_name: "" }],
+    enabled: true,
+  };
 
   const urlResponseMap: Record<string, unknown> = {
     "/__api__/v1/user": userDTO,
@@ -1179,6 +1183,7 @@ describe("getSettings", () => {
     "/__api__/v1/server_settings/python": python,
     "/__api__/v1/server_settings/r": r,
     "/__api__/v1/server_settings/quarto": quarto,
+    "/__api__/v1/server_settings/nodejs": nodejs,
   };
 
   function mockSettingsRoutes() {
@@ -1187,13 +1192,13 @@ describe("getSettings", () => {
     );
   }
 
-  it("makes 7 request calls to the correct URLs", async () => {
+  it("makes 8 request calls to the correct URLs", async () => {
     mockSettingsRoutes();
 
     const client = createClient();
     await client.getSettings();
 
-    expect(mockRequest).toHaveBeenCalledTimes(7);
+    expect(mockRequest).toHaveBeenCalledTimes(8);
 
     const urls = mockRequest.mock.calls
       .map((call: unknown[]) => (call[0] as { url: string }).url)
@@ -1214,6 +1219,7 @@ describe("getSettings", () => {
     expect(settings.python).toEqual(python);
     expect(settings.r).toEqual(r);
     expect(settings.quarto).toEqual(quarto);
+    expect(settings.nodejs).toEqual(nodejs);
   });
 
   it("uses app-mode-specific scheduler path when appMode is provided", async () => {
@@ -1262,6 +1268,25 @@ describe("getSettings", () => {
     );
   });
 
+  it('uses scheduler/nodejs path when appMode is "nodejs"', async () => {
+    const appModeMap: Record<string, unknown> = {
+      ...urlResponseMap,
+      "/__api__/server_settings/scheduler/nodejs": scheduler,
+    };
+    mockRequest.mockImplementation((config: { url: string }) =>
+      Promise.resolve(jsonResponse(appModeMap[config.url])),
+    );
+
+    const client = createClient();
+    await client.getSettings("nodejs");
+
+    const urls = mockRequest.mock.calls.map(
+      (call: unknown[]) => (call[0] as { url: string }).url,
+    );
+    expect(urls).toContain("/__api__/server_settings/scheduler/nodejs");
+    expect(urls).not.toContain("/__api__/server_settings/scheduler");
+  });
+
   it("uses base scheduler path when no appMode is provided", async () => {
     mockSettingsRoutes();
 
@@ -1272,6 +1297,43 @@ describe("getSettings", () => {
       (call: unknown[]) => (call[0] as { url: string }).url,
     );
     expect(urls).toContain("/__api__/server_settings/scheduler");
+  });
+
+  it("falls back to empty NodejsInfo when /server_settings/nodejs 404s", async () => {
+    mockRequest.mockImplementation((config: { url: string }) => {
+      if (config.url === "/__api__/v1/server_settings/nodejs") {
+        return Promise.resolve(
+          jsonResponse({ error: "Not found" }, 404, "Not Found"),
+        );
+      }
+      return Promise.resolve(jsonResponse(urlResponseMap[config.url]));
+    });
+
+    const client = createClient();
+    const settings = await client.getSettings();
+
+    expect(settings.nodejs).toEqual({ installations: [], enabled: false });
+    // The other 7 settings must still come through correctly.
+    expect(settings.general).toEqual(general);
+    expect(settings.python).toEqual(python);
+    expect(settings.r).toEqual(r);
+    expect(settings.quarto).toEqual(quarto);
+  });
+
+  it("propagates non-404 errors from /server_settings/nodejs", async () => {
+    mockRequest.mockImplementation((config: { url: string }) => {
+      if (config.url === "/__api__/v1/server_settings/nodejs") {
+        return Promise.resolve(
+          jsonResponse({ error: "Boom" }, 500, "Internal Server Error"),
+        );
+      }
+      return Promise.resolve(jsonResponse(urlResponseMap[config.url]));
+    });
+
+    const client = createClient();
+    await expect(client.getSettings()).rejects.toThrow(
+      /Request failed with status code 500/,
+    );
   });
 });
 
@@ -1919,7 +1981,7 @@ describe("AbortSignal support", () => {
     expect(call.signal).toBeDefined();
   });
 
-  it("getSettings forwards signal to all 7 requests", async () => {
+  it("getSettings forwards signal to all 8 requests", async () => {
     mockRequest.mockRejectedValue(
       Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
     );
@@ -1929,7 +1991,7 @@ describe("AbortSignal support", () => {
       client.getSettings(undefined, abortedSignal()),
     ).rejects.toThrow();
 
-    // All 7 requests should have been initiated with the signal
+    // All 8 requests should have been initiated with the signal
     expect(mockRequest).toHaveBeenCalled();
     for (const call of mockRequest.mock.calls) {
       const config = call[0] as Record<string, unknown>;

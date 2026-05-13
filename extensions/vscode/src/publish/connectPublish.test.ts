@@ -290,6 +290,7 @@ function makeSettings(overrides?: Partial<AllSettings>): AllSettings {
     python: { installations: [], api_enabled: true, ...overrides?.python },
     r: { installations: [], ...overrides?.r },
     quarto: { installations: [], ...overrides?.quarto },
+    nodejs: { installations: [], enabled: true, ...overrides?.nodejs },
   };
 }
 
@@ -2231,6 +2232,51 @@ describe("connectPublish — server settings validation", () => {
     await expect(connectPublish(opts)).rejects.toThrow(
       "API deployment is not licensed",
     );
+  });
+
+  // --- Node.js licensing/configuration ---
+
+  test("rejects Node.js content when nodejs.enabled is false", async () => {
+    const api = makeMockApi();
+    vi.mocked(api.getSettings).mockResolvedValue(
+      makeSettings({
+        nodejs: { installations: [], enabled: false },
+      }),
+    );
+
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+    });
+    const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Node.js content is not enabled or licensed on this Connect server",
+    );
+  });
+
+  test("accepts Node.js content when nodejs.enabled is true", async () => {
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).resolves.toBeDefined();
+  });
+
+  test("does not block Python content when nodejs.enabled is false", async () => {
+    const api = makeMockApi();
+    vi.mocked(api.getSettings).mockResolvedValue(
+      makeSettings({
+        nodejs: { installations: [], enabled: false },
+      }),
+    );
+
+    const config = makeConfig({ type: ContentType.PYTHON_SHINY });
+    const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).resolves.toBeDefined();
   });
 
   // --- RACU (run_as_current_user) ---

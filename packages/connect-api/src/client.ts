@@ -16,6 +16,7 @@ import type {
   ContentID,
   DeployOutput,
   Integration,
+  NodejsInfo,
   PyInfo,
   QuartoInfo,
   RInfo,
@@ -49,6 +50,7 @@ export class ConnectAPIError extends Error {
 const knownAppModes = new Set([
   "jupyter-static",
   "jupyter-voila",
+  "nodejs",
   "python-bokeh",
   "python-dash",
   "python-fastapi",
@@ -449,7 +451,14 @@ export class ConnectAPI {
   }
 
   /**
-   * Fetches composite server settings from 7 separate endpoints.
+   * Fetches composite server settings from 8 separate endpoints.
+   *
+   * The Node.js settings endpoint (`/v1/server_settings/nodejs`) returns a
+   * 404 on older Connect servers that predate Connect 2026.04.0; in
+   * that case `getSettings` falls back to `{ installations: [], enabled: false }`
+   * rather than failing the entire call. Any other error (network failure,
+   * 5xx, auth) on the Node.js request still fails `getSettings` — only 404
+   * is swallowed.
    *
    * @param appMode - Connect app mode string (e.g. "python-shiny", "static").
    *   When provided and not "static", the scheduler endpoint is fetched with
@@ -478,6 +487,7 @@ export class ConnectAPI {
       { data: python },
       { data: r },
       { data: quarto },
+      { data: nodejs },
     ] = await Promise.all([
       this.client.get<UserDTO>("/__api__/v1/user", { signal }),
       this.client.get<ServerSettings>("/__api__/server_settings", { signal }),
@@ -491,9 +501,17 @@ export class ConnectAPI {
       this.client.get<QuartoInfo>("/__api__/v1/server_settings/quarto", {
         signal,
       }),
+      this.client
+        .get<NodejsInfo>("/__api__/v1/server_settings/nodejs", { signal })
+        .catch((err): { data: NodejsInfo } => {
+          if (axios.isAxiosError(err) && err.response?.status === 404) {
+            return { data: { installations: [], enabled: false } };
+          }
+          throw err;
+        }),
     ]);
 
-    return { general, user, application, scheduler, python, r, quarto };
+    return { general, user, application, scheduler, python, r, quarto, nodejs };
   }
 }
 
