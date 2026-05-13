@@ -785,6 +785,66 @@ describe("connectPublish", () => {
 
     expect(config).toEqual(originalConfig);
   });
+
+  test("happy path — Node.js content type", async () => {
+    const { readFile } = await import("node:fs/promises");
+    vi.mocked(readFile).mockResolvedValue(
+      JSON.stringify({
+        name: "my-node-app",
+        version: "1.0.0",
+        main: "index.js",
+        engines: { node: ">=22.18.0" },
+      }),
+    );
+
+    const api = makeMockApi();
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      entrypoint: "index.js",
+      files: ["index.js", "package.json", "package-lock.json"],
+    });
+    const onProgress = vi.fn();
+    const opts = makeOptions({ api, config, onProgress });
+
+    const result = await connectPublish(opts);
+
+    expect(result).toBeDefined();
+    expect(result.contentId).toBe("content-guid-123");
+
+    // All major steps were exercised.
+    const steps = progressSteps(onProgress);
+    expect(steps.map((s) => s.step)).toEqual(
+      expect.arrayContaining([
+        "createManifest",
+        "preflight",
+        "createNewDeployment",
+        "createBundle",
+        "uploadBundle",
+        "deployBundle",
+      ]),
+    );
+
+    // The version-constraint log fired.
+    const logMessages = onProgress.mock.calls
+      .map((args) => args[0] as PublishEvent)
+      .filter((e) => e.status === "log" && typeof e.message === "string")
+      .map((e) => e.message as string);
+    expect(logMessages).toContain("Node.js version constraint >=22.18.0");
+
+    // updateDeployment receives the connectContentFromConfig payload; reaching
+    // deployBundle means it didn't throw for the Node.js config.
+    expect(api.createDeployment).toHaveBeenCalledTimes(1);
+    expect(api.updateDeployment).toHaveBeenCalledTimes(1);
+    expect(api.deployBundle).toHaveBeenCalledTimes(1);
+
+    // The deployment record written to disk reflects the Node.js config.
+    const writeCalls = mockWriteFile.mock.calls;
+    expect(writeCalls.length).toBeGreaterThan(0);
+    const lastWrite = writeCalls[writeCalls.length - 1];
+    const written = String(lastWrite[1]);
+    expect(written).toContain("nodejs");
+  });
 });
 
 describe("connectPublish — R package resolution", () => {
