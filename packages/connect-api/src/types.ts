@@ -335,7 +335,24 @@ export interface QuartoInfo {
   installations: QuartoInstallation[];
 }
 
-/** Composite settings from all 7 server endpoints. */
+export interface NodejsInstallation {
+  version: string;
+  cluster_name: string;
+  image_name: string;
+}
+
+export interface NodejsInfo {
+  installations: NodejsInstallation[];
+  /**
+   * True only when Node.js support is enabled in Connect's configuration AND
+   * the license permits Node.js content (Advanced tier or Evaluation).
+   * Older Connect servers that predate the field are treated as `false`
+   * (graceful 404 fallback in getSettings).
+   */
+  enabled: boolean;
+}
+
+/** Composite settings from all 8 server endpoints. */
 export interface AllSettings {
   general: ServerSettings;
   user: UserDTO;
@@ -344,4 +361,5 @@ export interface AllSettings {
   python: PyInfo;
   r: RInfo;
   quarto: QuartoInfo;
+  nodejs: NodejsInfo;
 }
