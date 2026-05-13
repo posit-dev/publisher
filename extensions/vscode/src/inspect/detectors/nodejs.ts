@@ -2,8 +2,9 @@
 
 import * as path from "path";
 import { ContentType } from "src/api/types/configurations";
-import { fileExistsAt, readFileText } from "src/interpreters/fsUtils";
+import { fileExistsAt } from "src/interpreters/fsUtils";
 import { ContentTypeDetector, PartialConfig } from "../types";
+import { readMain, readPackageJson, readStart } from "../nodejs/packageJson";
 
 const VALID_EXTENSIONS: ReadonlySet<string> = new Set([
   ".js",
@@ -45,35 +46,6 @@ function makeConfig(baseDir: string, abs: string): PartialConfig {
   };
 }
 
-/** Type guard narrowing parsed JSON to a plain object before field access. */
-function isRecord(v: unknown): v is Record<string, unknown> {
-  return typeof v === "object" && v !== null;
-}
-
-/**
- * Read a non-empty string `main` field from a parsed package.json, or
- * `undefined` if absent or not a usable string.
- */
-function readMain(pkg: unknown): string | undefined {
-  if (!isRecord(pkg)) return undefined;
-  const main = pkg.main;
-  if (typeof main !== "string" || main.length === 0) return undefined;
-  return main;
-}
-
-/**
- * Read a non-empty `scripts.start` string from a parsed package.json, or
- * `undefined` if absent or not a usable string.
- */
-function readStart(pkg: unknown): string | undefined {
-  if (!isRecord(pkg)) return undefined;
-  const scripts = pkg.scripts;
-  if (!isRecord(scripts)) return undefined;
-  const start = scripts.start;
-  if (typeof start !== "string" || start.length === 0) return undefined;
-  return start;
-}
-
 /**
  * Find the script file in a `scripts.start` command. Locates `node` (with a
  * word boundary so `ts-node` also matches — Connect parity, see test) and
@@ -86,22 +58,6 @@ function parseStartScript(start: string): string | undefined {
   if (rest === undefined) return undefined;
   const args = rest.trim().split(/\s+/);
   return args.find((a) => !a.startsWith("-") && hasValidExtension(a));
-}
-
-/**
- * Read and parse `<baseDir>/package.json`. Returns `undefined` when the file
- * is missing or unparseable so the caller treats both as "no package.json
- * signal" — Connect's runtime warns and falls through, but in detection we
- * prefer Unknown over guessing.
- */
-async function readPackageJson(baseDir: string): Promise<unknown> {
-  const text = await readFileText(path.join(baseDir, "package.json"));
-  if (text === null) return undefined;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return undefined;
-  }
 }
 
 /**
