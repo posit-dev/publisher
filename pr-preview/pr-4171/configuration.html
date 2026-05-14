@@ -79,9 +79,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-0dd6cd67919e2c41bb2dcdcbfca5a3a1.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-6bda98905bb078aad7433ede987ca2b5.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="site_libs/bootstrap/bootstrap-dark-a5c432f32ecf7e42bd802bc2d5efd259.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="site_libs/bootstrap/bootstrap-6bda98905bb078aad7433ede987ca2b5.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-e55ee09a9c959426ded80bf645a07944.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark-3fd03a7780898d0bbbecbbebd353b0f9.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="site_libs/bootstrap/bootstrap-e55ee09a9c959426ded80bf645a07944.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": true,
@@ -631,7 +631,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><a href="https://docs.posit.co/connect/user/nodejs/">Posit Connect supports deploying Node.js applications</a>.</p>
 <p>Both <code>package.json</code> and <code>package-lock.json</code> must be present and listed under <code>files</code>. Connect uses <code>npm ci</code> to install dependencies; if <code>package-lock.json</code> is missing, run <code>npm install</code> to generate it.</p>
 <p>If <code>package.json</code> specifies an <a href="https://docs.npmjs.com/cli/configuring-npm/package-json#engines"><code>engines.node</code></a> constraint, Connect uses it to select the runtime version. Otherwise Connect uses the latest version of Node.js available on the server.</p>
-<p>Node.js deployment requires an Advanced Connect license, and the server administrator must enable Node.js support. Publisher reports when the target server has Node.js disabled.</p>
+<p>Node.js deployment requires an <a href="https://docs.posit.co/connect/user/licensing/">Advanced Connect license</a>, and the server administrator must enable Node.js support. Publisher reports when the target server has Node.js disabled.</p>
 <p>Connect Cloud does not support Node.js content.</p>
 <p>Example:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="dt">type</span> <span class="op">=</span> <span class="st">"nodejs"</span></span>
