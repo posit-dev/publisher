@@ -235,7 +235,7 @@ Both `package.json` and `package-lock.json` must be present and listed under `fi
 
 If `package.json` specifies an [`engines.node`](https://docs.npmjs.com/cli/configuring-npm/package-json#engines) constraint, Connect uses it to select the runtime version. Otherwise Connect uses the latest version of Node.js available on the server.
 
-Node.js deployment requires an Advanced Connect license, and the server administrator must enable Node.js support. Publisher reports when the target server has Node.js disabled.
+Node.js deployment requires an [Advanced Connect license](https://docs.posit.co/connect/user/licensing/), and the server administrator must enable Node.js support. Publisher reports when the target server has Node.js disabled.
 
 Connect Cloud does not support Node.js content.
 
