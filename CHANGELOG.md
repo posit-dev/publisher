@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed Quarto availability check opening a visible terminal and showing a confusing "process exited with code 1" error when Quarto is not installed. The check now runs silently in the background. (#3801)
 - Fixed deploying content to Connect running within the Posit Team Native App in Snowpark Container Services from Publisher running outside of SPCS. Users with existing credentials for SPCS servers must delete and recreate those credentials. Credentials now require a valid Snowflake connection and valid Connect authentication (either API key or token). (#3465)
 - Cancelling the "new credential" flow at the final step (input credential name) actually cancels instead of saving the new credential. (#4159)
+- Upgraded project dependencies to improve proxy support. (#3102)
 - Fixed `memory_limit` and `memory_request` examples in the publishing configuration schema being quoted as strings instead of integers. (#1505)
 
 ## [2.4.0]
