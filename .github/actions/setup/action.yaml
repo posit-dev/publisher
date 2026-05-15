@@ -8,7 +8,7 @@ runs:
       if: runner.os == 'Windows' && runner.arch == 'ARM64'
       shell: bash
       run: cargo install just
-    - uses: extractions/setup-just@v3
+    - uses: extractions/setup-just@v4
       if: runner.os != 'Windows' || runner.arch != 'ARM64'
     - if: ${{ runner.os == 'Linux' }}
       uses: t1m0thyj/unlock-keyring@v1
