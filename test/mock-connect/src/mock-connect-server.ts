@@ -183,6 +183,12 @@ export class MockConnectServer {
         200,
         loadFixture("server-settings-quarto.json"),
       ],
+      [
+        "GET",
+        /^\/__api__\/v1\/server_settings\/nodejs$/,
+        200,
+        loadFixture("server-settings-nodejs.json"),
+      ],
       // Content Validation (non-API path)
       ["GET", /^\/content\/[^/]+\/$/, 200, "<html>OK</html>", "text/html"],
     ];

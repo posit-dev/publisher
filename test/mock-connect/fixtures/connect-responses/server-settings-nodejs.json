@@ -1,0 +1,6 @@
+{
+  "installations": [
+    { "version": "22.11.0", "cluster_name": "", "image_name": "" }
+  ],
+  "enabled": true
+}

@@ -131,6 +131,13 @@ export const fixtureMappings: FixtureMapping[] = [
     status: 200,
     description: "GET /server_settings/quarto — Quarto installations",
   },
+  {
+    fixture: "server-settings-nodejs.json",
+    path: "/v1/server_settings/nodejs",
+    method: "get",
+    status: 200,
+    description: "GET /server_settings/nodejs — Node.js installations",
+  },
 
   // Integrations endpoint
   {
