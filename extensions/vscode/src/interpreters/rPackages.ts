@@ -12,7 +12,7 @@ import {
   RVersionConfig,
 } from "src/api/types/packages";
 
-import { fileExistsAt, readFileText } from "./fsUtils";
+import { fileExistsAt, readFileText } from "../utils/fsUtils";
 import type { PositronRSettings } from "../api/types/positron";
 
 const DEFAULT_RENV_LOCKFILE = "renv.lock";

@@ -110,7 +110,7 @@ vi.mock("../interpreters/rPackages", () => ({
 // readFileText delegates to the mocked node:fs/promises readFile so per-test
 // `vi.mocked(readFile).mockResolvedValue(...)` overrides still drive the
 // shared inspect/nodejs/packageJson helpers used during createManifest.
-vi.mock("../interpreters/fsUtils", async () => {
+vi.mock("../utils/fsUtils", async () => {
   const fs = await import("node:fs/promises");
   return {
     fileExistsAt: vi.fn().mockResolvedValue(true),
@@ -852,7 +852,7 @@ describe("connectPublish — R package resolution", () => {
   });
 
   test("uses existing lockfile when present", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(true);
 
     const { resolveRPackages } = await import("./dependencies");
@@ -887,7 +887,7 @@ describe("connectPublish — R package resolution", () => {
   });
 
   test("existing lockfile path emits expected log messages", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(true);
 
     const { resolveRPackages } = await import("./dependencies");
@@ -923,7 +923,7 @@ describe("connectPublish — R package resolution", () => {
   });
 
   test("no-lockfile scan path emits expected log messages", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(false);
 
     const { resolveRPackages } = await import("./dependencies");
@@ -967,7 +967,7 @@ describe("connectPublish — R package resolution", () => {
   });
 
   test("missing R interpreter fails before package log messages", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(false);
 
     const config = makeConfig({
@@ -998,7 +998,7 @@ describe("connectPublish — R package resolution", () => {
   });
 
   test("scans for dependencies when no lockfile exists", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(false);
 
     const { resolveRPackages } = await import("./dependencies");
@@ -1033,7 +1033,7 @@ describe("connectPublish — R package resolution", () => {
   });
 
   test("throws when R scan needed but no R interpreter", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(false);
 
     const config = makeConfig({
@@ -1050,7 +1050,7 @@ describe("connectPublish — R package resolution", () => {
   });
 
   test("injects extra dependencies before scanning", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(false);
 
     const {
@@ -1100,7 +1100,7 @@ describe("connectPublish — R package resolution", () => {
   });
 
   test("cleans up extra deps file even if scan fails", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(false);
 
     const { recordExtraDependencies, cleanupExtraDependencies } =
@@ -1133,7 +1133,7 @@ describe("connectPublish — packagesFromLibrary", () => {
   });
 
   test("uses library mapper when packagesFromLibrary is true and lockfile exists", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(true);
 
     const { libraryToManifestPackages } = await import("./rLibraryMapper");
@@ -1184,7 +1184,7 @@ describe("connectPublish — packagesFromLibrary", () => {
   });
 
   test("throws when packagesFromLibrary is true but lockfile missing", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(false);
 
     const config = makeConfig({
@@ -1205,7 +1205,7 @@ describe("connectPublish — packagesFromLibrary", () => {
   });
 
   test("throws when packagesFromLibrary is true but no R interpreter", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(true);
 
     const config = makeConfig({
@@ -1232,7 +1232,7 @@ describe("connectPublish — staged lockfile cleanup", () => {
   });
 
   test("staged lockfile is cleaned up after bundle creation", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(true);
 
     const { resolveRPackages } = await import("./dependencies");
@@ -1282,7 +1282,7 @@ describe("connectPublish — staged lockfile cleanup", () => {
   });
 
   test("staged lockfile is cleaned up even if bundle creation fails", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(true);
 
     const { resolveRPackages } = await import("./dependencies");
@@ -1322,7 +1322,7 @@ describe("connectPublish — staged lockfile cleanup", () => {
   });
 
   test("no cleanup when lockfile is at project root", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(true);
 
     const { resolveRPackages } = await import("./dependencies");
@@ -1965,7 +1965,7 @@ describe("connectPublish — preflight validation", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     // Restore default — fileExistsAt returns true (file exists)
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(true);
   });
 
@@ -1987,7 +1987,7 @@ describe("connectPublish — preflight validation", () => {
   });
 
   test("missing requirements file classifies as requirementsFileReadingError", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(false);
 
     const onProgress = vi.fn();
@@ -2011,7 +2011,7 @@ describe("connectPublish — preflight validation", () => {
   });
 
   test("rejects missing requirements file", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(false);
 
     const config = makeConfig({
@@ -2088,7 +2088,7 @@ describe("connectPublish — generated requirements from lockfiles", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     // Default: requirements file does NOT exist on disk
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(false);
   });
 
@@ -2203,7 +2203,7 @@ describe("connectPublish — generated requirements from lockfiles", () => {
   });
 
   test("does not generate when requirements file exists on disk", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(true);
 
     const config = makeConfig({
@@ -2240,7 +2240,7 @@ describe("connectPublish — generated requirements from lockfiles", () => {
 describe("connectPublish — server settings validation", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(true);
   });
 
@@ -2456,7 +2456,7 @@ describe("connectPublish — server settings validation", () => {
   });
 
   test("nodejs preflight rejects when package.json missing on disk", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockImplementation((p: string) => {
       return Promise.resolve(!p.endsWith("package.json"));
     });
@@ -2475,7 +2475,7 @@ describe("connectPublish — server settings validation", () => {
   });
 
   test("nodejs preflight rejects when package-lock.json missing on disk with npm install hint", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockImplementation((p: string) => {
       return Promise.resolve(!p.endsWith("package-lock.json"));
     });

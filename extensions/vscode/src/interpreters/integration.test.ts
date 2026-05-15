@@ -25,7 +25,7 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { describe, expect, test } from "vitest";
-import { readFileText, fileExistsAt } from "./fsUtils";
+import { readFileText, fileExistsAt } from "../utils/fsUtils";
 import { getPythonRequires } from "./pythonRequires";
 import { getRRequires } from "./rRequires";
 import { getInterpreterDefaults } from "./index";

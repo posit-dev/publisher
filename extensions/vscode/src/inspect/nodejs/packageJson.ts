@@ -2,7 +2,7 @@
 
 import * as path from "path";
 
-import { readFileText } from "src/interpreters/fsUtils";
+import { readFileText } from "src/utils/fsUtils";
 
 /** Type guard narrowing parsed JSON to a plain object before field access. */
 export function isRecord(v: unknown): v is Record<string, unknown> {

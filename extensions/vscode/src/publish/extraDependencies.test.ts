@@ -18,12 +18,12 @@ vi.mock("node:fs/promises", () => ({
   unlink: vi.fn(),
 }));
 
-vi.mock("../interpreters/fsUtils", () => ({
+vi.mock("../utils/fsUtils", () => ({
   fileExistsAt: vi.fn(),
 }));
 
 // Import the mock after vi.mock so we can configure it per-test
-import { fileExistsAt } from "../interpreters/fsUtils";
+import { fileExistsAt } from "../utils/fsUtils";
 const mockFileExistsAt = vi.mocked(fileExistsAt);
 const mockReadFile = vi.mocked(readFile);
 const mockWriteFile = vi.mocked(writeFile);
