@@ -30,6 +30,6 @@ toc: false
 ---
 
 EOF
-tail -n +2 "$SCRIPT_DIR/../CHANGELOG.md" \
+tail -n +8 "$SCRIPT_DIR/../CHANGELOG.md" \
   | sed '/^## \[Unreleased\]/,/^## \[/{/^## \[Unreleased\]/d;/^## \[/!d;}' \
   >> "$SCRIPT_DIR/changelog.md"
