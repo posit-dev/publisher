@@ -19,3 +19,17 @@ fi
 cat > "$SCRIPT_DIR/_variables.yml" <<EOF
 version: "$VERSION"
 EOF
+
+# Copy CHANGELOG.md into docs/ so Quarto can render it as a page.
+# Prepend front matter, strip the "# Changelog" heading, and remove the
+# [Unreleased] section (everything between ## [Unreleased] and the next ## [).
+cat > "$SCRIPT_DIR/changelog.md" <<EOF
+---
+title: "Changelog"
+toc: false
+---
+
+EOF
+tail -n +8 "$SCRIPT_DIR/../CHANGELOG.md" \
+  | sed '/^## \[Unreleased\]/,/^## \[/{/^## \[Unreleased\]/d;/^## \[/!d;}' \
+  >> "$SCRIPT_DIR/changelog.md"

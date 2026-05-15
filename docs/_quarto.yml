@@ -22,6 +22,8 @@ website:
         href: collaboration.md
       - text: "Troubleshooting"
         href: troubleshooting.md
+      - text: "Changelog"
+        href: changelog.md
     tools:
       - icon: github
         href: https://github.com/posit-dev/publisher
