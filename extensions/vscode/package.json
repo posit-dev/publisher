@@ -650,7 +650,7 @@
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "tsc-watch": "tsc --noEmit --watch --project tsconfig.json",
-    "build-font": "node -e \"require('fs').mkdirSync('dist', {recursive: true})\" && fantasticon",
+    "build-font": "fantasticon",
     "lint": "eslint src --max-warnings 0 && eslint webviews/homeView/src --max-warnings 0",
     "esbuild-tests": "node ./esbuild.tests.mjs",
     "pretest": "npm run esbuild-tests && npm run esbuild-base",
