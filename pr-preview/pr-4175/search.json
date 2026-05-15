@@ -238,13 +238,6 @@
     "text": "All notable changes to this project will be documented in this file.\nThe format is based on Keep a Changelog, and this project adheres to Semantic Versioning."
   },
   {
-    "objectID": "changelog.html#unreleased",
-    "href": "changelog.html#unreleased",
-    "title": "Changelog",
-    "section": "[Unreleased]",
-    "text": "[Unreleased]\n\nAdded\n\nSupport for deploying Node.js applications (Express, Fastify, Hono, etc.) to Posit Connect. (#3964)\n\n\n\nFixed\n\nFixed Quarto availability check opening a visible terminal and showing a confusing “process exited with code 1” error when Quarto is not installed. The check now runs silently in the background. (#3801)\nFixed deploying content to Connect running within the Posit Team Native App in Snowpark Container Services from Publisher running outside of SPCS. Users with existing credentials for SPCS servers must delete and recreate those credentials. Credentials now require a valid Snowflake connection and valid Connect authentication (either API key or token). (#3465)\nCancelling the “new credential” flow at the final step (input credential name) actually cancels instead of saving the new credential. (#4159)"
-  },
-  {
     "objectID": "changelog.html#section",
     "href": "changelog.html#section",
     "title": "Changelog",
