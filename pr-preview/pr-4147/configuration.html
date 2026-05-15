@@ -79,9 +79,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-0dd6cd67919e2c41bb2dcdcbfca5a3a1.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-6bda98905bb078aad7433ede987ca2b5.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="site_libs/bootstrap/bootstrap-dark-a5c432f32ecf7e42bd802bc2d5efd259.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="site_libs/bootstrap/bootstrap-6bda98905bb078aad7433ede987ca2b5.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-e55ee09a9c959426ded80bf645a07944.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark-3fd03a7780898d0bbbecbbebd353b0f9.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="site_libs/bootstrap/bootstrap-e55ee09a9c959426ded80bf645a07944.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": true,
@@ -401,6 +401,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#hide_tagged_input" id="toc-hide_tagged_input" class="nav-link" data-scroll-target="#hide_tagged_input">hide_tagged_input</a></li>
   </ul></li>
   <li><a href="#quarto-settings" id="toc-quarto-settings" class="nav-link" data-scroll-target="#quarto-settings">Quarto settings</a></li>
+  <li><a href="#node.js-settings" id="toc-node.js-settings" class="nav-link" data-scroll-target="#node.js-settings">Node.js settings</a></li>
   <li><a href="#connect-specific-settings" id="toc-connect-specific-settings" class="nav-link" data-scroll-target="#connect-specific-settings">Connect-specific settings</a>
   <ul class="collapse">
   <li><a href="#access-settings" id="toc-access-settings" class="nav-link" data-scroll-target="#access-settings">Access settings</a></li>
@@ -452,6 +453,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><code>html</code></li>
 <li><code>jupyter-notebook</code></li>
 <li><code>jupyter-voila</code></li>
+<li><code>nodejs</code></li>
 <li><code>python-bokeh</code></li>
 <li><code>python-dash</code></li>
 <li><code>python-fastapi</code></li>
@@ -623,6 +625,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="dt">engines</span> <span class="op">=</span> <span class="op">[</span><span class="st">"knitr"</span><span class="op">]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
+<section id="node.js-settings" class="level2">
+<h2 class="anchored" data-anchor-id="node.js-settings">Node.js settings</h2>
+<p><em>Only valid when <code>product_type</code> is <code>connect</code></em></p>
+<p><a href="https://docs.posit.co/connect/user/nodejs/">Posit Connect supports deploying Node.js applications</a>.</p>
+<p>Both <code>package.json</code> and <code>package-lock.json</code> must be present and listed under <code>files</code>. Connect uses <code>npm ci</code> to install dependencies; if <code>package-lock.json</code> is missing, run <code>npm install</code> to generate it.</p>
+<p>If <code>package.json</code> specifies an <a href="https://docs.npmjs.com/cli/configuring-npm/package-json#engines"><code>engines.node</code></a> constraint, Connect uses it to select the runtime version. Otherwise Connect uses the latest version of Node.js available on the server.</p>
+<p>Node.js deployment requires an <a href="https://docs.posit.co/connect/user/licensing/">Advanced Connect license</a>, and the server administrator must enable Node.js support. Publisher reports when the target server has Node.js disabled.</p>
+<p>Connect Cloud does not support Node.js content.</p>
+<p>Example:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="dt">type</span> <span class="op">=</span> <span class="st">"nodejs"</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="dt">entrypoint</span> <span class="op">=</span> <span class="st">"index.js"</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="dt">files</span> <span class="op">=</span> <span class="op">[</span><span class="st">"*.js"</span><span class="op">,</span> <span class="st">"package.json"</span><span class="op">,</span> <span class="st">"package-lock.json"</span><span class="op">]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
 <section id="connect-specific-settings" class="level2">
 <h2 class="anchored" data-anchor-id="connect-specific-settings">Connect-specific settings</h2>
 <section id="access-settings" class="level3">
@@ -636,9 +651,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h4 class="anchored" data-anchor-id="run_as_current_user">run_as_current_user</h4>
 <p>For application content types, run a separate process under the user account of each visiting user under that user’s server account. Requires PAM authentication on the Posit Connect server. You must be an administrator to set this value.</p>
 <p>Example:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[connect.access]</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="dt">run_as</span> <span class="op">=</span> <span class="st">"myuser"</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="dt">run_as_current_user</span> <span class="op">=</span> <span class="cn">true</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[connect.access]</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="dt">run_as</span> <span class="op">=</span> <span class="st">"myuser"</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="dt">run_as_current_user</span> <span class="op">=</span> <span class="cn">true</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 <section id="kubernetes-settings" class="level3">
@@ -685,17 +700,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h4 class="anchored" data-anchor-id="service_account_name">service_account_name</h4>
 <p>The name of the Kubernetes service account that is used to run this content. It must adhere to Kubernetes service account naming rules. You must be an administrator to set this value.</p>
 <p>Example:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[connect.kubernetes]</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="dt">amd_gpu_limit</span> <span class="op">=</span> <span class="dv">0</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="dt">cpu_limit</span> <span class="op">=</span> <span class="fl">1.5</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="dt">cpu_request</span> <span class="op">=</span> <span class="fl">0.5</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="dt">default_image_name</span> <span class="op">=</span> <span class="st">"posit/connect-runtime-python3.11-r4.3"</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="dt">default_py_environment_management</span> <span class="op">=</span> <span class="cn">true</span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="dt">default_r_environment_management</span> <span class="op">=</span> <span class="cn">true</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="dt">memory_limit</span> <span class="op">=</span> <span class="dv">100000000</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="dt">memory_request</span> <span class="op">=</span> <span class="dv">20000000</span></span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="dt">nvidia_gpu_limit</span> <span class="op">=</span> <span class="dv">1</span></span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="dt">service_account_name</span> <span class="op">=</span> <span class="st">"posit-connect-content"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[connect.kubernetes]</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="dt">amd_gpu_limit</span> <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="dt">cpu_limit</span> <span class="op">=</span> <span class="fl">1.5</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="dt">cpu_request</span> <span class="op">=</span> <span class="fl">0.5</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="dt">default_image_name</span> <span class="op">=</span> <span class="st">"posit/connect-runtime-python3.11-r4.3"</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="dt">default_py_environment_management</span> <span class="op">=</span> <span class="cn">true</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="dt">default_r_environment_management</span> <span class="op">=</span> <span class="cn">true</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="dt">memory_limit</span> <span class="op">=</span> <span class="dv">100000000</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="dt">memory_request</span> <span class="op">=</span> <span class="dv">20000000</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="dt">nvidia_gpu_limit</span> <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="dt">service_account_name</span> <span class="op">=</span> <span class="st">"posit-connect-content"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 <section id="runtime-settings" class="level3">
@@ -734,15 +749,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h4 class="anchored" data-anchor-id="read_timeout">read_timeout</h4>
 <p>Maximum number of seconds allowed without data received from a client connection. A value of <code>0</code> means a lack of client (browser) interaction never causes the connection to close.</p>
 <p>Example:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[connect.runtime]</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="dt">connection_timeout</span> <span class="op">=</span> <span class="dv">5</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="dt">idle_timeout</span> <span class="op">=</span> <span class="dv">120</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="dt">init_timeout</span> <span class="op">=</span> <span class="dv">60</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="dt">load_factor</span> <span class="op">=</span> <span class="fl">0.5</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="dt">max_conns_per_process</span> <span class="op">=</span> <span class="dv">50</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="dt">max_processes</span> <span class="op">=</span> <span class="dv">5</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="dt">min_processes</span> <span class="op">=</span> <span class="dv">1</span></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="dt">read_timeout</span> <span class="op">=</span> <span class="dv">30</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[connect.runtime]</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="dt">connection_timeout</span> <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="dt">idle_timeout</span> <span class="op">=</span> <span class="dv">120</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="dt">init_timeout</span> <span class="op">=</span> <span class="dv">60</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="dt">load_factor</span> <span class="op">=</span> <span class="fl">0.5</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="dt">max_conns_per_process</span> <span class="op">=</span> <span class="dv">50</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="dt">max_processes</span> <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="dt">min_processes</span> <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="dt">read_timeout</span> <span class="op">=</span> <span class="dv">30</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 </section>

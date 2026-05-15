@@ -22,6 +22,7 @@ Also available on the [Open VSX Registry](https://open-vsx.org/extension/posit/p
 - html
 - jupyter-notebook
 - jupyter-voila
+- nodejs
 - python-bokeh
 - python-dash
 - python-fastapi

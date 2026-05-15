@@ -281,6 +281,7 @@ Indicates the type of content being deployed. Valid values are:
 - `html`
 - `jupyter-notebook`
 - `jupyter-voila`
+- `nodejs`
 - `python-bokeh`
 - `python-dash`
 - `python-fastapi`
@@ -486,6 +487,28 @@ Quarto version. The server must have a similar Quarto version in order to run th
 [quarto]
 version = "1.4.554"
 engines = ["knitr"]
+```
+
+## Node.js settings
+
+_Only valid when `product_type` is `connect`_
+
+[Posit Connect supports deploying Node.js applications](https://docs.posit.co/connect/user/nodejs/).
+
+Both `package.json` and `package-lock.json` must be present and listed under `files`. Connect uses `npm ci` to install dependencies; if `package-lock.json` is missing, run `npm install` to generate it.
+
+If `package.json` specifies an [`engines.node`](https://docs.npmjs.com/cli/configuring-npm/package-json#engines) constraint, Connect uses it to select the runtime version. Otherwise Connect uses the latest version of Node.js available on the server.
+
+Node.js deployment requires an [Advanced Connect license](https://docs.posit.co/connect/user/licensing/), and the server administrator must enable Node.js support. Publisher reports when the target server has Node.js disabled.
+
+Connect Cloud does not support Node.js content.
+
+Example:
+
+```toml
+type = "nodejs"
+entrypoint = "index.js"
+files = ["*.js", "package.json", "package-lock.json"]
 ```
 
 ## Connect-specific settings
