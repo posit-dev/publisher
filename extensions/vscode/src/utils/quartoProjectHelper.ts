@@ -3,7 +3,7 @@
 import * as path from "path";
 import { execFile } from "child_process";
 import { promisify } from "util";
-import { fileExistsAt } from "../interpreters/fsUtils";
+import { fileExistsAt } from "./fsUtils";
 import { runTerminalCommand } from "./window";
 
 const execFileAsync = promisify(execFile);

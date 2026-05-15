@@ -2,7 +2,7 @@
 
 import { execFile } from "child_process";
 import path from "node:path";
-import { fileExistsAt } from "./fsUtils";
+import { fileExistsAt } from "../utils/fsUtils";
 import { getRRequires } from "./rRequires";
 
 const DEFAULT_RENV_LOCKFILE = "renv.lock";

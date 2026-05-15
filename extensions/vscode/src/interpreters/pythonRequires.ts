@@ -1,7 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import path from "node:path";
-import { readFileText } from "./fsUtils";
+import { readFileText } from "../utils/fsUtils";
 import { adaptPythonRequires } from "./versionConstraints";
 
 /**

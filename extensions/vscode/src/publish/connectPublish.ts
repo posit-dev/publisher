@@ -44,7 +44,7 @@ import {
 
 import { forceProductTypeCompliance } from "../toml/configCompliance";
 import { DEFAULT_PYTHON_PACKAGE_FILE } from "../constants";
-import { fileExistsAt } from "../interpreters/fsUtils";
+import { fileExistsAt } from "../utils/fsUtils";
 import { generateRequirements } from "../interpreters/pythonDependencySources";
 import { logger } from "../logging";
 import type { ErrorCode } from "../utils/errorTypes";

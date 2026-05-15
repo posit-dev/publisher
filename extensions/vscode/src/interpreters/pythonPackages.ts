@@ -3,7 +3,7 @@
 import path from "node:path";
 
 import { DEFAULT_PYTHON_PACKAGE_FILE } from "../constants";
-import { readFileText } from "./fsUtils";
+import { readFileText } from "../utils/fsUtils";
 import { generateRequirements } from "./pythonDependencySources";
 
 /**

@@ -15,7 +15,7 @@ import {
 const mockFiles: Record<string, string> = {};
 const mockErrors: Record<string, Error> = {};
 
-vi.mock("./fsUtils", () => ({
+vi.mock("../utils/fsUtils", () => ({
   readFileText: vi.fn((filePath: string) => {
     const error = mockErrors[filePath];
     if (error) {
