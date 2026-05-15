@@ -164,7 +164,7 @@ jobs:
         run: quarto render docs
 
       - name: Upload docs preview
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: docs-preview
           path: docs/_site
