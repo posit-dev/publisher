@@ -26,6 +26,7 @@ EOF
 cat > "$SCRIPT_DIR/changelog.md" <<EOF
 ---
 title: "Changelog"
+toc: false
 ---
 
 EOF
