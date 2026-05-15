@@ -235,14 +235,14 @@
     "href": "changelog.html",
     "title": "Changelog",
     "section": "",
-    "text": "All notable changes to this project will be documented in this file.\nThe format is based on Keep a Changelog, and this project adheres to Semantic Versioning."
+    "text": "Fixed re-deploying static HTML content (e.g., Quarto sites) failing with Connect error 110 when the content was originally deployed without content_category. (#4110)\nFixed deployment and credential testing showing “HTTP undefined” when the server is unreachable. Now displays a clear message asking the user to check their network connection, VPN, and server URL. (#4096)\nFixed Quarto dashboards with server: shiny being misdetected as static content, causing deployment to fail with an output-dir error on Connect. (#3991)\nFixed content URLs (View Content, dashboard, logs) being unreachable when the configured server URL differs from the external hostname. This scenario can happen when publishing from Workbench to Connect within the Posit Team Native App in Snowpark Container Services. (#3698)"
   },
   {
     "objectID": "changelog.html#section",
     "href": "changelog.html#section",
     "title": "Changelog",
-    "section": "[2.4.0]",
-    "text": "[2.4.0]\n\nFixed\n\nFixed re-deploying static HTML content (e.g., Quarto sites) failing with Connect error 110 when the content was originally deployed without content_category. (#4110)\nFixed deployment and credential testing showing “HTTP undefined” when the server is unreachable. Now displays a clear message asking the user to check their network connection, VPN, and server URL. (#4096)\nFixed Quarto dashboards with server: shiny being misdetected as static content, causing deployment to fail with an output-dir error on Connect. (#3991)\nFixed content URLs (View Content, dashboard, logs) being unreachable when the configured server URL differs from the external hostname. This scenario can happen when publishing from Workbench to Connect within the Posit Team Native App in Snowpark Container Services. (#3698)"
+    "section": "",
+    "text": "Fixed re-deploying static HTML content (e.g., Quarto sites) failing with Connect error 110 when the content was originally deployed without content_category. (#4110)\nFixed deployment and credential testing showing “HTTP undefined” when the server is unreachable. Now displays a clear message asking the user to check their network connection, VPN, and server URL. (#4096)\nFixed Quarto dashboards with server: shiny being misdetected as static content, causing deployment to fail with an output-dir error on Connect. (#3991)\nFixed content URLs (View Content, dashboard, logs) being unreachable when the configured server URL differs from the external hostname. This scenario can happen when publishing from Workbench to Connect within the Posit Team Native App in Snowpark Container Services. (#3698)"
   },
   {
     "objectID": "changelog.html#section-1",
