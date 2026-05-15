@@ -106,10 +106,20 @@ vi.mock("../interpreters/rPackages", () => ({
   repoURLFromOptions: vi.fn().mockReturnValue(""),
 }));
 
-// Mock fsUtils — default to true so preflight requirements check passes
-vi.mock("../interpreters/fsUtils", () => ({
-  fileExistsAt: vi.fn().mockResolvedValue(true),
-}));
+// Mock fsUtils — default to true so preflight requirements check passes.
+// readFileText delegates to the mocked node:fs/promises readFile so per-test
+// `vi.mocked(readFile).mockResolvedValue(...)` overrides still drive the
+// shared inspect/nodejs/packageJson helpers used during createManifest.
+vi.mock("../interpreters/fsUtils", async () => {
+  const fs = await import("node:fs/promises");
+  return {
+    fileExistsAt: vi.fn().mockResolvedValue(true),
+    readFileText: vi.fn(async (filePath: string): Promise<string | null> => {
+      const result = await fs.readFile(filePath, "utf-8");
+      return typeof result === "string" ? result : null;
+    }),
+  };
+});
 
 // Mock dependency source generation (pylock.toml / uv.lock / pyproject.toml fallback)
 vi.mock("../interpreters/pythonDependencySources", () => ({
@@ -774,6 +784,65 @@ describe("connectPublish", () => {
     await connectPublish(opts);
 
     expect(config).toEqual(originalConfig);
+  });
+
+  test("happy path — Node.js content type", async () => {
+    const { readFile } = await import("node:fs/promises");
+    vi.mocked(readFile).mockResolvedValue(
+      JSON.stringify({
+        name: "my-node-app",
+        version: "1.0.0",
+        main: "index.js",
+        engines: { node: ">=22.18.0" },
+      }),
+    );
+
+    const api = makeMockApi();
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      entrypoint: "index.js",
+      files: ["index.js", "package.json", "package-lock.json"],
+    });
+    const onProgress = vi.fn();
+    const opts = makeOptions({ api, config, onProgress });
+
+    const result = await connectPublish(opts);
+
+    expect(result).toBeDefined();
+    expect(result.contentId).toBe("content-guid-123");
+
+    // All major steps were exercised.
+    const steps = progressSteps(onProgress);
+    expect(steps.map((s) => s.step)).toEqual(
+      expect.arrayContaining([
+        "createManifest",
+        "preflight",
+        "createNewDeployment",
+        "createBundle",
+        "uploadBundle",
+        "deployBundle",
+      ]),
+    );
+
+    // The version-constraint log fired.
+    const logMessages = onProgress.mock.calls
+      .map((args) => args[0] as PublishEvent)
+      .filter((e) => e.status === "log" && typeof e.message === "string")
+      .map((e) => e.message as string);
+    expect(logMessages).toContain("Node.js version constraint >=22.18.0");
+
+    // updateDeployment receives the connectContentFromConfig payload; reaching
+    // deployBundle means it didn't throw for the Node.js config.
+    expect(api.createDeployment).toHaveBeenCalledTimes(1);
+    expect(api.updateDeployment).toHaveBeenCalledTimes(1);
+    expect(api.deployBundle).toHaveBeenCalledTimes(1);
+
+    // The deployment record written to disk reflects the Node.js config.
+    const writeCalls = mockWriteFile.mock.calls;
+    expect(writeCalls.length).toBeGreaterThan(0);
+    const written = String(writeCalls.at(-1)?.[1] ?? "");
+    expect(written).toContain("nodejs");
   });
 });
 
@@ -2234,6 +2303,95 @@ describe("connectPublish — server settings validation", () => {
     );
   });
 
+  // --- Node.js version constraint log ---
+
+  test("logs Node.js version constraint from engines.node", async () => {
+    const { readFile } = await import("node:fs/promises");
+    vi.mocked(readFile).mockResolvedValue(
+      JSON.stringify({ engines: { node: ">=22.18.0" } }),
+    );
+
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      files: ["index.js", "package.json", "package-lock.json"],
+    });
+    const onProgress = vi.fn();
+    const opts = makeOptions({ config, onProgress });
+
+    await connectPublish(opts);
+
+    const logMessages = onProgress.mock.calls
+      .map((args) => args[0] as PublishEvent)
+      .filter((e) => e.status === "log" && typeof e.message === "string")
+      .map((e) => e.message as string);
+
+    expect(logMessages).toContain("Node.js version constraint >=22.18.0");
+  });
+
+  test("logs Node.js version constraint (any) when engines.node absent", async () => {
+    const { readFile } = await import("node:fs/promises");
+    vi.mocked(readFile).mockResolvedValue(
+      JSON.stringify({ name: "x", version: "0.0.0" }),
+    );
+
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      files: ["index.js", "package.json", "package-lock.json"],
+    });
+    const onProgress = vi.fn();
+    const opts = makeOptions({ config, onProgress });
+
+    await connectPublish(opts);
+
+    const logMessages = onProgress.mock.calls
+      .map((args) => args[0] as PublishEvent)
+      .filter((e) => e.status === "log" && typeof e.message === "string")
+      .map((e) => e.message as string);
+
+    expect(logMessages).toContain("Node.js version constraint (any)");
+  });
+
+  test("logs (any) when package.json is malformed (no throw)", async () => {
+    const { readFile } = await import("node:fs/promises");
+    vi.mocked(readFile).mockResolvedValue("not { valid json");
+
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      files: ["index.js", "package.json", "package-lock.json"],
+    });
+    const onProgress = vi.fn();
+    const opts = makeOptions({ config, onProgress });
+
+    await expect(connectPublish(opts)).resolves.toBeDefined();
+
+    const logMessages = onProgress.mock.calls
+      .map((args) => args[0] as PublishEvent)
+      .filter((e) => e.status === "log" && typeof e.message === "string")
+      .map((e) => e.message as string);
+
+    expect(logMessages).toContain("Node.js version constraint (any)");
+  });
+
+  test("does not log Node.js version constraint for non-NODEJS types", async () => {
+    const config = makeConfig({ type: ContentType.PYTHON_SHINY });
+    const onProgress = vi.fn();
+    const opts = makeOptions({ config, onProgress });
+
+    await connectPublish(opts);
+
+    const logMessages = onProgress.mock.calls
+      .map((args) => args[0] as PublishEvent)
+      .filter((e) => e.status === "log" && typeof e.message === "string")
+      .map((e) => e.message as string);
+
+    expect(
+      logMessages.some((m) => m.startsWith("Node.js version constraint")),
+    ).toBe(false);
+  });
+
   // --- Node.js licensing/configuration ---
 
   test("rejects Node.js content when nodejs.enabled is false", async () => {
@@ -2247,6 +2405,8 @@ describe("connectPublish — server settings validation", () => {
     const config = makeConfig({
       type: ContentType.NODEJS,
       python: undefined,
+      files: ["index.js", "package.json", "package-lock.json"],
+      entrypoint: "index.js",
     });
     const opts = makeOptions({ api, config });
 
@@ -2259,6 +2419,8 @@ describe("connectPublish — server settings validation", () => {
     const config = makeConfig({
       type: ContentType.NODEJS,
       python: undefined,
+      files: ["index.js", "package.json", "package-lock.json"],
+      entrypoint: "index.js",
     });
     const opts = makeOptions({ config });
 
@@ -2275,6 +2437,113 @@ describe("connectPublish — server settings validation", () => {
 
     const config = makeConfig({ type: ContentType.PYTHON_SHINY });
     const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).resolves.toBeDefined();
+  });
+
+  // --- Node.js preflight package-file validation ---
+
+  test("nodejs preflight accepts package.json + package-lock.json present and in files", async () => {
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      files: ["index.js", "package.json", "package-lock.json"],
+      entrypoint: "index.js",
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).resolves.toBeDefined();
+  });
+
+  test("nodejs preflight rejects when package.json missing on disk", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockImplementation((p: string) => {
+      return Promise.resolve(!p.endsWith("package.json"));
+    });
+
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      files: ["index.js", "package.json", "package-lock.json"],
+      entrypoint: "index.js",
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Missing package.json — file not found in the project directory. Run `npm init` to create one.",
+    );
+  });
+
+  test("nodejs preflight rejects when package-lock.json missing on disk with npm install hint", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockImplementation((p: string) => {
+      return Promise.resolve(!p.endsWith("package-lock.json"));
+    });
+
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      files: ["index.js", "package.json", "package-lock.json"],
+      entrypoint: "index.js",
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Missing package-lock.json — file not found in the project directory. Run `npm install` to generate it.",
+    );
+  });
+
+  test("nodejs preflight rejects when package.json on disk but absent from files", async () => {
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      files: ["index.js", "package-lock.json"],
+      entrypoint: "index.js",
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Missing package.json — file is not included in the deployment configuration. Add it to the `files` list in your configuration.",
+    );
+  });
+
+  test("nodejs preflight rejects when package-lock.json on disk but absent from files", async () => {
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      files: ["index.js", "package.json"],
+      entrypoint: "index.js",
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Missing package-lock.json — file is not included in the deployment configuration. Add it to the `files` list in your configuration.",
+    );
+
+    // Confirm the not-in-files failure does NOT include the
+    // missing-on-disk hint (Run `npm install`).
+    await expect(connectPublish(opts)).rejects.not.toThrow(/Run `npm install`/);
+  });
+
+  test("nodejs preflight rejects when files is undefined", async () => {
+    const config = makeConfig({
+      type: ContentType.NODEJS,
+      python: undefined,
+      files: undefined,
+      entrypoint: "index.js",
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Missing package.json — file is not included in the deployment configuration. Add it to the `files` list in your configuration.",
+    );
+  });
+
+  test("nodejs preflight skipped for non-NODEJS content types", async () => {
+    // Default config is python-shiny with no package.json in files.
+    // Confirm preflight does not fail looking for Node.js files.
+    const config = makeConfig({ type: ContentType.PYTHON_SHINY });
+    const opts = makeOptions({ config });
 
     await expect(connectPublish(opts)).resolves.toBeDefined();
   });

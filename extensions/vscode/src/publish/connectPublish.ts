@@ -21,6 +21,10 @@ import type { PositronRSettings } from "../api/types/positron";
 import { appModeFromType, contentTypeFromAppMode } from "../bundler/appMode";
 import { connectContentFromConfig } from "../bundler/connectContentFromConfig";
 import { getFilenames } from "../bundler/manifest";
+import {
+  readEnginesNode,
+  readPackageJson,
+} from "../inspect/nodejs/packageJson";
 
 import { readPythonRequirements } from "./dependencies";
 import {
@@ -204,6 +208,16 @@ export async function connectPublish({
         : "Local Python not in use",
     });
 
+    if (config.type === ContentType.NODEJS) {
+      const pkg = await readPackageJson(projectDir);
+      const constraint = readEnginesNode(pkg);
+      onProgress({
+        step: "createManifest",
+        status: "log",
+        message: `Node.js version constraint ${constraint ?? "(any)"}`,
+      });
+    }
+
     onProgress({ step: "createManifest", status: "success" });
 
     await throwIfCanceled();
@@ -281,6 +295,42 @@ export async function connectPublish({
           `Missing dependency file ${packageFile}. ` +
             `This file must be included in the deployment.`,
         );
+      }
+    }
+
+    if (config.type === ContentType.NODEJS) {
+      const requiredFiles = [
+        {
+          name: "package.json",
+          missingOnDiskHint: "Run `npm init` to create one.",
+        },
+        {
+          name: "package-lock.json",
+          missingOnDiskHint: "Run `npm install` to generate it.",
+        },
+      ] as const;
+      const notIncludedHint =
+        "Add it to the `files` list in your configuration.";
+
+      for (const { name, missingOnDiskHint } of requiredFiles) {
+        const filePath = path.join(projectDir, name);
+        const exists = await fileExistsAt(filePath);
+        if (!exists) {
+          throw new Error(
+            `Missing ${name} — file not found in the project directory. ` +
+              missingOnDiskHint,
+          );
+        }
+        const filePatterns = config.files ?? [];
+        const isIncluded = filePatterns.some((pattern) =>
+          pattern.endsWith(name),
+        );
+        if (!isIncluded) {
+          throw new Error(
+            `Missing ${name} — file is not included in the deployment configuration. ` +
+              notIncludedHint,
+          );
+        }
       }
     }
 
