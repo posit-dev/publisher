@@ -143,7 +143,8 @@ export async function normalizeConfig(
   // call findLinkedResources (Python apps, notebooks, R apps).
   if (isPythonContentType(cfg.type) || isRAppContentType(cfg.type)) {
     const discoveredAssets = await findLinkedResources(baseDir, files);
-    files.push(...discoveredAssets);
+    const existingFiles = new Set(files);
+    files.push(...discoveredAssets.filter((f) => !existingFiles.has(f)));
   }
 
   const comments = initialComment.split("\n");

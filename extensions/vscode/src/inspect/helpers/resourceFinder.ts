@@ -40,6 +40,24 @@ const htmlPatterns = [
 // CSS url() references
 const cssUrlRe = /url\(['"]?([^'")]+)['"]?\)/g;
 
+// Find the index of a `#` comment character that is not inside a quoted string.
+// Returns -1 if there is no unquoted `#`.
+function findUnquotedHash(line: string): number {
+  let inSingle = false;
+  let inDouble = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"' && !inSingle) {
+      inDouble = !inDouble;
+    } else if (ch === "'" && !inDouble) {
+      inSingle = !inSingle;
+    } else if (ch === "#" && !inSingle && !inDouble) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 // R quoted strings
 const doubleQuoteRe = /"([^"\n]*)"/g;
 const singleQuoteRe = /'([^'\n]*)'/g;
@@ -251,9 +269,9 @@ async function scanR(
 ): Promise<void> {
   const inputDir = path.dirname(absFilePath);
 
-  // Strip comments before extracting strings
+  // Strip comments (respecting quoted strings) before extracting paths
   const strippedLines = content.split("\n").map((line) => {
-    const commentIdx = line.indexOf("#");
+    const commentIdx = findUnquotedHash(line);
     return commentIdx >= 0 ? line.substring(0, commentIdx) : line;
   });
   const stripped = strippedLines.join("\n");
@@ -298,9 +316,9 @@ async function scanPython(
     .replace(/"""[\s\S]*?"""/g, "")
     .replace(/'''[\s\S]*?'''/g, "");
 
-  // Strip comments before extracting strings
+  // Strip comments (respecting quoted strings) before extracting paths
   const strippedLines = noTripleQuotes.split("\n").map((line) => {
-    const commentIdx = line.indexOf("#");
+    const commentIdx = findUnquotedHash(line);
     return commentIdx >= 0 ? line.substring(0, commentIdx) : line;
   });
   const stripped = strippedLines.join("\n");

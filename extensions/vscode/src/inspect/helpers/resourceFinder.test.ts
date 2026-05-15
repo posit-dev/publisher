@@ -370,6 +370,22 @@ describe("findLinkedResources", () => {
       expect(result).toContain("/data/keep.csv");
       expect(result).not.toContain("/data/old.csv");
     });
+
+    test("preserves paths containing # inside quoted strings", async () => {
+      setupFileContents({
+        "/project/script.R":
+          'df <- read.csv("data/file#2.csv")\nother <- "images/logo.png"\n',
+      });
+      setupFiles({
+        "/project/script.R": "file",
+        "/project/data/file#2.csv": "file",
+        "/project/images/logo.png": "file",
+      });
+
+      const result = await findLinkedResources("/project", ["/script.R"]);
+      expect(result).toContain("/data/file#2.csv");
+      expect(result).toContain("/images/logo.png");
+    });
   });
 
   // ---- Python ----
@@ -450,6 +466,22 @@ describe("findLinkedResources", () => {
       const result = await findLinkedResources("/project", ["/app.py"]);
       expect(result).toContain("/data/keep.csv");
       expect(result).not.toContain("/data/skip.csv");
+    });
+
+    test("preserves paths containing # inside quoted strings", async () => {
+      setupFileContents({
+        "/project/app.py":
+          'path = "data/file#2.csv"\nother = "images/logo.png"\n',
+      });
+      setupFiles({
+        "/project/app.py": "file",
+        "/project/data/file#2.csv": "file",
+        "/project/images/logo.png": "file",
+      });
+
+      const result = await findLinkedResources("/project", ["/app.py"]);
+      expect(result).toContain("/data/file#2.csv");
+      expect(result).toContain("/images/logo.png");
     });
 
     test("ignores web URLs in Python strings", async () => {
