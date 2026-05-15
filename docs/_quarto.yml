@@ -1,6 +1,11 @@
 project:
   type: posit-docs
-  pre-render: ./_prerender.sh
+  pre-render:
+    - ./_prerender.sh
+    - python3 ../scripts/generate_llms_txt.py
+  resources:
+    - llms.txt
+    - llms-full.txt
 
 website:
   title: "Posit Publisher"
