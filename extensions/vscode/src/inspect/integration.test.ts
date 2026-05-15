@@ -1514,3 +1514,280 @@ describe(
     });
   },
 );
+
+// ---------------------------------------------------------------------------
+// Resource discovery – verify that referenced assets are auto-included
+// ---------------------------------------------------------------------------
+
+describe("resource discovery (real filesystem)", { timeout: 15_000 }, () => {
+  test("Python Shiny app discovers CSS in www/ directory", () =>
+    withTempDir(async (dir) => {
+      const wwwDir = path.join(dir, "www");
+      await mkdir(wwwDir);
+      await writeFile(
+        path.join(dir, "app.py"),
+        'from shiny import App, ui\napp_ui = ui.page_fluid(ui.include_css("www/style.css"))\napp = App(app_ui, None)\n',
+        "utf-8",
+      );
+      await writeFile(
+        path.join(wwwDir, "style.css"),
+        "body { color: red; }\n",
+        "utf-8",
+      );
+
+      const results = await inspectProject({ projectDir: dir });
+
+      const shiny = results.find(
+        (r) => r.configuration.type === ContentType.PYTHON_SHINY,
+      );
+      expect(shiny).toBeDefined();
+      expect(shiny?.configuration.files).toContain("/app.py");
+      expect(shiny?.configuration.files).toContain("/www/style.css");
+    }));
+
+  test("Python Shiny app discovers image files", () =>
+    withTempDir(async (dir) => {
+      const imgDir = path.join(dir, "images");
+      await mkdir(imgDir);
+      await writeFile(
+        path.join(dir, "app.py"),
+        'from shiny import App, ui\nlogo = "images/logo.png"\napp = App(ui.page_fluid(), None)\n',
+        "utf-8",
+      );
+      await writeFile(path.join(imgDir, "logo.png"), "fake-png", "utf-8");
+
+      const results = await inspectProject({ projectDir: dir });
+
+      const shiny = results.find(
+        (r) => r.configuration.type === ContentType.PYTHON_SHINY,
+      );
+      expect(shiny).toBeDefined();
+      expect(shiny?.configuration.files).toContain("/images/logo.png");
+    }));
+
+  test("Flask app discovers referenced static files", () =>
+    withTempDir(async (dir) => {
+      const staticDir = path.join(dir, "static");
+      await mkdir(staticDir);
+      await writeFile(
+        path.join(dir, "app.py"),
+        'from flask import Flask\napp = Flask(__name__)\nCSS = "static/main.css"\n',
+        "utf-8",
+      );
+      await writeFile(
+        path.join(staticDir, "main.css"),
+        ".container { margin: 0; }\n",
+        "utf-8",
+      );
+
+      const results = await inspectProject({ projectDir: dir });
+
+      const flask = results.find(
+        (r) => r.configuration.type === ContentType.PYTHON_FLASK,
+      );
+      expect(flask).toBeDefined();
+      expect(flask?.configuration.files).toContain("/static/main.css");
+    }));
+
+  test("FastAPI app discovers referenced data files", () =>
+    withTempDir(async (dir) => {
+      const dataDir = path.join(dir, "data");
+      await mkdir(dataDir);
+      await writeFile(
+        path.join(dir, "main.py"),
+        'from fastapi import FastAPI\napp = FastAPI()\nDATA_PATH = "data/config.json"\n',
+        "utf-8",
+      );
+      await writeFile(
+        path.join(dataDir, "config.json"),
+        '{"key": "value"}\n',
+        "utf-8",
+      );
+
+      const results = await inspectProject({ projectDir: dir });
+
+      const fastapi = results.find(
+        (r) => r.configuration.type === ContentType.PYTHON_FASTAPI,
+      );
+      expect(fastapi).toBeDefined();
+      expect(fastapi?.configuration.files).toContain("/data/config.json");
+    }));
+
+  test("Python app does not include non-existent referenced files", () =>
+    withTempDir(async (dir) => {
+      await writeFile(
+        path.join(dir, "app.py"),
+        'from shiny import App, ui\npath = "missing/file.css"\napp = App(ui.page_fluid(), None)\n',
+        "utf-8",
+      );
+
+      const results = await inspectProject({ projectDir: dir });
+
+      const shiny = results.find(
+        (r) => r.configuration.type === ContentType.PYTHON_SHINY,
+      );
+      expect(shiny).toBeDefined();
+      expect(shiny?.configuration.files).not.toContain("/missing/file.css");
+    }));
+
+  test("Python app ignores web URLs", () =>
+    withTempDir(async (dir) => {
+      await writeFile(
+        path.join(dir, "app.py"),
+        'from shiny import App, ui\nurl = "https://cdn.example.com/style.css"\napp = App(ui.page_fluid(), None)\n',
+        "utf-8",
+      );
+
+      const results = await inspectProject({ projectDir: dir });
+
+      const shiny = results.find(
+        (r) => r.configuration.type === ContentType.PYTHON_SHINY,
+      );
+      expect(shiny).toBeDefined();
+      const files = shiny?.configuration.files ?? [];
+      const hasUrl = files.some((f) => f.includes("cdn.example.com"));
+      expect(hasUrl).toBe(false);
+    }));
+
+  test("Python app ignores strings in docstrings", () =>
+    withTempDir(async (dir) => {
+      const dataDir = path.join(dir, "data");
+      await mkdir(dataDir);
+      await writeFile(path.join(dataDir, "skip.csv"), "a,b\n1,2\n", "utf-8");
+      await writeFile(path.join(dataDir, "keep.csv"), "x,y\n3,4\n", "utf-8");
+      await writeFile(
+        path.join(dir, "app.py"),
+        '"""This app reads "data/skip.csv" for analysis."""\nfrom shiny import App, ui\npath = "data/keep.csv"\napp = App(ui.page_fluid(), None)\n',
+        "utf-8",
+      );
+
+      const results = await inspectProject({ projectDir: dir });
+
+      const shiny = results.find(
+        (r) => r.configuration.type === ContentType.PYTHON_SHINY,
+      );
+      expect(shiny).toBeDefined();
+      expect(shiny?.configuration.files).toContain("/data/keep.csv");
+      expect(shiny?.configuration.files).not.toContain("/data/skip.csv");
+    }));
+
+  test("Python app ignores strings in comments", () =>
+    withTempDir(async (dir) => {
+      const dataDir = path.join(dir, "data");
+      await mkdir(dataDir);
+      await writeFile(path.join(dataDir, "old.csv"), "a,b\n", "utf-8");
+      await writeFile(path.join(dataDir, "new.csv"), "x,y\n", "utf-8");
+      await writeFile(
+        path.join(dir, "app.py"),
+        'from shiny import App, ui\n# old path: "data/old.csv"\npath = "data/new.csv"\napp = App(ui.page_fluid(), None)\n',
+        "utf-8",
+      );
+
+      const results = await inspectProject({ projectDir: dir });
+
+      const shiny = results.find(
+        (r) => r.configuration.type === ContentType.PYTHON_SHINY,
+      );
+      expect(shiny).toBeDefined();
+      expect(shiny?.configuration.files).toContain("/data/new.csv");
+      expect(shiny?.configuration.files).not.toContain("/data/old.csv");
+    }));
+
+  test("CSS discovered from Python app is recursively scanned", () =>
+    withTempDir(async (dir) => {
+      const wwwDir = path.join(dir, "www");
+      const imgDir = path.join(dir, "images");
+      await mkdir(wwwDir);
+      await mkdir(imgDir);
+      await writeFile(
+        path.join(dir, "app.py"),
+        'from shiny import App, ui\ncss = "www/style.css"\napp = App(ui.page_fluid(), None)\n',
+        "utf-8",
+      );
+      await writeFile(
+        path.join(wwwDir, "style.css"),
+        'body { background: url("../images/bg.jpg"); }\n',
+        "utf-8",
+      );
+      await writeFile(path.join(imgDir, "bg.jpg"), "fake-jpg", "utf-8");
+
+      const results = await inspectProject({ projectDir: dir });
+
+      const shiny = results.find(
+        (r) => r.configuration.type === ContentType.PYTHON_SHINY,
+      );
+      expect(shiny).toBeDefined();
+      expect(shiny?.configuration.files).toContain("/www/style.css");
+      expect(shiny?.configuration.files).toContain("/images/bg.jpg");
+    }));
+
+  test("R Shiny app discovers referenced CSS file", () =>
+    withTempDir(async (dir) => {
+      const wwwDir = path.join(dir, "www");
+      await mkdir(wwwDir);
+      await writeFile(
+        path.join(dir, "app.R"),
+        'library(shiny)\nui <- fluidPage(includeCSS("www/custom.css"))\nserver <- function(input, output) {}\nshinyApp(ui, server)\n',
+        "utf-8",
+      );
+      await writeFile(
+        path.join(wwwDir, "custom.css"),
+        "h1 { color: blue; }\n",
+        "utf-8",
+      );
+
+      const results = await inspectProject({ projectDir: dir });
+
+      const shiny = results.find(
+        (r) => r.configuration.type === ContentType.R_SHINY,
+      );
+      expect(shiny).toBeDefined();
+      expect(shiny?.configuration.files).toContain("/www/custom.css");
+    }));
+
+  test("Plumber API discovers referenced data file", () =>
+    withTempDir(async (dir) => {
+      const dataDir = path.join(dir, "data");
+      await mkdir(dataDir);
+      await writeFile(
+        path.join(dir, "plumber.R"),
+        '#* @get /data\nfunction() {\n  read.csv("data/lookup.csv")\n}\n',
+        "utf-8",
+      );
+      await writeFile(
+        path.join(dataDir, "lookup.csv"),
+        "id,name\n1,Alice\n",
+        "utf-8",
+      );
+
+      const results = await inspectProject({ projectDir: dir });
+
+      const plumber = results.find(
+        (r) => r.configuration.type === ContentType.R_PLUMBER,
+      );
+      expect(plumber).toBeDefined();
+      expect(plumber?.configuration.files).toContain("/data/lookup.csv");
+    }));
+
+  test("multiple Python files with shared resources deduplicates", () =>
+    withTempDir(async (dir) => {
+      const assetsDir = path.join(dir, "assets");
+      await mkdir(assetsDir);
+      await writeFile(
+        path.join(dir, "app.py"),
+        'from shiny import App, ui\nlogo = "assets/logo.png"\napp = App(ui.page_fluid(), None)\n',
+        "utf-8",
+      );
+      await writeFile(path.join(assetsDir, "logo.png"), "fake-png", "utf-8");
+
+      const results = await inspectProject({ projectDir: dir });
+
+      const shiny = results.find(
+        (r) => r.configuration.type === ContentType.PYTHON_SHINY,
+      );
+      expect(shiny).toBeDefined();
+      const files = shiny?.configuration.files ?? [];
+      const logoEntries = files.filter((f) => f === "/assets/logo.png");
+      expect(logoEntries).toHaveLength(1);
+    }));
+});
