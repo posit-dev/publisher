@@ -34,10 +34,28 @@ jobs:
           path: dist
       - id: get-prerelease
         run: echo "prerelease=$(just pre-release)" >> "$GITHUB_OUTPUT"
+      - id: extract-changelog
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          # Extract the section between this version's header and the next version header
+          changelog=$(awk -v ver="$version" '
+            /^## \[/ {
+              if (found) exit
+              if ($0 ~ "\\[" ver "\\]") found=1
+              next
+            }
+            found { print }
+          ' CHANGELOG.md)
+          {
+            echo "body<<CHANGELOG_EOF"
+            echo "$changelog"
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
       - uses: softprops/action-gh-release@v3
         with:
           draft: false
           prerelease: ${{ steps.get-prerelease.outputs.prerelease == 'true' }}
+          body: ${{ steps.extract-changelog.outputs.body }}
           files: |
             dist/**/*
   # Slack notification on failure
