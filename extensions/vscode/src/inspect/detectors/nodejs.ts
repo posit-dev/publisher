@@ -2,7 +2,7 @@
 
 import * as path from "path";
 import { ContentType } from "src/api/types/configurations";
-import { fileExistsAt } from "src/interpreters/fsUtils";
+import { fileExistsAt } from "src/utils/fsUtils";
 import { ContentTypeDetector, PartialConfig } from "../types";
 import { readMain, readPackageJson, readStart } from "../nodejs/packageJson";
 

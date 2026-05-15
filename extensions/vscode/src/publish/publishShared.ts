@@ -22,7 +22,7 @@ import type { ConfigurationDetails } from "../api/types/configurations";
 import type { ServerType } from "../api/types/contentRecords";
 import type { PositronRSettings } from "../api/types/positron";
 
-import { fileExistsAt } from "../interpreters/fsUtils";
+import { fileExistsAt } from "../utils/fsUtils";
 import { convertKeysToSnakeCase } from "../toml/convertKeys";
 import { stripEmpty, isRecord, expandInlineArrays } from "../toml/tomlHelpers";
 import type { ErrorCode } from "../utils/errorTypes";

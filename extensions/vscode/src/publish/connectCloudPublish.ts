@@ -18,7 +18,7 @@ import { isCertificateError } from "@posit-dev/connect-api";
 import type { ErrorCode } from "../utils/errorTypes";
 import { logger } from "../logging";
 import { DEFAULT_PYTHON_PACKAGE_FILE } from "../constants";
-import { fileExistsAt } from "../interpreters/fsUtils";
+import { fileExistsAt } from "../utils/fsUtils";
 import { generateRequirements } from "../interpreters/pythonDependencySources";
 import { forceProductTypeCompliance } from "../toml/configCompliance";
 import { getFilenames } from "../bundler/manifest";

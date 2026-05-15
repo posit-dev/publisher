@@ -3,7 +3,7 @@
 import path from "node:path";
 import { parse as parseTOML } from "smol-toml";
 
-import { readFileText } from "./fsUtils";
+import { readFileText } from "../utils/fsUtils";
 
 /**
  * Read Python dependencies from pyproject.toml's [project].dependencies.

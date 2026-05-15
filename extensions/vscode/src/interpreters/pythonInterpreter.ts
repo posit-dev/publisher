@@ -2,7 +2,7 @@
 
 import { execFile } from "child_process";
 import path from "node:path";
-import { fileExistsAt } from "./fsUtils";
+import { fileExistsAt } from "../utils/fsUtils";
 import { getPythonRequires } from "./pythonRequires";
 
 const REQUIREMENTS_TXT = "requirements.txt";
