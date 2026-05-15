@@ -372,6 +372,119 @@ describe("findLinkedResources", () => {
     });
   });
 
+  // ---- Python ----
+
+  describe("Python file scanning", () => {
+    test("discovers paths from quoted strings", async () => {
+      setupFileContents({
+        "/project/app.py":
+          'from shiny import App\nui = App("www/style.css")\ndata = open("data/input.csv")\n',
+      });
+      setupFiles({
+        "/project/app.py": "file",
+        "/project/www/style.css": "file",
+        "/project/data/input.csv": "file",
+      });
+
+      const result = await findLinkedResources("/project", ["/app.py"]);
+      expect(result).toContain("/www/style.css");
+      expect(result).toContain("/data/input.csv");
+    });
+
+    test("discovers paths from single-quoted strings", async () => {
+      setupFileContents({
+        "/project/app.py": "logo = 'images/logo.png'\n",
+      });
+      setupFiles({
+        "/project/app.py": "file",
+        "/project/images/logo.png": "file",
+      });
+
+      const result = await findLinkedResources("/project", ["/app.py"]);
+      expect(result).toContain("/images/logo.png");
+    });
+
+    test("ignores paths in comments", async () => {
+      setupFileContents({
+        "/project/app.py":
+          '# old: "data/skip.csv"\ndf = open("data/keep.csv")\n',
+      });
+      setupFiles({
+        "/project/app.py": "file",
+        "/project/data/skip.csv": "file",
+        "/project/data/keep.csv": "file",
+      });
+
+      const result = await findLinkedResources("/project", ["/app.py"]);
+      expect(result).toContain("/data/keep.csv");
+      expect(result).not.toContain("/data/skip.csv");
+    });
+
+    test("ignores paths in triple-quoted docstrings", async () => {
+      setupFileContents({
+        "/project/app.py":
+          '"""This module loads "data/docstring.csv" for analysis."""\ndf = open("data/real.csv")\n',
+      });
+      setupFiles({
+        "/project/app.py": "file",
+        "/project/data/docstring.csv": "file",
+        "/project/data/real.csv": "file",
+      });
+
+      const result = await findLinkedResources("/project", ["/app.py"]);
+      expect(result).toContain("/data/real.csv");
+      expect(result).not.toContain("/data/docstring.csv");
+    });
+
+    test("ignores paths in single-quoted triple-quoted strings", async () => {
+      setupFileContents({
+        "/project/app.py":
+          "'''Module docstring referencing 'data/skip.csv' for docs'''\npath = 'data/keep.csv'\n",
+      });
+      setupFiles({
+        "/project/app.py": "file",
+        "/project/data/skip.csv": "file",
+        "/project/data/keep.csv": "file",
+      });
+
+      const result = await findLinkedResources("/project", ["/app.py"]);
+      expect(result).toContain("/data/keep.csv");
+      expect(result).not.toContain("/data/skip.csv");
+    });
+
+    test("ignores web URLs in Python strings", async () => {
+      setupFileContents({
+        "/project/app.py":
+          'url = "https://example.com/logo.png"\nlocal = "images/local.png"\n',
+      });
+      setupFiles({
+        "/project/app.py": "file",
+        "/project/images/local.png": "file",
+      });
+
+      const result = await findLinkedResources("/project", ["/app.py"]);
+      expect(result).toContain("/images/local.png");
+      expect(result).not.toContain("https://example.com/logo.png");
+    });
+
+    test("recursively scans discovered CSS files from Python", async () => {
+      setupFileContents({
+        "/project/app.py": 'css_file = "www/style.css"\n',
+        "/project/www/style.css":
+          'body { background: url("../images/bg.jpg"); }\n',
+      });
+      setupFiles({
+        "/project/app.py": "file",
+        "/project/www/style.css": "file",
+        "/project/images/bg.jpg": "file",
+      });
+
+      const result = await findLinkedResources("/project", ["/app.py"]);
+      expect(result).toContain("/www/style.css");
+      expect(result).toContain("/images/bg.jpg");
+    });
+  });
+
   // ---- URL filtering ----
 
   describe("URL filtering", () => {

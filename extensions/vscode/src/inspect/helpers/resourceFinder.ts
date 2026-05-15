@@ -14,10 +14,11 @@ const supportedExtensions = new Set([
   ".htm",
   ".r",
   ".css",
+  ".py",
 ]);
 
 // Extensions that trigger recursive scanning when discovered as resources
-const recursiveExtensions = new Set([".html", ".htm", ".css", ".r"]);
+const recursiveExtensions = new Set([".html", ".htm", ".css", ".r", ".py"]);
 
 // Markdown image: ![alt](path) with optional title
 const markdownImgRe = /!\[.*?\]\((.*?)(?:\s+["'].*?["'])?\)/g;
@@ -125,6 +126,9 @@ async function discoverResources(
       break;
     case ".r":
       await scanR(baseDir, absFilePath, content, visited, resourceMap);
+      break;
+    case ".py":
+      await scanPython(baseDir, absFilePath, content, visited, resourceMap);
       break;
   }
 }
@@ -265,6 +269,53 @@ async function scanR(
   );
 
   const singleMatches = extractMatches(singleQuoteRe, stripped);
+  await processMatches(
+    singleMatches,
+    baseDir,
+    inputDir,
+    false,
+    visited,
+    resourceMap,
+  );
+}
+
+// Python quoted strings (single-line only; triple-quotes are stripped first)
+const pyDoubleQuoteRe = /"([^"\n]*)"/g;
+const pySingleQuoteRe = /'([^'\n]*)'/g;
+
+async function scanPython(
+  baseDir: string,
+  absFilePath: string,
+  content: string,
+  visited: Set<string>,
+  resourceMap: Set<string>,
+): Promise<void> {
+  const inputDir = path.dirname(absFilePath);
+
+  // Remove triple-quoted strings (docstrings/multiline strings) to avoid
+  // treating their contents as file references
+  const noTripleQuotes = content
+    .replace(/"""[\s\S]*?"""/g, "")
+    .replace(/'''[\s\S]*?'''/g, "");
+
+  // Strip comments before extracting strings
+  const strippedLines = noTripleQuotes.split("\n").map((line) => {
+    const commentIdx = line.indexOf("#");
+    return commentIdx >= 0 ? line.substring(0, commentIdx) : line;
+  });
+  const stripped = strippedLines.join("\n");
+
+  const doubleMatches = extractMatches(pyDoubleQuoteRe, stripped);
+  await processMatches(
+    doubleMatches,
+    baseDir,
+    inputDir,
+    false,
+    visited,
+    resourceMap,
+  );
+
+  const singleMatches = extractMatches(pySingleQuoteRe, stripped);
   await processMatches(
     singleMatches,
     baseDir,
