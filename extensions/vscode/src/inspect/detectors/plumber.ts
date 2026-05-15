@@ -6,6 +6,7 @@ import * as yaml from "js-yaml";
 import { ContentType } from "src/api/types/configurations";
 import { logger } from "src/logging";
 import { ContentTypeDetector, PartialConfig } from "../types";
+import { findLinkedResources } from "../helpers/resourceFinder";
 
 interface PlumberServerMetadata {
   engine?: string;
@@ -70,6 +71,9 @@ export class PlumberDetector implements ContentTypeDetector {
 
     const files = [`/${serverFile}`];
     this.includeServerYmlFiles(files, metadata);
+
+    const discoveredAssets = await findLinkedResources(baseDir, files);
+    files.push(...discoveredAssets);
 
     logger.info(
       `[plumber] detected plumber project via server file ${serverFile}`,
@@ -155,10 +159,13 @@ export class PlumberDetector implements ContentTypeDetector {
           possibleEntrypoint,
         );
         if (found) {
+          const files = [`/${found}`];
+          const discoveredAssets = await findLinkedResources(baseDir, files);
+          files.push(...discoveredAssets);
           return {
             type: ContentType.R_PLUMBER,
             entrypoint: found,
-            files: [`/${found}`],
+            files,
             r: {},
           };
         }
@@ -179,10 +186,14 @@ export class PlumberDetector implements ContentTypeDetector {
       return undefined;
     }
 
+    const files = [`/${entrypoint}`];
+    const discoveredAssets = await findLinkedResources(baseDir, files);
+    files.push(...discoveredAssets);
+
     return {
       type: ContentType.R_PLUMBER,
       entrypoint,
-      files: [`/${entrypoint}`],
+      files,
       r: {},
     };
   }

@@ -16,6 +16,10 @@ vi.mock("fs/promises", () => ({
   readFile: mockReadFile,
 }));
 
+vi.mock("../helpers/resourceFinder", () => ({
+  findLinkedResources: vi.fn().mockResolvedValue([]),
+}));
+
 afterEach(() => {
   vi.clearAllMocks();
 });

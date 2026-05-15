@@ -4,6 +4,7 @@ import * as path from "path";
 import * as fs from "fs/promises";
 import { ContentType } from "src/api/types/configurations";
 import { ContentTypeDetector, PartialConfig } from "../types";
+import { findLinkedResources } from "../helpers/resourceFinder";
 
 const possibleEntrypoints = ["app.R", "server.R"];
 
@@ -29,9 +30,13 @@ export class RShinyDetector implements ContentTypeDetector {
       } catch {
         continue;
       }
+      const files = [`/${relEntrypoint}`];
+      const discoveredAssets = await findLinkedResources(baseDir, files);
+      files.push(...discoveredAssets);
       configs.push({
         type: ContentType.R_SHINY,
         entrypoint: relEntrypoint,
+        files,
         r: {},
       });
     }

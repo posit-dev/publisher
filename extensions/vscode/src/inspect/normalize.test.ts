@@ -32,10 +32,6 @@ vi.mock("src/interpreters/rInterpreter", () => ({
   detectRInterpreter: mockDetectR,
 }));
 
-vi.mock("./helpers/resourceFinder", () => ({
-  findLinkedResources: vi.fn().mockResolvedValue([]),
-}));
-
 const { mockReadFile, mockAccess } = vi.hoisted(() => ({
   mockReadFile: vi.fn(),
   mockAccess: vi.fn(),

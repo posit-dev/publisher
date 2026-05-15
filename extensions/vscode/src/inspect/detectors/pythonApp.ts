@@ -5,6 +5,7 @@ import { ContentType } from "src/api/types/configurations";
 import { ContentTypeDetector, PartialConfig } from "../types";
 import { globDir } from "../helpers/globDir";
 import { fileHasPythonImports } from "../helpers/pythonImports";
+import { findLinkedResources } from "../helpers/resourceFinder";
 
 /**
  * Generic Python framework detector parameterized by content type and import list.
@@ -35,9 +36,13 @@ export class PythonAppDetector implements ContentTypeDetector {
       }
       const matches = await fileHasPythonImports(filePath, this.imports);
       if (matches) {
+        const files = [`/${relEntrypoint}`];
+        const discoveredAssets = await findLinkedResources(baseDir, files);
+        files.push(...discoveredAssets);
         configs.push({
           type: this.contentType,
           entrypoint: relEntrypoint,
+          files,
           python: {},
         });
       }

@@ -6,6 +6,7 @@ import { ContentType } from "src/api/types/configurations";
 import { ContentTypeDetector, PartialConfig } from "../types";
 import { globDir } from "../helpers/globDir";
 import { hasPythonImports } from "../helpers/pythonImports";
+import { findLinkedResources } from "../helpers/resourceFinder";
 
 const shinyExpressImportRE =
   /(import\s+shiny.express)|(from\s+shiny.express\s+import)|(from\s+shiny\s+import.*\bexpress\b)/;
@@ -53,10 +54,14 @@ export class PyShinyDetector implements ContentTypeDetector {
 
       const isExpress = hasShinyExpressImport(content);
 
+      const files = [`/${relEntrypoint}`];
+      const discoveredAssets = await findLinkedResources(baseDir, files);
+      files.push(...discoveredAssets);
+
       const config: PartialConfig = {
         type: ContentType.PYTHON_SHINY,
         entrypoint: relEntrypoint,
-        files: [`/${relEntrypoint}`],
+        files,
         python: {},
       };
 
