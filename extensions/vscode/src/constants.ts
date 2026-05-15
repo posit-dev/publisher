@@ -16,15 +16,21 @@ export const DEFAULT_R_PACKAGE_FILE = "renv.lock";
 
 // should all be lowercase!
 export const ENTRYPOINT_FILE_EXTENSIONS = [
+  ".cjs",
+  ".cts",
   ".htm",
   ".html",
   ".ipynb",
+  ".js",
+  ".mjs",
+  ".mts",
   ".py",
   ".qmd",
   ".r",
   ".rmd",
-  ".yml",
+  ".ts",
   ".yaml",
+  ".yml",
 ];
 
 export enum BooleanContextValues {
