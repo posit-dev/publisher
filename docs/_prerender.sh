@@ -19,3 +19,13 @@ fi
 cat > "$SCRIPT_DIR/_variables.yml" <<EOF
 version: "$VERSION"
 EOF
+
+# Copy CHANGELOG.md into docs/ so Quarto can render it as a page.
+# Prepend front matter and strip the "# Changelog" heading (redundant with title).
+cat > "$SCRIPT_DIR/changelog.md" <<EOF
+---
+title: "Changelog"
+---
+
+EOF
+tail -n +2 "$SCRIPT_DIR/../CHANGELOG.md" >> "$SCRIPT_DIR/changelog.md"
