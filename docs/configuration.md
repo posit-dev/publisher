@@ -37,7 +37,7 @@ Indicates the type of content being deployed. Valid values are:
 #### entrypoint
 
 Name of the primary file containing the content. For Python flask, dash, fastapi, and python-shiny projects, this specifies the object within the
-file in module:object format. See the documentation at https://docs.posit.co/connect/user/publishing-cli-apps/#publishing-rsconnect-python-entrypoint.
+file in module:object format. See [understanding entrypoints](https://docs.posit.co/connect/user/publishing-cli-apps/#understanding-entrypoints) for additional information.
 
 #### title
 
@@ -233,7 +233,7 @@ _Only valid when `product_type` is `connect`_
 
 Both `package.json` and `package-lock.json` must be present and listed under `files`. Connect uses `npm ci` to install dependencies; if `package-lock.json` is missing, run `npm install` to generate it.
 
-If `package.json` specifies an [`engines.node`](https://docs.npmjs.com/cli/configuring-npm/package-json#engines) constraint, Connect uses it to select the runtime version. Otherwise Connect uses the latest version of Node.js available on the server.
+If `package.json` specifies an [`engines.node`](https://docs.npmjs.com/cli/configuring-npm/package-json) constraint, Connect uses it to select the runtime version. Otherwise Connect uses the latest version of Node.js available on the server.
 
 Node.js deployment requires an [Advanced Connect license](https://docs.posit.co/connect/user/licensing/), and the server administrator must enable Node.js support. Publisher reports when the target server has Node.js disabled.
 
