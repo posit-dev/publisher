@@ -12,7 +12,7 @@ vi.mock("child_process", () => ({
 }));
 
 let mockFileExistsResult = false;
-vi.mock("./fsUtils", () => ({
+vi.mock("../utils/fsUtils", () => ({
   fileExistsAt: vi.fn(() => Promise.resolve(mockFileExistsResult)),
 }));
 

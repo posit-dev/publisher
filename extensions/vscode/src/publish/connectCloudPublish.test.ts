@@ -91,7 +91,7 @@ vi.mock("../interpreters/rPackages", () => ({
   repoURLFromOptions: vi.fn().mockReturnValue(""),
 }));
 
-vi.mock("../interpreters/fsUtils", () => ({
+vi.mock("../utils/fsUtils", () => ({
   fileExistsAt: vi.fn().mockResolvedValue(false),
 }));
 
@@ -319,7 +319,7 @@ describe("connectCloudPublish", () => {
 
     // All package files "exist" so buildManifest skips R scanning and
     // the bundle step skips the missing-requirements-file check.
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(true);
 
     const resultPromise = connectCloudPublish(opts);
@@ -713,7 +713,7 @@ describe("connectCloudPublish", () => {
   });
 
   test("missing dependency file classifies as requirementsFileReadingError", async () => {
-    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    const { fileExistsAt } = await import("../utils/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(false);
 
     const onProgress = vi.fn();

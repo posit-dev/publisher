@@ -49,3 +49,4 @@ test/e2e/**/.positron_workspace
 docs/_site/
 docs/.quarto/
 docs/_variables.yml
+docs/changelog.md

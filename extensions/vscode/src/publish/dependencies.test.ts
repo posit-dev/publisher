@@ -7,7 +7,7 @@ import { readPythonRequirements, resolveRPackages } from "./dependencies";
 
 const mockFiles: Record<string, string> = {};
 
-vi.mock("../interpreters/fsUtils", () => ({
+vi.mock("../utils/fsUtils", () => ({
   readFileText: vi.fn((filePath: string) => {
     const content = mockFiles[filePath];
     return Promise.resolve(content ?? null);

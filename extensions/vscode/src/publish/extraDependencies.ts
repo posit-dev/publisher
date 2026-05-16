@@ -4,7 +4,7 @@ import { readFile, writeFile, mkdir, unlink } from "node:fs/promises";
 import path from "node:path";
 
 import { ContentType } from "../api/types/configurations";
-import { fileExistsAt } from "../interpreters/fsUtils";
+import { fileExistsAt } from "../utils/fsUtils";
 
 const PLUMBER_SERVER_FILES = ["_server.yml", "_server.yaml"];
 

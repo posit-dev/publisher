@@ -7,7 +7,7 @@ import { generateRequirements } from "./pythonDependencySources";
 
 const mockFiles: Record<string, string> = {};
 
-vi.mock("./fsUtils", () => ({
+vi.mock("../utils/fsUtils", () => ({
   readFileText: vi.fn((filePath: string) => {
     const content = mockFiles[filePath];
     if (content === undefined) {

@@ -23,7 +23,7 @@ vi.mock("./window", () => {
 });
 
 const mockFileExistsAt = vi.fn();
-vi.mock("../interpreters/fsUtils", () => ({
+vi.mock("./fsUtils", () => ({
   fileExistsAt: (...args: unknown[]) => mockFileExistsAt(...args),
 }));
 
