@@ -27,7 +27,14 @@ include_mail = false
 #### Exclusions ####
 # Quarto vendors a pile of third-party JS/CSS under site_libs. Don't lint that tree;
 # its links are bootstrap/fontawesome internals, not our content.
-exclude_path = ["_site/site_libs"]
+# llms*.txt are plain-text dumps of the same content as the HTML pages — checking
+# them duplicates coverage and loses backtick context (URLs in code samples get
+# flagged because the .txt has no <code> wrapper to signal "example, don't fetch").
+exclude_path = [
+  "_site/site_libs",
+  "_site/llms.txt",
+  "_site/llms-full.txt",
+]
 
 # URL exclusions (regex). Keep this list short and commented — each entry is a
 # place we're choosing not to verify.
