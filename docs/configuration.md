@@ -389,7 +389,7 @@ _Only valid when `product_type` is `connect_cloud`_
 
 ### vanity_name
 
-The custom component of the vanity URL. If your account name is 'my-account' and this value is 'vanity', the vanity URL will be https://my-account-vanity.share.connect.posit.cloud.
+The custom component of the vanity URL. If your account name is 'my-account' and this value is 'vanity', the vanity URL will be `https://my-account-vanity.share.connect.posit.cloud`.
 
 Only supported for organizational accounts.
 
