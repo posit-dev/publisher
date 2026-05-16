@@ -45,6 +45,11 @@ exclude = [
 
   # Localhost references in examples.
   '^https?://(localhost|127\.0\.0\.1)',
+
+  # The posit-docs Quarto extension injects a "Get Support" navbar link to
+  # support.posit.co (Zendesk-powered) on every page. Zendesk blocks
+  # non-interactive clients with 403, so lychee can't validate it.
+  '^https://support\.posit\.co',
 ]
 
 # Don't fail on links the user can't visit anyway (private repos, intranets).
