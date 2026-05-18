@@ -1,0 +1,267 @@
+name: Prepare Patch Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Patch version to release (e.g., 2.0.1) - must be even minor"
+        required: true
+        type: string
+      base_tag:
+        description: "Tag to branch from (optional; defaults to highest vMAJOR.MINOR.* tag)"
+        required: false
+        type: string
+      pr_numbers:
+        description: "Comma-separated PR numbers to cherry-pick (e.g., 4082,4087)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    name: Prepare patch release PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate token for GitHub App
+        id: generate-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.POSIT_CONNECT_PROJECTS_APP_ID }}
+          private-key: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ steps.generate-token.outputs.token }}
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ inputs.version }}"
+          VERSION="${VERSION#v}"
+
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid version format: $VERSION (expected x.y.z)"
+            exit 1
+          fi
+
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+          if [ $((MINOR % 2)) -ne 0 ]; then
+            echo "::error::Production releases must have even minor version. Got: $VERSION (minor=$MINOR is odd)"
+            exit 1
+          fi
+
+          PATCH=$(echo "$VERSION" | cut -d. -f3)
+          if [ "$PATCH" -eq 0 ]; then
+            echo "::error::Patch version must be > 0 for a patch release. Use prepare-release workflow for .0 releases."
+            exit 1
+          fi
+
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Derive base tag
+        run: |
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+
+          if [ -n "${{ inputs.base_tag }}" ]; then
+            BASE_TAG="${{ inputs.base_tag }}"
+            if ! git rev-parse "$BASE_TAG" >/dev/null 2>&1; then
+              echo "::error::Base tag $BASE_TAG does not exist"
+              exit 1
+            fi
+          else
+            # Find highest tag matching vMAJOR.MINOR.*
+            BASE_TAG=$(git tag -l "v${MAJOR}.${MINOR}.*" --sort=-v:refname | head -n1)
+            if [ -z "$BASE_TAG" ]; then
+              echo "::error::No existing tags found matching v${MAJOR}.${MINOR}.*"
+              exit 1
+            fi
+          fi
+
+          echo "BASE_TAG=$BASE_TAG" >> "$GITHUB_ENV"
+          echo "Branching from: $BASE_TAG"
+
+      - name: Check if release branch already exists
+        run: |
+          if git ls-remote --exit-code --heads origin "release/v$VERSION" >/dev/null 2>&1; then
+            echo "::error::Release branch release/v$VERSION already exists"
+            exit 1
+          fi
+
+      - name: Check if tag already exists
+        run: |
+          if git tag -l "v$VERSION" | grep -q "v$VERSION"; then
+            echo "::error::Tag v$VERSION already exists"
+            exit 1
+          fi
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create release branch from base tag
+        run: |
+          git checkout -b "release/v$VERSION" "$BASE_TAG"
+
+      - name: Cherry-pick PRs
+        id: cherry-pick
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          IFS=',' read -ra PR_LIST <<< "${{ inputs.pr_numbers }}"
+          BACKPORTED_PRS=""
+          CONFLICT_PR=""
+
+          for PR_NUM in "${PR_LIST[@]}"; do
+            PR_NUM=$(echo "$PR_NUM" | tr -d ' ')
+            echo "Processing PR #$PR_NUM..."
+
+            # Resolve squash-merge SHA
+            SHA=$(gh pr view "$PR_NUM" --json mergeCommit -q .mergeCommit.oid)
+            if [ -z "$SHA" ]; then
+              echo "::error::Could not resolve merge commit for PR #$PR_NUM. Is it merged?"
+              exit 1
+            fi
+
+            echo "Cherry-picking $SHA (PR #$PR_NUM)..."
+            if ! git cherry-pick "$SHA" 2>/dev/null; then
+              echo "::warning::Cherry-pick conflict on PR #$PR_NUM (SHA: $SHA)"
+              echo "conflict=true" >> "$GITHUB_OUTPUT"
+              echo "conflict_pr=$PR_NUM" >> "$GITHUB_OUTPUT"
+              echo "conflict_sha=$SHA" >> "$GITHUB_OUTPUT"
+              # Abort so we can push the branch in its pre-conflict state
+              git cherry-pick --abort
+              break
+            fi
+
+            BACKPORTED_PRS="${BACKPORTED_PRS}- #${PR_NUM} ($SHA)\n"
+          done
+
+          echo "BACKPORTED_PRS<<EOF" >> "$GITHUB_ENV"
+          echo -e "$BACKPORTED_PRS" >> "$GITHUB_ENV"
+          echo "EOF" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-node@v6
+        if: steps.cherry-pick.outputs.conflict != 'true'
+        with:
+          node-version: "lts/*"
+
+      - name: Run prepare-release script
+        if: steps.cherry-pick.outputs.conflict != 'true'
+        run: |
+          echo y | python3 ./scripts/prepare-release.py "$VERSION" --allow-downgrade --from-cherry-pick
+
+      - name: Install dependencies and sync lockfile
+        if: steps.cherry-pick.outputs.conflict != 'true'
+        run: npm install
+
+      - name: Commit changes
+        if: steps.cherry-pick.outputs.conflict != 'true'
+        run: |
+          git add CHANGELOG.md extensions/vscode/CHANGELOG.md extensions/vscode/package.json package-lock.json
+          git commit -m "Prepare patch release v$VERSION"
+
+      - name: Push branch
+        run: |
+          git push -u origin "release/v$VERSION"
+
+      - name: Create pull request (success)
+        if: steps.cherry-pick.outputs.conflict != 'true'
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          gh pr create \
+            --title "Release v$VERSION (patch)" \
+            --body "$(cat <<EOF
+          ## Patch Release v$VERSION
+
+          Branched from \`$BASE_TAG\` with cherry-picked fixes.
+
+          ### Backported PRs
+
+          $BACKPORTED_PRS
+
+          ### Release Checklist
+
+          - [ ] CHANGELOG entries are complete and accurate
+          - [ ] Cherry-picked changes are correct
+          - [ ] Version number follows convention (even minor = production)
+
+          ### What happens next
+
+          When this PR is merged, a GitHub Action will automatically:
+          1. Create the \`v$VERSION\` tag
+          2. Trigger the release workflow to build and publish
+
+          ---
+          🤖 Generated by the prepare-patch-release workflow
+          EOF
+          )" \
+            --head "release/v$VERSION" \
+            --base main
+
+      - name: Create draft pull request (conflict)
+        if: steps.cherry-pick.outputs.conflict == 'true'
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+          CONFLICT_PR: ${{ steps.cherry-pick.outputs.conflict_pr }}
+          CONFLICT_SHA: ${{ steps.cherry-pick.outputs.conflict_sha }}
+        run: |
+          gh pr create \
+            --title "Release v$VERSION (patch) [CONFLICT - needs manual resolution]" \
+            --body "$(cat <<EOF
+          ## Patch Release v$VERSION — ⚠️ Cherry-pick conflict
+
+          Branched from \`$BASE_TAG\`. Cherry-pick failed on PR #$CONFLICT_PR (SHA: \`$CONFLICT_SHA\`).
+
+          ### Successfully backported before conflict
+
+          $BACKPORTED_PRS
+
+          ### Manual resolution needed
+
+          \`\`\`bash
+          git fetch origin release/v$VERSION
+          git checkout release/v$VERSION
+          git cherry-pick $CONFLICT_SHA
+          # Resolve conflicts, then:
+          git cherry-pick --continue
+          # Cherry-pick any remaining PRs, then run:
+          echo y | python3 ./scripts/prepare-release.py $VERSION --allow-downgrade --from-cherry-pick
+          npm install
+          git add CHANGELOG.md extensions/vscode/CHANGELOG.md extensions/vscode/package.json package-lock.json
+          git commit -m "Prepare patch release v$VERSION"
+          git push
+          \`\`\`
+
+          Once resolved, mark this PR as **Ready for review**.
+
+          ---
+          🤖 Generated by the prepare-patch-release workflow
+          EOF
+          )" \
+            --head "release/v$VERSION" \
+            --base main \
+            --draft
+
+      - name: Add summary
+        run: |
+          if [ "${{ steps.cherry-pick.outputs.conflict }}" = "true" ]; then
+            echo "## ⚠️ Patch Release PR Created (Draft — conflict)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Cherry-pick conflict on PR #${{ steps.cherry-pick.outputs.conflict_pr }}." >> $GITHUB_STEP_SUMMARY
+            echo "A **draft** PR has been opened. Resolve the conflict locally, push, and mark ready." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## 🚀 Patch Release PR Created" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Release branch: \`release/v$VERSION\`" >> $GITHUB_STEP_SUMMARY
+            echo "Based on: \`$BASE_TAG\`" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. Review the PR and verify changelog entries" >> $GITHUB_STEP_SUMMARY
+          echo "2. Merge the PR when ready" >> $GITHUB_STEP_SUMMARY
+          echo "3. The release tag will be created automatically" >> $GITHUB_STEP_SUMMARY
