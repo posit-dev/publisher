@@ -95,7 +95,6 @@ module.exports = defineConfig({
   ...(isMockMode && {
     expose: {
       grepTags: "-@uses-posit-connect-cloud",
-      grepFilterSpecs: true,
       grepOmitFiltered: true,
     },
   }),

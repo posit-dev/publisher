@@ -227,7 +227,7 @@ jobs:
               CYPRESS_BOOTSTRAP_ADMIN_API_KEY=$CONNECT_API_KEY npx cypress run --headless --browser chrome
             else
               # Exclude @uses-posit-connect-cloud cloud tests for non-release versions
-              CYPRESS_BOOTSTRAP_ADMIN_API_KEY=$CONNECT_API_KEY npx cypress run --headless --browser chrome --env grepFilterSpecs=true,grepOmitFiltered=true,grepTags=-@uses-posit-connect-cloud
+              CYPRESS_BOOTSTRAP_ADMIN_API_KEY=$CONNECT_API_KEY npx cypress run --headless --browser chrome --expose grepTags=-@uses-posit-connect-cloud,grepOmitFiltered=true
             fi
         env:
           CONNECT_CLOUD_ENV: staging
