@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.0]
+
 ### Added
 
 - Support for deploying Node.js applications (Express, Fastify, Hono, etc.) to Posit Connect. (#3964)
