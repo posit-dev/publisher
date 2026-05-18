@@ -1,0 +1,58 @@
+# Configuration for lychee link checker.
+# Inputs are passed on the CLI, e.g.:
+#   lychee --config docs/lychee.toml docs/_site
+
+#### Network ####
+max_concurrency = 8
+max_retries = 2
+retry_wait_time = 2
+timeout = 20
+
+# Lychee's default UA is sometimes blocked (e.g. by Cloudflare). A browser-ish UA avoids that.
+user_agent = "Mozilla/5.0 (compatible; lychee/0.15)"
+
+# Plain success codes only. GitHub rate-limit (429) is NOT accepted — we authenticate
+# instead by passing GITHUB_TOKEN to lychee in CI, which uses the GitHub API and the
+# 5000/hour authenticated limit. A genuine 429 should correctly fail the run.
+accept = ["200", "204", "206"]
+
+#### What to check ####
+# Check anchor fragments within the generated site (catches broken #section links
+# and stray-character bugs like `#foo.` from Markdown swallowing trailing punctuation).
+include_fragments = true
+
+# Don't follow mailto:, tel:, file://, etc.
+include_mail = false
+
+#### Exclusions ####
+# Quarto vendors a pile of third-party JS/CSS under site_libs. Don't lint that tree;
+# its links are bootstrap/fontawesome internals, not our content.
+# llms*.txt are plain-text dumps of the same content as the HTML pages — checking
+# them duplicates coverage and loses backtick context (URLs in code samples get
+# flagged because the .txt has no <code> wrapper to signal "example, don't fetch").
+exclude_path = [
+  "_site/site_libs",
+  "_site/llms.txt",
+  "_site/llms-full.txt",
+]
+
+# URL exclusions (regex). Keep this list short and commented — each entry is a
+# place we're choosing not to verify.
+exclude = [
+  # Placeholder URLs that appear in code examples and configuration snippets.
+  '^http://<Your Connect Server>',
+  '^https://example\.com',
+
+  # Localhost references in examples.
+  '^https?://(localhost|127\.0\.0\.1)',
+
+  # The posit-docs Quarto extension injects a "Get Support" navbar link to
+  # support.posit.co (Zendesk-powered) on every page. Zendesk blocks
+  # non-interactive clients with 403, so lychee can't validate it.
+  '^https://support\.posit\.co',
+]
+
+# Don't fail on links the user can't visit anyway (private repos, intranets).
+exclude_private = true
+exclude_link_local = true
+exclude_loopback = true

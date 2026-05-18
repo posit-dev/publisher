@@ -28,3 +28,10 @@ jobs:
       - uses: rossjrw/pr-preview-action@v1
         with:
           source-dir: docs/_site
+
+      - name: Check links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --config docs/lychee.toml docs/_site
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fail: true
