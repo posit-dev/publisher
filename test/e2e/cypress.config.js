@@ -18,7 +18,7 @@ const pccConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
 // Rewrite placeholder password with actual secret and handle failures.
 // Skip in mock mode — PCC/OAuth tests are excluded and secrets are unavailable.
 if (isMockMode) {
-  // No-op: leave pccConfig password as-is (tests tagged @pcc are excluded)
+  // No-op: leave pccConfig password as-is (tests tagged @uses-posit-connect-cloud are excluded)
 } else if (process.env.CI === "true" && process.env.PCC_USER_CCQA3) {
   pccConfig.pcc_user_ccqa3.auth.password = process.env.PCC_USER_CCQA3;
 } else if (pccConfig.pcc_user_ccqa3.auth.password === "UPDATE") {
@@ -91,10 +91,10 @@ module.exports = defineConfig({
     WORKBENCH_URL: "http://localhost:8787",
     pccConfig,
   },
-  // When running in mock mode, exclude @pcc tests via @cypress/grep
+  // When running in mock mode, exclude @uses-posit-connect-cloud tests via @cypress/grep
   ...(isMockMode && {
     expose: {
-      grepTags: "-@pcc",
+      grepTags: "-@uses-posit-connect-cloud",
       grepFilterSpecs: true,
       grepOmitFiltered: true,
     },

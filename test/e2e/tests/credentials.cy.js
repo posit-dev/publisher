@@ -76,21 +76,25 @@ describe("Credentials Section", () => {
       .should("have.text", "admin-code-server");
   });
 
-  it("New PCC Credential - OAuth Device Code", { tags: "@pcc" }, () => {
-    const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-    // Drive full OAuth UI flow and nickname entry via helper
-    cy.addPCCCredential(user, "connect-cloud-credential");
+  it(
+    "New PCC Credential - OAuth Device Code",
+    { tags: "@uses-posit-connect-cloud" },
+    () => {
+      const user = Cypress.env("pccConfig").pcc_user_ccqa3;
+      // Drive full OAuth UI flow and nickname entry via helper
+      cy.addPCCCredential(user, "connect-cloud-credential");
 
-    // Verify the credential appears in the list
-    cy.ensureCredentialsSectionExpanded();
-    cy.refreshCredentials();
+      // Verify the credential appears in the list
+      cy.ensureCredentialsSectionExpanded();
+      cy.refreshCredentials();
 
-    cy.findInPublisherWebview(
-      '[data-automation="connect-cloud-credential-list"]',
-    )
-      .find(".tree-item-title")
-      .should("have.text", "connect-cloud-credential");
-  });
+      cy.findInPublisherWebview(
+        '[data-automation="connect-cloud-credential-list"]',
+      )
+        .find(".tree-item-title")
+        .should("have.text", "connect-cloud-credential");
+    },
+  );
 
   it("Existing Credentials Load", () => {
     // Creates admin credential via UI and validates it renders correctly in the list.

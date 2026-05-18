@@ -4,7 +4,7 @@ import { configure } from "@testing-library/cypress";
 // Import cypress-terminal-report for browser log collection
 import "cypress-terminal-report/src/installLogsCollector";
 
-// Import @cypress/grep for test filtering by tags (@pcc, etc.)
+// Import @cypress/grep for test filtering by tags (@uses-posit-connect-cloud, etc.)
 import { register as registerCypressGrep } from "@cypress/grep";
 registerCypressGrep();
 

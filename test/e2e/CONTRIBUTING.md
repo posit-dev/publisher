@@ -39,13 +39,13 @@ Run `direnv allow` after creating the file. Without direnv, export these variabl
 
 ### 1Password CLI (optional, for Connect Cloud tests)
 
-Tests tagged `@pcc` fetch credentials from 1Password. To run these locally:
+Tests tagged `@uses-posit-connect-cloud` fetch credentials from 1Password. To run these locally:
 
 1. Install the 1Password CLI: `brew install 1password-cli`
 2. Enable the desktop app integration: 1Password > Settings > Developer > "Integrate with 1Password CLI"
 3. Verify access: `op item get "pcc_user_ccqa3" --field "password" --vault "Publisher" --reveal`
 
-If you don't have 1Password access, you can skip cloud tests with `--env grepTags=-@pcc` or set `SKIP_1PASSWORD=true` to use placeholder credentials.
+If you don't have 1Password access, you can skip cloud tests with `--env grepTags=-@uses-posit-connect-cloud` or set `SKIP_1PASSWORD=true` to use placeholder credentials.
 
 ### Workbench License (optional)
 
@@ -90,8 +90,8 @@ just e2e --spec "tests/credentials.cy.js"
 # Run multiple test files
 just e2e --spec "tests/common.cy.js,tests/deployments.cy.js"
 
-# Exclude @pcc tests (no cloud credentials needed)
-just e2e --env grepTags=-@pcc
+# Exclude @uses-posit-connect-cloud tests (no cloud credentials needed)
+just e2e --env grepTags=-@uses-posit-connect-cloud
 
 # Interactive Cypress UI
 just e2e-open
@@ -125,12 +125,12 @@ Containers reach Connect via `connect-publisher-e2e` hostname mapped to host-gat
 
 Most tests use the local Connect server. These work with just a Connect license.
 
-### Connect Cloud Tests (@pcc)
+### Connect Cloud Tests (@uses-posit-connect-cloud)
 
-Tests tagged `@pcc` require Posit Connect Cloud credentials configured in `config/staging-pccqa.json`. Exclude them with:
+Tests tagged `@uses-posit-connect-cloud` require Posit Connect Cloud credentials configured in `config/staging-pccqa.json`. Exclude them with:
 
 ```bash
-just e2e --env grepTags=-@pcc
+just e2e --env grepTags=-@uses-posit-connect-cloud
 ```
 
 ### Workbench Tests

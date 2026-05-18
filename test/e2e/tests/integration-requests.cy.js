@@ -37,9 +37,9 @@ describe("IntegrationRequests Section", () => {
   describe("Connect Cloud", () => {
     it(
       "PCC deployment hides Integration Requests Section",
-      { tags: "@pcc" },
+      { tags: "@uses-posit-connect-cloud" },
       () => {
-        // Setup - moved from before/beforeEach to avoid running when @pcc tests are filtered
+        // Setup - moved from before/beforeEach to avoid running when @uses-posit-connect-cloud tests are filtered
         cy.initializeConnect();
 
         const user = Cypress.env("pccConfig").pcc_user_ccqa3;

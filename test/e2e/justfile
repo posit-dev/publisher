@@ -184,7 +184,7 @@ e2e-mock *cypress_args:
     VSIX_FILENAME=$(ls -Art ../../dist/*.vsix | xargs -n1 basename | tail -n 1)
     docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
 
-    # Run Cypress excluding @pcc tests (which require real OAuth).
+    # Run Cypress excluding @uses-posit-connect-cloud tests (which require real OAuth).
     # CYPRESS_MOCK_CONNECT triggers grep filtering via cypress.config.js expose section.
     export CYPRESS_MOCK_CONNECT=true
     # The mock server accepts any key, but the extension validates the format:
