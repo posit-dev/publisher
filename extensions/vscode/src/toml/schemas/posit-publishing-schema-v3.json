@@ -145,13 +145,13 @@
                   "type": "integer",
                   "minimum": 0,
                   "description": "The maximum amount of RAM this content will be allowed to consume when executing or rendering, expressed in bytes. If the process tries to use more memory than allowed, it will be terminated",
-                  "examples": ["100000000"]
+                  "examples": [100000000]
                 },
                 "memory_request": {
                   "type": "integer",
                   "minimum": 0,
                   "description": "The minimum amount of RAM this content needs when executing or rendering, expressed in bytes.",
-                  "examples": ["20000000"]
+                  "examples": [20000000]
                 },
                 "nvidia_gpu_limit": {
                   "type": "integer",
