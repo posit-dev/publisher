@@ -18,8 +18,6 @@ jobs:
       - run: npm run typecheck
         working-directory: test/connect-api-contracts
       - run: just test-connect-contracts
-        env:
-          API_BACKEND: typescript
 
   validate-fixtures:
     runs-on: ubuntu-latest
