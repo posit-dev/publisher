@@ -350,9 +350,7 @@ The VS Code extension declares two related versions:
 - `engines.vscode` in `extensions/vscode/package.json` — the minimum VS Code version users need to install the extension.
 - `@types/vscode` in `extensions/vscode/package.json` and `test/extension-contract-tests/package.json` — the API surface the TypeScript code compiles against.
 
-`vsce package` fails if the declared `@types/vscode` range is higher than the declared `engines.vscode` range (it refuses to ship an extension that compiles against APIs newer than the minimum runtime it claims to support). Keeping these two in lockstep avoids that failure and keeps `engines.vscode` honest — if it's lower than `@types/vscode`, the extension will install on VS Code versions that lack APIs the code calls, and crash at runtime.
-
-We pin both to the **same exact version, with no caret**:
+`vsce package` fails if `@types/vscode` is higher than `engines.vscode` — it refuses to ship an extension that compiles against APIs newer than the minimum runtime it claims to support. Pin both to the same version across all three places:
 
 ```jsonc
 // extensions/vscode/package.json
@@ -369,10 +367,4 @@ We pin both to the **same exact version, with no caret**:
 }
 ```
 
-Dropping the caret keeps Dependabot from drifting `@types/vscode` above `engines.vscode`. Both packages that depend on `@types/vscode` must use the same exact version so npm can hoist a single resolved version into the workspace.
-
-#### When to bump
-
-Bump the pin when adding code that needs a VS Code API not present in the current pinned version. Choose the **lowest** version that exposes the API you need (check the VS Code API release notes), and update all three places at once: `engines.vscode`, the extension's `@types/vscode`, and the contract-tests' `@types/vscode`. Then run `npm install` to refresh the lockfile.
-
-Raising the pin raises the minimum VS Code version users need, so don't bump further than the API requires.
+When adding code that needs a VS Code API not present in the current pinned version, bump all three places to the lowest version that exposes the API you need (check the VS Code API release notes), then run `npm install`. Raising the pin raises the minimum VS Code version users need, so don't bump further than required.
