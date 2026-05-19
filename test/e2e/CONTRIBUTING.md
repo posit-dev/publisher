@@ -45,7 +45,7 @@ Tests tagged `@uses-posit-connect-cloud` fetch credentials from 1Password. To ru
 2. Enable the desktop app integration: 1Password > Settings > Developer > "Integrate with 1Password CLI"
 3. Verify access: `op item get "pcc_user_ccqa3" --field "password" --vault "Publisher" --reveal`
 
-If you don't have 1Password access, you can skip cloud tests with `--env grepTags=-@uses-posit-connect-cloud` or set `SKIP_1PASSWORD=true` to use placeholder credentials.
+If you don't have 1Password access, you can skip cloud tests by running with a filter that excludes `@uses-posit-connect-cloud` (e.g., `--env grepTags="@uses-posit-connect-server @uses-no-target"`) or set `SKIP_1PASSWORD=true` to use placeholder credentials.
 
 ### Workbench License (optional)
 
@@ -90,8 +90,8 @@ just e2e --spec "tests/credentials.cy.js"
 # Run multiple test files
 just e2e --spec "tests/common.cy.js,tests/deployments.cy.js"
 
-# Exclude @uses-posit-connect-cloud tests (no cloud credentials needed)
-just e2e --env grepTags=-@uses-posit-connect-cloud
+# Run only the tag(s) you want (positive filtering)
+just e2e --env grepTags="@uses-posit-connect-server @uses-no-target"
 
 # Interactive Cypress UI
 just e2e-open
@@ -121,19 +121,24 @@ Containers reach Connect via `connect-publisher-e2e` hostname mapped to host-gat
 
 ## Test Categories
 
-### Connect Server Tests
+Every spec is tagged with exactly one of the following. CI rows and mock-mode runs select tests by including the relevant tags in `grepTags` (positive filtering — untagged tests do not run anywhere).
 
-Most tests use the local Connect server. These work with just a Connect license.
+| Tag                          | What it needs                                       | Where it runs in CI |
+| ---------------------------- | --------------------------------------------------- | ------------------- |
+| `@uses-posit-connect-server` | Local Connect server                                | All matrix rows     |
+| `@uses-posit-connect-cloud`  | Real PCC credentials (1Password / `PCC_USER_CCQA3`) | `release` row only  |
+| `@uses-positron`             | Workbench + Positron containers                     | `release` row only  |
+| `@uses-no-target`            | Nothing external (smoke tests)                      | All matrix rows     |
 
-### Connect Cloud Tests (@uses-posit-connect-cloud)
+When adding a new test, tag it with the most restrictive requirement it has. The tag describes the _gating_ capability, not an exhaustive inventory — e.g., the Workbench specs publish to a Connect Server too, but they're tagged `@uses-positron` because that's the rarer requirement.
 
-Tests tagged `@uses-posit-connect-cloud` require Posit Connect Cloud credentials configured in `config/staging-pccqa.json`. Exclude them with:
+Tag at the describe level when every test inside shares the same requirement; tag at the `it` level when a single file mixes requirements (see `credentials.cy.js`).
 
-```bash
-just e2e --env grepTags=-@uses-posit-connect-cloud
-```
+### Connect Cloud Tests (`@uses-posit-connect-cloud`)
 
-### Workbench Tests
+Require PCC credentials configured in `config/staging-pccqa.json`. To skip locally, run with a `grepTags` filter that doesn't include the tag — e.g., `--env grepTags="@uses-posit-connect-server @uses-no-target"`.
+
+### Workbench Tests (`@uses-positron`)
 
 Require the Workbench container:
 
@@ -141,7 +146,7 @@ Require the Workbench container:
 just pull-workbench release
 just start-workbench release
 just install-positron-extension release
-just e2e --spec "tests/workbench/**/*.cy.js"
+just e2e --env grepTags="@uses-positron"
 ```
 
 ## Testing Against Specific Connect Versions

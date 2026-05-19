@@ -9,76 +9,85 @@ describe("Deployments Section", () => {
     cy.clearupDeployments();
   });
 
-  describe("Connect Server Deployments", () => {
-    beforeEach(() => {
-      cy.visit("/");
-      cy.getPublisherSidebarIcon().click();
-      cy.waitForPublisherIframe();
-      cy.debugIframes();
-      cy.resetCredentials();
-      cy.setAdminCredentials();
-    });
+  describe(
+    "Connect Server Deployments",
+    { tags: "@uses-posit-connect-server" },
+    () => {
+      beforeEach(() => {
+        cy.visit("/");
+        cy.getPublisherSidebarIcon().click();
+        cy.waitForPublisherIframe();
+        cy.debugIframes();
+        cy.resetCredentials();
+        cy.setAdminCredentials();
+      });
 
-    afterEach(() => {
-      cy.clearupDeployments();
-    });
+      afterEach(() => {
+        cy.clearupDeployments();
+      });
 
-    it("PCS Static Content Deployment", () => {
-      // Uses createPCSDeployment + deployCurrentlySelected.
-      // Asserts config fields and files are present (order-agnostic).
+      it("PCS Static Content Deployment", () => {
+        // Uses createPCSDeployment + deployCurrentlySelected.
+        // Asserts config fields and files are present (order-agnostic).
 
-      // Ensure Publisher is in the expected initial state
-      cy.expectInitialPublisherState();
+        // Ensure Publisher is in the expected initial state
+        cy.expectInitialPublisherState();
 
-      cy.createPCSDeployment("static", "index.html", "static", (tomlFiles) => {
-        const { contents: config } = tomlFiles.config;
-        const { name: cfgName } = tomlFiles.config;
-        const { name: recName } = tomlFiles.contentRecord;
+        cy.createPCSDeployment(
+          "static",
+          "index.html",
+          "static",
+          (tomlFiles) => {
+            const { contents: config } = tomlFiles.config;
+            const { name: cfgName } = tomlFiles.config;
+            const { name: recName } = tomlFiles.contentRecord;
 
-        expect(config.title).to.equal("static");
-        expect(config.type).to.equal("html");
-        expect(config.entrypoint).to.equal("index.html");
+            expect(config.title).to.equal("static");
+            expect(config.type).to.equal("html");
+            expect(config.entrypoint).to.equal("index.html");
 
-        // Assert required files without relying on order
-        expect(config.files).to.include.members([
-          "/index.html",
-          `/.posit/publish/${cfgName}`,
-          `/.posit/publish/deployments/${recName}`,
-        ]);
-      }).deployCurrentlySelected();
+            // Assert required files without relying on order
+            expect(config.files).to.include.members([
+              "/index.html",
+              `/.posit/publish/${cfgName}`,
+              `/.posit/publish/deployments/${recName}`,
+            ]);
+          },
+        ).deployCurrentlySelected();
 
-      cy.findUniqueInPublisherWebview(
-        '[data-automation="publisher-deployment-section"]',
-      ).should("exist");
-    });
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ).should("exist");
+      });
 
-    // Unable to run this,
-    // as we will need to install the renv package - install.packages("renv")
-    // as well as call renv::restore(), before we can deploy. This will use
-    // the current version of R within our code-server image, so we'll have an
-    // extra bit of work when we want to change that version around to different
-    // ones.
-    it.skip("PCS ShinyApp Content Deployment", () => {
-      cy.createPCSDeployment("shinyapp", "app.R", "ShinyApp", (tomlFiles) => {
-        const config = tomlFiles.config.contents;
-        expect(config.title).to.equal("ShinyApp");
-        expect(config.type).to.equal("r-shiny");
-        expect(config.entrypoint).to.equal("app.R");
-        expect(config.files[0]).to.equal("/app.R");
-        expect(config.files[1]).to.equal("/renv.lock");
-        expect(config.files[2]).to.equal(
-          `/.posit/publish/${tomlFiles.config.name}`,
-        );
-        expect(config.files[3]).to.equal(
-          `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
-        );
-      }).deployCurrentlySelected();
+      // Unable to run this,
+      // as we will need to install the renv package - install.packages("renv")
+      // as well as call renv::restore(), before we can deploy. This will use
+      // the current version of R within our code-server image, so we'll have an
+      // extra bit of work when we want to change that version around to different
+      // ones.
+      it.skip("PCS ShinyApp Content Deployment", () => {
+        cy.createPCSDeployment("shinyapp", "app.R", "ShinyApp", (tomlFiles) => {
+          const config = tomlFiles.config.contents;
+          expect(config.title).to.equal("ShinyApp");
+          expect(config.type).to.equal("r-shiny");
+          expect(config.entrypoint).to.equal("app.R");
+          expect(config.files[0]).to.equal("/app.R");
+          expect(config.files[1]).to.equal("/renv.lock");
+          expect(config.files[2]).to.equal(
+            `/.posit/publish/${tomlFiles.config.name}`,
+          );
+          expect(config.files[3]).to.equal(
+            `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
+          );
+        }).deployCurrentlySelected();
 
-      cy.findUniqueInPublisherWebview(
-        '[data-automation="publisher-deployment-section"]',
-      ).should("exist");
-    });
-  });
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ).should("exist");
+      });
+    },
+  );
 
   describe("Connect Cloud Deployments", () => {
     it(
