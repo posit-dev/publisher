@@ -342,3 +342,37 @@ Any significantly difficult dependency updates should have an issue created to
 track the work and can be triaged alongside our other issues.
 
 Updates to dependencies should be done in a separate PR.
+
+### `engines.vscode` and `@types/vscode`
+
+The VS Code extension declares two related versions:
+
+- `engines.vscode` in `extensions/vscode/package.json` — the minimum VS Code version users need to install the extension.
+- `@types/vscode` in `extensions/vscode/package.json` and `test/extension-contract-tests/package.json` — the API surface the TypeScript code compiles against.
+
+`vsce package` fails if the declared `@types/vscode` range is higher than the declared `engines.vscode` range (it refuses to ship an extension that compiles against APIs newer than the minimum runtime it claims to support). Keeping these two in lockstep avoids that failure and keeps `engines.vscode` honest — if it's lower than `@types/vscode`, the extension will install on VS Code versions that lack APIs the code calls, and crash at runtime.
+
+We pin both to the **same exact version, with no caret**:
+
+```jsonc
+// extensions/vscode/package.json
+"engines": { "vscode": "1.105.0" },
+"devDependencies": {
+  "@types/vscode": "1.105.0"
+}
+```
+
+```jsonc
+// test/extension-contract-tests/package.json
+"devDependencies": {
+  "@types/vscode": "1.105.0"
+}
+```
+
+Dropping the caret keeps Dependabot from drifting `@types/vscode` above `engines.vscode`. Both packages that depend on `@types/vscode` must use the same exact version so npm can hoist a single resolved version into the workspace.
+
+#### When to bump
+
+Bump the pin when adding code that needs a VS Code API not present in the current pinned version. Choose the **lowest** version that exposes the API you need (check the VS Code API release notes), and update all three places at once: `engines.vscode`, the extension's `@types/vscode`, and the contract-tests' `@types/vscode`. Then run `npm install` to refresh the lockfile.
+
+Raising the pin raises the minimum VS Code version users need, so don't bump further than the API requires.
