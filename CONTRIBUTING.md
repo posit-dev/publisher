@@ -342,3 +342,29 @@ Any significantly difficult dependency updates should have an issue created to
 track the work and can be triaged alongside our other issues.
 
 Updates to dependencies should be done in a separate PR.
+
+### `engines.vscode` and `@types/vscode`
+
+The VS Code extension declares two related versions:
+
+- [`engines.vscode`](https://code.visualstudio.com/api/references/extension-manifest) in `extensions/vscode/package.json` — the minimum VS Code version users need to install the extension.
+- `@types/vscode` in `extensions/vscode/package.json` and `test/extension-contract-tests/package.json` — the API surface the TypeScript code compiles against.
+
+[`vsce package`](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce) fails if `@types/vscode` is higher than `engines.vscode` — it refuses to ship an extension that compiles against APIs newer than the minimum runtime it claims to support. Pin `@types/vscode` to an exact version (so the code can't drift onto newer APIs) and use a caret on `engines.vscode` (so the extension installs on that VS Code version and any newer one). Use the same version number in all three places:
+
+```jsonc
+// extensions/vscode/package.json
+"engines": { "vscode": "^1.105.0" },
+"devDependencies": {
+  "@types/vscode": "1.105.0"
+}
+```
+
+```jsonc
+// test/extension-contract-tests/package.json
+"devDependencies": {
+  "@types/vscode": "1.105.0"
+}
+```
+
+When adding code that needs a VS Code API not present in the current pinned version, bump all three places to the lowest version that exposes the API you need (check the [VS Code API release notes](https://code.visualstudio.com/updates/)), then run `npm install`. Raising the pin raises the minimum VS Code version users need, so don't bump further than required.
