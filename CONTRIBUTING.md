@@ -347,7 +347,7 @@ Updates to dependencies should be done in a separate PR.
 
 The VS Code extension declares two related versions:
 
-- `engines.vscode` in `extensions/vscode/package.json` — the minimum VS Code version users need to install the extension.
+- [`engines.vscode`](https://code.visualstudio.com/api/references/extension-manifest) in `extensions/vscode/package.json` — the minimum VS Code version users need to install the extension.
 - `@types/vscode` in `extensions/vscode/package.json` and `test/extension-contract-tests/package.json` — the API surface the TypeScript code compiles against.
 
 `vsce package` fails if `@types/vscode` is higher than `engines.vscode` — it refuses to ship an extension that compiles against APIs newer than the minimum runtime it claims to support. Pin both to the same version across all three places:
