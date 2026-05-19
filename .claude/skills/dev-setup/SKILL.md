@@ -170,7 +170,7 @@ The E2E tests need `CONNECT_LICENSE_FILE` and (on macOS) `DOCKER_HOST` set.
 
 Run a quick smoke test excluding Connect Cloud tests (which need 1Password):
 
-- **Act:** `cd test/e2e && just e2e --env grepTags=-@pcc`
+- **Act:** `cd test/e2e && just e2e --env grepTags=-@uses-posit-connect-cloud`
 - **Verify:** Tests pass (the Workbench tests may fail if no Workbench container is set up — that's expected and fine).
 
 **Troubleshooting:** If it fails with `port 3939 already allocated`, a stale Connect container is lingering from a previous run:
@@ -186,20 +186,20 @@ After tests complete, clean up: `just stop`
 
 ### Step 16: 1Password CLI (Optional, Connect Cloud only)
 
-For Connect Cloud tests (tagged `@pcc`), credentials are fetched from 1Password.
+For Connect Cloud tests (tagged `@uses-posit-connect-cloud`), credentials are fetched from 1Password.
 
 - **Check:** `op --version` — must be the system-wide install, not the local `test/bin/op`.
 - **Act:** If missing: `brew install 1password-cli`. Then enable the desktop app integration: 1Password > Settings > Developer > "Integrate with 1Password CLI".
 - **Verify:** `op item get "pcc_user_ccqa3" --field "password" --vault "Publisher" --reveal` succeeds.
 
-If the developer doesn't have access to the Publisher vault, let them know that cloud tests can be skipped with `--env grepTags=-@pcc` or `SKIP_1PASSWORD=true`.
+If the developer doesn't have access to the Publisher vault, let them know that cloud tests can be skipped with `--env grepTags=-@uses-posit-connect-cloud` or `SKIP_1PASSWORD=true`.
 
 ### E2E Setup Complete
 
 Summarize what's available:
 
 - `just e2e` — run all E2E tests
-- `just e2e --env grepTags=-@pcc` — skip cloud tests
+- `just e2e --env grepTags=-@uses-posit-connect-cloud` — skip cloud tests
 - `just e2e-open` — interactive Cypress UI
 - `just stop` — stop Docker containers
 - Point them to `test/e2e/CONTRIBUTING.md` for more details

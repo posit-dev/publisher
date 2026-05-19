@@ -17,7 +17,7 @@ describe("Multi-Stepper Negative Cases", () => {
   describe("OAuth Cancellation Cases", () => {
     it(
       "OAuth error handling and cancellation scenarios",
-      { tags: "@pcc" },
+      { tags: "@uses-posit-connect-cloud" },
       () => {
         // Tests OAuth cancellation scenarios:
         // - OAuth cancellation when adding credential (with existing credentials)

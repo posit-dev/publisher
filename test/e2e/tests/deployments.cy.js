@@ -81,88 +81,94 @@ describe("Deployments Section", () => {
   });
 
   describe("Connect Cloud Deployments", () => {
-    it("PCC Shiny Python Deployment", { tags: "@pcc" }, () => {
-      // Setup - moved from beforeEach to avoid running when @pcc tests are filtered
-      cy.clearupDeployments();
-      cy.visit("/");
-      cy.getPublisherSidebarIcon().click();
-      cy.waitForPublisherIframe();
-      cy.resetCredentials();
-      const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-      cy.log("PCC user for addPCCCredential: " + JSON.stringify(user));
-      cy.addPCCCredential(user, "pcc-deploy-credential", {
-        assertEmpty: false,
-      });
+    it(
+      "PCC Shiny Python Deployment",
+      { tags: "@uses-posit-connect-cloud" },
+      () => {
+        // Setup - moved from beforeEach to avoid running when @uses-posit-connect-cloud tests are filtered
+        cy.clearupDeployments();
+        cy.visit("/");
+        cy.getPublisherSidebarIcon().click();
+        cy.waitForPublisherIframe();
+        cy.resetCredentials();
+        const user = Cypress.env("pccConfig").pcc_user_ccqa3;
+        cy.log("PCC user for addPCCCredential: " + JSON.stringify(user));
+        cy.addPCCCredential(user, "pcc-deploy-credential", {
+          assertEmpty: false,
+        });
 
-      // Verify credential is ready before proceeding
-      cy.ensureCredentialsSectionExpanded();
-      cy.refreshCredentials();
-      cy.findInPublisherWebview(
-        '[data-automation="pcc-deploy-credential-list"]',
-      )
-        .find(".tree-item-title")
-        .should("have.text", "pcc-deploy-credential");
+        // Verify credential is ready before proceeding
+        cy.ensureCredentialsSectionExpanded();
+        cy.refreshCredentials();
+        cy.findInPublisherWebview(
+          '[data-automation="pcc-deploy-credential-list"]',
+        )
+          .find(".tree-item-title")
+          .should("have.text", "pcc-deploy-credential");
 
-      // Ensure Publisher is in the expected initial state
-      cy.expectInitialPublisherState();
+        // Ensure Publisher is in the expected initial state
+        cy.expectInitialPublisherState();
 
-      // Select files to include in deployment
-      const filesToSelect = ["data", "README.md", "styles.css"];
-      cy.createPCCDeployment(
-        "examples-shiny-python",
-        "app.py",
-        "shiny-python-pcc",
-        (tomlFiles) => {
-          const config = tomlFiles.config.contents;
-          expect(config.title).to.equal("shiny-python-pcc");
-          expect(config.type).to.equal("python-shiny");
-          expect(config.entrypoint).to.equal("app.py");
-          // Check that all selected files are included (note: requirements.txt is auto-managed)
-          ["/app.py", "/data", "/README.md", "/styles.css"].forEach((file) => {
-            expect(config.files).to.include(file);
-          });
-        },
-        filesToSelect,
-      );
+        // Select files to include in deployment
+        const filesToSelect = ["data", "README.md", "styles.css"];
+        cy.createPCCDeployment(
+          "examples-shiny-python",
+          "app.py",
+          "shiny-python-pcc",
+          (tomlFiles) => {
+            const config = tomlFiles.config.contents;
+            expect(config.title).to.equal("shiny-python-pcc");
+            expect(config.type).to.equal("python-shiny");
+            expect(config.entrypoint).to.equal("app.py");
+            // Check that all selected files are included (note: requirements.txt is auto-managed)
+            ["/app.py", "/data", "/README.md", "/styles.css"].forEach(
+              (file) => {
+                expect(config.files).to.include(file);
+              },
+            );
+          },
+          filesToSelect,
+        );
 
-      // Set public access via helper and then deploy
-      cy.getPublisherTomlFilePaths("examples-shiny-python").then(
-        ({ config }) => {
-          // Write both Python version and public access in one operation
-          return cy.writeTomlFile(
-            config.path,
-            "version = '3.11'\n[connect_cloud]\n[connect_cloud.access_control]\npublic_access = true",
-          );
-        },
-      );
+        // Set public access via helper and then deploy
+        cy.getPublisherTomlFilePaths("examples-shiny-python").then(
+          ({ config }) => {
+            // Write both Python version and public access in one operation
+            return cy.writeTomlFile(
+              config.path,
+              "version = '3.11'\n[connect_cloud]\n[connect_cloud.access_control]\npublic_access = true",
+            );
+          },
+        );
 
-      cy.deployCurrentlySelected();
+        cy.deployCurrentlySelected();
 
-      cy.findUniqueInPublisherWebview(
-        '[data-automation="publisher-deployment-section"]',
-      ).should("exist");
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ).should("exist");
 
-      // Load the deployment TOML to get the published URL and verify app
-      cy.getPublisherTomlFilePaths("examples-shiny-python").then(
-        (filePaths) => {
-          cy.loadTomlFile(filePaths.contentRecord.path).then(
-            (contentRecord) => {
-              const publishedUrl = contentRecord.direct_url;
+        // Load the deployment TOML to get the published URL and verify app
+        cy.getPublisherTomlFilePaths("examples-shiny-python").then(
+          (filePaths) => {
+            cy.loadTomlFile(filePaths.contentRecord.path).then(
+              (contentRecord) => {
+                const publishedUrl = contentRecord.direct_url;
 
-              const expectedTitle = "Restaurant tipping";
-              cy.task("confirmPCCPublishSuccess", {
-                publishedUrl,
-                expectedTitle,
-              }).then((result) => {
-                expect(
-                  result.success,
-                  result.error || "Publish confirmation failed",
-                ).to.be.true;
-              });
-            },
-          );
-        },
-      );
-    });
+                const expectedTitle = "Restaurant tipping";
+                cy.task("confirmPCCPublishSuccess", {
+                  publishedUrl,
+                  expectedTitle,
+                }).then((result) => {
+                  expect(
+                    result.success,
+                    result.error || "Publish confirmation failed",
+                  ).to.be.true;
+                });
+              },
+            );
+          },
+        );
+      },
+    );
   });
 });

@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Connect Server versions - tests exclude @pcc tags
+        # Connect Server versions - tests exclude @uses-posit-connect-cloud tags
         # Simplified to reduce CI time: preview, release, one recent, one old
         connect-version:
           - "preview" # Nightly builds of Connect - catch regressions early
@@ -211,8 +211,8 @@ jobs:
           docker exec publisher-e2e.code-server rm -f /home/coder/workspace/static*.toml || true
 
       # Run Cypress tests
-      # - For "release": run ALL tests (including @pcc cloud tests)
-      # - For other versions: exclude @pcc tests (cloud tests only run once on release)
+      # - For "release": run ALL tests (including @uses-posit-connect-cloud cloud tests)
+      # - For other versions: exclude @uses-posit-connect-cloud tests (cloud tests only run once on release)
       - name: Run Cypress tests (${{ matrix.connect-version }})
         id: run_tests
         uses: posit-dev/with-connect@main
@@ -223,11 +223,11 @@ jobs:
           command: |
             cd test/e2e
             if [ "${{ matrix.connect-version }}" = "release" ]; then
-              # Run all tests (including @pcc cloud tests)
+              # Run all tests (including @uses-posit-connect-cloud cloud tests)
               CYPRESS_BOOTSTRAP_ADMIN_API_KEY=$CONNECT_API_KEY npx cypress run --headless --browser chrome
             else
-              # Exclude @pcc cloud tests for non-release versions
-              CYPRESS_BOOTSTRAP_ADMIN_API_KEY=$CONNECT_API_KEY npx cypress run --headless --browser chrome --env grepFilterSpecs=true,grepOmitFiltered=true,grepTags=-@pcc
+              # Exclude @uses-posit-connect-cloud cloud tests for non-release versions
+              CYPRESS_BOOTSTRAP_ADMIN_API_KEY=$CONNECT_API_KEY npx cypress run --headless --browser chrome --expose grepTags=-@uses-posit-connect-cloud,grepOmitFiltered=true
             fi
         env:
           CONNECT_CLOUD_ENV: staging
