@@ -350,11 +350,11 @@ The VS Code extension declares two related versions:
 - [`engines.vscode`](https://code.visualstudio.com/api/references/extension-manifest) in `extensions/vscode/package.json` — the minimum VS Code version users need to install the extension.
 - `@types/vscode` in `extensions/vscode/package.json` and `test/extension-contract-tests/package.json` — the API surface the TypeScript code compiles against.
 
-`vsce package` fails if `@types/vscode` is higher than `engines.vscode` — it refuses to ship an extension that compiles against APIs newer than the minimum runtime it claims to support. Pin both to the same version across all three places:
+`vsce package` fails if `@types/vscode` is higher than `engines.vscode` — it refuses to ship an extension that compiles against APIs newer than the minimum runtime it claims to support. Pin `@types/vscode` to an exact version (so the code can't drift onto newer APIs) and use a caret on `engines.vscode` (so the extension installs on that VS Code version and any newer one). Use the same version number in all three places:
 
 ```jsonc
 // extensions/vscode/package.json
-"engines": { "vscode": "1.105.0" },
+"engines": { "vscode": "^1.105.0" },
 "devDependencies": {
   "@types/vscode": "1.105.0"
 }
