@@ -15,7 +15,7 @@
     "url": "https://github.com/posit-dev/publisher/discussions"
   },
   "engines": {
-    "vscode": "1.105.0"
+    "vscode": "^1.105.0"
   },
   "capabilities": {
     "untrustedWorkspaces": {
