@@ -367,4 +367,4 @@ The VS Code extension declares two related versions:
 }
 ```
 
-When adding code that needs a VS Code API not present in the current pinned version, bump all three places to the lowest version that exposes the API you need (check the VS Code API release notes), then run `npm install`. Raising the pin raises the minimum VS Code version users need, so don't bump further than required.
+When adding code that needs a VS Code API not present in the current pinned version, bump all three places to the lowest version that exposes the API you need (check the [VS Code API release notes](https://code.visualstudio.com/updates/)), then run `npm install`. Raising the pin raises the minimum VS Code version users need, so don't bump further than required.
