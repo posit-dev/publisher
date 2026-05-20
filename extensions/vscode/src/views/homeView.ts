@@ -1,5 +1,6 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
+import fs from "fs";
 import path from "path";
 import debounce from "debounce";
 
@@ -2094,32 +2095,70 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
    * rendered within the webview panel
    */
   private getWebviewContent(webview: Webview, extensionUri: Uri) {
-    // The CSS files from the Vue build output
-    const stylesUri = getUri(webview, extensionUri, [
-      "webviews",
-      "homeView",
+    // Inline stylesheets to work around Firefox's broken service-worker
+    // interception of webview resource requests in Posit Workbench (#4013).
+    const stylesContent = fs.readFileSync(
+      path.join(
+        extensionUri.fsPath,
+        "webviews",
+        "homeView",
+        "dist",
+        "index.css",
+      ),
+      "utf8",
+    );
+
+    // *.inlined.css is only produced during vscode:prepublish (fantasticon
+    // is broken on Windows, so it stays out of esbuild-base). When absent,
+    // fall back to webview URI links — the Workbench/Firefox bug doesn't
+    // apply in the Extension Development Host.
+    const codiconsInlinedPath = path.join(
+      extensionUri.fsPath,
       "dist",
-      "index.css",
-    ]);
+      "codicons",
+      "codicon.inlined.css",
+    );
+    const positPublisherIconsInlinedPath = path.join(
+      extensionUri.fsPath,
+      "dist",
+      "posit-publisher-icons.inlined.css",
+    );
+    const useInlinedIconFonts =
+      fs.existsSync(codiconsInlinedPath) &&
+      fs.existsSync(positPublisherIconsInlinedPath);
+
+    let iconStyleTags: string;
+    let fontSrcCsp: string;
+    if (useInlinedIconFonts) {
+      const codiconsContent = fs.readFileSync(codiconsInlinedPath, "utf8");
+      const positPublisherFontContent = fs.readFileSync(
+        positPublisherIconsInlinedPath,
+        "utf8",
+      );
+      iconStyleTags = `<style>${codiconsContent}</style>
+          <style>${positPublisherFontContent}</style>`;
+      fontSrcCsp = "data:";
+    } else {
+      const codiconsUri = getUri(webview, extensionUri, [
+        "dist",
+        "codicons",
+        "codicon.css",
+      ]);
+      const positPublisherFontCssUri = getUri(webview, extensionUri, [
+        "dist",
+        "posit-publisher-icons.css",
+      ]);
+      iconStyleTags = `<link rel="stylesheet" type="text/css" href="${codiconsUri}">
+          <link rel="stylesheet" type="text/css" href="${positPublisherFontCssUri}">`;
+      fontSrcCsp = webview.cspSource;
+    }
+
     // The JS file from the Vue build output
     const scriptUri = getUri(webview, extensionUri, [
       "webviews",
       "homeView",
       "dist",
       "index.js",
-    ]);
-    // The codicon css (and related ttf file) ship via the copy-codicons
-    // build step because vsce can't pack workspace-hoisted node_modules
-    // (see https://github.com/microsoft/vscode-vsce/issues/580).
-    const codiconsUri = getUri(webview, extensionUri, [
-      "dist",
-      "codicons",
-      "codicon.css",
-    ]);
-    // Custom Posit Publisher font
-    const positPublisherFontCssUri = getUri(webview, extensionUri, [
-      "dist",
-      "posit-publisher-icons.css",
     ]);
 
     const nonce = getNonce();
@@ -2134,13 +2173,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           <meta http-equiv="Content-Security-Policy"
             content="
               default-src 'none';
-              font-src ${webview.cspSource};
+              font-src ${fontSrcCsp};
               style-src ${webview.cspSource} 'unsafe-inline';
               script-src 'nonce-${nonce}';"
           />
-          <link rel="stylesheet" type="text/css" href="${stylesUri}">
-          <link rel="stylesheet" type="text/css" href="${codiconsUri}">
-          <link rel="stylesheet" type="text/css" href="${positPublisherFontCssUri}">
+          <style>${stylesContent}</style>
+          ${iconStyleTags}
           <title>Hello World</title>
         </head>
         <body>
