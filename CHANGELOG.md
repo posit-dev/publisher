@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added a `metrics_collection_enabled` configuration option under `[connect.runtime]` to enable or disable per-content resource metrics (CPU, memory, connections) at deploy time when publishing to Posit Connect. Omit the field to inherit the server-wide default. The setting has no effect on Connect Cloud deployments. (#4201)
+
 ## [2.6.0]
 
 ### Added
