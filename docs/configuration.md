@@ -353,6 +353,12 @@ The maximum number of seconds allowed for an interactive application to start. P
 
 Controls how aggressively new processes are spawned. The valid range is between 0.0 and 1.0.
 
+#### metrics_collection_enabled
+
+_Valid only when `product_type` is `connect`._
+
+Controls whether per-job resource metrics (CPU, memory, connections) are collected for this content item. When omitted, the content inherits the server-wide default (`Applications.MetricsCollectionEnabled`). Has no effect on Connect Cloud deployments.
+
 #### max_conns_per_process
 
 Specifies the maximum number of client connections allowed to an individual process. Incoming connections which will exceed this limit are routed to a new process or rejected.
@@ -379,6 +385,7 @@ init_timeout = 60
 load_factor = 0.5
 max_conns_per_process = 50
 max_processes = 5
+metrics_collection_enabled = true
 min_processes = 1
 read_timeout = 30
 ```
