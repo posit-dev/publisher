@@ -129,6 +129,7 @@ export interface ConnectContent {
   min_processes?: number | null;
   max_conns_per_process?: number | null;
   load_factor?: number | null;
+  metrics_collection_enabled?: boolean | null;
   run_as?: string;
   run_as_current_user?: boolean;
   memory_request?: number | null;
@@ -159,6 +160,7 @@ export interface ContentDetailsDTO {
   min_processes: number | null;
   max_conns_per_process: number | null;
   load_factor: number | null;
+  metrics_collection_enabled: boolean | null;
   created_time: string;
   last_deployed_time: string;
   bundle_id: string | null;

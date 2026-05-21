@@ -20,6 +20,7 @@ export type ConnectRuntime = {
   minProcesses?: number;
   maxConnsPerProcess?: number;
   loadFactor?: number;
+  metricsCollectionEnabled?: boolean;
 };
 
 export type ConnectKubernetes = {

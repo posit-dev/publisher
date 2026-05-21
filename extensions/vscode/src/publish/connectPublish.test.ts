@@ -182,6 +182,7 @@ const TEST_CONTENT: ContentDetailsDTO = {
   min_processes: null,
   max_conns_per_process: null,
   load_factor: null,
+  metrics_collection_enabled: null,
   created_time: "2024-01-01T00:00:00Z",
   last_deployed_time: "2024-01-01T00:00:00Z",
   bundle_id: null,

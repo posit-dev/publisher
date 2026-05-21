@@ -514,6 +514,7 @@ describe("contentDetails", () => {
     min_processes: null,
     max_conns_per_process: null,
     load_factor: null,
+    metrics_collection_enabled: null,
     created_time: "2024-01-01T00:00:00Z",
     last_deployed_time: "2024-01-01T00:00:00Z",
     bundle_id: "bundle-1",
@@ -531,6 +532,7 @@ describe("contentDetails", () => {
     content_url: "https://connect.example.com/content/content-guid-abc/",
     dashboard_url:
       "https://connect.example.com/connect/#/apps/content-guid-abc",
+    locked: false,
     app_role: "owner",
     id: "42",
   };
