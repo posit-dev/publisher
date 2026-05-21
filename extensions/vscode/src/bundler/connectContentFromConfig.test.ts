@@ -52,6 +52,7 @@ describe("connectContentFromConfig", () => {
             minProcesses: 1,
             maxConnsPerProcess: 50,
             loadFactor: 0.75,
+            metricsCollectionEnabled: true,
           },
         },
       }),
@@ -66,6 +67,7 @@ describe("connectContentFromConfig", () => {
       min_processes: 1,
       max_conns_per_process: 50,
       load_factor: 0.75,
+      metrics_collection_enabled: true,
     });
   });
 
@@ -143,6 +145,7 @@ describe("connectContentFromConfig", () => {
       cfg({
         connect: {
           access: { runAsCurrentUser: false },
+          runtime: { metricsCollectionEnabled: false },
           kubernetes: {
             defaultREnvironmentManagement: false,
             defaultPyEnvironmentManagement: false,
@@ -151,8 +154,22 @@ describe("connectContentFromConfig", () => {
       }),
     );
     expect(result.run_as_current_user).toBe(false);
+    expect(result.metrics_collection_enabled).toBe(false);
     expect(result.default_r_environment_management).toBe(false);
     expect(result.default_py_environment_management).toBe(false);
+  });
+
+  it("omits metrics_collection_enabled when not set", () => {
+    const result = connectContentFromConfig(
+      cfg({
+        connect: {
+          runtime: { maxProcesses: 5 },
+        },
+      }),
+    );
+    expect(result.metrics_collection_enabled).toBeUndefined();
+    const json = JSON.parse(JSON.stringify(result));
+    expect("metrics_collection_enabled" in json).toBe(false);
   });
 
   it("access with runAs only, no runAsCurrentUser", () => {

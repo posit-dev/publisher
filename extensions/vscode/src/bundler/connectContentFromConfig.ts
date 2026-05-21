@@ -26,6 +26,7 @@ export function connectContentFromConfig(
     min_processes: rt?.minProcesses,
     max_conns_per_process: rt?.maxConnsPerProcess,
     load_factor: rt?.loadFactor,
+    metrics_collection_enabled: rt?.metricsCollectionEnabled,
 
     // Access
     run_as: access?.runAs || undefined,
