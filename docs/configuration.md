@@ -357,7 +357,7 @@ Controls how aggressively new processes are spawned. The valid range is between 
 
 _Only valid when `product_type` is `connect`_
 
-Controls whether per-job resource metrics (CPU, memory, connections) are collected for this content item. When omitted, the content inherits the server-wide default (`Applications.MetricsCollectionEnabled`). Has no effect on Connect Cloud deployments.
+Controls whether per-job resource metrics (CPU, memory, connections) are collected for this content item. When omitted, the content inherits the server-wide default (`Applications.MetricsCollectionEnabled`).
 
 #### max_conns_per_process
 
