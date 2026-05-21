@@ -189,6 +189,7 @@ class ExternalBrowserTokenProvider implements TokenProvider {
       account: this.account,
       username: this.user,
       authenticator: "EXTERNALBROWSER",
+      clientStoreTemporaryCredential: true,
     });
 
     await conn.connectAsync();

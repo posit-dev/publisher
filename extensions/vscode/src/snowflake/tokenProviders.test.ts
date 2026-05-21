@@ -347,6 +347,7 @@ describe("External browser token provider (externalbrowser)", () => {
       account: "myaccount",
       username: "myuser",
       authenticator: "EXTERNALBROWSER",
+      clientStoreTemporaryCredential: true,
     });
   });
 

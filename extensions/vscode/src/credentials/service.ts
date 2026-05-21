@@ -3,6 +3,7 @@
 import { SecretStorage } from "vscode";
 import { randomUUID } from "crypto";
 import { GUID, ConnectAPIOptions } from "@posit-dev/connect-api";
+import snowflake from "snowflake-sdk";
 
 import { Credential } from "src/api/types/credentials";
 import { ServerType } from "src/api/types/contentRecords";
@@ -25,6 +26,7 @@ import {
 import { CONNECT_CLOUD_ENV } from "src/constants";
 import config from "src/config";
 import { logger } from "src/logging";
+import { SnowflakeSecretStorageCredentialManager } from "src/snowflake/secretStorageCredentialManager";
 
 export interface CreateCredentialInput {
   name: string;
@@ -135,7 +137,13 @@ async function buildSnowflakeOptions(
 }
 
 export class CredentialsService {
-  constructor(private readonly secrets: SecretStorage) {}
+  constructor(private readonly secrets: SecretStorage) {
+    snowflake.configure({
+      customCredentialManager: new SnowflakeSecretStorageCredentialManager(
+        secrets,
+      ),
+    });
+  }
 
   list(): Promise<Credential[]> {
     return getAllCredentials(this.secrets);
