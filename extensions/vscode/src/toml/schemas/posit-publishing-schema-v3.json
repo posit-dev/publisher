@@ -518,7 +518,7 @@
             },
             "metrics_collection_enabled": {
               "type": "boolean",
-              "description": "Controls whether per-job resource metrics (CPU, memory, connections) are collected for this content item. When omitted, the content inherits the server-wide default. Only forwarded for Posit Connect deployments; ignored for Connect Cloud.",
+              "description": "Controls whether per-job resource metrics (CPU, memory, connections) are collected for this content item. When omitted, the content inherits the server-wide default.",
               "examples": [true]
             }
           }
