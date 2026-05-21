@@ -44,6 +44,7 @@ max_processes = 5
 min_processes = 1
 max_conns_per_process = 50
 load_factor = 0.5
+metrics_collection_enabled = true
 
 [connect.kubernetes]
 amd_gpu_limit = 0
