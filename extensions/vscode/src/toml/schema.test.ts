@@ -123,6 +123,36 @@ describe("schema rejects invalid integration_requests", () => {
   });
 });
 
+describe("schema validates connect.runtime.metrics_collection_enabled", () => {
+  it("accepts true", () => {
+    const data = baseConfig("connect");
+    setNested(data, ["connect", "runtime"], "metrics_collection_enabled", true);
+    expectValid(data);
+  });
+
+  it("accepts false", () => {
+    const data = baseConfig("connect");
+    setNested(
+      data,
+      ["connect", "runtime"],
+      "metrics_collection_enabled",
+      false,
+    );
+    expectValid(data);
+  });
+
+  it("rejects non-boolean value", () => {
+    const data = baseConfig("connect");
+    setNested(
+      data,
+      ["connect", "runtime"],
+      "metrics_collection_enabled",
+      "yes",
+    );
+    expectInvalid(data);
+  });
+});
+
 describe("schema rejects disallowed properties for Connect", () => {
   it("rejects python.garbage", () => {
     const data = baseConfig("connect");
