@@ -355,7 +355,7 @@ Controls how aggressively new processes are spawned. The valid range is between 
 
 #### metrics_collection_enabled
 
-_Valid only when `product_type` is `connect`._
+_Only valid when `product_type` is `connect`_
 
 Controls whether per-job resource metrics (CPU, memory, connections) are collected for this content item. When omitted, the content inherits the server-wide default (`Applications.MetricsCollectionEnabled`). Has no effect on Connect Cloud deployments.
 
