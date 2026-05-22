@@ -180,6 +180,28 @@ export class QuartoDetector implements ContentTypeDetector {
           );
         }
       }
+    } else if (inspectOutput.engines.length === 0) {
+      // Directory inspection returned no engines — scan input files to detect
+      // languages so we can populate engines as a fallback.
+      for (const inputFile of inspectOutput.inputFiles()) {
+        if (needR && needPython) break;
+        const abs = path.isAbsolute(inputFile)
+          ? inputFile
+          : path.join(baseDir, inputFile);
+        const ext = path.extname(abs).toLowerCase();
+        if (ext === ".ipynb") {
+          needPython = true;
+        } else if (quartoSuffixesLower.includes(ext)) {
+          try {
+            const content = await fs.readFile(abs, "utf-8");
+            const langs = detectMarkdownLanguagesInContent(content);
+            needR = needR || langs.needsR;
+            needPython = needPython || langs.needsPython;
+          } catch {
+            // Cannot read file — skip
+          }
+        }
+      }
     }
 
     const engines = [...inspectOutput.engines];
@@ -508,11 +530,41 @@ export class QuartoDetector implements ContentTypeDetector {
       return cfg;
     }
 
-    // Include .qmd files
+    // Include .qmd files and detect languages from their content
     const qmdFiles = await globDir(baseDir, "*.qmd");
+    let needR = false;
+    let needPython = false;
+
     for (const qmdPath of qmdFiles) {
       const relPath = path.basename(qmdPath);
       files.push(`/${relPath}`);
+
+      // Detect language needs from file content
+      if (!needR || !needPython) {
+        try {
+          const content = await fs.readFile(qmdPath, "utf-8");
+          const langs = detectMarkdownLanguagesInContent(content);
+          needR = needR || langs.needsR;
+          needPython = needPython || langs.needsPython;
+        } catch {
+          // Cannot read file — skip language detection for this file
+        }
+      }
+    }
+
+    // Set engines based on detected languages
+    const engines: string[] = [];
+    if (needR) {
+      cfg.r = {};
+      engines.push("knitr");
+    }
+    if (needPython) {
+      cfg.python = {};
+      engines.push("jupyter");
+    }
+    if (engines.length > 0) {
+      engines.sort();
+      cfg.quarto = { version: defaultQuartoVersion, engines };
     }
 
     // Include special yml files
