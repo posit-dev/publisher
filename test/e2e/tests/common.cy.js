@@ -3,7 +3,7 @@
 // Purpose: Smoke-test that the Publisher extension loads, the webview is accessible,
 // and all primary sections appear (Deployments, Credentials, Help).
 // This is a fast readiness check used by other specs as a baseline.
-describe("Common", () => {
+describe("Common", { tags: "@uses-no-target" }, () => {
   beforeEach(() => {
     cy.visit("/");
     cy.getPublisherSidebarIcon().click();

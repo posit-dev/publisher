@@ -22,7 +22,7 @@ describe("Credentials Section", () => {
     cy.resetCredentials();
   });
 
-  it("New PCS Credential", () => {
+  it("New PCS Credential", { tags: "@uses-posit-connect-server" }, () => {
     // Starts via startCredentialCreationFlow("server") and completes setup with API key.
     // Asserts successful connection and nickname presence in the credentials tree
 
@@ -96,25 +96,29 @@ describe("Credentials Section", () => {
     },
   );
 
-  it("Existing Credentials Load", () => {
-    // Creates admin credential via UI and validates it renders correctly in the list.
-    cy.setAdminCredentials();
-    cy.ensureCredentialsSectionExpanded();
-    cy.refreshCredentials();
+  it(
+    "Existing Credentials Load",
+    { tags: "@uses-posit-connect-server" },
+    () => {
+      // Creates admin credential via UI and validates it renders correctly in the list.
+      cy.setAdminCredentials();
+      cy.ensureCredentialsSectionExpanded();
+      cy.refreshCredentials();
 
-    cy.publisherWebview()
-      .findByText("No credentials have been added yet.")
-      .should("not.exist");
+      cy.publisherWebview()
+        .findByText("No credentials have been added yet.")
+        .should("not.exist");
 
-    cy.findUniqueInPublisherWebview(
-      '[data-automation="admin-code-server-list"]',
-    )
-      .find(".tree-item-title")
-      .should("exist")
-      .and("have.text", "admin-code-server");
-  });
+      cy.findUniqueInPublisherWebview(
+        '[data-automation="admin-code-server-list"]',
+      )
+        .find(".tree-item-title")
+        .should("exist")
+        .and("have.text", "admin-code-server");
+    },
+  );
 
-  it("Delete Credential", () => {
+  it("Delete Credential", { tags: "@uses-posit-connect-server" }, () => {
     // Creates admin credential, hovers to reveal delete action, confirms, and asserts removal.
     cy.setAdminCredentials();
     cy.ensureCredentialsSectionExpanded();

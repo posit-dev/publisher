@@ -141,23 +141,27 @@ describe("Multi-Stepper Negative Cases", () => {
     );
   });
 
-  describe("User Cancellation Cases", () => {
-    it("Deployment creation cancellation with partial input", () => {
-      // Tests cancellation during deployment creation workflow
-      // - Starts deployment creation flow
-      // - Enters partial input (deployment title)
-      // - Cancels via ESC key
-      // - Verifies return to initial publisher state with no artifacts
+  describe(
+    "User Cancellation Cases",
+    { tags: "@uses-posit-connect-server" },
+    () => {
+      it("Deployment creation cancellation with partial input", () => {
+        // Tests cancellation during deployment creation workflow
+        // - Starts deployment creation flow
+        // - Enters partial input (deployment title)
+        // - Cancels via ESC key
+        // - Verifies return to initial publisher state with no artifacts
 
-      cy.startDeploymentCreationFlow("simple.py");
+        cy.startDeploymentCreationFlow("simple.py");
 
-      // Start typing title but then cancel
-      cy.get(".quick-input-widget")
-        .find(".quick-input-filter input")
-        .type("test-deployment");
+        // Start typing title but then cancel
+        cy.get(".quick-input-widget")
+          .find(".quick-input-filter input")
+          .type("test-deployment");
 
-      cy.cancelQuickInput();
-      cy.expectInitialPublisherState();
-    });
-  });
+        cy.cancelQuickInput();
+        cy.expectInitialPublisherState();
+      });
+    },
+  );
 });

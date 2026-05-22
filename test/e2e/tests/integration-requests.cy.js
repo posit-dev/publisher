@@ -4,7 +4,7 @@
 // Rationale: Ensures PCC hides server-only features while PCS shows them.
 
 describe("IntegrationRequests Section", () => {
-  describe("Connect Server", () => {
+  describe("Connect Server", { tags: "@uses-posit-connect-server" }, () => {
     before(() => {
       cy.initializeConnect();
     });

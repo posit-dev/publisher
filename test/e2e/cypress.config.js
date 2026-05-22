@@ -91,10 +91,11 @@ module.exports = defineConfig({
     WORKBENCH_URL: "http://localhost:8787",
     pccConfig,
   },
-  // When running in mock mode, exclude @uses-posit-connect-cloud tests via @cypress/grep
+  // When running in mock mode, run Connect Server and no-target tests only.
+  // PCC and Positron tests are excluded — they require real services.
   ...(isMockMode && {
     expose: {
-      grepTags: "-@uses-posit-connect-cloud",
+      grepTags: "@uses-posit-connect-server @uses-no-target",
       grepOmitFiltered: true,
     },
   }),
