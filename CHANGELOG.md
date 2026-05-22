@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support for deploying Node.js applications (Express, Fastify, Hono, etc.) to Posit Connect. (#3964)
+- Support for browser-based Snowflake authentication when creating a new credential for Connect running within the Posit Team Native App in Snowpark Container Services. (#3466)
 
 ### Fixed
 
