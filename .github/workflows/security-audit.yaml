@@ -92,7 +92,7 @@ jobs:
           aws-region: us-east-2
 
       - name: Fix security issues with Claude
-        uses: anthropics/claude-code-action@v1.0.92
+        uses: anthropics/claude-code-action@v1.0.133
         with:
           use_bedrock: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
