@@ -1,9 +1,5 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import crypto from "crypto";
-import fs from "fs";
-import os from "os";
-import path from "path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("axios");
@@ -27,168 +23,89 @@ describe("createTokenProvider", () => {
 });
 
 describe("JWT token provider (snowflake_jwt)", () => {
-  let tmpDir: string;
-  let privateKeyFile: string;
-  let privateKeyPem: string;
-  let publicKeyDer: Buffer;
+  const VALID_SERIALIZED = JSON.stringify({
+    services: { sf: { tokenInfo: { sessionToken: "mock-jwt-token-123" } } },
+  });
+
+  let mockConnectAsync: ReturnType<typeof vi.fn>;
+  let mockSerialize: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "snowflake-jwt-test-"));
-
-    const { privateKey, publicKey } = crypto.generateKeyPairSync("rsa", {
-      modulusLength: 2048,
-    });
-
-    privateKeyPem = privateKey
-      .export({ type: "pkcs8", format: "pem" })
-      .toString();
-    const exported = publicKey.export({ type: "spki", format: "der" });
-    if (!Buffer.isBuffer(exported)) throw new Error("unexpected");
-    publicKeyDer = exported;
-
-    privateKeyFile = path.join(tmpDir, "key.p8");
-    fs.writeFileSync(privateKeyFile, privateKeyPem, "utf-8");
-
+    mockConnectAsync = vi.fn().mockResolvedValue(undefined);
+    mockSerialize = vi.fn().mockReturnValue(VALID_SERIALIZED);
+    vi.mocked(snowflake.createConnection).mockReturnValue({
+      connectAsync: mockConnectAsync,
+      serialize: mockSerialize,
+    } as unknown as ReturnType<typeof snowflake.createConnection>);
     vi.clearAllMocks();
   });
 
   afterEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
     vi.clearAllMocks();
   });
 
-  it("generates a JWT with correct claims structure and POSTs to token endpoint", async () => {
-    const mockPost = vi.mocked(axios.post).mockResolvedValue({
-      data: "access-token-value",
-    });
-
-    const provider = createTokenProvider({
-      account: "myaccount",
-      user: "myuser",
-      authenticator: "snowflake_jwt",
-      private_key_file: privateKeyFile,
-    });
-
-    const token = await provider.getToken("example.snowflakecomputing.app");
-
-    expect(token).toBe("access-token-value");
-    expect(mockPost).toHaveBeenCalledOnce();
-
-    const [url, body, config] = mockPost.mock.calls[0]!;
-    expect(url).toBe("https://myaccount.snowflakecomputing.com/oauth/token");
-    expect(config).toMatchObject({
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    });
-
-    // Parse URLSearchParams from the body
-    const params = new URLSearchParams(String(body));
-    expect(params.get("grant_type")).toBe(
-      "urn:ietf:params:oauth:grant-type:jwt-bearer",
-    );
-    expect(params.get("scope")).toBe("example.snowflakecomputing.app");
-
-    // Decode and verify the JWT assertion
-    const assertion = params.get("assertion");
-    expect(assertion).toBeTruthy();
-
-    const parts = assertion!.split(".");
-    const decoded = JSON.parse(
-      Buffer.from(parts[1]!, "base64url").toString("utf-8"),
-    );
-    const header = JSON.parse(
-      Buffer.from(parts[0]!, "base64url").toString("utf-8"),
-    );
-
-    expect(header.alg).toBe("RS256");
-    expect(decoded.sub).toBe("MYACCOUNT.MYUSER");
-
-    // Verify fingerprint
-    const expectedFingerprint = crypto
-      .createHash("sha256")
-      .update(publicKeyDer)
-      .digest("base64");
-    expect(decoded.iss).toBe(`MYACCOUNT.MYUSER.SHA256:${expectedFingerprint}`);
-
-    // Verify exp - iat = 60
-    expect(decoded.exp - decoded.iat).toBe(60);
-  });
-
-  it("includes role in scope when specified", async () => {
-    vi.mocked(axios.post).mockResolvedValue({ data: "token" });
-
-    const provider = createTokenProvider({
-      account: "myaccount",
-      user: "myuser",
-      authenticator: "snowflake_jwt",
-      private_key_file: privateKeyFile,
-      role: "myrole",
-    });
-
-    await provider.getToken("example.snowflakecomputing.app");
-
-    const [, body] = vi.mocked(axios.post).mock.calls[0]!;
-    const params = new URLSearchParams(String(body));
-    expect(params.get("scope")).toBe(
-      "session:role:myrole example.snowflakecomputing.app",
-    );
-  });
-
-  it("throws when private key file does not exist", () => {
+  it("throws when private_key_file is missing", () => {
     expect(() =>
       createTokenProvider({
         account: "myaccount",
         user: "myuser",
         authenticator: "snowflake_jwt",
-        private_key_file: path.join(tmpDir, "nonexistent.p8"),
       }),
-    ).toThrow();
+    ).toThrow("private_key_file is required for snowflake_jwt");
   });
 
-  it("throws when private key file is malformed", () => {
-    const badKeyFile = path.join(tmpDir, "bad.p8");
-    fs.writeFileSync(badKeyFile, "this is not a valid PEM key", "utf-8");
-
-    expect(() =>
-      createTokenProvider({
-        account: "myaccount",
-        user: "myuser",
-        authenticator: "snowflake_jwt",
-        private_key_file: badKeyFile,
-      }),
-    ).toThrow();
-  });
-
-  it("returns the access token from the exchange response", async () => {
-    vi.mocked(axios.post).mockResolvedValue({
-      data: "my-special-access-token",
-    });
-
+  it("creates connection with correct account, username, authenticator, and privateKeyPath", async () => {
     const provider = createTokenProvider({
       account: "myaccount",
       user: "myuser",
       authenticator: "snowflake_jwt",
-      private_key_file: privateKeyFile,
+      private_key_file: "/path/to/key.p8",
     });
-
-    const token = await provider.getToken("example.snowflakecomputing.app");
-    expect(token).toBe("my-special-access-token");
+    await provider.getToken("ignored-hostname");
+    expect(snowflake.createConnection).toHaveBeenCalledWith({
+      account: "myaccount",
+      username: "myuser",
+      authenticator: "SNOWFLAKE_JWT",
+      privateKeyPath: "/path/to/key.p8",
+      clientStoreTemporaryCredential: true,
+    });
   });
 
-  it("throws when token endpoint returns an HTTP error", async () => {
-    vi.mocked(axios.post).mockRejectedValue(
-      new Error("Request failed with status code 500"),
+  it("returns the session token from serialized connection state", async () => {
+    const provider = createTokenProvider({
+      account: "myaccount",
+      user: "myuser",
+      authenticator: "snowflake_jwt",
+      private_key_file: "/path/to/key.p8",
+    });
+    const token = await provider.getToken("ignored-hostname");
+    expect(token).toBe("mock-jwt-token-123");
+  });
+
+  it("throws if session token is absent from serialized state", async () => {
+    mockSerialize.mockReturnValue(JSON.stringify({ services: {} }));
+    const provider = createTokenProvider({
+      account: "myaccount",
+      user: "myuser",
+      authenticator: "snowflake_jwt",
+      private_key_file: "/path/to/key.p8",
+    });
+    await expect(provider.getToken("ignored-hostname")).rejects.toThrow(
+      "missing session token",
     );
+  });
 
+  it("throws if connectAsync rejects", async () => {
+    mockConnectAsync.mockRejectedValue(new Error("jwt auth failed"));
     const provider = createTokenProvider({
       account: "myaccount",
       user: "myuser",
       authenticator: "snowflake_jwt",
-      private_key_file: privateKeyFile,
+      private_key_file: "/path/to/key.p8",
     });
-
-    await expect(
-      provider.getToken("example.snowflakecomputing.app"),
-    ).rejects.toThrow();
+    await expect(provider.getToken("ignored-hostname")).rejects.toThrow(
+      "jwt auth failed",
+    );
   });
 });
 

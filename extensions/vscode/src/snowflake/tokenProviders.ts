@@ -1,11 +1,8 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import crypto from "crypto";
-import fs from "fs";
+import snowflake from "snowflake-sdk";
 
 import axios from "axios";
-import jwt from "jsonwebtoken";
-import snowflake from "snowflake-sdk";
 
 import type { SnowflakeConnectionConfig } from "./types";
 
@@ -38,16 +35,13 @@ export function createTokenProvider(
 }
 
 /**
- * JWT token provider that uses key-pair authentication.
- * Loads a PKCS8 RSA private key, generates a signed JWT, and exchanges
- * it for an OAuth access token from Snowflake.
+ * JWT token provider that uses key-pair authentication with Snowflake SDK.
+ * Uses the snowflake-sdk with SNOWFLAKE_JWT authenticator to obtain a session token.
  */
 class JWTTokenProvider implements TokenProvider {
   private readonly account: string;
   private readonly user: string;
-  private readonly privateKeyPem: string;
-  private readonly publicKeyDer: Buffer;
-  private readonly role: string;
+  private readonly privateKeyPath: string;
 
   constructor(connection: SnowflakeConnectionConfig) {
     const keyFile = connection.private_key_file;
@@ -55,67 +49,32 @@ class JWTTokenProvider implements TokenProvider {
       throw new Error("private_key_file is required for snowflake_jwt");
     }
 
-    const pemData = fs.readFileSync(keyFile, "utf-8");
-    const privateKey = crypto.createPrivateKey(pemData);
-    const publicKey = crypto.createPublicKey(privateKey);
-
     this.account = connection.account;
     this.user = connection.user;
-    this.privateKeyPem = privateKey
-      .export({ type: "pkcs8", format: "pem" })
-      .toString();
-    const exported = publicKey.export({ type: "spki", format: "der" });
-    if (!Buffer.isBuffer(exported)) {
-      throw new Error("expected Buffer from DER public key export");
+    this.privateKeyPath = keyFile;
+  }
+
+  async getToken(_hostname: string): Promise<string> {
+    const conn = snowflake.createConnection({
+      account: this.account,
+      username: this.user,
+      authenticator: "SNOWFLAKE_JWT",
+      privateKeyPath: this.privateKeyPath,
+      clientStoreTemporaryCredential: true,
+    });
+
+    await conn.connectAsync();
+
+    const sessionToken = extractSerializedToken(JSON.parse(conn.serialize()));
+
+    if (!sessionToken || typeof sessionToken !== "string") {
+      throw new Error("missing session token in jwt connection state");
     }
-    this.publicKeyDer = exported;
-    this.role = connection.role ?? "";
-  }
 
-  getToken(hostname: string): Promise<string> {
-    const assertion = this.buildJWT();
-    return this.exchangeForAccessToken(hostname, assertion);
-  }
+    // Do NOT call conn.destroy() — it sends a logout request to the server
+    // and invalidates the session token we just extracted.
 
-  private buildJWT(): string {
-    const fingerprint = crypto
-      .createHash("sha256")
-      .update(this.publicKeyDer)
-      .digest("base64");
-
-    const sub = `${this.account}.${this.user}`.toUpperCase();
-    const iss = `${sub}.SHA256:${fingerprint}`;
-
-    const now = Math.floor(Date.now() / 1000);
-
-    return jwt.sign({ sub, iss, iat: now, exp: now + 60 }, this.privateKeyPem, {
-      algorithm: "RS256",
-    });
-  }
-
-  private async exchangeForAccessToken(
-    hostname: string,
-    assertion: string,
-  ): Promise<string> {
-    const scope =
-      this.role !== "" ? `session:role:${this.role} ${hostname}` : hostname;
-
-    const params = new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      scope,
-      assertion,
-    });
-
-    const tokenEndpoint = `https://${this.account}.snowflakecomputing.com/oauth/token`;
-
-    const resp = await axios.post(tokenEndpoint, params.toString(), {
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    });
-
-    if (typeof resp.data !== "string") {
-      throw new Error("expected string response from token endpoint");
-    }
-    return resp.data;
+    return sessionToken;
   }
 }
 
