@@ -701,6 +701,7 @@
     "picomatch": "^4.0.4",
     "retry": "^0.13.1",
     "smol-toml": "^1.6.1",
+    "snowflake-sdk": "2.4.2",
     "tar-stream": "^3.2.0",
     "vscode-uri": "^3.0.8"
   }

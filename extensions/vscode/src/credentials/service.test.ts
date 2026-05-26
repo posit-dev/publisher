@@ -26,6 +26,12 @@ vi.mock("src/logging");
 vi.mock("src/snowflake/connections");
 vi.mock("src/snowflake/tokenProviders");
 
+vi.mock("snowflake-sdk", () => ({
+  default: {
+    configure: vi.fn(),
+  },
+}));
+
 vi.mock("src/config", () => ({
   default: {
     connectCloudURL: "https://connect.posit.cloud",

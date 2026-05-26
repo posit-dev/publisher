@@ -9,6 +9,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("axios");
 import axios from "axios";
 
+vi.mock("snowflake-sdk");
+import snowflake from "snowflake-sdk";
+
 import { createTokenProvider } from "./tokenProviders";
 
 describe("createTokenProvider", () => {
@@ -308,5 +311,77 @@ describe("OAuth token provider (oauth)", () => {
     await expect(
       provider.getToken("example.snowflakecomputing.app"),
     ).rejects.toThrow("missing token in login response");
+  });
+});
+
+describe("External browser token provider (externalbrowser)", () => {
+  const VALID_SERIALIZED = JSON.stringify({
+    services: { sf: { tokenInfo: { sessionToken: "mock-token-abc" } } },
+  });
+
+  let mockConnectAsync: ReturnType<typeof vi.fn>;
+  let mockSerialize: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    mockConnectAsync = vi.fn().mockResolvedValue(undefined);
+    mockSerialize = vi.fn().mockReturnValue(VALID_SERIALIZED);
+    vi.mocked(snowflake.createConnection).mockReturnValue({
+      connectAsync: mockConnectAsync,
+      serialize: mockSerialize,
+    } as unknown as ReturnType<typeof snowflake.createConnection>);
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("creates connection with correct account, username, and authenticator", async () => {
+    const provider = createTokenProvider({
+      account: "myaccount",
+      user: "myuser",
+      authenticator: "externalbrowser",
+    });
+    await provider.getToken("ignored-hostname");
+    expect(snowflake.createConnection).toHaveBeenCalledWith({
+      account: "myaccount",
+      username: "myuser",
+      authenticator: "EXTERNALBROWSER",
+      clientStoreTemporaryCredential: true,
+    });
+  });
+
+  it("returns the session token from serialized connection state", async () => {
+    const provider = createTokenProvider({
+      account: "myaccount",
+      user: "myuser",
+      authenticator: "externalbrowser",
+    });
+    const token = await provider.getToken("ignored-hostname");
+    expect(token).toBe("mock-token-abc");
+  });
+
+  it("throws if session token is absent from serialized state", async () => {
+    mockSerialize.mockReturnValue(JSON.stringify({ services: {} }));
+    const provider = createTokenProvider({
+      account: "myaccount",
+      user: "myuser",
+      authenticator: "externalbrowser",
+    });
+    await expect(provider.getToken("ignored-hostname")).rejects.toThrow(
+      "missing session token",
+    );
+  });
+
+  it("throws if connectAsync rejects", async () => {
+    mockConnectAsync.mockRejectedValue(new Error("browser auth failed"));
+    const provider = createTokenProvider({
+      account: "myaccount",
+      user: "myuser",
+      authenticator: "externalbrowser",
+    });
+    await expect(provider.getToken("ignored-hostname")).rejects.toThrow(
+      "browser auth failed",
+    );
   });
 });

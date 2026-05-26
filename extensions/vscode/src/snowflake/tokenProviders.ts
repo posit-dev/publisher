@@ -5,6 +5,7 @@ import fs from "fs";
 
 import axios from "axios";
 import jwt from "jsonwebtoken";
+import snowflake from "snowflake-sdk";
 
 import type { SnowflakeConnectionConfig } from "./types";
 
@@ -15,7 +16,7 @@ export interface TokenProvider {
 
 /**
  * Creates a TokenProvider based on the authenticator field of the connection config.
- * Supported authenticators: "snowflake_jwt", "oauth" (case-insensitive).
+ * Supported authenticators: "snowflake_jwt", "oauth", "externalbrowser" (case-insensitive).
  */
 export function createTokenProvider(
   connection: SnowflakeConnectionConfig,
@@ -27,6 +28,8 @@ export function createTokenProvider(
       return new JWTTokenProvider(connection);
     case "oauth":
       return new OAuthTokenProvider(connection);
+    case "externalbrowser":
+      return new ExternalBrowserTokenProvider(connection);
     default:
       throw new Error(
         `unsupported authenticator type: "${connection.authenticator}"`,
@@ -165,4 +168,53 @@ class OAuthTokenProvider implements TokenProvider {
 
     return sessionToken;
   }
+}
+
+/**
+ * External browser token provider that uses Snowflake's browser-based SSO.
+ * Opens the system browser for the user to authenticate via their identity provider,
+ * then extracts the session token from the SDK's internal connection state.
+ */
+class ExternalBrowserTokenProvider implements TokenProvider {
+  private readonly account: string;
+  private readonly user: string;
+
+  constructor(connection: SnowflakeConnectionConfig) {
+    this.account = connection.account;
+    this.user = connection.user;
+  }
+
+  async getToken(_hostname: string): Promise<string> {
+    const conn = snowflake.createConnection({
+      account: this.account,
+      username: this.user,
+      authenticator: "EXTERNALBROWSER",
+      clientStoreTemporaryCredential: true,
+    });
+
+    await conn.connectAsync();
+
+    const sessionToken = extractSerializedToken(JSON.parse(conn.serialize()));
+
+    if (!sessionToken || typeof sessionToken !== "string") {
+      throw new Error(
+        "missing session token in externalbrowser connection state",
+      );
+    }
+
+    // Do NOT call conn.destroy() — it sends a logout request to the server
+    // and invalidates the session token we just extracted.
+
+    return sessionToken;
+  }
+}
+
+/**
+ * Extracts the session token from the private state returned by
+ * connection.serialize(). This is an undocumented SDK internal; the SDK is
+ * pinned to avoid breakage from internal restructuring.
+ */
+function extractSerializedToken(parsed: unknown): unknown {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (parsed as any)?.services?.sf?.tokenInfo?.sessionToken;
 }
