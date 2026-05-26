@@ -2,9 +2,6 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("axios");
-import axios from "axios";
-
 vi.mock("snowflake-sdk");
 import snowflake from "snowflake-sdk";
 
@@ -110,7 +107,20 @@ describe("JWT token provider (snowflake_jwt)", () => {
 });
 
 describe("OAuth token provider (oauth)", () => {
+  const VALID_SERIALIZED = JSON.stringify({
+    services: { sf: { tokenInfo: { sessionToken: "mock-oauth-token-456" } } },
+  });
+
+  let mockConnectAsync: ReturnType<typeof vi.fn>;
+  let mockSerialize: ReturnType<typeof vi.fn>;
+
   beforeEach(() => {
+    mockConnectAsync = vi.fn().mockResolvedValue(undefined);
+    mockSerialize = vi.fn().mockReturnValue(VALID_SERIALIZED);
+    vi.mocked(snowflake.createConnection).mockReturnValue({
+      connectAsync: mockConnectAsync,
+      serialize: mockSerialize,
+    } as unknown as ReturnType<typeof snowflake.createConnection>);
     vi.clearAllMocks();
   });
 
@@ -118,116 +128,67 @@ describe("OAuth token provider (oauth)", () => {
     vi.clearAllMocks();
   });
 
-  it("sends login-request with correct body and headers", async () => {
-    const mockPost = vi.mocked(axios.post).mockResolvedValue({
-      data: {
-        data: {
-          token: "session-token-value",
-        },
-      },
-    });
+  it("throws when token is missing", () => {
+    expect(() =>
+      createTokenProvider({
+        account: "myaccount",
+        user: "myuser",
+        authenticator: "oauth",
+      }),
+    ).toThrow("token is required for oauth");
+  });
 
+  it("creates connection with correct account, authenticator, and token", async () => {
     const provider = createTokenProvider({
       account: "myaccount",
       user: "myuser",
       authenticator: "oauth",
       token: "my-oauth-token",
     });
+    await provider.getToken("ignored-hostname");
+    expect(snowflake.createConnection).toHaveBeenCalledWith({
+      account: "myaccount",
+      authenticator: "OAUTH",
+      token: "my-oauth-token",
+      clientStoreTemporaryCredential: true,
+    });
+  });
 
-    await provider.getToken("example.snowflakecomputing.app");
+  it("returns the session token from serialized connection state", async () => {
+    const provider = createTokenProvider({
+      account: "myaccount",
+      user: "myuser",
+      authenticator: "oauth",
+      token: "my-oauth-token",
+    });
+    const token = await provider.getToken("ignored-hostname");
+    expect(token).toBe("mock-oauth-token-456");
+  });
 
-    expect(mockPost).toHaveBeenCalledOnce();
-
-    const [url, body, config] = mockPost.mock.calls[0]!;
-    expect(url).toBe(
-      "https://myaccount.snowflakecomputing.com/session/v1/login-request",
+  it("throws if session token is absent from serialized state", async () => {
+    mockSerialize.mockReturnValue(JSON.stringify({ services: {} }));
+    const provider = createTokenProvider({
+      account: "myaccount",
+      user: "myuser",
+      authenticator: "oauth",
+      token: "my-oauth-token",
+    });
+    await expect(provider.getToken("ignored-hostname")).rejects.toThrow(
+      "missing session token",
     );
-    expect(body).toEqual({
-      data: {
-        ACCOUNT_NAME: "myaccount",
-        TOKEN: "my-oauth-token",
-        AUTHENTICATOR: "OAUTH",
-      },
-    });
-    expect(config).toMatchObject({
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/snowflake",
-      },
-    });
   });
 
-  it("returns the session token from data.data.token", async () => {
-    vi.mocked(axios.post).mockResolvedValue({
-      data: {
-        data: {
-          token: "my-session-token",
-        },
-      },
-    });
-
+  it("throws if connectAsync rejects", async () => {
+    mockConnectAsync.mockRejectedValue(new Error("oauth auth failed"));
     const provider = createTokenProvider({
       account: "myaccount",
       user: "myuser",
       authenticator: "oauth",
       token: "my-oauth-token",
     });
-
-    const result = await provider.getToken("example.snowflakecomputing.app");
-    expect(result).toBe("my-session-token");
-  });
-
-  it("throws when login response is missing token", async () => {
-    vi.mocked(axios.post).mockResolvedValue({
-      data: {
-        data: {},
-      },
-    });
-
-    const provider = createTokenProvider({
-      account: "myaccount",
-      user: "myuser",
-      authenticator: "oauth",
-      token: "my-oauth-token",
-    });
-
-    await expect(
-      provider.getToken("example.snowflakecomputing.app"),
-    ).rejects.toThrow("missing token in login response");
-  });
-
-  it("throws when login endpoint returns an HTTP error", async () => {
-    vi.mocked(axios.post).mockRejectedValue(
-      new Error("Request failed with status code 500"),
+    await expect(provider.getToken("ignored-hostname")).rejects.toThrow(
+      "oauth auth failed",
     );
-
-    const provider = createTokenProvider({
-      account: "myaccount",
-      user: "myuser",
-      authenticator: "oauth",
-      token: "my-oauth-token",
-    });
-
-    await expect(
-      provider.getToken("example.snowflakecomputing.app"),
-    ).rejects.toThrow();
-  });
-
-  it("throws when login response body is not valid JSON structure", async () => {
-    vi.mocked(axios.post).mockResolvedValue({
-      data: "notjson",
-    });
-
-    const provider = createTokenProvider({
-      account: "myaccount",
-      user: "myuser",
-      authenticator: "oauth",
-      token: "my-oauth-token",
-    });
-
-    await expect(
-      provider.getToken("example.snowflakecomputing.app"),
-    ).rejects.toThrow("missing token in login response");
   });
 });
 

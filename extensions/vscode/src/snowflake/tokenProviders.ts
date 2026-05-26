@@ -2,8 +2,6 @@
 
 import snowflake from "snowflake-sdk";
 
-import axios from "axios";
-
 import type { SnowflakeConnectionConfig } from "./types";
 
 /** A token provider that returns an ingress access token for a given hostname. */
@@ -79,51 +77,41 @@ class JWTTokenProvider implements TokenProvider {
 }
 
 /**
- * OAuth token provider that uses Snowflake's login-request flow.
- * Sends a login request with an OAuth token and retrieves a session token.
+ * OAuth token provider that uses Snowflake's OAuth authentication.
+ * Uses the snowflake-sdk with OAUTH authenticator to obtain a session token.
  */
 class OAuthTokenProvider implements TokenProvider {
   private readonly account: string;
   private readonly token: string;
 
   constructor(connection: SnowflakeConnectionConfig) {
+    const oauthToken = connection.token;
+    if (!oauthToken) {
+      throw new Error("token is required for oauth");
+    }
+
     this.account = connection.account;
-    this.token = connection.token ?? "";
+    this.token = oauthToken;
   }
 
   async getToken(_hostname: string): Promise<string> {
-    const loginEndpoint = `https://${this.account}.snowflakecomputing.com/session/v1/login-request`;
+    const conn = snowflake.createConnection({
+      account: this.account,
+      authenticator: "OAUTH",
+      token: this.token,
+      clientStoreTemporaryCredential: true,
+    });
 
-    const resp = await axios.post(
-      loginEndpoint,
-      {
-        data: {
-          ACCOUNT_NAME: this.account,
-          TOKEN: this.token,
-          AUTHENTICATOR: "OAUTH",
-        },
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/snowflake",
-        },
-      },
-    );
+    await conn.connectAsync();
 
-    const sessionToken: unknown =
-      resp.data &&
-      typeof resp.data === "object" &&
-      "data" in resp.data &&
-      resp.data.data &&
-      typeof resp.data.data === "object" &&
-      "token" in resp.data.data
-        ? resp.data.data.token
-        : undefined;
+    const sessionToken = extractSerializedToken(JSON.parse(conn.serialize()));
 
     if (!sessionToken || typeof sessionToken !== "string") {
-      throw new Error("missing token in login response");
+      throw new Error("missing session token in oauth connection state");
     }
+
+    // Do NOT call conn.destroy() — it sends a logout request to the server
+    // and invalidates the session token we just extracted.
 
     return sessionToken;
   }
