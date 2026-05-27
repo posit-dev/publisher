@@ -29,7 +29,6 @@ import {
 import { CredentialsService } from "src/credentials/service";
 import { isConnect, isSnowflake } from "../utils/multiStepHelpers";
 import { listConnections } from "src/snowflake/connections";
-import { getSnowflakeToken as getSnowflakeTokenFromSDK } from "src/snowflake/tokenProviders";
 import { openConfigurationCommand } from "src/commands";
 import { extensionSettings } from "src/extension";
 import { formatURL } from "src/utils/url";
@@ -114,7 +113,7 @@ export async function newConnectCredential(
     if (!config) {
       return undefined;
     }
-    return await getSnowflakeTokenFromSDK(config);
+    return await credentialsService.getSnowflakeToken(config);
   }
 
   const isValidTokenAuth = () => {
@@ -513,7 +512,10 @@ export async function newConnectCredential(
 
     try {
       await showProgress("Reading Snowflake connections", viewId, async () => {
-        const resp = await fetchSnowflakeConnections(serverUrl);
+        const resp = await fetchSnowflakeConnections(
+          credentialsService,
+          serverUrl,
+        );
         connections = resp.connections;
         connectionQuickPicks = resp.connectionQuickPicks;
       });

@@ -23,21 +23,24 @@ vi.mock("@posit-dev/connect-api", async (importOriginal) => {
 
 vi.mock("src/logging");
 vi.mock("./connections");
-vi.mock("./tokenProviders");
 
 import { ConnectAPI } from "@posit-dev/connect-api";
 import { listConnections } from "./connections";
-import { getSnowflakeToken } from "./tokenProviders";
+import { CredentialsService } from "src/credentials/service";
 
 import { discoverSnowflakeConnections } from "./discovery";
 
 const mockListConnections = vi.mocked(listConnections);
-const mockGetSnowflakeToken = vi.mocked(getSnowflakeToken);
 const MockConnectAPI = ConnectAPI as unknown as ReturnType<typeof vi.fn>;
 
 describe("discoverSnowflakeConnections", () => {
+  let mockService: Omit<CredentialsService, "new">;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    mockService = {
+      getSnowflakeToken: vi.fn(),
+    } as unknown as Omit<CredentialsService, "new">;
   });
 
   it("returns validated connections with working URLs", async () => {
@@ -50,11 +53,12 @@ describe("discoverSnowflakeConnections", () => {
       },
     });
 
-    mockGetSnowflakeToken.mockResolvedValue("sf-token-123");
+    vi.mocked(mockService.getSnowflakeToken).mockResolvedValue("sf-token-123");
 
     mockTestAuthentication.mockResolvedValue({ user: {}, error: null });
 
     const result = await discoverSnowflakeConnections(
+      mockService as unknown as CredentialsService,
       "https://example.snowflakecomputing.app",
     );
 
@@ -79,7 +83,7 @@ describe("discoverSnowflakeConnections", () => {
       },
     });
 
-    mockGetSnowflakeToken.mockResolvedValue("sf-token-abc");
+    vi.mocked(mockService.getSnowflakeToken).mockResolvedValue("sf-token-abc");
 
     // Input URL with path — getListOfPossibleURLs will generate candidates:
     // ["https://example.snowflakecomputing.app", "https://example.snowflakecomputing.app/connect"]
@@ -89,6 +93,7 @@ describe("discoverSnowflakeConnections", () => {
       .mockResolvedValueOnce({ user: {}, error: null });
 
     const result = await discoverSnowflakeConnections(
+      mockService as unknown as CredentialsService,
       "https://example.snowflakecomputing.app/connect",
     );
 
@@ -117,7 +122,7 @@ describe("discoverSnowflakeConnections", () => {
       },
     });
 
-    mockGetSnowflakeToken
+    vi.mocked(mockService.getSnowflakeToken)
       .mockRejectedValueOnce(
         new Error("private_key_file is required for snowflake_jwt"),
       )
@@ -126,6 +131,7 @@ describe("discoverSnowflakeConnections", () => {
     mockTestAuthentication.mockResolvedValue({ user: {}, error: null });
 
     const result = await discoverSnowflakeConnections(
+      mockService as unknown as CredentialsService,
       "https://example.snowflakecomputing.app",
     );
 
@@ -138,6 +144,7 @@ describe("discoverSnowflakeConnections", () => {
     mockListConnections.mockReturnValue({});
 
     const result = await discoverSnowflakeConnections(
+      mockService as unknown as CredentialsService,
       "https://example.snowflakecomputing.app",
     );
 
@@ -155,9 +162,12 @@ describe("discoverSnowflakeConnections", () => {
       },
     });
 
-    mockGetSnowflakeToken.mockRejectedValue(new Error("token error"));
+    vi.mocked(mockService.getSnowflakeToken).mockRejectedValue(
+      new Error("token error"),
+    );
 
     const result = await discoverSnowflakeConnections(
+      mockService as unknown as CredentialsService,
       "https://example.snowflakecomputing.app",
     );
 

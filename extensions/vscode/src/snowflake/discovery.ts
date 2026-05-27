@@ -3,9 +3,9 @@
 import { ConnectAPI, ConnectAPIError } from "@posit-dev/connect-api";
 
 import { listConnections } from "./connections";
-import { getSnowflakeToken } from "./tokenProviders";
 import { getListOfPossibleURLs } from "../utils/url";
 import { logger } from "src/logging";
+import { CredentialsService } from "src/credentials/service";
 import type { SnowflakeConnection } from "./types";
 
 const VALIDATION_TIMEOUT_MS = 30_000;
@@ -15,6 +15,7 @@ const VALIDATION_TIMEOUT_MS = 30_000;
  * to the Connect server at the given URL.
  */
 export async function discoverSnowflakeConnections(
+  credentialsService: CredentialsService,
   serverUrl: string,
 ): Promise<SnowflakeConnection[]> {
   const urlCandidates = getListOfPossibleURLs(serverUrl);
@@ -24,7 +25,7 @@ export async function discoverSnowflakeConnections(
   for (const [name, config] of Object.entries(connections)) {
     let token;
     try {
-      token = await getSnowflakeToken(config);
+      token = await credentialsService.getSnowflakeToken(config);
     } catch (e) {
       logger.debug(`Snowflake: skipping connection "${name}": ${e}`);
       continue;

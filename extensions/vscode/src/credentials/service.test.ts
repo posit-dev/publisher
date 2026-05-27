@@ -7,7 +7,6 @@ import { credentialFactory } from "src/test/unit-test-utils/factories";
 import { mockSecretStorage } from "src/test/unit-test-utils/vscode-mocks";
 import { ServerType } from "src/api/types/contentRecords";
 import { listConnections } from "src/snowflake/connections";
-import { getSnowflakeToken } from "src/snowflake/tokenProviders";
 import { storeCredential } from "./storage";
 import {
   CredentialsService,
@@ -24,7 +23,6 @@ import {
 vi.mock("vscode");
 vi.mock("src/logging");
 vi.mock("src/snowflake/connections");
-vi.mock("src/snowflake/tokenProviders");
 
 vi.mock("snowflake-sdk", () => ({
   default: {
@@ -353,9 +351,16 @@ describe("CredentialsService", () => {
 });
 
 describe("connectAPIOptionsFromCredential", () => {
+  let service: CredentialsService;
+
+  beforeEach(() => {
+    const secrets = new mockSecretStorage();
+    service = new CredentialsService(secrets);
+  });
+
   describe("API key auth", () => {
     test("returns apiKey options when apiKey is present", async () => {
-      const result = await connectAPIOptionsFromCredential({
+      const result = await connectAPIOptionsFromCredential(service, {
         url: "https://connect.example.com",
         apiKey: "my-key",
         token: "",
@@ -373,7 +378,7 @@ describe("connectAPIOptionsFromCredential", () => {
 
   describe("token auth", () => {
     test("returns token options when token and privateKey are present", async () => {
-      const result = await connectAPIOptionsFromCredential({
+      const result = await connectAPIOptionsFromCredential(service, {
         url: "https://connect.example.com",
         apiKey: "",
         token: "my-token",
@@ -390,7 +395,7 @@ describe("connectAPIOptionsFromCredential", () => {
     });
 
     test("prefers token auth over API key auth when both are present", async () => {
-      const result = await connectAPIOptionsFromCredential({
+      const result = await connectAPIOptionsFromCredential(service, {
         url: "https://connect.example.com",
         apiKey: "my-key",
         token: "my-token",
@@ -409,7 +414,7 @@ describe("connectAPIOptionsFromCredential", () => {
 
   describe("no auth", () => {
     test("returns url-only options when no auth fields are set", async () => {
-      const result = await connectAPIOptionsFromCredential({
+      const result = await connectAPIOptionsFromCredential(service, {
         url: "https://connect.example.com",
         apiKey: "",
         token: "",
@@ -427,6 +432,7 @@ describe("connectAPIOptionsFromCredential", () => {
   describe("extra options", () => {
     test("spreads extra options onto the result", async () => {
       const result = await connectAPIOptionsFromCredential(
+        service,
         {
           url: "https://connect.example.com",
           apiKey: "my-key",
@@ -463,7 +469,7 @@ describe("connectAPIOptionsFromCredential", () => {
         },
       });
 
-      vi.mocked(getSnowflakeToken).mockImplementation((config) => {
+      vi.spyOn(service, "getSnowflakeToken").mockImplementation((config) => {
         if (config.authenticator === "unsupported") {
           return Promise.reject(
             new Error('unsupported authenticator type: "unsupported"'),
@@ -474,7 +480,7 @@ describe("connectAPIOptionsFromCredential", () => {
     });
 
     test("returns snowflakeToken + apiKey options for Snowflake credentials with API key", async () => {
-      const result = await connectAPIOptionsFromCredential({
+      const result = await connectAPIOptionsFromCredential(service, {
         url: "https://my-org.snowflakecomputing.app",
         apiKey: "connect-api-key",
         token: "",
@@ -491,7 +497,7 @@ describe("connectAPIOptionsFromCredential", () => {
     });
 
     test("returns snowflakeToken + token+privateKey options for Snowflake credentials with token auth", async () => {
-      const result = await connectAPIOptionsFromCredential({
+      const result = await connectAPIOptionsFromCredential(service, {
         url: "https://my-org.snowflakecomputing.app",
         apiKey: "",
         token: "connect-token-id",
@@ -509,7 +515,7 @@ describe("connectAPIOptionsFromCredential", () => {
     });
 
     test("returns snowflakeToken-only for legacy Snowflake credentials with no Connect auth", async () => {
-      const result = await connectAPIOptionsFromCredential({
+      const result = await connectAPIOptionsFromCredential(service, {
         url: "https://my-org.snowflakecomputing.app",
         apiKey: "",
         token: "",
@@ -528,6 +534,7 @@ describe("connectAPIOptionsFromCredential", () => {
 
     test("passes extra options through for Snowflake credentials", async () => {
       const result = await connectAPIOptionsFromCredential(
+        service,
         {
           url: "https://my-org.snowflakecomputing.app",
           apiKey: "",
@@ -547,7 +554,7 @@ describe("connectAPIOptionsFromCredential", () => {
 
     test("throws when Snowflake connection name is not found", async () => {
       await expect(
-        connectAPIOptionsFromCredential({
+        connectAPIOptionsFromCredential(service, {
           url: "https://my-org.snowflakecomputing.app",
           apiKey: "",
           token: "",
@@ -560,7 +567,7 @@ describe("connectAPIOptionsFromCredential", () => {
 
     test("throws when token provider creation fails", async () => {
       await expect(
-        connectAPIOptionsFromCredential({
+        connectAPIOptionsFromCredential(service, {
           url: "https://my-org.snowflakecomputing.app",
           apiKey: "",
           token: "",

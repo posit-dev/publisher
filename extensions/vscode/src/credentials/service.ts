@@ -7,6 +7,7 @@ import snowflake from "snowflake-sdk";
 
 import { Credential } from "src/api/types/credentials";
 import { ServerType } from "src/api/types/contentRecords";
+import type { SnowflakeConnectionConfig } from "src/snowflake/types";
 import {
   getAllCredentials,
   getCredential,
@@ -15,7 +16,6 @@ import {
   deleteAllCredentials,
 } from "./storage";
 import { listConnections } from "src/snowflake/connections";
-import { getSnowflakeToken } from "src/snowflake/tokenProviders";
 import { normalizeServerURL, isConnectLike } from "src/utils/serverUrl";
 import {
   CredentialNotFoundError,
@@ -51,6 +51,7 @@ export interface CreateCredentialInput {
  * connection from connections.toml and exchanging credentials with Snowflake.
  */
 export async function connectAPIOptionsFromCredential(
+  service: CredentialsService,
   credential: Pick<
     Credential,
     | "url"
@@ -66,7 +67,7 @@ export async function connectAPIOptionsFromCredential(
     credential.serverType === ServerType.SNOWFLAKE &&
     credential.snowflakeConnection
   ) {
-    return await buildSnowflakeOptions(credential, extra);
+    return await service.buildSnowflakeOptions(credential, extra);
   }
 
   if (credential.token && credential.privateKey) {
@@ -86,50 +87,6 @@ export async function connectAPIOptionsFromCredential(
   }
   return {
     url: credential.url,
-    ...extra,
-  };
-}
-
-async function buildSnowflakeOptions(
-  credential: Pick<
-    Credential,
-    "url" | "snowflakeConnection" | "apiKey" | "token" | "privateKey"
-  >,
-  extra?: Pick<ConnectAPIOptions, "rejectUnauthorized" | "timeout">,
-): Promise<ConnectAPIOptions> {
-  const connections = listConnections();
-  const connectionName = credential.snowflakeConnection;
-  const connectionConfig = connections[connectionName];
-  if (!connectionConfig) {
-    throw new Error(
-      `Snowflake connection "${connectionName}" not found in connections.toml`,
-    );
-  }
-
-  const snowflakeToken = await getSnowflakeToken(connectionConfig);
-
-  if (credential.token && credential.privateKey) {
-    return {
-      url: credential.url,
-      snowflakeToken,
-      token: credential.token,
-      privateKey: credential.privateKey,
-      ...extra,
-    };
-  }
-  if (credential.apiKey) {
-    return {
-      url: credential.url,
-      snowflakeToken,
-      apiKey: credential.apiKey,
-      ...extra,
-    };
-  }
-  // Legacy credential with no Connect auth — will fail at request time
-  // but we still need to allow loading/displaying it.
-  return {
-    url: credential.url,
-    snowflakeToken,
     ...extra,
   };
 }
@@ -291,5 +248,129 @@ export class CredentialsService {
     if (newCred.name === existing.name) {
       throw new CredentialNameCollisionError(existing.name, existing.url);
     }
+  }
+
+  /**
+   * Obtains a session token from Snowflake using the authenticator and credentials
+   * from the connection config. Supports "snowflake_jwt", "oauth", and "externalbrowser"
+   * authenticators (case-insensitive).
+   *
+   * The session token is extracted directly from the SDK's internal connection state.
+   * Do NOT call conn.destroy() — it invalidates the token.
+   */
+  async getSnowflakeToken(
+    connection: SnowflakeConnectionConfig,
+  ): Promise<string> {
+    const authenticator = connection.authenticator.toUpperCase();
+
+    let connectionConfig: Record<string, unknown>;
+
+    switch (authenticator) {
+      case "SNOWFLAKE_JWT": {
+        if (!connection.private_key_file) {
+          throw new Error("private_key_file is required for snowflake_jwt");
+        }
+        connectionConfig = {
+          username: connection.user,
+          authenticator,
+          privateKeyPath: connection.private_key_file,
+        };
+        break;
+      }
+      case "OAUTH": {
+        if (!connection.token) {
+          throw new Error("token is required for oauth");
+        }
+        connectionConfig = {
+          authenticator,
+          token: connection.token,
+        };
+        break;
+      }
+      case "EXTERNALBROWSER":
+        connectionConfig = {
+          username: connection.user,
+          authenticator,
+        };
+        break;
+      default:
+        throw new Error(
+          `unsupported authenticator type: "${connection.authenticator}"`,
+        );
+    }
+
+    const conn = snowflake.createConnection({
+      account: connection.account,
+      clientStoreTemporaryCredential: true,
+      ...connectionConfig,
+    });
+
+    await conn.connectAsync();
+
+    const sessionToken = this.extractSerializedToken(
+      JSON.parse(conn.serialize()),
+    );
+
+    if (!sessionToken || typeof sessionToken !== "string") {
+      throw new Error(
+        `missing session token in ${authenticator.toLowerCase()} connection state`,
+      );
+    }
+
+    return sessionToken;
+  }
+
+  /**
+   * Extracts the session token from the private state returned by
+   * connection.serialize(). This is an undocumented SDK internal; the SDK is
+   * pinned to avoid breakage from internal restructuring.
+   */
+  private extractSerializedToken(parsed: unknown): unknown {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (parsed as any)?.services?.sf?.tokenInfo?.sessionToken;
+  }
+
+  async buildSnowflakeOptions(
+    credential: Pick<
+      Credential,
+      "url" | "snowflakeConnection" | "apiKey" | "token" | "privateKey"
+    >,
+    extra?: Pick<ConnectAPIOptions, "rejectUnauthorized" | "timeout">,
+  ): Promise<ConnectAPIOptions> {
+    const connections = listConnections();
+    const connectionName = credential.snowflakeConnection;
+    const connectionConfig = connections[connectionName];
+    if (!connectionConfig) {
+      throw new Error(
+        `Snowflake connection "${connectionName}" not found in connections.toml`,
+      );
+    }
+
+    const snowflakeToken = await this.getSnowflakeToken(connectionConfig);
+
+    if (credential.token && credential.privateKey) {
+      return {
+        url: credential.url,
+        snowflakeToken,
+        token: credential.token,
+        privateKey: credential.privateKey,
+        ...extra,
+      };
+    }
+    if (credential.apiKey) {
+      return {
+        url: credential.url,
+        snowflakeToken,
+        apiKey: credential.apiKey,
+        ...extra,
+      };
+    }
+    // Legacy credential with no Connect auth — will fail at request time
+    // but we still need to allow loading/displaying it.
+    return {
+      url: credential.url,
+      snowflakeToken,
+      ...extra,
+    };
   }
 }
