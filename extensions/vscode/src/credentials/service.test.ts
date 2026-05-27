@@ -7,7 +7,7 @@ import { credentialFactory } from "src/test/unit-test-utils/factories";
 import { mockSecretStorage } from "src/test/unit-test-utils/vscode-mocks";
 import { ServerType } from "src/api/types/contentRecords";
 import { listConnections } from "src/snowflake/connections";
-import { createTokenProvider } from "src/snowflake/tokenProviders";
+import { getSnowflakeToken } from "src/snowflake/tokenProviders";
 import { storeCredential } from "./storage";
 import {
   CredentialsService,
@@ -463,13 +463,13 @@ describe("connectAPIOptionsFromCredential", () => {
         },
       });
 
-      vi.mocked(createTokenProvider).mockImplementation((config) => {
+      vi.mocked(getSnowflakeToken).mockImplementation((config) => {
         if (config.authenticator === "unsupported") {
-          throw new Error('unsupported authenticator type: "unsupported"');
+          return Promise.reject(
+            new Error('unsupported authenticator type: "unsupported"'),
+          );
         }
-        return {
-          getToken: vi.fn().mockResolvedValue("sf-test-token-123"),
-        };
+        return Promise.resolve("sf-test-token-123");
       });
     });
 

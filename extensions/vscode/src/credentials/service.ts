@@ -15,7 +15,7 @@ import {
   deleteAllCredentials,
 } from "./storage";
 import { listConnections } from "src/snowflake/connections";
-import { createTokenProvider } from "src/snowflake/tokenProviders";
+import { getSnowflakeToken } from "src/snowflake/tokenProviders";
 import { normalizeServerURL, isConnectLike } from "src/utils/serverUrl";
 import {
   CredentialNotFoundError,
@@ -106,9 +106,7 @@ async function buildSnowflakeOptions(
     );
   }
 
-  const tokenProvider = createTokenProvider(connectionConfig);
-  const hostname = new URL(credential.url).hostname;
-  const snowflakeToken = await tokenProvider.getToken(hostname);
+  const snowflakeToken = await getSnowflakeToken(connectionConfig);
 
   if (credential.token && credential.privateKey) {
     return {

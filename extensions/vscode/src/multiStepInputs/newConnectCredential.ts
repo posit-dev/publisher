@@ -29,7 +29,7 @@ import {
 import { CredentialsService } from "src/credentials/service";
 import { isConnect, isSnowflake } from "../utils/multiStepHelpers";
 import { listConnections } from "src/snowflake/connections";
-import { createTokenProvider } from "src/snowflake/tokenProviders";
+import { getSnowflakeToken as getSnowflakeTokenFromSDK } from "src/snowflake/tokenProviders";
 import { openConfigurationCommand } from "src/commands";
 import { extensionSettings } from "src/extension";
 import { formatURL } from "src/utils/url";
@@ -114,10 +114,7 @@ export async function newConnectCredential(
     if (!config) {
       return undefined;
     }
-    const serverUrl = typeof state.data.url === "string" ? state.data.url : "";
-    const provider = createTokenProvider(config);
-    const hostname = new URL(serverUrl).hostname;
-    return await provider.getToken(hostname);
+    return await getSnowflakeTokenFromSDK(config);
   }
 
   const isValidTokenAuth = () => {

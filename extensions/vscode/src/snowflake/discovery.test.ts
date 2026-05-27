@@ -27,12 +27,12 @@ vi.mock("./tokenProviders");
 
 import { ConnectAPI } from "@posit-dev/connect-api";
 import { listConnections } from "./connections";
-import { createTokenProvider } from "./tokenProviders";
+import { getSnowflakeToken } from "./tokenProviders";
 
 import { discoverSnowflakeConnections } from "./discovery";
 
 const mockListConnections = vi.mocked(listConnections);
-const mockCreateTokenProvider = vi.mocked(createTokenProvider);
+const mockGetSnowflakeToken = vi.mocked(getSnowflakeToken);
 const MockConnectAPI = ConnectAPI as unknown as ReturnType<typeof vi.fn>;
 
 describe("discoverSnowflakeConnections", () => {
@@ -50,8 +50,7 @@ describe("discoverSnowflakeConnections", () => {
       },
     });
 
-    const mockGetToken = vi.fn().mockResolvedValue("sf-token-123");
-    mockCreateTokenProvider.mockReturnValue({ getToken: mockGetToken });
+    mockGetSnowflakeToken.mockResolvedValue("sf-token-123");
 
     mockTestAuthentication.mockResolvedValue({ user: {}, error: null });
 
@@ -62,8 +61,6 @@ describe("discoverSnowflakeConnections", () => {
     expect(result).toEqual([
       { name: "default", serverUrl: "https://example.snowflakecomputing.app" },
     ]);
-
-    expect(mockGetToken).toHaveBeenCalledWith("example.snowflakecomputing.app");
 
     expect(MockConnectAPI).toHaveBeenCalledWith({
       url: "https://example.snowflakecomputing.app",
@@ -82,8 +79,7 @@ describe("discoverSnowflakeConnections", () => {
       },
     });
 
-    const mockGetToken = vi.fn().mockResolvedValue("sf-token-abc");
-    mockCreateTokenProvider.mockReturnValue({ getToken: mockGetToken });
+    mockGetSnowflakeToken.mockResolvedValue("sf-token-abc");
 
     // Input URL with path — getListOfPossibleURLs will generate candidates:
     // ["https://example.snowflakecomputing.app", "https://example.snowflakecomputing.app/connect"]
@@ -111,7 +107,7 @@ describe("discoverSnowflakeConnections", () => {
         account: "brokenaccount",
         user: "brokenuser",
         authenticator: "snowflake_jwt",
-        // missing private_key_file — will throw in createTokenProvider
+        // missing private_key_file — will throw in getSnowflakeToken
       },
       working: {
         account: "workingaccount",
@@ -121,13 +117,11 @@ describe("discoverSnowflakeConnections", () => {
       },
     });
 
-    mockCreateTokenProvider
-      .mockImplementationOnce(() => {
-        throw new Error("private_key_file is required for snowflake_jwt");
-      })
-      .mockReturnValueOnce({
-        getToken: vi.fn().mockResolvedValue("sf-token-working"),
-      });
+    mockGetSnowflakeToken
+      .mockRejectedValueOnce(
+        new Error("private_key_file is required for snowflake_jwt"),
+      )
+      .mockResolvedValueOnce("sf-token-working");
 
     mockTestAuthentication.mockResolvedValue({ user: {}, error: null });
 
@@ -161,8 +155,7 @@ describe("discoverSnowflakeConnections", () => {
       },
     });
 
-    const mockGetToken = vi.fn().mockRejectedValue(new Error("token error"));
-    mockCreateTokenProvider.mockReturnValue({ getToken: mockGetToken });
+    mockGetSnowflakeToken.mockRejectedValue(new Error("token error"));
 
     const result = await discoverSnowflakeConnections(
       "https://example.snowflakecomputing.app",

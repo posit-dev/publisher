@@ -3,7 +3,7 @@
 import { ConnectAPI, ConnectAPIError } from "@posit-dev/connect-api";
 
 import { listConnections } from "./connections";
-import { createTokenProvider } from "./tokenProviders";
+import { getSnowflakeToken } from "./tokenProviders";
 import { getListOfPossibleURLs } from "../utils/url";
 import { logger } from "src/logging";
 import type { SnowflakeConnection } from "./types";
@@ -22,9 +22,9 @@ export async function discoverSnowflakeConnections(
   const results: SnowflakeConnection[] = [];
 
   for (const [name, config] of Object.entries(connections)) {
-    let tokenProvider;
+    let token;
     try {
-      tokenProvider = createTokenProvider(config);
+      token = await getSnowflakeToken(config);
     } catch (e) {
       logger.debug(`Snowflake: skipping connection "${name}": ${e}`);
       continue;
@@ -32,9 +32,6 @@ export async function discoverSnowflakeConnections(
 
     for (const candidateUrl of urlCandidates) {
       try {
-        const hostname = new URL(candidateUrl).hostname;
-        const token = await tokenProvider.getToken(hostname);
-
         const api = new ConnectAPI({
           url: candidateUrl,
           snowflakeToken: token,

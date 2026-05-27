@@ -175,7 +175,7 @@ vi.mock("src/snowflake/connections", () => ({
 }));
 
 vi.mock("src/snowflake/tokenProviders", () => ({
-  createTokenProvider: vi.fn(),
+  getSnowflakeToken: vi.fn(),
 }));
 
 vi.mock("src/commands", () => ({

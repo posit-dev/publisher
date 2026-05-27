@@ -5,17 +5,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("snowflake-sdk");
 import snowflake from "snowflake-sdk";
 
-import { createTokenProvider } from "./tokenProviders";
+import { getSnowflakeToken } from "./tokenProviders";
 
-describe("createTokenProvider", () => {
-  it("throws for unsupported authenticator type", () => {
-    expect(() =>
-      createTokenProvider({
+describe("getSnowflakeToken", () => {
+  it("throws for unsupported authenticator type", async () => {
+    await expect(
+      getSnowflakeToken({
         account: "myaccount",
         user: "myuser",
         authenticator: "unsupported",
       }),
-    ).toThrow('unsupported authenticator type: "unsupported"');
+    ).rejects.toThrow('unsupported authenticator type: "unsupported"');
   });
 });
 
@@ -41,24 +41,23 @@ describe("JWT token provider (snowflake_jwt)", () => {
     vi.clearAllMocks();
   });
 
-  it("throws when private_key_file is missing", () => {
-    expect(() =>
-      createTokenProvider({
+  it("throws when private_key_file is missing", async () => {
+    await expect(
+      getSnowflakeToken({
         account: "myaccount",
         user: "myuser",
         authenticator: "snowflake_jwt",
       }),
-    ).toThrow("private_key_file is required for snowflake_jwt");
+    ).rejects.toThrow("private_key_file is required for snowflake_jwt");
   });
 
   it("creates connection with correct account, username, authenticator, and privateKeyPath", async () => {
-    const provider = createTokenProvider({
+    await getSnowflakeToken({
       account: "myaccount",
       user: "myuser",
       authenticator: "snowflake_jwt",
       private_key_file: "/path/to/key.p8",
     });
-    await provider.getToken("ignored-hostname");
     expect(snowflake.createConnection).toHaveBeenCalledWith({
       account: "myaccount",
       username: "myuser",
@@ -69,40 +68,37 @@ describe("JWT token provider (snowflake_jwt)", () => {
   });
 
   it("returns the session token from serialized connection state", async () => {
-    const provider = createTokenProvider({
+    const token = await getSnowflakeToken({
       account: "myaccount",
       user: "myuser",
       authenticator: "snowflake_jwt",
       private_key_file: "/path/to/key.p8",
     });
-    const token = await provider.getToken("ignored-hostname");
     expect(token).toBe("mock-jwt-token-123");
   });
 
   it("throws if session token is absent from serialized state", async () => {
     mockSerialize.mockReturnValue(JSON.stringify({ services: {} }));
-    const provider = createTokenProvider({
-      account: "myaccount",
-      user: "myuser",
-      authenticator: "snowflake_jwt",
-      private_key_file: "/path/to/key.p8",
-    });
-    await expect(provider.getToken("ignored-hostname")).rejects.toThrow(
-      "missing session token",
-    );
+    await expect(
+      getSnowflakeToken({
+        account: "myaccount",
+        user: "myuser",
+        authenticator: "snowflake_jwt",
+        private_key_file: "/path/to/key.p8",
+      }),
+    ).rejects.toThrow("missing session token");
   });
 
   it("throws if connectAsync rejects", async () => {
     mockConnectAsync.mockRejectedValue(new Error("jwt auth failed"));
-    const provider = createTokenProvider({
-      account: "myaccount",
-      user: "myuser",
-      authenticator: "snowflake_jwt",
-      private_key_file: "/path/to/key.p8",
-    });
-    await expect(provider.getToken("ignored-hostname")).rejects.toThrow(
-      "jwt auth failed",
-    );
+    await expect(
+      getSnowflakeToken({
+        account: "myaccount",
+        user: "myuser",
+        authenticator: "snowflake_jwt",
+        private_key_file: "/path/to/key.p8",
+      }),
+    ).rejects.toThrow("jwt auth failed");
   });
 });
 
@@ -128,24 +124,23 @@ describe("OAuth token provider (oauth)", () => {
     vi.clearAllMocks();
   });
 
-  it("throws when token is missing", () => {
-    expect(() =>
-      createTokenProvider({
+  it("throws when token is missing", async () => {
+    await expect(
+      getSnowflakeToken({
         account: "myaccount",
         user: "myuser",
         authenticator: "oauth",
       }),
-    ).toThrow("token is required for oauth");
+    ).rejects.toThrow("token is required for oauth");
   });
 
   it("creates connection with correct account, authenticator, and token", async () => {
-    const provider = createTokenProvider({
+    await getSnowflakeToken({
       account: "myaccount",
       user: "myuser",
       authenticator: "oauth",
       token: "my-oauth-token",
     });
-    await provider.getToken("ignored-hostname");
     expect(snowflake.createConnection).toHaveBeenCalledWith({
       account: "myaccount",
       authenticator: "OAUTH",
@@ -155,40 +150,37 @@ describe("OAuth token provider (oauth)", () => {
   });
 
   it("returns the session token from serialized connection state", async () => {
-    const provider = createTokenProvider({
+    const token = await getSnowflakeToken({
       account: "myaccount",
       user: "myuser",
       authenticator: "oauth",
       token: "my-oauth-token",
     });
-    const token = await provider.getToken("ignored-hostname");
     expect(token).toBe("mock-oauth-token-456");
   });
 
   it("throws if session token is absent from serialized state", async () => {
     mockSerialize.mockReturnValue(JSON.stringify({ services: {} }));
-    const provider = createTokenProvider({
-      account: "myaccount",
-      user: "myuser",
-      authenticator: "oauth",
-      token: "my-oauth-token",
-    });
-    await expect(provider.getToken("ignored-hostname")).rejects.toThrow(
-      "missing session token",
-    );
+    await expect(
+      getSnowflakeToken({
+        account: "myaccount",
+        user: "myuser",
+        authenticator: "oauth",
+        token: "my-oauth-token",
+      }),
+    ).rejects.toThrow("missing session token");
   });
 
   it("throws if connectAsync rejects", async () => {
     mockConnectAsync.mockRejectedValue(new Error("oauth auth failed"));
-    const provider = createTokenProvider({
-      account: "myaccount",
-      user: "myuser",
-      authenticator: "oauth",
-      token: "my-oauth-token",
-    });
-    await expect(provider.getToken("ignored-hostname")).rejects.toThrow(
-      "oauth auth failed",
-    );
+    await expect(
+      getSnowflakeToken({
+        account: "myaccount",
+        user: "myuser",
+        authenticator: "oauth",
+        token: "my-oauth-token",
+      }),
+    ).rejects.toThrow("oauth auth failed");
   });
 });
 
@@ -215,12 +207,11 @@ describe("External browser token provider (externalbrowser)", () => {
   });
 
   it("creates connection with correct account, username, and authenticator", async () => {
-    const provider = createTokenProvider({
+    await getSnowflakeToken({
       account: "myaccount",
       user: "myuser",
       authenticator: "externalbrowser",
     });
-    await provider.getToken("ignored-hostname");
     expect(snowflake.createConnection).toHaveBeenCalledWith({
       account: "myaccount",
       username: "myuser",
@@ -230,36 +221,33 @@ describe("External browser token provider (externalbrowser)", () => {
   });
 
   it("returns the session token from serialized connection state", async () => {
-    const provider = createTokenProvider({
+    const token = await getSnowflakeToken({
       account: "myaccount",
       user: "myuser",
       authenticator: "externalbrowser",
     });
-    const token = await provider.getToken("ignored-hostname");
     expect(token).toBe("mock-token-abc");
   });
 
   it("throws if session token is absent from serialized state", async () => {
     mockSerialize.mockReturnValue(JSON.stringify({ services: {} }));
-    const provider = createTokenProvider({
-      account: "myaccount",
-      user: "myuser",
-      authenticator: "externalbrowser",
-    });
-    await expect(provider.getToken("ignored-hostname")).rejects.toThrow(
-      "missing session token",
-    );
+    await expect(
+      getSnowflakeToken({
+        account: "myaccount",
+        user: "myuser",
+        authenticator: "externalbrowser",
+      }),
+    ).rejects.toThrow("missing session token");
   });
 
   it("throws if connectAsync rejects", async () => {
     mockConnectAsync.mockRejectedValue(new Error("browser auth failed"));
-    const provider = createTokenProvider({
-      account: "myaccount",
-      user: "myuser",
-      authenticator: "externalbrowser",
-    });
-    await expect(provider.getToken("ignored-hostname")).rejects.toThrow(
-      "browser auth failed",
-    );
+    await expect(
+      getSnowflakeToken({
+        account: "myaccount",
+        user: "myuser",
+        authenticator: "externalbrowser",
+      }),
+    ).rejects.toThrow("browser auth failed");
   });
 });

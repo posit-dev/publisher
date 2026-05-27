@@ -4,156 +4,72 @@ import snowflake from "snowflake-sdk";
 
 import type { SnowflakeConnectionConfig } from "./types";
 
-/** A token provider that returns an ingress access token for a given hostname. */
-export interface TokenProvider {
-  getToken(hostname: string): Promise<string>;
-}
-
 /**
- * Creates a TokenProvider based on the authenticator field of the connection config.
- * Supported authenticators: "snowflake_jwt", "oauth", "externalbrowser" (case-insensitive).
+ * Obtains a session token from Snowflake using the authenticator and credentials
+ * from the connection config. Supports "snowflake_jwt", "oauth", and "externalbrowser"
+ * authenticators (case-insensitive).
+ *
+ * The session token is extracted directly from the SDK's internal connection state.
+ * Do NOT call conn.destroy() — it invalidates the token.
  */
-export function createTokenProvider(
+export async function getSnowflakeToken(
   connection: SnowflakeConnectionConfig,
-): TokenProvider {
-  const authenticator = connection.authenticator.toLowerCase();
+): Promise<string> {
+  const authenticator = connection.authenticator.toUpperCase();
+
+  let connectionConfig: Record<string, unknown>;
 
   switch (authenticator) {
-    case "snowflake_jwt":
-      return new JWTTokenProvider(connection);
-    case "oauth":
-      return new OAuthTokenProvider(connection);
-    case "externalbrowser":
-      return new ExternalBrowserTokenProvider(connection);
+    case "SNOWFLAKE_JWT": {
+      if (!connection.private_key_file) {
+        throw new Error("private_key_file is required for snowflake_jwt");
+      }
+      connectionConfig = {
+        username: connection.user,
+        authenticator,
+        privateKeyPath: connection.private_key_file,
+      };
+      break;
+    }
+    case "OAUTH": {
+      if (!connection.token) {
+        throw new Error("token is required for oauth");
+      }
+      connectionConfig = {
+        authenticator,
+        token: connection.token,
+      };
+      break;
+    }
+    case "EXTERNALBROWSER":
+      connectionConfig = {
+        username: connection.user,
+        authenticator,
+      };
+      break;
     default:
       throw new Error(
         `unsupported authenticator type: "${connection.authenticator}"`,
       );
   }
-}
 
-/**
- * JWT token provider that uses key-pair authentication with Snowflake SDK.
- * Uses the snowflake-sdk with SNOWFLAKE_JWT authenticator to obtain a session token.
- */
-class JWTTokenProvider implements TokenProvider {
-  private readonly account: string;
-  private readonly user: string;
-  private readonly privateKeyPath: string;
+  const conn = snowflake.createConnection({
+    account: connection.account,
+    clientStoreTemporaryCredential: true,
+    ...connectionConfig,
+  });
 
-  constructor(connection: SnowflakeConnectionConfig) {
-    const keyFile = connection.private_key_file;
-    if (!keyFile) {
-      throw new Error("private_key_file is required for snowflake_jwt");
-    }
+  await conn.connectAsync();
 
-    this.account = connection.account;
-    this.user = connection.user;
-    this.privateKeyPath = keyFile;
+  const sessionToken = extractSerializedToken(JSON.parse(conn.serialize()));
+
+  if (!sessionToken || typeof sessionToken !== "string") {
+    throw new Error(
+      `missing session token in ${authenticator.toLowerCase()} connection state`,
+    );
   }
 
-  async getToken(_hostname: string): Promise<string> {
-    const conn = snowflake.createConnection({
-      account: this.account,
-      username: this.user,
-      authenticator: "SNOWFLAKE_JWT",
-      privateKeyPath: this.privateKeyPath,
-      clientStoreTemporaryCredential: true,
-    });
-
-    await conn.connectAsync();
-
-    const sessionToken = extractSerializedToken(JSON.parse(conn.serialize()));
-
-    if (!sessionToken || typeof sessionToken !== "string") {
-      throw new Error("missing session token in jwt connection state");
-    }
-
-    // Do NOT call conn.destroy() — it sends a logout request to the server
-    // and invalidates the session token we just extracted.
-
-    return sessionToken;
-  }
-}
-
-/**
- * OAuth token provider that uses Snowflake's OAuth authentication.
- * Uses the snowflake-sdk with OAUTH authenticator to obtain a session token.
- */
-class OAuthTokenProvider implements TokenProvider {
-  private readonly account: string;
-  private readonly token: string;
-
-  constructor(connection: SnowflakeConnectionConfig) {
-    const oauthToken = connection.token;
-    if (!oauthToken) {
-      throw new Error("token is required for oauth");
-    }
-
-    this.account = connection.account;
-    this.token = oauthToken;
-  }
-
-  async getToken(_hostname: string): Promise<string> {
-    const conn = snowflake.createConnection({
-      account: this.account,
-      authenticator: "OAUTH",
-      token: this.token,
-      clientStoreTemporaryCredential: true,
-    });
-
-    await conn.connectAsync();
-
-    const sessionToken = extractSerializedToken(JSON.parse(conn.serialize()));
-
-    if (!sessionToken || typeof sessionToken !== "string") {
-      throw new Error("missing session token in oauth connection state");
-    }
-
-    // Do NOT call conn.destroy() — it sends a logout request to the server
-    // and invalidates the session token we just extracted.
-
-    return sessionToken;
-  }
-}
-
-/**
- * External browser token provider that uses Snowflake's browser-based SSO.
- * Opens the system browser for the user to authenticate via their identity provider,
- * then extracts the session token from the SDK's internal connection state.
- */
-class ExternalBrowserTokenProvider implements TokenProvider {
-  private readonly account: string;
-  private readonly user: string;
-
-  constructor(connection: SnowflakeConnectionConfig) {
-    this.account = connection.account;
-    this.user = connection.user;
-  }
-
-  async getToken(_hostname: string): Promise<string> {
-    const conn = snowflake.createConnection({
-      account: this.account,
-      username: this.user,
-      authenticator: "EXTERNALBROWSER",
-      clientStoreTemporaryCredential: true,
-    });
-
-    await conn.connectAsync();
-
-    const sessionToken = extractSerializedToken(JSON.parse(conn.serialize()));
-
-    if (!sessionToken || typeof sessionToken !== "string") {
-      throw new Error(
-        "missing session token in externalbrowser connection state",
-      );
-    }
-
-    // Do NOT call conn.destroy() — it sends a logout request to the server
-    // and invalidates the session token we just extracted.
-
-    return sessionToken;
-  }
+  return sessionToken;
 }
 
 /**
