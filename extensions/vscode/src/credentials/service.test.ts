@@ -1,12 +1,13 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, it, test, vi } from "vitest";
 import { GUID } from "@posit-dev/connect-api";
 
 import { credentialFactory } from "src/test/unit-test-utils/factories";
 import { mockSecretStorage } from "src/test/unit-test-utils/vscode-mocks";
 import { ServerType } from "src/api/types/contentRecords";
 import { listConnections } from "src/snowflake/connections";
+import type { SnowflakeConnectionConfig } from "src/snowflake/types";
 import { storeCredential } from "./storage";
 import {
   CredentialsService,
@@ -23,12 +24,9 @@ import {
 vi.mock("vscode");
 vi.mock("src/logging");
 vi.mock("src/snowflake/connections");
+vi.mock("snowflake-sdk");
 
-vi.mock("snowflake-sdk", () => ({
-  default: {
-    configure: vi.fn(),
-  },
-}));
+import snowflake from "snowflake-sdk";
 
 vi.mock("src/config", () => ({
   default: {
@@ -576,6 +574,207 @@ describe("connectAPIOptionsFromCredential", () => {
           snowflakeConnection: "bad-authenticator",
         }),
       ).rejects.toThrow("unsupported authenticator type");
+    });
+  });
+});
+
+describe("CredentialsService.getSnowflakeToken", () => {
+  let service: CredentialsService;
+
+  beforeEach(() => {
+    service = new CredentialsService(new mockSecretStorage());
+  });
+
+  it("throws for unsupported authenticator type", async () => {
+    await expect(
+      service.getSnowflakeToken({
+        account: "myaccount",
+        user: "myuser",
+        authenticator: "unsupported",
+      }),
+    ).rejects.toThrow('unsupported authenticator type: "unsupported"');
+  });
+
+  describe("JWT token provider (snowflake_jwt)", () => {
+    it("throws when private_key_file is missing", async () => {
+      await expect(
+        service.getSnowflakeToken({
+          account: "myaccount",
+          user: "myuser",
+          authenticator: "snowflake_jwt",
+        }),
+      ).rejects.toThrow("private_key_file is required for snowflake_jwt");
+    });
+
+    it("creates connection with correct account, username, authenticator, and privateKeyPath", async () => {
+      const mockConnect = vi.fn().mockResolvedValue(undefined);
+      const mockSerialize = vi.fn().mockReturnValue(
+        JSON.stringify({
+          services: { sf: { tokenInfo: { sessionToken: "token" } } },
+        }),
+      );
+      vi.mocked(snowflake.createConnection).mockReturnValue({
+        connectAsync: mockConnect,
+        serialize: mockSerialize,
+      } as unknown as ReturnType<typeof snowflake.createConnection>);
+
+      await service.getSnowflakeToken({
+        account: "myaccount",
+        user: "myuser",
+        authenticator: "snowflake_jwt",
+        private_key_file: "/path/to/key.p8",
+      });
+      expect(snowflake.createConnection).toHaveBeenCalledWith({
+        account: "myaccount",
+        username: "myuser",
+        authenticator: "SNOWFLAKE_JWT",
+        privateKeyPath: "/path/to/key.p8",
+        clientStoreTemporaryCredential: true,
+      });
+    });
+  });
+
+  describe("OAuth token provider (oauth)", () => {
+    it("throws when token is missing", async () => {
+      await expect(
+        service.getSnowflakeToken({
+          account: "myaccount",
+          user: "myuser",
+          authenticator: "oauth",
+        }),
+      ).rejects.toThrow("token is required for oauth");
+    });
+
+    it("creates connection with correct account, authenticator, and token", async () => {
+      const mockConnect = vi.fn().mockResolvedValue(undefined);
+      const mockSerialize = vi.fn().mockReturnValue(
+        JSON.stringify({
+          services: { sf: { tokenInfo: { sessionToken: "token" } } },
+        }),
+      );
+      vi.mocked(snowflake.createConnection).mockReturnValue({
+        connectAsync: mockConnect,
+        serialize: mockSerialize,
+      } as unknown as ReturnType<typeof snowflake.createConnection>);
+
+      await service.getSnowflakeToken({
+        account: "myaccount",
+        user: "myuser",
+        authenticator: "oauth",
+        token: "my-oauth-token",
+      });
+      expect(snowflake.createConnection).toHaveBeenCalledWith({
+        account: "myaccount",
+        authenticator: "OAUTH",
+        token: "my-oauth-token",
+        clientStoreTemporaryCredential: true,
+      });
+    });
+  });
+
+  describe("External browser token provider (externalbrowser)", () => {
+    it("creates connection with correct account, username, and authenticator", async () => {
+      const mockConnect = vi.fn().mockResolvedValue(undefined);
+      const mockSerialize = vi.fn().mockReturnValue(
+        JSON.stringify({
+          services: { sf: { tokenInfo: { sessionToken: "token" } } },
+        }),
+      );
+      vi.mocked(snowflake.createConnection).mockReturnValue({
+        connectAsync: mockConnect,
+        serialize: mockSerialize,
+      } as unknown as ReturnType<typeof snowflake.createConnection>);
+
+      await service.getSnowflakeToken({
+        account: "myaccount",
+        user: "myuser",
+        authenticator: "externalbrowser",
+      });
+      expect(snowflake.createConnection).toHaveBeenCalledWith({
+        account: "myaccount",
+        username: "myuser",
+        authenticator: "EXTERNALBROWSER",
+        clientStoreTemporaryCredential: true,
+      });
+    });
+  });
+
+  describe("shared token extraction and error handling", () => {
+    const testCases: Array<{
+      authenticator: string;
+      tokenValue: string;
+      connectionInput: SnowflakeConnectionConfig;
+    }> = [
+      {
+        authenticator: "snowflake_jwt",
+        tokenValue: "mock-jwt-token-123",
+        connectionInput: {
+          account: "myaccount",
+          user: "myuser",
+          authenticator: "snowflake_jwt",
+          private_key_file: "/path/to/key.p8",
+        },
+      },
+      {
+        authenticator: "oauth",
+        tokenValue: "mock-oauth-token-456",
+        connectionInput: {
+          account: "myaccount",
+          user: "myuser",
+          authenticator: "oauth",
+          token: "my-oauth-token",
+        },
+      },
+      {
+        authenticator: "externalbrowser",
+        tokenValue: "mock-token-abc",
+        connectionInput: {
+          account: "myaccount",
+          user: "myuser",
+          authenticator: "externalbrowser",
+        },
+      },
+    ];
+
+    testCases.forEach(({ authenticator, tokenValue, connectionInput }) => {
+      describe(`for ${authenticator}`, () => {
+        let mockConnectAsync: ReturnType<typeof vi.fn>;
+        let mockSerialize: ReturnType<typeof vi.fn>;
+
+        beforeEach(() => {
+          mockConnectAsync = vi.fn().mockResolvedValue(undefined);
+          mockSerialize = vi.fn().mockReturnValue(
+            JSON.stringify({
+              services: { sf: { tokenInfo: { sessionToken: tokenValue } } },
+            }),
+          );
+          vi.mocked(snowflake.createConnection).mockReturnValue({
+            connectAsync: mockConnectAsync,
+            serialize: mockSerialize,
+          } as unknown as ReturnType<typeof snowflake.createConnection>);
+        });
+
+        it("returns the session token from serialized connection state", async () => {
+          const token = await service.getSnowflakeToken(connectionInput);
+          expect(token).toBe(tokenValue);
+        });
+
+        it("throws if session token is absent from serialized state", async () => {
+          mockSerialize.mockReturnValue(JSON.stringify({ services: {} }));
+          await expect(
+            service.getSnowflakeToken(connectionInput),
+          ).rejects.toThrow("missing session token");
+        });
+
+        it("throws if connectAsync rejects", async () => {
+          mockConnectAsync.mockRejectedValue(
+            new Error(`${authenticator} auth failed`),
+          );
+          await expect(
+            service.getSnowflakeToken(connectionInput),
+          ).rejects.toThrow(`${authenticator} auth failed`);
+        });
+      });
     });
   });
 });
