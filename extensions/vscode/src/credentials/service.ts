@@ -3,6 +3,7 @@
 import { SecretStorage } from "vscode";
 import { randomUUID } from "crypto";
 import { GUID, ConnectAPIOptions } from "@posit-dev/connect-api";
+import { Mutex } from "async-mutex";
 import snowflake from "snowflake-sdk";
 
 import { Credential } from "src/api/types/credentials";
@@ -92,6 +93,9 @@ export async function connectAPIOptionsFromCredential(
 }
 
 export class CredentialsService {
+  private snowflakeConnectionCache = new Map<string, snowflake.Connection>();
+  private snowflakeConnectionCacheMutex = new Mutex();
+
   constructor(private readonly secrets: SecretStorage) {
     snowflake.configure({
       customCredentialManager: new SnowflakeSecretStorageCredentialManager(
@@ -250,17 +254,15 @@ export class CredentialsService {
     }
   }
 
-  /**
-   * Obtains a session token from Snowflake using the authenticator and credentials
-   * from the connection config. Supports "snowflake_jwt", "oauth", and "externalbrowser"
-   * authenticators (case-insensitive).
-   *
-   * The session token is extracted directly from the SDK's internal connection state.
-   * Do NOT call conn.destroy() — it invalidates the token.
-   */
-  async getSnowflakeToken(
+  private getCacheKeyForConnection(
     connection: SnowflakeConnectionConfig,
-  ): Promise<string> {
+  ): string {
+    return `${connection.account}:${connection.user}:${connection.authenticator}`;
+  }
+
+  private createSnowflakeConnection(
+    connection: SnowflakeConnectionConfig,
+  ): snowflake.Connection {
     const authenticator = connection.authenticator.toUpperCase();
 
     let connectionConfig: Record<string, unknown>;
@@ -299,13 +301,59 @@ export class CredentialsService {
         );
     }
 
-    const conn = snowflake.createConnection({
+    return snowflake.createConnection({
       account: connection.account,
       clientStoreTemporaryCredential: true,
       ...connectionConfig,
     });
+  }
 
-    await conn.connectAsync();
+  private getOrCreateSnowflakeConnection(
+    connection: SnowflakeConnectionConfig,
+  ): Promise<snowflake.Connection> {
+    const cacheKey = this.getCacheKeyForConnection(connection);
+
+    return this.snowflakeConnectionCacheMutex.runExclusive(async () => {
+      // Check cache
+      const cached = this.snowflakeConnectionCache.get(cacheKey);
+      if (cached) {
+        logger.debug(`Snowflake connection cache hit for ${cacheKey}`);
+        // TODO: Implement invalidation strategy for cached connections (TTL, manual invalidation, etc.)
+        return cached;
+      }
+
+      logger.debug(
+        `Snowflake connection cache miss for ${cacheKey}, creating new connection`,
+      );
+
+      // Not in cache - create connection
+      const conn = this.createSnowflakeConnection(connection);
+      await conn.connectAsync();
+
+      logger.debug(`Snowflake connection created and cached for ${cacheKey}`);
+
+      // Cache it
+      this.snowflakeConnectionCache.set(cacheKey, conn);
+
+      return conn;
+    });
+  }
+
+  /**
+   * Obtains a session token from Snowflake using the authenticator and credentials
+   * from the connection config. Supports "snowflake_jwt", "oauth", and "externalbrowser"
+   * authenticators (case-insensitive).
+   *
+   * The session token is extracted directly from the SDK's internal connection state.
+   * Do NOT call conn.destroy() — it invalidates the token.
+   *
+   * Connections are cached by account + user + authenticator to avoid repeated
+   * connection establishment for the same configuration.
+   */
+  async getSnowflakeToken(
+    connection: SnowflakeConnectionConfig,
+  ): Promise<string> {
+    const conn = await this.getOrCreateSnowflakeConnection(connection);
 
     const sessionToken = this.extractSerializedToken(
       JSON.parse(conn.serialize()),
@@ -313,7 +361,7 @@ export class CredentialsService {
 
     if (!sessionToken || typeof sessionToken !== "string") {
       throw new Error(
-        `missing session token in ${authenticator.toLowerCase()} connection state`,
+        `missing session token in ${connection.authenticator.toLowerCase()} connection state`,
       );
     }
 
