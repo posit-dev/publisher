@@ -578,6 +578,250 @@ describe("connectAPIOptionsFromCredential", () => {
   });
 });
 
+describe("CredentialsService cache invalidation", () => {
+  let service: CredentialsService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    service = new CredentialsService(new mockSecretStorage());
+  });
+
+  const testConnection = {
+    account: "myaccount",
+    user: "myuser",
+    authenticator: "externalbrowser",
+  };
+
+  const setupMockConnection = (isValid: boolean, tokenValue = "test-token") => {
+    const mockConnectAsync = vi.fn().mockResolvedValue(undefined);
+    const mockSerialize = vi.fn().mockReturnValue(
+      JSON.stringify({
+        services: { sf: { tokenInfo: { sessionToken: tokenValue } } },
+      }),
+    );
+    const mockIsValidAsync = vi.fn().mockResolvedValue(isValid);
+    const mockDestroy = vi.fn((callback: (err?: Error) => void) => {
+      callback();
+    });
+
+    vi.mocked(snowflake.createConnection).mockReturnValue({
+      connectAsync: mockConnectAsync,
+      serialize: mockSerialize,
+      isValidAsync: mockIsValidAsync,
+      destroy: mockDestroy,
+    } as unknown as ReturnType<typeof snowflake.createConnection>);
+
+    return { mockConnectAsync, mockSerialize, mockIsValidAsync, mockDestroy };
+  };
+
+  describe("cache hit with valid connection", () => {
+    it("returns cached connection without destroying it", async () => {
+      const { mockDestroy } = setupMockConnection(true);
+
+      // First call creates and caches the connection
+      await service.getSnowflakeToken(testConnection);
+
+      // Second call should return cached version
+      await service.getSnowflakeToken(testConnection);
+
+      // Connection should never be destroyed
+      expect(mockDestroy).not.toHaveBeenCalled();
+      // createConnection should only be called once (for the first call)
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("cache hit with invalid connection", () => {
+    it("destroys invalid cached connection and creates a new one", async () => {
+      const { mockIsValidAsync, mockDestroy } = setupMockConnection(true);
+
+      // First call creates and caches the connection
+      await service.getSnowflakeToken(testConnection);
+
+      // Make the cached connection invalid for the next call
+      mockIsValidAsync.mockResolvedValue(false);
+
+      // Second call should detect invalid connection
+      await service.getSnowflakeToken(testConnection);
+
+      // Connection should be destroyed
+      expect(mockDestroy).toHaveBeenCalledOnce();
+      // createConnection should be called twice (first and replacement)
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("cache key computation", () => {
+    it("uses account:user:authenticator as cache key", async () => {
+      setupMockConnection(true, "token1");
+
+      // First connection
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "externalbrowser",
+      });
+
+      // Different account - should create new connection
+      await service.getSnowflakeToken({
+        account: "acct2",
+        user: "user1",
+        authenticator: "externalbrowser",
+      });
+
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+
+    it("treats different authenticators as different cache keys", async () => {
+      setupMockConnection(true);
+
+      // JWT auth
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "snowflake_jwt",
+        private_key_file: "/path/to/key.p8",
+      });
+
+      // OAuth auth - different authenticator
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "oauth",
+        token: "oauth-token",
+      });
+
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+
+    it("treats different users as different cache keys", async () => {
+      setupMockConnection(true);
+
+      // User 1
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "externalbrowser",
+      });
+
+      // User 2 - different user
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user2",
+        authenticator: "externalbrowser",
+      });
+
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("concurrent cache access", () => {
+    it("handles concurrent calls with the same cache key serially", async () => {
+      const { mockConnectAsync } = setupMockConnection(true);
+
+      // Simulate a slow connection
+      let connectStarted = 0;
+      let connectFinished = 0;
+      mockConnectAsync.mockImplementation(async () => {
+        connectStarted++;
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        connectFinished++;
+      });
+
+      // Start two concurrent calls
+      await Promise.all([
+        service.getSnowflakeToken(testConnection),
+        service.getSnowflakeToken(testConnection),
+      ]);
+
+      // Connection should only be created once (mutex ensures serial access)
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(1);
+      // connectAsync should only be called once
+      expect(connectStarted).toBe(1);
+      expect(connectFinished).toBe(1);
+    });
+
+    it("allows concurrent calls with different cache keys", async () => {
+      let callCount = 0;
+      const mockConnectAsync = vi.fn().mockResolvedValue(undefined);
+      const mockIsValidAsync = vi.fn().mockResolvedValue(true);
+      const mockDestroy = vi.fn((callback: (err?: Error) => void) => {
+        callback();
+      });
+
+      // Return different tokens for each connection
+      const mockSerialize = vi.fn().mockImplementation(() => {
+        callCount++;
+        return JSON.stringify({
+          services: {
+            sf: { tokenInfo: { sessionToken: `token-${callCount}` } },
+          },
+        });
+      });
+
+      vi.mocked(snowflake.createConnection).mockReturnValue({
+        connectAsync: mockConnectAsync,
+        serialize: mockSerialize,
+        isValidAsync: mockIsValidAsync,
+        destroy: mockDestroy,
+      } as unknown as ReturnType<typeof snowflake.createConnection>);
+
+      const [token1, token2] = await Promise.all([
+        service.getSnowflakeToken({
+          account: "acct1",
+          user: "user1",
+          authenticator: "externalbrowser",
+        }),
+        service.getSnowflakeToken({
+          account: "acct2",
+          user: "user1",
+          authenticator: "externalbrowser",
+        }),
+      ]);
+
+      // Different keys - different tokens
+      expect(token1).not.toBe(token2);
+      // createConnection should be called twice
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("destroy error handling", () => {
+    it("logs destroy error but still removes from cache", async () => {
+      const mockConnectAsync = vi.fn().mockResolvedValue(undefined);
+      const mockSerialize = vi.fn().mockReturnValue(
+        JSON.stringify({
+          services: { sf: { tokenInfo: { sessionToken: "token" } } },
+        }),
+      );
+      const mockIsValidAsync = vi.fn().mockResolvedValue(false);
+      const mockDestroy = vi
+        .fn()
+        .mockImplementation((callback: (err?: Error) => void) =>
+          callback(new Error("destroy failed")),
+        );
+
+      vi.mocked(snowflake.createConnection).mockReturnValue({
+        connectAsync: mockConnectAsync,
+        serialize: mockSerialize,
+        isValidAsync: mockIsValidAsync,
+        destroy: mockDestroy,
+      } as unknown as ReturnType<typeof snowflake.createConnection>);
+
+      // First call creates and caches the connection
+      await service.getSnowflakeToken(testConnection);
+
+      // Second call attempts to destroy invalid connection
+      await service.getSnowflakeToken(testConnection);
+
+      // Connection should still be destroyed (attempt made)
+      expect(mockDestroy).toHaveBeenCalledOnce();
+      // A new connection should be created despite destroy error
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+  });
+});
+
 describe("CredentialsService.getSnowflakeToken", () => {
   let service: CredentialsService;
 

@@ -317,9 +317,28 @@ export class CredentialsService {
       // Check cache
       const cached = this.snowflakeConnectionCache.get(cacheKey);
       if (cached) {
-        logger.debug(`Snowflake connection cache hit for ${cacheKey}`);
-        // TODO: Implement invalidation strategy for cached connections (TTL, manual invalidation, etc.)
-        return cached;
+        const isValid = await cached.isValidAsync();
+        if (isValid) {
+          logger.debug(`Snowflake connection cache hit for ${cacheKey}`);
+          return cached;
+        }
+
+        // Connection is no longer valid - destroy it and remove from cache
+        await new Promise<void>((resolve) => {
+          cached.destroy((err) => {
+            if (err) {
+              logger.debug(
+                `Error destroying invalid Snowflake connection for ${cacheKey}: ${err.message}`,
+              );
+            } else {
+              logger.debug(
+                `Destroyed invalid Snowflake connection for ${cacheKey}`,
+              );
+            }
+            resolve();
+          });
+        });
+        this.snowflakeConnectionCache.delete(cacheKey);
       }
 
       logger.debug(
