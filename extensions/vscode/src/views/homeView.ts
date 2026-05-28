@@ -521,6 +521,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           ...progressOptions,
         });
       }
+    } catch (error: unknown) {
+      const msg = getSummaryStringFromError("initiateDeployment", error);
+      window.showErrorMessage(`Deployment failed: ${msg}`);
+      throw error;
     } finally {
       this.webviewConduit.sendMsg({
         kind: HostToWebviewMessageType.PUBLISH_INIT,
