@@ -229,8 +229,8 @@ export function listConnections(): Record<string, SnowflakeConnectionConfig> {
     ? parseConfigToml(content)
     : parseConnectionsToml(content);
 
-  normalizeKeyPaths(conns);
   applyEnvVarOverrides(conns);
+  normalizeKeyPaths(conns);
 
   return conns;
 }
