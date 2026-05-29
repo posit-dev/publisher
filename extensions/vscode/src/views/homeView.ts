@@ -522,9 +522,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         });
       }
     } catch (error: unknown) {
+      // Surface failures that happen while setting up the deployment (e.g.
+      // fetching a Snowflake token). Do not rethrow: the message dispatch in
+      // WebviewConduit does not await or catch this handler, so rethrowing
+      // would only produce an unhandled rejection after the user has already
+      // been shown the error.
       const msg = getSummaryStringFromError("initiateDeployment", error);
       window.showErrorMessage(`Deployment failed: ${msg}`);
-      throw error;
     } finally {
       this.webviewConduit.sendMsg({
         kind: HostToWebviewMessageType.PUBLISH_INIT,

@@ -13,6 +13,7 @@ import {
   CredentialsService,
   CreateCredentialInput,
   connectAPIOptionsFromCredential,
+  SNOWFLAKE_DESTROY_TIMEOUT_MS,
 } from "./service";
 import {
   CredentialNotFoundError,
@@ -904,6 +905,68 @@ describe("CredentialsService cache invalidation", () => {
       expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
     });
   });
+
+  describe("validity check failure", () => {
+    it("rebuilds the connection when isValidAsync rejects", async () => {
+      const { mockIsValidAsync, mockDestroy } = setupMockConnection(true);
+
+      // First call creates and caches the connection.
+      await service.getSnowflakeToken(testConnection);
+
+      // The validity check on the cached connection throws (e.g. a network
+      // error during the heartbeat) rather than returning false.
+      mockIsValidAsync.mockRejectedValue(new Error("heartbeat failed"));
+
+      // Second call must not surface the validation error; it should evict the
+      // poisoned entry and build a fresh connection instead.
+      await expect(service.getSnowflakeToken(testConnection)).resolves.toBe(
+        "test-token",
+      );
+
+      expect(mockDestroy).toHaveBeenCalledOnce();
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("destroy timeout", () => {
+    it("recovers if destroy never invokes its callback", async () => {
+      vi.useFakeTimers();
+      try {
+        const mockConnectAsync = vi.fn().mockResolvedValue(undefined);
+        const mockSerialize = vi.fn().mockReturnValue(
+          JSON.stringify({
+            services: { sf: { tokenInfo: { sessionToken: "test-token" } } },
+          }),
+        );
+        const mockIsValidAsync = vi.fn().mockResolvedValue(false);
+        // A destroy() that never reports back, simulating a wedged connection.
+        const mockDestroy = vi.fn(() => {});
+
+        vi.mocked(snowflake.createConnection).mockReturnValue({
+          connectAsync: mockConnectAsync,
+          serialize: mockSerialize,
+          isValidAsync: mockIsValidAsync,
+          destroy: mockDestroy,
+        } as unknown as ReturnType<typeof snowflake.createConnection>);
+
+        // First call: cache miss, caches the connection (isValidAsync is not
+        // consulted on a freshly created connection).
+        await service.getSnowflakeToken(testConnection);
+
+        // Second call: cache hit, but the connection reports invalid and its
+        // destroy() hangs. The timeout must let the call complete anyway rather
+        // than holding the mutex forever.
+        const pending = service.getSnowflakeToken(testConnection);
+        await vi.advanceTimersByTimeAsync(SNOWFLAKE_DESTROY_TIMEOUT_MS);
+
+        await expect(pending).resolves.toBe("test-token");
+        expect(mockDestroy).toHaveBeenCalledOnce();
+        expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
 });
 
 describe("CredentialsService.getSnowflakeToken", () => {
@@ -1116,6 +1179,13 @@ describe("CredentialsService.getSnowflakeToken", () => {
           await expect(
             service.getSnowflakeToken(connectionInput),
           ).rejects.toThrow("missing session token");
+        });
+
+        it("throws a friendly error if serialized state is not valid JSON", async () => {
+          mockSerialize.mockReturnValue("not valid json{");
+          await expect(
+            service.getSnowflakeToken(connectionInput),
+          ).rejects.toThrow(`unable to read ${authenticator} connection state`);
         });
 
         it("throws if connectAsync rejects", async () => {

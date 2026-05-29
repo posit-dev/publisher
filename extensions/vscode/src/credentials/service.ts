@@ -29,6 +29,12 @@ import config from "src/config";
 import { logger } from "src/logging";
 import { SnowflakeSecretStorageCredentialManager } from "src/snowflake/secretStorageCredentialManager";
 
+// Upper bound on how long to wait for snowflake-sdk's destroy() callback before
+// giving up. destroy() is async and, on a wedged connection, may never invoke
+// its callback; without a bound it would hold the connection-cache mutex
+// indefinitely and stall every other token fetch.
+export const SNOWFLAKE_DESTROY_TIMEOUT_MS = 5_000;
+
 export interface CreateCredentialInput {
   name: string;
   url?: string;
@@ -331,6 +337,60 @@ export class CredentialsService {
     });
   }
 
+  /**
+   * Destroys a Snowflake connection, resolving once the SDK reports completion
+   * or {@link SNOWFLAKE_DESTROY_TIMEOUT_MS} elapses — whichever comes first.
+   * Never rejects: destroy is best-effort cleanup of an already-invalid
+   * connection, so a failure or hang is logged and swallowed rather than
+   * propagated to the caller (who is about to rebuild the connection anyway).
+   */
+  private destroyConnection(
+    conn: snowflake.Connection,
+    cacheKey: string,
+  ): Promise<void> {
+    return new Promise<void>((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(timer);
+        resolve();
+      };
+
+      const timer = setTimeout(() => {
+        logger.debug(
+          `Timed out destroying invalid Snowflake connection for ${cacheKey}`,
+        );
+        finish();
+      }, SNOWFLAKE_DESTROY_TIMEOUT_MS);
+
+      try {
+        conn.destroy((err) => {
+          if (err) {
+            logger.debug(
+              `Error destroying invalid Snowflake connection for ${cacheKey}: ${err.message}`,
+            );
+          } else {
+            logger.debug(
+              `Destroyed invalid Snowflake connection for ${cacheKey}`,
+            );
+          }
+          finish();
+        });
+      } catch (err) {
+        // destroy() threw synchronously rather than reporting via callback.
+        logger.debug(
+          `Error destroying invalid Snowflake connection for ${cacheKey}: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+        finish();
+      }
+    });
+  }
+
   private getOrCreateSnowflakeConnection(
     connection: SnowflakeConnectionConfig,
   ): Promise<snowflake.Connection> {
@@ -340,27 +400,27 @@ export class CredentialsService {
       // Check cache
       const cached = this.snowflakeConnectionCache.get(cacheKey);
       if (cached) {
-        const isValid = await cached.isValidAsync();
+        let isValid = false;
+        try {
+          isValid = await cached.isValidAsync();
+        } catch (err) {
+          // A validity check that throws (e.g. a network error during the
+          // heartbeat) means we can't trust the cached connection. Treat it as
+          // invalid and rebuild rather than leaving a poisoned entry behind.
+          logger.debug(
+            `Error validating cached Snowflake connection for ${cacheKey}: ${
+              err instanceof Error ? err.message : String(err)
+            }`,
+          );
+        }
+
         if (isValid) {
           logger.debug(`Snowflake connection cache hit for ${cacheKey}`);
           return cached;
         }
 
         // Connection is no longer valid - destroy it and remove from cache
-        await new Promise<void>((resolve) => {
-          cached.destroy((err) => {
-            if (err) {
-              logger.debug(
-                `Error destroying invalid Snowflake connection for ${cacheKey}: ${err.message}`,
-              );
-            } else {
-              logger.debug(
-                `Destroyed invalid Snowflake connection for ${cacheKey}`,
-              );
-            }
-            resolve();
-          });
-        });
+        await this.destroyConnection(cached, cacheKey);
         this.snowflakeConnectionCache.delete(cacheKey);
       }
 
@@ -396,14 +456,25 @@ export class CredentialsService {
     connection: SnowflakeConnectionConfig,
   ): Promise<string> {
     const conn = await this.getOrCreateSnowflakeConnection(connection);
+    const authenticator = connection.authenticator.toLowerCase();
 
-    const sessionToken = this.extractSerializedToken(
-      JSON.parse(conn.serialize()),
-    );
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(conn.serialize());
+    } catch (err) {
+      throw new Error(
+        `unable to read ${authenticator} connection state: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+        { cause: err },
+      );
+    }
+
+    const sessionToken = this.extractSerializedToken(parsed);
 
     if (!sessionToken || typeof sessionToken !== "string") {
       throw new Error(
-        `missing session token in ${connection.authenticator.toLowerCase()} connection state`,
+        `missing session token in ${authenticator} connection state`,
       );
     }
 
