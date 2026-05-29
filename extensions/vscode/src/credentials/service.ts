@@ -27,7 +27,6 @@ import {
 import { CONNECT_CLOUD_ENV } from "src/constants";
 import config from "src/config";
 import { logger } from "src/logging";
-import { SnowflakeSecretStorageCredentialManager } from "src/snowflake/secretStorageCredentialManager";
 
 // Upper bound on how long to wait for snowflake-sdk's destroy() callback before
 // giving up. destroy() is async and, on a wedged connection, may never invoke
@@ -102,13 +101,7 @@ export class CredentialsService {
   private snowflakeConnectionCache = new Map<string, snowflake.Connection>();
   private snowflakeConnectionCacheMutex = new Mutex();
 
-  constructor(private readonly secrets: SecretStorage) {
-    snowflake.configure({
-      customCredentialManager: new SnowflakeSecretStorageCredentialManager(
-        secrets,
-      ),
-    });
-  }
+  constructor(private readonly secrets: SecretStorage) {}
 
   list(): Promise<Credential[]> {
     return getAllCredentials(this.secrets);
