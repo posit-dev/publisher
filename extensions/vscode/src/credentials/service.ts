@@ -1,7 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { SecretStorage } from "vscode";
-import { randomUUID } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { GUID, ConnectAPIOptions } from "@posit-dev/connect-api";
 import { Mutex } from "async-mutex";
 import snowflake from "snowflake-sdk";
@@ -257,7 +257,27 @@ export class CredentialsService {
   private getCacheKeyForConnection(
     connection: SnowflakeConnectionConfig,
   ): string {
-    return `${connection.account}:${connection.user}:${connection.authenticator}`;
+    // Account and user are case-insensitive Snowflake identifiers;
+    // authenticator and role are matched case-insensitively by the SDK.
+    // Normalize them so equivalent configs share one cached connection.
+    const account = connection.account.trim().toLowerCase();
+    const user = (connection.user ?? "").trim().toLowerCase();
+    const authenticator = connection.authenticator.trim().toUpperCase();
+    const role = (connection.role ?? "").trim().toUpperCase();
+
+    // token (oauth) and private_key_file (jwt) are the distinguishing
+    // credential material. They must be part of the key so a rotated token or
+    // a different key file produces a fresh connection rather than reusing a
+    // stale one — but they are hashed so a secret never lands in a log line.
+    // NUL separates the fields: it can't appear in a token or a filesystem
+    // path, so distinct field pairs can't collide into the same digest.
+    const credentialDigest = createHash("sha256")
+      .update(connection.token ?? "")
+      .update("\u0000")
+      .update(connection.private_key_file ?? "")
+      .digest("hex");
+
+    return [account, user, authenticator, role, credentialDigest].join("|");
   }
 
   private createSnowflakeConnection(
@@ -304,6 +324,9 @@ export class CredentialsService {
     return snowflake.createConnection({
       account: connection.account,
       clientStoreTemporaryCredential: true,
+      // Authenticate under the configured role when one is set; otherwise the
+      // session uses the user's default role. Applies to every authenticator.
+      ...(connection.role ? { role: connection.role } : {}),
       ...connectionConfig,
     });
   }

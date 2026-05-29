@@ -713,6 +713,90 @@ describe("CredentialsService cache invalidation", () => {
 
       expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
     });
+
+    it("treats oauth connections with different tokens as different cache keys", async () => {
+      setupMockConnection(true);
+
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "oauth",
+        token: "oauth-token-1",
+      });
+
+      // Same account/user/authenticator, rotated token - must not reuse the
+      // cached connection or it would hand back the stale token.
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "oauth",
+        token: "oauth-token-2",
+      });
+
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+
+    it("treats jwt connections with different key files as different cache keys", async () => {
+      setupMockConnection(true);
+
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "snowflake_jwt",
+        private_key_file: "/path/to/key-a.p8",
+      });
+
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "snowflake_jwt",
+        private_key_file: "/path/to/key-b.p8",
+      });
+
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+
+    it("treats different roles as different cache keys", async () => {
+      setupMockConnection(true);
+
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "externalbrowser",
+        role: "ANALYST",
+      });
+
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "externalbrowser",
+        role: "ADMIN",
+      });
+
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+
+    it("normalizes case/whitespace so equivalent configs share a connection", async () => {
+      setupMockConnection(true);
+
+      await service.getSnowflakeToken({
+        account: "MyAccount",
+        user: "MyUser",
+        authenticator: "externalbrowser",
+        role: "Analyst",
+      });
+
+      // Account/user are case-insensitive identifiers, authenticator and role
+      // are matched case-insensitively, and surrounding whitespace is trimmed.
+      await service.getSnowflakeToken({
+        account: "myaccount",
+        user: "myuser  ",
+        authenticator: "EXTERNALBROWSER",
+        role: " analyst",
+      });
+
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("concurrent cache access", () => {
@@ -875,6 +959,30 @@ describe("CredentialsService.getSnowflakeToken", () => {
         privateKeyPath: "/path/to/key.p8",
         clientStoreTemporaryCredential: true,
       });
+    });
+
+    it("forwards the configured role to createConnection", async () => {
+      const mockConnect = vi.fn().mockResolvedValue(undefined);
+      const mockSerialize = vi.fn().mockReturnValue(
+        JSON.stringify({
+          services: { sf: { tokenInfo: { sessionToken: "token" } } },
+        }),
+      );
+      vi.mocked(snowflake.createConnection).mockReturnValue({
+        connectAsync: mockConnect,
+        serialize: mockSerialize,
+      } as unknown as ReturnType<typeof snowflake.createConnection>);
+
+      await service.getSnowflakeToken({
+        account: "myaccount",
+        user: "myuser",
+        authenticator: "snowflake_jwt",
+        private_key_file: "/path/to/key.p8",
+        role: "MY_ROLE",
+      });
+      expect(snowflake.createConnection).toHaveBeenCalledWith(
+        expect.objectContaining({ role: "MY_ROLE" }),
+      );
     });
   });
 
