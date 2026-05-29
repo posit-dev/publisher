@@ -192,6 +192,26 @@ authenticator = "snowflake_jwt"
       expect(conns["default"]?.user).toBe("newuser");
     });
 
+    it("normalizes PRIVATE_KEY_PATH env override to private_key_file", () => {
+      fs.writeFileSync(
+        path.join(tmpDir, "connections.toml"),
+        `[default]
+account = "myaccount"
+user = "myuser"
+authenticator = "snowflake_jwt"
+`,
+      );
+
+      setEnv(
+        "SNOWFLAKE_CONNECTIONS_DEFAULT_PRIVATE_KEY_PATH",
+        "/env/path/to/key.p8",
+      );
+
+      const conns = listConnections();
+      expect(conns["default"]?.private_key_file).toBe("/env/path/to/key.p8");
+      expect(conns["default"]?.private_key_path).toBeUndefined();
+    });
+
     it("uses uppercase connection name in env var lookup", () => {
       fs.writeFileSync(
         path.join(tmpDir, "connections.toml"),
