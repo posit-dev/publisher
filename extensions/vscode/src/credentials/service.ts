@@ -268,8 +268,14 @@ export class CredentialsService {
     // credential material. They must be part of the key so a rotated token or
     // a different key file produces a fresh connection rather than reusing a
     // stale one — but they are hashed so a secret never lands in a log line.
+    //
     // NUL separates the fields: it can't appear in a token or a filesystem
     // path, so distinct field pairs can't collide into the same digest.
+    //
+    // We aren't hashing the key file, so if somebody changes their key in
+    // place during a session, we will keep using the connection established
+    // with the old key until that session goes invalid (or the extension
+    // restarts). This is a pretty edge case.
     const credentialDigest = createHash("sha256")
       .update(connection.token ?? "")
       .update("\u0000")
@@ -322,6 +328,8 @@ export class CredentialsService {
 
     return snowflake.createConnection({
       account: connection.account,
+      // Avoids repeated browser prompts by caching the SSO id-token in the
+      // credential manager. Currently a (harmless) no-op for JWT/OAUTH.
       clientStoreTemporaryCredential: true,
       // Authenticate under the configured role when one is set; otherwise the
       // session uses the user's default role. Applies to every authenticator.
@@ -395,6 +403,10 @@ export class CredentialsService {
       if (cached) {
         let isValid = false;
         try {
+          // NOTE: this potentially refreshes an expired session token using the
+          // master token, and sends a heartbeat request to Snowflake. Do not
+          // replace with isUp or isTokenValid. Always reread the session token
+          // after this (see getSnowflakeToken) to pick up the refreshed value.
           isValid = await cached.isValidAsync();
         } catch (err) {
           // A validity check that throws (e.g. a network error during the
@@ -442,8 +454,10 @@ export class CredentialsService {
    * The session token is extracted directly from the SDK's internal connection state.
    * Do NOT call conn.destroy() — it invalidates the token.
    *
-   * Connections are cached by account + user + authenticator to avoid repeated
-   * connection establishment for the same configuration.
+   * Connections are cached by account + user + authenticator + role plus a
+   * digest of the credential material (oauth token / jwt key file) to avoid
+   * repeated connection establishment for the same configuration. See
+   * getCacheKeyForConnection for the exact key.
    */
   async getSnowflakeToken(
     connection: SnowflakeConnectionConfig,

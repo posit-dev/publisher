@@ -973,6 +973,7 @@ describe("CredentialsService.getSnowflakeToken", () => {
   let service: CredentialsService;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     service = new CredentialsService(new mockSecretStorage());
   });
 
