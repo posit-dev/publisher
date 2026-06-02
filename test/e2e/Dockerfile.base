@@ -5,7 +5,7 @@
 # - R: 4.3, 4.4
 # - Quarto: 1.6, 1.7
 
-FROM ubuntu:24.04 AS base
+FROM ubuntu:26.04 AS base
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG OS_IDENTIFIER=ubuntu-2404
