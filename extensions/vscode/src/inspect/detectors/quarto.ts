@@ -89,18 +89,23 @@ export class QuartoDetector implements ContentTypeDetector {
     }
 
     const configs: PartialConfig[] = [];
-    const entrypointPaths = await this.findEntrypoints(baseDir);
 
-    for (const epPath of entrypointPaths) {
-      const relEntrypoint = path.basename(epPath);
-      if (entrypoint && relEntrypoint !== entrypoint) {
-        continue;
-      }
+    if (entrypoint) {
+      const epPath = path.join(baseDir, entrypoint);
       const cfg = await this.configFromInspect(baseDir, epPath);
       if (cfg) {
         configs.push(cfg);
       }
+    } else {
+      const entrypointPaths = await this.findEntrypoints(baseDir);
+      for (const epPath of entrypointPaths) {
+        const cfg = await this.configFromInspect(baseDir, epPath);
+        if (cfg) {
+          configs.push(cfg);
+        }
+      }
     }
+
     return configs;
   }
 
@@ -436,8 +441,17 @@ export class QuartoDetector implements ContentTypeDetector {
   }
 
   private async findEntrypoints(baseDir: string): Promise<string[]> {
+    const hasQuartoProject = await this.hasQuartoProjectFile(baseDir);
+
+    // Only include .md files when a _quarto.yml/_quarto.yaml project file
+    // exists — otherwise generic markdown files (README.md, CHANGELOG.md, etc.)
+    // would be treated as deployable Quarto content.
+    const suffixes = hasQuartoProject
+      ? quartoSuffixes
+      : quartoSuffixes.filter((s) => s.toLowerCase() !== ".md");
+
     const results = await Promise.all(
-      quartoSuffixes.map((suffix) =>
+      suffixes.map((suffix) =>
         globDir(baseDir, "*" + suffix, { nocase: true }),
       ),
     );
@@ -445,21 +459,23 @@ export class QuartoDetector implements ContentTypeDetector {
     return results.flat();
   }
 
-  private async genNonInspectConfig(
-    baseDir: string,
-    inspectPath: string,
-  ): Promise<PartialConfig | undefined> {
-    // Check if _quarto.yml or _quarto.yaml exists
-    let quartoYmlExists = false;
+  private async hasQuartoProjectFile(baseDir: string): Promise<boolean> {
     for (const name of ["_quarto.yml", "_quarto.yaml"]) {
       try {
         await fs.access(path.join(baseDir, name));
-        quartoYmlExists = true;
-        break;
+        return true;
       } catch {
         // doesn't exist
       }
     }
+    return false;
+  }
+
+  private async genNonInspectConfig(
+    baseDir: string,
+    inspectPath: string,
+  ): Promise<PartialConfig | undefined> {
+    const quartoYmlExists = await this.hasQuartoProjectFile(baseDir);
 
     const ext = path.extname(inspectPath).toLowerCase();
     if (
