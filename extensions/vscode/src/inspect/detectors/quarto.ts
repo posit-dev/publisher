@@ -28,7 +28,7 @@ const specialYmlFiles = [
 // written. The exact value is non-critical — Connect uses it only as a hint.
 const defaultQuartoVersion = "1.7.34";
 
-const quartoSuffixes = [".qmd", ".Rmd", ".ipynb", ".R", ".py", ".jl"];
+const quartoSuffixes = [".qmd", ".Rmd", ".ipynb", ".R", ".py", ".jl", ".md"];
 const quartoSuffixesLower = quartoSuffixes.map((s) => s.toLowerCase());
 
 function isQuartoShiny(metadata: {
@@ -466,7 +466,8 @@ export class QuartoDetector implements ContentTypeDetector {
       !quartoYmlExists &&
       ext !== ".qmd" &&
       ext !== ".ipynb" &&
-      ext !== ".rmd"
+      ext !== ".rmd" &&
+      ext !== ".md"
     ) {
       return undefined;
     }
@@ -502,6 +503,15 @@ export class QuartoDetector implements ContentTypeDetector {
     if (ext === ".rmd") {
       cfg.r = {};
       cfg.quarto = { version: defaultQuartoVersion, engines: ["knitr"] };
+      files.push(`/${relEntrypoint}`);
+      const assets = await findLinkedResources(baseDir, files);
+      files.push(...assets);
+      return cfg;
+    }
+
+    // Standalone Markdown files use the markdown engine (no Python or R)
+    if (ext === ".md") {
+      cfg.quarto = { version: defaultQuartoVersion, engines: ["markdown"] };
       files.push(`/${relEntrypoint}`);
       const assets = await findLinkedResources(baseDir, files);
       files.push(...assets);
