@@ -71,7 +71,7 @@ jobs:
 
       - name: Publish to Open VSX Registry
         env:
-          OVSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
+          OVSX_PAT: ${{ secrets.OPEN_VSX_TOKEN }}
           EXTENSION_FILE: ${{ steps.get-extension-path.outputs.extension_path }}
         run: |
           set -euo pipefail
