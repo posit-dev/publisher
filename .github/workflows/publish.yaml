@@ -38,12 +38,16 @@ jobs:
           echo "extension_path=dist/${name}-$(just version).vsix" >> "$GITHUB_OUTPUT"
 
       - name: Publish to Visual Studio Marketplace
-        uses: HaaLeo/publish-vscode-extension@v2
-        with:
-          registryUrl: https://marketplace.visualstudio.com
-          pat: ${{ secrets.VSCE_PAT }}
-          extensionFile: ${{ steps.get-extension-path.outputs.extension_path }}
-          skipDuplicate: true
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          EXTENSION_FILE: ${{ steps.get-extension-path.outputs.extension_path }}
+        run: |
+          set -euo pipefail
+          if [[ ! -f "$EXTENSION_FILE" ]]; then
+            echo "::error::extensionFile not found at: $EXTENSION_FILE"
+            exit 1
+          fi
+          npx --yes @vscode/vsce@2 publish --packagePath "$EXTENSION_FILE" --skip-duplicate
 
   publish-open-vsx:
     needs:
@@ -66,8 +70,13 @@ jobs:
           echo "extension_path=dist/${name}-$(just version).vsix" >> "$GITHUB_OUTPUT"
 
       - name: Publish to Open VSX Registry
-        uses: HaaLeo/publish-vscode-extension@v2
-        with:
-          pat: ${{ secrets.OPEN_VSX_TOKEN }}
-          extensionFile: ${{ steps.get-extension-path.outputs.extension_path }}
-          skipDuplicate: true
+        env:
+          OVSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
+          EXTENSION_FILE: ${{ steps.get-extension-path.outputs.extension_path }}
+        run: |
+          set -euo pipefail
+          if [[ ! -f "$EXTENSION_FILE" ]]; then
+            echo "::error::extensionFile not found at: $EXTENSION_FILE"
+            exit 1
+          fi
+          npx --yes ovsx@0 publish "$EXTENSION_FILE" --skip-duplicate
