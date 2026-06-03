@@ -1,5 +1,460 @@
 [
   {
+    "objectID": "vscode.html",
+    "href": "vscode.html",
+    "title": "VS Code Extension",
+    "section": "",
+    "text": "In VSCode, open the folder containing the project you want to deploy.\nOpen the Posit Publisher UI by clicking the icon in the activity bar.\n\n\n\n\nThe Home view shows information about the selected deployment destination.\nTo create your first deployment, click the Add Deployment button.\n\nThis will take you through the process of creating a new deployment, which includes a credential, configuration, and content record.\n\nA credential defines the server you will deploy to and the API key that will be used to authenticate you. Once you have created a credential, you can use it for all of your deployments to that server.\nA configuration file describes how your project will be deployed. If the extension detects more than one possible project type, you will be asked which one to use when creating the configuration file.\nA content record describes where your project is going to be deployed, and records the settings used for that deployment and the result.\n\n\n[!TIP] If you have the Even Better TOML extension installed, VSCode will show tooltips for the fields. It will also validate the structure and contents of the configuration file using the provided schema.\n\n\n\n\n\nBefore you can deploy a Python project, you must set up the requirements file for your project. If you don’t already have a requirements.txt you can open the Requirements view and click the Scan button to generate one. Review the generated requirements file to ensure it includes all the packages your project needs.\n\n\n\n\nIf a renv.lock file is provided, Publisher reads package information directly from the lockfile (no local renv library required to publish).\nIf a lockfile is not provided Publisher will try to detect dependencies from the code itself.\nIn case you want Publisher to read dependencies from the renv library, set packages_from_library = true under [r] in your configuration.\n\n\n\nYou are all set to Deploy!\nClick the Deploy Your Project button in the Home view to start the deployment process.\n\nDuring deployment, the extension will show a progress window with the status of the deployment. Once the deployment completes, the result will be displayed in the Home view."
+  },
+  {
+    "objectID": "vscode.html#tutorial",
+    "href": "vscode.html#tutorial",
+    "title": "VS Code Extension",
+    "section": "",
+    "text": "In VSCode, open the folder containing the project you want to deploy.\nOpen the Posit Publisher UI by clicking the icon in the activity bar.\n\n\n\n\nThe Home view shows information about the selected deployment destination.\nTo create your first deployment, click the Add Deployment button.\n\nThis will take you through the process of creating a new deployment, which includes a credential, configuration, and content record.\n\nA credential defines the server you will deploy to and the API key that will be used to authenticate you. Once you have created a credential, you can use it for all of your deployments to that server.\nA configuration file describes how your project will be deployed. If the extension detects more than one possible project type, you will be asked which one to use when creating the configuration file.\nA content record describes where your project is going to be deployed, and records the settings used for that deployment and the result.\n\n\n[!TIP] If you have the Even Better TOML extension installed, VSCode will show tooltips for the fields. It will also validate the structure and contents of the configuration file using the provided schema.\n\n\n\n\n\nBefore you can deploy a Python project, you must set up the requirements file for your project. If you don’t already have a requirements.txt you can open the Requirements view and click the Scan button to generate one. Review the generated requirements file to ensure it includes all the packages your project needs.\n\n\n\n\nIf a renv.lock file is provided, Publisher reads package information directly from the lockfile (no local renv library required to publish).\nIf a lockfile is not provided Publisher will try to detect dependencies from the code itself.\nIn case you want Publisher to read dependencies from the renv library, set packages_from_library = true under [r] in your configuration.\n\n\n\nYou are all set to Deploy!\nClick the Deploy Your Project button in the Home view to start the deployment process.\n\nDuring deployment, the extension will show a progress window with the status of the deployment. Once the deployment completes, the result will be displayed in the Home view."
+  },
+  {
+    "objectID": "vscode.html#other-views-and-features",
+    "href": "vscode.html#other-views-and-features",
+    "title": "VS Code Extension",
+    "section": "Other Views and Features",
+    "text": "Other Views and Features\n\nDeploy via Entrypoint\nYou can deploy or create a new deployment directly from an open file. If it is a valid entrypoint a Posit Publisher button will appear in the editor menu.\n\n\n\nMultiple Deployments\nYou can create multiple deployments for different purposes. For example, you can use a staging deployment for testing before creating or updating a production deployment that is shared with your users.\nClicking the Deployment dropdown lets you choose which deployment to target.\n\nThen choose from the displayed list.\n\n\n\nUpdating Previously Deployed Content\nIf you have previously deployed content on Connect that you want to update, but you don’t already have a Deployment and Configuration file setup, you can use a prompt in the Home View to allow for this.\n\nAfter creating a new deployment in the extension pressing “update that previous deployment” will prompt you with the content URL. Once provided your new deployment will be setup to update that content URL, rather than creating a new deployment entirely.\n\n\nProject Files\nThis view shows the files in your workspace:\n\nIncluded files show as checked and will be included in your deployment. They are sent to the server as part of the uploaded content.\nExcluded files show as unchecked and will not be included in your deployment. The tooltip on an excluded file will indicate the reason it is excluded. Some files are excluded by the publisher and cannot be added.\n\n\nThe files included in your project are controlled by the files list in the deployment configuration file. The buttons in the UI update that list. If you have more than one destination with different configuration files, they can have different sets of included and excluded files.\nThe files list accepts wildcards in .gitignore format. For example, to include all Python source files from your project directory, you can use *.py. Exclude files (or wildcard patterns) by prefixing them with !. If a file matches multiple entries, the last match wins. For example, you can exclude all CSV files except data.csv with the configuration entry:\nfiles = [\n  \"*\",\n  \"!*.csv\",\n  \"data.csv\"\n]\n\n\nSecrets\nYou can setup Secrets for your project in the Secrets view.\nSecrets are name-value pairs that you want to be available at runtime for content on the server. However, unlike environment variables, the value associated with a secret is considered “sensitive”, and should not be stored in the configuration file itself.\nSecret names are defined in the Configuration file using the secrets field. They can be added by clicking the + button in the Secrets view or by directly editing the configuration file.\nsecrets = ['API_KEY', '_DB_PASSWORD']\nThe names indicate what Secrets are required for the deployment. When they are sent up to the Connect server they become Environment Variables.\n\nSecrets are sent to the Connect server only when a value is supplied to avoid overwriting any values already set.\nTo set a Secret click the Edit Value button (the pencil icon) for the Secret you’d like to set and enter the value. The value is stored in the extension and is sent up during your next deploy.\nA badge indicates how many Secrets are set to send in your next deploy.\n\n\nPython Packages\nThis view shows the contents of the requirements file in your project directory. It’s required when deploying a Python project. By default, the filename is requirements.txt. You can specify an alternate name in the deployment configuration file using the package_file field under the [python] section.\n\nIf you don’t have a requirements file yet, you’ll see a message prompting you to scan it. Clicking Scan will scan your project code for imports and attempt to map those to package names and versions using the package metadata from your local Python installation. After scanning, verify the contents of the generated requirements file and make any changes needed.\nIf you already have a requirements file, you can scan your code again using the eye icon in the Requirements view.\n\n\nR Packages\nThis view shows the contents of the renv.lock file in your project directory. It’s required when deploying an R project. By default, the filename is renv.lock. You can specify an alternate name in the deployment configuration file using the package_file field under the [r] section.\n\nIf your renv.lock file and library are out of sync, you can still publish by default because Publisher uses the lockfile. However, it’s good practice to keep them in sync: run renv::snapshot() (update lockfile from library) or renv::restore() (update library from lockfile). Clicking the “eye” icon in the R Packages view runs renv::snapshot() for you.\n\n\nCredentials\nThis view lists the credentials you have defined. You need a credential for each Connect server you want to deploy to; each credential includes the server URL and an API key. Credentials are securely stored by VS Code.\nTo add a credential for a new server, click the + button. To remove a credential, right-click on it and select Delete.\n\nFor instructions on how to create a Connect API key, see the Connect documentation.\n\nFirst time deploying\nIf a deployment is pointed to a server that you have not deployed to before, you may need to set up a credential.\nPosit Publisher makes this easy by prompting you to Create a new Credential when the selected deployment requires a credential you don’t have.\n\n\n\n\nHelp and Feedback\nThis view contains links to this documentation and other resources.\n\n\nPosit Publisher Logs\nThe Posit Publisher logs are available in the VSCode bottom panel.\n\nThere are a few ways to easily get to them:\n\nRun Posit Publisher Logs: Focus on Logs View from the command palette.\nClick the Show Logs button in the error notification that appears on a deployment failure.\nSelect Go to Publishing Log in the status area ellipsis menu.\n\n\n\nOther Logs\nClicking the ellipsis menu in the status area provides options to view additional options which may be helpful when troubleshooting.\n\n\nBrowse Deployment Server opens a browser window showing the content list on the Connect server.\nShow Content Log opens a browser window showing the most recent log for your content on the Connect server.\nGo to Debug Log opens the Posit Publisher debug logs in the VSCode output panel.\nGo to Publishing Log opens the Posit Publisher Logs panel."
+  },
+  {
+    "objectID": "configuration.html",
+    "href": "configuration.html",
+    "title": "Configuration File Reference",
+    "section": "",
+    "text": "The type of server the content is being deployed to. May be set to connect or connect_cloud. Defaults to connect.\nMany of the fields described here are only valid for one product_type value. If not otherwise specified, fields are valid for both.\n\n\n\nIndicates the type of content being deployed. Valid values are:\n\nhtml\njupyter-notebook\njupyter-voila\nnodejs\npython-bokeh\npython-dash\npython-fastapi\npython-flask\npython-gradio\npython-panel\npython-shiny\npython-streamlit\nquarto-shiny\nquarto-static\nquarto (Deprecated use quarto-static instead)\nr-plumber\nr-shiny\nrmd-shiny\nrmd\n\n\n\n\nName of the primary file containing the content. For Python flask, dash, fastapi, and python-shiny projects, this specifies the object within the file in module:object format. See understanding entrypoints for additional information.\n\n\n\nTitle for this content. If specified, it must be a single line containing between 3 and 1000 characters.\n\n\n\nDescription for this content. It may span multiple lines and be up to 4000 characters.\n\n\n\nProject-relative paths of the files to be included in the deployment. Uses .gitignore syntax for file include patterns, like wildcards.\nHere are some examples given an example project structure:\nproject-root/\n|\n├── dir/\n│   ├── util.py\n│   └─  helper.py\n│\n└── app.py\n\nTo include all Python files in your project, you can use a wildcard pattern. *.py would include all .py files in any directory.\n/dir/util.py would include the specific util.py file in the dir directory under the root of the project to be published.\nTo include the file app.py at the root of the project, you can use /app.py.\n\n\n\n\nOnly valid when product_type is connect\ntrue if this is a report that accepts parameters.\n\n\n\nOnly valid when product_type is connect\nAccess the content after deploying, to validate that it is live. Defaults to true.\n\n\n\nURL of the json-schema definition for this file. Must be ‘https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json’. TOML editing tools may use this to provide validation and/or autocomplete.\nExample:\n\"$schema\" = \"https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json\"\ntype = \"quarto-static\"\nentrypoint = \"report.qmd\"\ntitle = \"Regional Quarterly Sales Report\"\ndescription = \"This is the quarterly sales report, broken down by region.\"\nvalidate = true\n\nfiles = [\n    \"*.py\",\n    \"*.qmd\",\n    \"requirements.txt\",\n]"
+  },
+  {
+    "objectID": "configuration.html#general-settings",
+    "href": "configuration.html#general-settings",
+    "title": "Configuration File Reference",
+    "section": "",
+    "text": "The type of server the content is being deployed to. May be set to connect or connect_cloud. Defaults to connect.\nMany of the fields described here are only valid for one product_type value. If not otherwise specified, fields are valid for both.\n\n\n\nIndicates the type of content being deployed. Valid values are:\n\nhtml\njupyter-notebook\njupyter-voila\nnodejs\npython-bokeh\npython-dash\npython-fastapi\npython-flask\npython-gradio\npython-panel\npython-shiny\npython-streamlit\nquarto-shiny\nquarto-static\nquarto (Deprecated use quarto-static instead)\nr-plumber\nr-shiny\nrmd-shiny\nrmd\n\n\n\n\nName of the primary file containing the content. For Python flask, dash, fastapi, and python-shiny projects, this specifies the object within the file in module:object format. See understanding entrypoints for additional information.\n\n\n\nTitle for this content. If specified, it must be a single line containing between 3 and 1000 characters.\n\n\n\nDescription for this content. It may span multiple lines and be up to 4000 characters.\n\n\n\nProject-relative paths of the files to be included in the deployment. Uses .gitignore syntax for file include patterns, like wildcards.\nHere are some examples given an example project structure:\nproject-root/\n|\n├── dir/\n│   ├── util.py\n│   └─  helper.py\n│\n└── app.py\n\nTo include all Python files in your project, you can use a wildcard pattern. *.py would include all .py files in any directory.\n/dir/util.py would include the specific util.py file in the dir directory under the root of the project to be published.\nTo include the file app.py at the root of the project, you can use /app.py.\n\n\n\n\nOnly valid when product_type is connect\ntrue if this is a report that accepts parameters.\n\n\n\nOnly valid when product_type is connect\nAccess the content after deploying, to validate that it is live. Defaults to true.\n\n\n\nURL of the json-schema definition for this file. Must be ‘https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json’. TOML editing tools may use this to provide validation and/or autocomplete.\nExample:\n\"$schema\" = \"https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json\"\ntype = \"quarto-static\"\nentrypoint = \"report.qmd\"\ntitle = \"Regional Quarterly Sales Report\"\ndescription = \"This is the quarterly sales report, broken down by region.\"\nvalidate = true\n\nfiles = [\n    \"*.py\",\n    \"*.qmd\",\n    \"requirements.txt\",\n]"
+  },
+  {
+    "objectID": "configuration.html#environment",
+    "href": "configuration.html#environment",
+    "title": "Configuration File Reference",
+    "section": "Environment",
+    "text": "Environment\nEnvironment variable/value map. All values must be strings. Secrets such as API keys or tokens should not be stored here.\nExample:\n[environment]\nAPI_URL = \"https://example.com/api\""
+  },
+  {
+    "objectID": "configuration.html#python-settings",
+    "href": "configuration.html#python-settings",
+    "title": "Configuration File Reference",
+    "section": "Python settings",
+    "text": "Python settings\n\npackage_file\nOnly valid when product_type is connect\nFile containing package dependencies. The file must exist and be listed under ‘files’. The default is ‘requirements.txt’.\n\n\npackage_manager\nOnly valid when product_type is connect\nPackage manager that will install the dependencies. Supported values are pip, uv and none.\n\nOmitting the value will let the server decide.\nIf package_manager is uv, dependencies will be installed using uv pip\nIf package_manager is pip, dependencies will be installed using pip\nIf package_manager is none, dependencies will not be installed.\n\n\n\nversion\nPython version. The server must have a matching Python major/minor version in order to run the content.\nExample:\n[python]\nversion = \"3.11.3\"\npackage_file = \"requirements.txt\"\npackage_manager = \"pip\""
+  },
+  {
+    "objectID": "configuration.html#r-settings",
+    "href": "configuration.html#r-settings",
+    "title": "Configuration File Reference",
+    "section": "R settings",
+    "text": "R settings\n\npackage_file\nOnly valid when product_type is connect\nFile containing package dependencies. This is usually renv.lock. The file must exist and be listed under ‘files’.\n\n\npackage_manager\nOnly valid when product_type is connect\nPackage manager that will install the dependencies. Supported values are renv and none. If package-manager is none, dependencies will be assumed to be pre-installed on the server.\n\n\npackages_from_library\nOnly valid when product_type is connect\nControls how Publisher retrieves dependencies for R projects.\n\nfalse (default): Read package metadata directly from renv.lock. This does not require a local renv library to be present in your workspace.\ntrue: Read package metadata from the local renv library (legacy behavior). This requires an initialized renv library matching your lockfile.\n\n\n\nversion\nR version. The server will use the nearest R version to run the content.\nExample:\n[r]\nversion = \"4.3.1\"\npackage_file = \"renv.lock\"\npackage_manager = \"renv\""
+  },
+  {
+    "objectID": "configuration.html#jupyter-settings",
+    "href": "configuration.html#jupyter-settings",
+    "title": "Configuration File Reference",
+    "section": "Jupyter settings",
+    "text": "Jupyter settings\nOnly valid when product_type is connect\n\nhide_all_input\nHide all input cells when rendering output.\n\n\nhide_tagged_input\nHide input code cells with the ‘hide_input’ tag when rendering output.\nExample:\n[jupyter]\nhide_all_input = false\nhide_tagged_input = false"
+  },
+  {
+    "objectID": "configuration.html#quarto-settings",
+    "href": "configuration.html#quarto-settings",
+    "title": "Configuration File Reference",
+    "section": "Quarto settings",
+    "text": "Quarto settings\nOnly valid when product_type is connect\n\nengines\nList of Quarto engines required for this content.\n\n\nversion\nQuarto version. The server must have a similar Quarto version in order to run the content.\n[quarto]\nversion = \"1.4.554\"\nengines = [\"knitr\"]"
+  },
+  {
+    "objectID": "configuration.html#node.js-settings",
+    "href": "configuration.html#node.js-settings",
+    "title": "Configuration File Reference",
+    "section": "Node.js settings",
+    "text": "Node.js settings\nOnly valid when product_type is connect\nPosit Connect supports deploying Node.js applications.\nBoth package.json and package-lock.json must be present and listed under files. Connect uses npm ci to install dependencies; if package-lock.json is missing, run npm install to generate it.\nIf package.json specifies an engines.node constraint, Connect uses it to select the runtime version. Otherwise Connect uses the latest version of Node.js available on the server.\nNode.js deployment requires an Advanced Connect license, and the server administrator must enable Node.js support. Publisher reports when the target server has Node.js disabled.\nConnect Cloud does not support Node.js content.\nExample:\ntype = \"nodejs\"\nentrypoint = \"index.js\"\nfiles = [\"*.js\", \"package.json\", \"package-lock.json\"]"
+  },
+  {
+    "objectID": "configuration.html#connect-specific-settings",
+    "href": "configuration.html#connect-specific-settings",
+    "title": "Configuration File Reference",
+    "section": "Connect-specific settings",
+    "text": "Connect-specific settings\n\nAccess settings\nOnly valid when product_type is connect\n\nrun_as\nThe system username under which the content should be run. Must be an existing user in the allowed group. You must be an administrator to set this value.\n\n\nrun_as_current_user\nFor application content types, run a separate process under the user account of each visiting user under that user’s server account. Requires PAM authentication on the Posit Connect server. You must be an administrator to set this value.\nExample:\n[connect.access]\nrun_as = \"myuser\"\nrun_as_current_user = true\n\n\n\nKubernetes settings\nOnly valid when product_type is connect\nSettings used with Posit Connect’s off-host execution feature, where content is run in Kubernetes.\n\namd_gpu_limit\nThe number of AMD GPUs that will be allocated by Kubernetes to run this content.\n\n\ncpu_limit\nThe maximum amount of compute power this content will be allowed to consume when executing or rendering, expressed in CPU Units, where 1.0 unit is equivalent to 1 physical or virtual core. Fractional values are allowed. If the process tries to use more CPU than allowed, it will be throttled.\n\n\ncpu_request\nThe minimum amount of compute power this content needs when executing virtual core. Fractional values are allowed.\n\n\ndefault_image_name\nName of the target container image.\n\n\ndefault_py_environment_management\nEnables or disables Python environment management. When false, Posit Connect will not install Python packages and instead assume that all required packages are present in the container image.\n\n\ndefault_r_environment_management\nEnables or disables R environment management. When false, Posit Connect will not install R packages and instead assume that all required packages are present in the container image.\n\n\nmemory_limit\nThe maximum amount of RAM this content will be allowed to consume when executing or rendering, expressed in bytes. If the process tries to use more memory than allowed, it will be terminated\n\n\nmemory_request\nThe minimum amount of RAM this content needs when executing or rendering, expressed in bytes.\n\n\nnvidia_gpu_limit\nThe number of NVIDIA GPUs that will be allocated by Kubernetes to run this content.\n\n\nservice_account_name\nThe name of the Kubernetes service account that is used to run this content. It must adhere to Kubernetes service account naming rules. You must be an administrator to set this value.\nExample:\n[connect.kubernetes]\namd_gpu_limit = 0\ncpu_limit = 1.5\ncpu_request = 0.5\ndefault_image_name = \"posit/connect-runtime-python3.11-r4.3\"\ndefault_py_environment_management = true\ndefault_r_environment_management = true\nmemory_limit = 100000000\nmemory_request = 20000000\nnvidia_gpu_limit = 1\nservice_account_name = \"posit-connect-content\"\n\n\n\nRuntime settings\nValid when product_type is connect or connect_cloud\nRuntime settings for application content types\n\nconnection_timeout\nMaximum number of seconds allowed without data sent or received across a client connection. A value of 0 means connections will never time-out (not recommended).\n\n\nidle_timeout\nThe maximum number of seconds a worker process for an interactive application to remain alive after it goes idle (no active connections).\n\n\ninit_timeout\nThe maximum number of seconds allowed for an interactive application to start. Posit Connect must be able to connect to a newly launched application before this threshold has elapsed.\n\n\nload_factor\nControls how aggressively new processes are spawned. The valid range is between 0.0 and 1.0.\n\n\nmax_conns_per_process\nSpecifies the maximum number of client connections allowed to an individual process. Incoming connections which will exceed this limit are routed to a new process or rejected.\n\n\nmax_processes\nSpecifies the total number of concurrent processes allowed for a single interactive application.\n\n\nmin_processes\nSpecifies the minimum number of concurrent processes allowed for a single interactive application.\n\n\nread_timeout\nMaximum number of seconds allowed without data received from a client connection. A value of 0 means a lack of client (browser) interaction never causes the connection to close.\nExample:\n[connect.runtime]\nconnection_timeout = 5\nidle_timeout = 120\ninit_timeout = 60\nload_factor = 0.5\nmax_conns_per_process = 50\nmax_processes = 5\nmin_processes = 1\nread_timeout = 30"
+  },
+  {
+    "objectID": "configuration.html#connect-cloud-specific-settings",
+    "href": "configuration.html#connect-cloud-specific-settings",
+    "title": "Configuration File Reference",
+    "section": "Connect Cloud-specific settings",
+    "text": "Connect Cloud-specific settings\nOnly valid when product_type is connect_cloud\n\nvanity_name\nThe custom component of the vanity URL. If your account name is ‘my-account’ and this value is ‘vanity’, the vanity URL will be https://my-account-vanity.share.connect.posit.cloud.\nOnly supported for organizational accounts.\n\n\naccess_control\nSettings for who can do what with the content.\nOnly supported for organizational accounts.\n\npublic_access\nSpecifies whether the content is publicly accessible. Defaults to true on free accounts and false on paid accounts.\n\n\norganization_access\nSpecifies the default level of access for account members within an organizational account. Can be disabled, view, or editor."
+  },
+  {
+    "objectID": "changelog.html",
+    "href": "changelog.html",
+    "title": "Changelog",
+    "section": "",
+    "text": "Support for deploying Node.js applications (Express, Fastify, Hono, etc.) to Posit Connect. (#3964)\nSupport for browser-based Snowflake authentication when creating a new credential for Connect running within the Posit Team Native App in Snowpark Container Services. (#3466)\n\n\n\n\n\nFixed Publisher’s sidebar rendering unstyled with missing icons in Positron on Posit Workbench when accessed via Firefox. (#4013)\nFixed Quarto availability check opening a visible terminal and showing a confusing “process exited with code 1” error when Quarto is not installed. The check now runs silently in the background. (#3801)\nFixed deploying content to Connect running within the Posit Team Native App in Snowpark Container Services from Publisher running outside of SPCS. Users with existing credentials for SPCS servers must delete and recreate those credentials. Credentials now require a valid Snowflake connection and valid Connect authentication (either API key or token). (#3465)\nCancelling the “new credential” flow at the final step (input credential name) actually cancels instead of saving the new credential. (#4159)\nUpgraded project dependencies to improve proxy support. (#3102)\nFixed memory_limit and memory_request examples in the publishing configuration schema being quoted as strings instead of integers. (#1505)"
+  },
+  {
+    "objectID": "changelog.html#section",
+    "href": "changelog.html#section",
+    "title": "Changelog",
+    "section": "",
+    "text": "Support for deploying Node.js applications (Express, Fastify, Hono, etc.) to Posit Connect. (#3964)\nSupport for browser-based Snowflake authentication when creating a new credential for Connect running within the Posit Team Native App in Snowpark Container Services. (#3466)\n\n\n\n\n\nFixed Publisher’s sidebar rendering unstyled with missing icons in Positron on Posit Workbench when accessed via Firefox. (#4013)\nFixed Quarto availability check opening a visible terminal and showing a confusing “process exited with code 1” error when Quarto is not installed. The check now runs silently in the background. (#3801)\nFixed deploying content to Connect running within the Posit Team Native App in Snowpark Container Services from Publisher running outside of SPCS. Users with existing credentials for SPCS servers must delete and recreate those credentials. Credentials now require a valid Snowflake connection and valid Connect authentication (either API key or token). (#3465)\nCancelling the “new credential” flow at the final step (input credential name) actually cancels instead of saving the new credential. (#4159)\nUpgraded project dependencies to improve proxy support. (#3102)\nFixed memory_limit and memory_request examples in the publishing configuration schema being quoted as strings instead of integers. (#1505)"
+  },
+  {
+    "objectID": "changelog.html#section-1",
+    "href": "changelog.html#section-1",
+    "title": "Changelog",
+    "section": "[2.4.0]",
+    "text": "[2.4.0]\n\nFixed\n\nFixed re-deploying static HTML content (e.g., Quarto sites) failing with Connect error 110 when the content was originally deployed without content_category. (#4110)\nFixed deployment and credential testing showing “HTTP undefined” when the server is unreachable. Now displays a clear message asking the user to check their network connection, VPN, and server URL. (#4096)\nFixed Quarto dashboards with server: shiny being misdetected as static content, causing deployment to fail with an output-dir error on Connect. (#3991)\nFixed content URLs (View Content, dashboard, logs) being unreachable when the configured server URL differs from the external hostname. This scenario can happen when publishing from Workbench to Connect within the Posit Team Native App in Snowpark Container Services. (#3698)"
+  },
+  {
+    "objectID": "changelog.html#section-2",
+    "href": "changelog.html#section-2",
+    "title": "Changelog",
+    "section": "[2.2.0]",
+    "text": "[2.2.0]\n\nFixed\n\nFixed Connect Cloud redeploy wiping previously set secrets. (#4082)"
+  },
+  {
+    "objectID": "changelog.html#section-3",
+    "href": "changelog.html#section-3",
+    "title": "Changelog",
+    "section": "[2.0.0]",
+    "text": "[2.0.0]\n\nAdded\n\nAdded support for deploying projects with dependencies recorded in pylock.toml (PEP 751), uv.lock, or pyproject.toml files. When requirements.txt is not present, these files are automatically detected and used in that priority order. (#2824)\nDirectory checkboxes in Project Files now show an indeterminate state when some, but not all, children are included in the deployment. Directories also now show as checked when all children are included. (#3472)\n\n\n\nFixed\n\nFixed deployment records being written with an empty created_at timestamp after publishing. (#3718)\nFixed configuration schema to use auth_type (snake_case) for integration requests, matching the format the extension actually produces. Added strict property validation to integration request items. (#3651)\nFixed a bug with cancellation that could cause redeployment to create a new content item instead of updating the existing one. (#3305)\nFixed the Python/R Packages panel showing “file does not exist” after scanning when the package file was absent at startup. (#3963)\n\n\n\nRemoved\n\nRemoved the Go backend. Publisher is now a pure TypeScript extension; all functionality that previously went through the Go binary (credential CRUD, publishing, SSE streaming) runs natively in the extension. (#3484, #3693, #3713, #3821)\nRemoved the positPublisher.useKeyChainCredentialStorage setting. Credentials are now stored exclusively by Positron’s and VS Code’s SecretStorage, which handles OS-level storage automatically. (#3649)"
+  },
+  {
+    "objectID": "changelog.html#section-4",
+    "href": "changelog.html#section-4",
+    "title": "Changelog",
+    "section": "[1.36.0]",
+    "text": "[1.36.0]\n\nFixed\n\nConnect Cloud users who have permissions to publish to multiple accounts are able to create credentials again. (#3446)"
+  },
+  {
+    "objectID": "changelog.html#section-5",
+    "href": "changelog.html#section-5",
+    "title": "Changelog",
+    "section": "[1.34.0]",
+    "text": "[1.34.0]\n\nChanged\n\nUpdated Go from 1.25 to 1.26. (#3554)\n\n\n\nFixed\n\nFixed credential operations failing silently when the Publisher agent is unreachable or doesn’t respond. The extension now shows warning messages when the agent is unavailable during credential listing, server URL validation, or API key validation. (#3396)"
+  },
+  {
+    "objectID": "changelog.html#section-6",
+    "href": "changelog.html#section-6",
+    "title": "Changelog",
+    "section": "[1.32.0]",
+    "text": "[1.32.0]\n\nChanged\n\nUpdated Go from 1.24 to 1.25. (#3520)\n\n\n\nAdded\n\nImproved performance of generating manifests for projects that do not already have an renv.lock file. (#3442)\n\n\n\nFixed\n\nPython projects using rpy2 now correctly include an [r] section in the configuration since R is required at runtime. (#3425)\nFixed deploy button not appearing for Jupyter notebooks, Quarto visual mode, and diff viewers. (#2785, #3146, #3469)\nFixed unhelpful “Unknown Error” popup appearing on every file open/save when the Publisher backend is unavailable during startup or shutdown. (#3452)\nFixed the agent process auto-restarting during intentional shutdown (e.g., when VS Code closes). (#3195)"
+  },
+  {
+    "objectID": "changelog.html#section-7",
+    "href": "changelog.html#section-7",
+    "title": "Changelog",
+    "section": "[1.30.0]",
+    "text": "[1.30.0]\n\nAdded\n\nAdded support for opening remote Connect content via the command menu. (#3377)\nAdded support finding R executables in VSCode using Rpath settings in the R extension. (#3378)\nThe Publisher logs view automatically opens when a deployment starts. (#3235)\nThe Publisher logs automatically scroll to follow new log entries during deployment. (#2997)\nPublisher Log stages automatically expand when running and collapse when completed. (#2998)\nPublisher logs automatically scroll to reveal the failure line when a deployment fails. (#3236)\nAdded R, Python, and Quarto interpreter version to the logs. (#2532)\nAdded automatic discovery of static assets for R Markdown projects. (#3233)\nAdded automatic discovery of static assets for HTML projects. (#3234)\nAdded positPublisher.enableConnectCloud setting to disable publishing to Posit Connect Cloud. When set to false, Connect Cloud is hidden from the platform picker when creating new credentials, and existing Connect Cloud credentials are filtered from the deployment credential list. Existing Connect Cloud deployments remain accessible. (#3411)\nPython notebooks now default to Quarto rendering on Connect, additionally, quarto is not required to be installed locally when sending notebooks to render on Connect with quarto. (#3423)\nQuarto is now the preferred renderer for Jupyter notebooks as well as Rmarkdown and of course Quarto docs. (#3423)\n\n\n\nFixed\n\nFixed server settings fetch failing, which caused the “Add Integration Request” action to be hidden. (#3444)\nPublisher no longer fails to list project files when the directory contains special file types (e.g. Unix socket files). (#3403)\nLog messages in the Publisher Logs panel are no longer duplicated when multiple deployments are made. (#3069)\nFix creating deployments of R Markdown documents that include parameters on Connect Cloud. (#3388)\nThe Publisher outputs (detailed logs) have been consolidated into one channel called “Posit Publisher”. (#3168)\nRMarkdown parsing no longer errors if there is a later horizontal rule (---) in the document body. (#3409)\nRemoved the requirement that the local python version exist on the server when deploying (#3368)\n\n\n\nChanged\n\nFiles in the Project Files view now open the file when clicking the file name. Directories expand or collapse. (#3187)"
+  },
+  {
+    "objectID": "changelog.html#section-8",
+    "href": "changelog.html#section-8",
+    "title": "Changelog",
+    "section": "[1.28.0]",
+    "text": "[1.28.0]\n\nFixed\n\nFor Connect: the input for referencing a previous deployment is once again more relaxed in its validation: So long as there is a GUID in the string, it will be attempted. This means that one can use the in-app URL, the standalone URL, or simply the GUID again. (#3341)\nR dependency detection succeeds even if non-existent files are included in the configuration. (#3089)\nExisting renv.lock files are respected and used to track dependencies when publishing to Connect Cloud. (#3356)"
+  },
+  {
+    "objectID": "changelog.html#section-9",
+    "href": "changelog.html#section-9",
+    "title": "Changelog",
+    "section": "[1.26.0]",
+    "text": "[1.26.0]\n\nAdded\n\nAdded support for deploying Holoviz Panel applications with the python-panel content type.\n\n\n\nFixed\n\nWhen creating a Connect credential using token authentication or an API key the server URL is automatically discovered even when extra paths are provided (e.g., /connect). (#2999)\nFixed text and button alignment in webview (#3071)\nWhen a deployment configuration content type isn’t recognized as a known type, the resulting type in the manifest is no longer an empty string (#2542)\n\n\n\nAdded\n\nAdded support for deploying Quarto Shiny content to Connect Cloud (#3265)"
+  },
+  {
+    "objectID": "changelog.html#section-10",
+    "href": "changelog.html#section-10",
+    "title": "Changelog",
+    "section": "[1.24.0]",
+    "text": "[1.24.0]\n\nAdded\n\nAdded more prominent status messages when rendering Quarto documents. (#2940)\nImproved visuals for waiting on Connect on-prem token to be claimed (#2900)\nAdded automatic discovery of static assets for Quarto projects (#2594)\nAdded LLM tooling for LLM assistants to be able to help out with deployment failures and configuration errors(#2690)\nAdded detection support for Plumber2 projects. (#3150)\n\n\n\nFixed\n\nThe “R Packages” section no longer shows you an alert if you aren’t using renv. (#3095)\nWhen renv.lock contains packages installed from GitHub or Bitbucket the deploy process should respect RemoteHost, RemoteRepo, RemoteUsername and RemoteUrl and RemoteSubdir fields (#3147)\nWhen a package has a present RemoteSubdir, the field GithubSubdir is added too to avoid issues with previous versions of Packrat not considering RemoteSubdir for packages hosted in Github. (#3194)\nProjects referencing packages with RemoteRepos by name and not URL do not hang when deploying. (#3209)\n\n\n\nChanged\n\nWhen opening the full deployment log record, it opens as a new unsaved file. (#2996)"
+  },
+  {
+    "objectID": "changelog.html#section-11",
+    "href": "changelog.html#section-11",
+    "title": "Changelog",
+    "section": "[1.22.0]",
+    "text": "[1.22.0]\n\nAdded\n\nAdded “Set Up renv” button to initialize the environment, install dependencies, and create a lockfile when no valid R lockfile file is present (#3000, #3048)\nAdded support for managing OAuth integration content requirements directly from the “Integration Requests” pane in the Publisher UI. Auto-association of OAuth integrations is supported when deploying to Posit Connect 2025.09.0 or later with a license that includes OAuth integrations. (#3016)\nAdded a “Render Your Project” button that shows up for HTML project deployments rendered by Quarto to easily update and publish the rendered output (#2948)\nAdded support for Positron repositories configuration when detecting dependencies, allowing dependencies to be installed with the configured CRAN repository.\nAdded the ability to associate a Connect Cloud deployment to another Connect Cloud deployment for the same account (#3067)\n\n\n\nFixed\n\nFixed an issue where the preferred Python path was incorrectly not found when deploying (#2742)\nFixed Python dependencies scanning not respecting the active Python session (#2825)\nFixed messaging about setting up renv (#3029)\n\n\n\nChanged\n\nUpdate installation.md to include directions for Positron, pre-release, and Open VSX installations (#3066)\nRemove install-publisher.bash script and references (#3066)"
+  },
+  {
+    "objectID": "changelog.html#section-12",
+    "href": "changelog.html#section-12",
+    "title": "Changelog",
+    "section": "[1.21.0]",
+    "text": "[1.21.0]\n\nAdded\n\nAdded the configuration TOML file code to the displayed deployment name (#3018)\nAdded the ability to toggle between the summary view (tree) and the raw view (text) for the Publisher logs along with copy and save logs functionality (#3017)"
+  },
+  {
+    "objectID": "changelog.html#section-13",
+    "href": "changelog.html#section-13",
+    "title": "Changelog",
+    "section": "[1.20.0]",
+    "text": "[1.20.0]\n\nFixed\n\nFixed an issue deploying content to free Posit Connect Cloud accounts with incorrect access settings. (#3005)"
+  },
+  {
+    "objectID": "changelog.html#section-14",
+    "href": "changelog.html#section-14",
+    "title": "Changelog",
+    "section": "[1.19.1]",
+    "text": "[1.19.1]\n\nFixed\n\nFixed the Python and R Packages views incorrectly stating the default package files were missing even when they were present (#2882, #2884)\nFixed an issue where the package file checkbox in the Project Files view would occasionally be unchecked even when the file was included (#2793)\n\n\n\nAdded\n\nAdded UTM parameters for Connect Cloud links to see who is coming from Publisher (#2969)\nR dependencies are automatically detected when a project does not include an renv.lock file.\nAdded a celebratory message when credential token is connected (#2901)\n\n\n\nChanged\n\nR manifest package generation now uses only renv.lock file by default. To use the local renv library instead, set r.packages_from_library = true in the configuration.\nSetting python.package_manager=pip will now force pip as the package manager enven when the server default is uv."
+  },
+  {
+    "objectID": "changelog.html#section-15",
+    "href": "changelog.html#section-15",
+    "title": "Changelog",
+    "section": "[1.19.0]",
+    "text": "[1.19.0]\n\nFixed\n\nFixed the “Posit Publisher: View Deployment Logs in Connect” incorrectly being available in the Command Palette (#2899)\n\n\n\nAdded\n\nAdded script to always enable the PCC flag for publisher e2e tests prior to running\nAdded staging.json config for test user details and ability to retrieve from AWS and GH secrets (CI)\nAdded Cypress E2E Test for PCC Oauth and credential adding\nAdded repeat-cypress-headless.sh script for easily repeating e2e tests\nAdded Cypress E2E CI Setup and Test Reliability Improvements (#2721)\nAdded endpoints for performing OAuth Device Authorization Grant with Posit Cloud login. (#2692)\nAdded support for one-click token authentication with Connect. (#2769)\nAdded schema and agent support for publishing to Connect Cloud. (#2729, #2747, #2771)\nAdded colors to the logs indicating queued, skipped, passed, and errored log stage statuses. (#2382)\nImproved error messaging when deployment fails due to a schema validation error. (#2831)\nAdded a Copy System Info command and item in the “Help and Feedback” view to easily copy system information - extension version, IDE, and platform details (#2835)\nAdded a delete button for Credentials in the Credentials View (#2862)\nWhen opened, the Publisher logs scroll to and expand the first failed stage if a stage is marked as failed (#2857, #2858)\nAdded a configuration option that will auto open Publisher logs on a failed deploy (#2860)\nUse server hostname as the default credential name for new Connect credentials (#2922)\nIntroduced Posit Connect Cloud support. This feature allows publishing to Connect Cloud.\n\n\n\nChanged\n\nThe “Select Deployment” input can now be dismissed by focusing another element similar to other inputs. (#2780)\nPublish failure logs and deployment validation failure logs link to the logs view directly in Posit Connect and Posit Connect Cloud when available (#2859)\nIf the agent process crashes or is killed, the extension will now restart it. (#2961)"
+  },
+  {
+    "objectID": "changelog.html#section-16",
+    "href": "changelog.html#section-16",
+    "title": "Changelog",
+    "section": "[1.18.1]",
+    "text": "[1.18.1]\n\nFixed\n\nUpdated software components used by Posit Publisher to address CVE-2025-7783 (#2741)"
+  },
+  {
+    "objectID": "changelog.html#section-17",
+    "href": "changelog.html#section-17",
+    "title": "Changelog",
+    "section": "[1.18.0]",
+    "text": "[1.18.0]\n\nFixed\n\nFixed the naming of “Shiny for Python” and “Shiny for R” content types. (#2664)\nFixed an issue where end-to-end tests could not run on some Mac systems due to Docker files not being built for the correct platform.\nFixed an issue where disabling keychain credential storage would not work as expected. (#2697)\nFixed inconsistent runtime discovery and selection at deploy time. (#2648)\n\n\n\nAdded\n\nImproved support for Posit Connect deployments hosted in Snowpark Container Services. (#2687, #2691)\nAdded internal API endpoint to list Connect Cloud accounts. (#2695)\n\n\n\nChanged\n\nBumped the credential version to 2 to support Posit Connect Cloud credentials. (#2684)"
+  },
+  {
+    "objectID": "changelog.html#section-18",
+    "href": "changelog.html#section-18",
+    "title": "Changelog",
+    "section": "[1.16.1]",
+    "text": "[1.16.1]\n\nFixed\n\nA filepath quoting issue on Windows when using R with a .bat file extension. (#2637)\nDetect and report auth client errors at deploy time. (#2654)"
+  },
+  {
+    "objectID": "changelog.html#section-19",
+    "href": "changelog.html#section-19",
+    "title": "Changelog",
+    "section": "[1.16.0]",
+    "text": "[1.16.0]\n\nAdded\n\nAdded support for deploying to Connect in Snowflake using key-pair auth. (#2632)"
+  },
+  {
+    "objectID": "changelog.html#section-20",
+    "href": "changelog.html#section-20",
+    "title": "Changelog",
+    "section": "[1.14.0]",
+    "text": "[1.14.0]\n\nAdded\n\nIntroduced detection of required R interpreter version based on DESCRIPTION file and renv.lock file. The detected version will fill the requires_r field in configuration (#2636)\n\n\n\nFixed\n\nDetection of required python interpreter version now will request a compatible version when there is .python-version file declaring a specific version number without any version requirement operator (#2628)\nFixed an issue where scanning for Python dependencies created an renv.lock file. Now the dependencies file is properly named requirements.txt. (#2639)"
+  },
+  {
+    "objectID": "changelog.html#section-21",
+    "href": "changelog.html#section-21",
+    "title": "Changelog",
+    "section": "[1.12.1]",
+    "text": "[1.12.1]\n\nFixed\n\nFix missing platform build in OpenVSX due to outage.\n\n\n\nChanged\n\nUpdated record.toml to correspond with updated schema change in v1.12"
+  },
+  {
+    "objectID": "changelog.html#section-22",
+    "href": "changelog.html#section-22",
+    "title": "Changelog",
+    "section": "[1.12.0]",
+    "text": "[1.12.0]\n\nAdded\n\nAdded the ability to update the target GUID for a deployment at any time from the “…” menu. (#2576)\nAdded a new extension setting Use Key Chain Credential Storage (defaulting to true), allowing the user to prioritize the use of a credential file over the keyring. (#2519)\nCredentials are now exposed via a posit-connect authentication provider, which is surfaced within the native Accounts UI. (#2608)\nAdded a new extension setting Default Connect Server to pre-populate the Server URL when creating a credential if there is not already one configured. When running within Posit Workbench, the extension will use the URL from the default RStudio/Posit Workbench setting (rstudio-pro#7466)\nWhen expanded, the Python Packages view will now display a message describing how to configure the project to use Python if the configuration file does not indicate a dependency on Python. (#2571)\nAdded a new field to the Python configuration section (“requires_python”), which can be used to indicate the range of Python interpreter versions required to run the content on the Connect server. If it is not provided, it is populated from the project files “.python-version”, “pyproject.toml” and “setup.cfg”. This setting is inserted into the manifest during deployment. (#2617)\n\n\n\nFixed\n\nPublisher icon was sometimes missing when workpace folder starts out untrusted in VS Code. The extension now supports running within both untrusted and trusted workspaces, and will prompt to manage workspace trust so it can initialize. (#2611)\n\n\n\nChanged\n\nR, Python, and Quarto versions are now optional in configuration files and will not be populated when creating a new deployment. If not present at the time of deployment, versions will be discovered and inserted from user’s running environment. (#2468, #2470)\nThe posit-publishing-schema-v3 configuration file schema has been updated with the new “Python.requires_python” field as well as the switch from required to optional for the version field within the R, Python and Quarto sections.\nThe Publisher Log Panel has now been renamed to “Publisher” and now will stay hidden until the user initiates a deployment operation from within the extension. It remains visible until the VSCode window is restarted. (#2596)\nEnd-to-end tests environment refactored (#2508, #2588 & #2589 - Project)\nLegacy CLI code removed (#2521 - Project)"
+  },
+  {
+    "objectID": "changelog.html#section-23",
+    "href": "changelog.html#section-23",
+    "title": "Changelog",
+    "section": "[1.10.0]",
+    "text": "[1.10.0]\n\nAdded\n\nAdded a new Troubleshooting document and a link to it in error notifications that occur during deployment. (#2562)\nAdded a new Collaboration document describing how to collaborate on projects using the Posit Publisher. (#2383)\nAdded support for deploying Gradio content to Posit Connect. (#2476, #2477)\nInspection for Gradio entrypoint files was added to correctly determine when it is Gradio content and setting type = 'python-gradio' in the generated configuration file. (#2475)\nWhen deploying R content without a lockfile the extension now prompts the user to install and setup renv then creates a renv.lock depending on what is needed in their environment. (#2560)\nThe Python interpreter used is now consistent across the extension and uses the selected Python intrepter in Positron or the VS Code Python extension defaulting to the Python on PATH when none is selected. (#2494, #2496)\nA warning has been added to the sidebar when the selected deployment has a configuration with type = 'unknown' suggesting the framework be set. (#2515)\nIcons have been added to the deployment select dropdown to indicate the deployment’s server and entrypoint. (#2483)\n\n\n\nFixed\n\nDeployment dismissal has been greatly improved. Deployments are no longer updated as the deploy continues on Posit Connect. They instead will be set to the dismissed state, avoiding changes after dismissal. (#2179, #2498)\nFixed an issue where the “View Content” button could appear when a deployment failed prior to any content being created on Posit Connect. (#2373)\n\n\n\nChanged\n\nThe Python and R package files can no longer be un-checked in the Project Files view to avoid unintended removal from the files attribute in the configuration. (#2555)\nThe sidebar design was unified to have similar different vertical placement in various deployment states. (#2531)\nWarnings in the sidebar have a new look to optimize horizontal space, utilize theme colors, and emphasize links. (#2526, #2527)\nThe error when the extension could not validate credentials has been improved to indicate that connectivity to the server could also be a problem. (#2450)"
+  },
+  {
+    "objectID": "changelog.html#section-24",
+    "href": "changelog.html#section-24",
+    "title": "Changelog",
+    "section": "[1.8.0]",
+    "text": "[1.8.0]\n\nAdded\n\nThe selected R interpreter in Positron is preferred over an R interpreter on PATH when inspecting an entrypoint. When a deployment is created the selected R version is used in the generated configuration where applicable. (#2500)\n\n\n\nFixed\n\nWhen utilizing file-based credential storage and the file is using an older format, or has been corrupted, the file is backed up and the user is prompted to re-enter their credentials. (#2491)\nIf corrupted credentials are detected inside of keychain storage the store will be reset and the user will be prompted to re-enter their credentials. (#2492)\n\n\n\nChanged\n\nThe entrypoint can no longer be un-checked in the Project Files view to avoid unintended removal from the files attribute in the configuration. (#2487)\nThe sidebar design has changed slightly to emphasize the deployment selection. (#2480, #2481)\nThe deployment selection field in the sidebar now uses a right chevron to indicate dropdown will appear as a VS Code Quick Pick. (#2482)"
+  },
+  {
+    "objectID": "changelog.html#section-25",
+    "href": "changelog.html#section-25",
+    "title": "Changelog",
+    "section": "[1.6.0]",
+    "text": "[1.6.0]\n\nAdded\n\nAdded emphasis to the entrypoint file for the selected deployment in the Project Files view (#2239)\nWhen running the extension in Positron the selected R interpreter is now used rather than using the R interpreter from the PATH (#1968)\nAdded improved inspection for RMarkdown sites. When a _site.yml or _bookdown.yml file present the content category is correctly set to site. (#1643)\nAdded improved inspection and initial configurations for Quarto Websites when a _quarto.yml is present. Pre and post scripts are now automatically included in the initial configuration. (#2266)\n\n\n\nFixed\n\nFixed the extension sidebar freezing when a deployment with a large number of files is selected (#2204)"
+  },
+  {
+    "objectID": "changelog.html#section-26",
+    "href": "changelog.html#section-26",
+    "title": "Changelog",
+    "section": "[1.4.0]",
+    "text": "[1.4.0]\n\nChanged\n\nChanged the behavior when the configuration has type = 'unknown'. Now several actions can be performed such as including/excluding files via the sidebar and re-deploying to Posit Connect if the content type was deployed with the unknown type. (#2419)\nChanged the quarto type to quarto-static to match Posit Connect. The type quarto has been deprecated, and it is recommended to use quarto-static. (#1208)\n\n\n\nAdded\n\nAdded support for deploying Quarto script files (#1208)\nImproved the Secrets view in the sidebar to show when the secret is already set for the content on Posit Connect, when a value is going to be set on deploy, and when a value needs to be set (#2365)\nAdded the ability to hide all input cells or hide input cells with the hide_input metadata tag in Jupyter notebooks using a new section in configuration files (#2399)\n\n\n\nFixed\n\nFixed an issue with new deployments with the unknown type (due to inspection) causing errors and not creating all necessary files (#2419)\nFixed unknown inspection occassionally not including the selected entrypoint in the generated configuration’s files list (#2419)\nFixed a behavior causing renv.lock related errors to show in the Posit Publisher output channel and a vague “Could not scan…” message being shown. Now the specific errors are displayed for easier resolution. (#2408)\nReplaced an unhelpful error with a much more informative message when attempting to inspect a Python file and a Python executable can not be found to do the inspection (#2385)"
+  },
+  {
+    "objectID": "changelog.html#section-27",
+    "href": "changelog.html#section-27",
+    "title": "Changelog",
+    "section": "[1.2.1]",
+    "text": "[1.2.1]\n\nChanged\n\nUpdated extension README.md to include an outline of the features provided and links to the documentation and issue board."
+  },
+  {
+    "objectID": "changelog.html#section-28",
+    "href": "changelog.html#section-28",
+    "title": "Changelog",
+    "section": "[1.2.0]",
+    "text": "[1.2.0]\n\nAdded\n\nImproved documentation around the file inclusion, git ignore pattern used in configuration files (#2359)\nSelecting a configuration file with errors no longer disables the deploy button. Instead, errors are displayed during the deployment process to better indicate what needs to be addressed (#2345, #2374)\nAdded a line number to the configuration file error message to better indicate where the schema validation error is occurring (#2330)\nAdded a more informative error when the Content ID is not found on the Connect server when updating an existing deployment (#2287)\nAdded more logging to the extension output to help diagnose issues (#2153)\nAdded an option to disable certificate verification when communicating with a Connect server (#2202)\nAdded a helpful warning when the selected configuration file has overlapping secrets and environment variable names to avoid unexpected behavior (#2326)\nAdded helpful errors when attempting to deploy with a missing package file, or a package file with no content (#2177, #2327)\nAdded a helpful error when attempting to deploy to locked content (#2375)\nAdded a fast failure when attempting to deploy to an existing target on Connect with a different content type (#2301)\nAdded automatic inclusion of deployment’s configuration and content record files (#2370)\n\n\n\nChanged\n\nChanged the icon for setting Secret values in the Secrets view to be more clear that a value is being set (#2379)\nChanged the prompt for setting a name for a Connect server and the related credential to be more clear (#2265)\nChanged the “couldn’t access the deployed content” error to be more clear and link to the content’s logs directly (#2206)\nChanged URL validation when adding a Connect server credential to allow for URLs with paths (#2001)\nChanged URL validation to automatically discover the proper Connect server API endpoint based on the URL provided by the user (often incorrect) (#2001)\nChanged unexpected errors to be briefer, with additional details being sent to the VSCode’s Output/Window pane\nRemoved the Scan button from the R Packages view and updated the message to include a link to the renv documentation when the R package file is missing, invalid or empty (#2403)\n\n\n\nFixed\n\nFixed an issue where the R version was going undetected when R_HOME is set (#2343)\nFixed the deployment selection prompting users to select “one of the existing deployments below” when no deployments were listed (#2241)\nFixed an issue where after scanning for R packages or Python packages the file would not correctly open in the editor (#2328)\nFixed an issue with file watching that would show an error when hitting a symlink pointing to a missing file (#2267)"
+  },
+  {
+    "objectID": "changelog.html#section-29",
+    "href": "changelog.html#section-29",
+    "title": "Changelog",
+    "section": "[1.1.7]",
+    "text": "[1.1.7]\n\nAdded\n\nSecrets are now able to be pushed up during a deploy in the added Secrets view. Secret names can be added to the Configuration, and values supplied individually in the Secrets view. (#2260, #2304, #2305)\nNewly made Deployments can now be associated with previously deployed content to easily update content on a Connect server. (#2285)\nViews that require action now show a warning icon when collapsed to assist in discovery (#2245)\nCredentials are now persisted on OSes without keychains by storing them in the user’s home directory under .connect-credentials. If using a previous version of the extension with a .connect-credentials dotfile remove it when upgrading. (#1831)\nFiles that have previously been deployed that are now deselected for the next deployment show a red R icon in the Project Files view (#2299)\n\n\n\nChanged\n\nWhen creating a new deployment, open entrypoint files are listed with an option to use an open file dialog to select any file. This removes a recursive search for all entrypoints present within the open workspace. (#2337)\nThe entrypoint file is now more prominent in the UI. It is visible in the Deployment selection and options when selecting (#2248)\nChanged the editor button tooltip wording for deployable files. It now reads “Deploy with Posit Publisher” (#2209)\nThe Credentials and Help views are now shown even when no Deployment is selected (#2309)\nChanged the naming of generated deployment files to be more unique, similar to configuration files. They now include a short unique hash to avoid collisions in source control (#1818)\n\n\n\nFixed\n\nIf editing a configuration file makes the configuration file invalid there are no longer refresh file errors (#2323)\nNewly included files in subdirectories are now correctly decorated with a green A on Windows (#2112)"
+  },
+  {
+    "objectID": "changelog.html#section-30",
+    "href": "changelog.html#section-30",
+    "title": "Changelog",
+    "section": "[1.1.6]",
+    "text": "[1.1.6]\n\nAdded\n\nAdded a warning message if a package is not installed locally when scanning for package requirements (#2113)\nAdded a link to edit the configuration file in relevant error messages when we fail to deploy (#2047)\nAdded attributes to the Files API responses if all nested files are included or excluded based on the configuration (#2147)\n\n\n\nChanged\n\nChanged Project Files to a tree view making it easier to manage included and excluded files and directories (#1210)\nWhen including and excluding files in the extension Project Files view the file path is now included in the configuration files list to avoid including similarly named files in subdirectories (#2159)\nThe files attribute in configuration files is now printed in a multiline format for better readability (#2158)\nThe publish button in the editor view for entrypoints no longer automatically re-deploys. It will continue to assist in selection of deployments (#2180)\nMoved the “Create a New Deployment” option in Deployment selection menus to the top of the list for easier discovery (#2110)\nChanged the naming of generated configuration files to be more unique. They are now based on the entered content title and include a short unique hash to avoid collisions in source control (#2135)\n\n\n\nFixed\n\nWhen creating a Shiny Express deployment the entrypoint is now included in the generated configuration file (#2137)\nReduced the number of workspace file scanning operations done when a large number of files are deleted in the workspace to improve performance (#2107)\nExpensive file scanning operations are now debounced and throttled to improve performance and avoid duplicate scans (#1970)\nImproved catching of errors in the extension by ensuring that all errors are caught and logged (#1912)\nFixed an issue where errors would occur if a directory in the workspace was prevented from being read (#2210)\n\n\n\nRemoved\n\nRemoved the flat file view for Project Files in favor of the tree view (#1210, #2160)"
+  },
+  {
+    "objectID": "changelog.html#section-31",
+    "href": "changelog.html#section-31",
+    "title": "Changelog",
+    "section": "[1.1.5]",
+    "text": "[1.1.5]\n\nAdded\n\nAdded support detecting the quarto-shiny type for Quarto documents that had revealjs as the output format (#2065)\nAdded inspection support for Jupyter notebooks using Quarto Inspect allowing Jupyter notebooks to be published using Quarto (#2059, #2085)\nAdded an overlay that disables the extension’s Home view when a selection is being made (#1995)\nAdded support for setting a Credential using a dotfile (#2088)\nAdded the ability to dismiss the current deployment in progress (#2057)\nAdded sorting of entrypoints when adding a new deployment including open files at the top of the list (#2045)\n\n\n\nChanged\n\nThe Posit Publisher button in the editor view for entrypoints now does not deploy after a new deployment is created - giving users time to review the newly created configuration before deploying (#2060)\nChanged the scanning of entrypoints when adding a new deployment - now a cursory scan is done using file extensions and a full inspection is only done on the selected entrypoint greatly improving the speed of adding a new deployment (#2029)\nChanged the initial listing of entrypoints, when adding a new deployment, to only show unique options rather duplications for each content type (#2046)\nChanged the Posit Publisher icon (#2054)\nThe Posit Publisher icon is now bundled as an icon-font to support SVGs for better rendering on high DPI displays (#2054)\n\n\n\nFixed\n\nFixed an issue where include and exclude patterns in configuration files lists did not correctly handle specified files in subdirectories (#2075)\nFixed the Python Packages list including a blank entry when whitespace was present in the requirements.txt file (#2033)\nFixed an issue where opening a workspace with no files or only files without read permissions would cause an unhelpful error when adding a new deployment - the error now correctly communicates that no possible entrypoints were found (#2032)\nFixed an issue with entrypoint inspection where a non-PyShiny entrypoint would cause other files from being scanned (#2011)\nFixed anchor links opening new tabs in web based VSCodes including in Posit Workbench (#2034)"
+  },
+  {
+    "objectID": "changelog.html#section-32",
+    "href": "changelog.html#section-32",
+    "title": "Changelog",
+    "section": "[1.1.4]",
+    "text": "[1.1.4]\n\nAdded\n\nAdded the support for recursively scanning workspace directories so the extension can manage multiple projects at once (#1849)\nAdded a publish button to the editor view when an entrypoint is the active file to allow for easier deployment of the entrypoint (#1846)\nAdded progress bars for asynchronous actions in each of the extension’s views (#1958)\n\n\n\nChanged\n\nA loading indicator is now shown in the Home view until all initialization is complete (#1960)\n\n\n\nFixed\n\nImproved Credential validation by allowing a Connect instance behind a proxy (#1974)\nThe extension now activates when a workspace is opened with only directories (#1991)\nFixed comments in requirements.txt showing up in the Python Packages view (#2010)\n\n\n\nRemoved\n\nDeployments and Configurations views were removed from the extension (#1996)"
+  },
+  {
+    "objectID": "changelog.html#section-33",
+    "href": "changelog.html#section-33",
+    "title": "Changelog",
+    "section": "[1.1.3]",
+    "text": "[1.1.3]\n\nAdded\n\nAdded links to marketplaces in extension README (#1899)\n\n\n\nChanged\n\nSplit extension publishing CI in to two separate jobs to facilitate reruns (#1898)"
+  },
+  {
+    "objectID": "changelog.html#section-34",
+    "href": "changelog.html#section-34",
+    "title": "Changelog",
+    "section": "[1.1.2]",
+    "text": "[1.1.2]\n\nFixed\n\nFixed VSIX target OS and architecture (#1895)"
+  },
+  {
+    "objectID": "changelog.html#section-35",
+    "href": "changelog.html#section-35",
+    "title": "Changelog",
+    "section": "[1.1.1]",
+    "text": "[1.1.1]\n\nFixed\n\nFixed the release tooling for publishing the VSCode extension (#1893)"
+  },
+  {
+    "objectID": "changelog.html#section-36",
+    "href": "changelog.html#section-36",
+    "title": "Changelog",
+    "section": "[1.1.0]",
+    "text": "[1.1.0]\n\nAdded\n\nAdded a VSCode Walkthrough for the extension (#1834)\nAdded the currently-deploying Deployment’s title to the Posit Publisher Logs view for more clarity (#1756)\nAdded a confirmation prompt when deleting a Credential (#1733)\nAdded a “Get Package Descriptions” deploying stage to the Posit Publisher Logs view for R projects (#1593)\nAdded a link to the GitHub Discussions for the project in the help and feedback view (#1884)\nAdded validation for server URLs and API keys when creating Credentials (#1610, #1611, #1612)\n\n\n\nChanged\n\nGenerated configuration files now omit has_parameters if it is false (#1788)\nAdjusted the VSCode extension file watcher to send file information to views less frequently when large amounts of files are being created or deleted. Sending is now debounced. (#1735)\nRendered files are now excluded by default in generated Configurations for Quarto deployments (#1707)\nMoved the settings for the VSCode extension under the “Posit Publisher” title (#1869)\nStopped .ipynb from being identified as potential quarto projects to avoid deploying HTML without executing the code cells (#1863)\n\n\n\nFixed\n\nDeployed Posit Connect manifests no longer contain empty option sections if they are ommitted in the configuration file (#1823)\nFixed the “Got To Publishing Log” link in the last deployment message context menu (#1889)\n\n\n\nRemoved\n\nRemoved the executable path option now that the extension is bundled with the publisher binary (#1877)"
+  },
+  {
+    "objectID": "changelog.html#beta1",
+    "href": "changelog.html#beta1",
+    "title": "Changelog",
+    "section": "[1.0.beta1]",
+    "text": "[1.0.beta1]\n\nAdded\n\nAdded protection against selecting a configuration of a different type than the selected deployment (#1658)\nAdded a pre-flight deployment check that verifies the configuration and deployment type match (#1666)\nOnce deployments are deployed and have GUIDs a content type is recorded in the deployment record (#1741)\nAdded the MIT license to the extension bundle (#1773)\nAdded a context menu to the Deployment status section of the sidebar to view logs (#1693)\n\n\n\nChanged\n\nChanged the name “Destination” to “Deployment” to make it more clear what was being created and deployed (#1690)\nChanged the order of steps when creating a credential. Now the user is prompted to give the server URL, the API key, and then a name (#1751)\nAPI key input prompts are now using the password type, hiding the input (#1775)\nImproved naming of deployment logs stages to make them more clear (#586)\nImproved missing configuration error message - now prompts the user to select or create a configuration based on available configurations (#1752)\nDeployments and Configurations views are no hidden by default on initial install of the extension (#1697)\n\n\n\nFixed\n\nThe extension no longer gets stuck on “Scanning folder…” on VSCode version 1.90.0 (#1803)\nFixed extension commands for the Files, Python packages, and R packages views that were not registered previously (#1766)\nRemoved an outdated message about a publisher CLI command from the extension (#1781)\nConfigurations are no longer created specifying Python for a non-Python project even if Python is detected (#1760)\nPython Package scanning now handles notebook blocks without newlines (#1769)"
+  },
+  {
+    "objectID": "changelog.html#alpha8",
+    "href": "changelog.html#alpha8",
+    "title": "Changelog",
+    "section": "[1.0.alpha8]",
+    "text": "[1.0.alpha8]\n\nAdded\n\nThere is now an R Packages view in the UI that lists dependencies from your renv.lock file. The Scan button will create or update your renv.lock file by running renv::snapshot() (#1657)\nThere is now a separate step for Restoring R Environment in the Posit Publisher Logs view (#1660)\nAuto-generated configuration files now include a header comment (#1708)\nThe documentation now includes a section listing the licenses and attribution for third-party software used in the extension (#1661)\nSnyk scanning is now enabled (#1680)\nThe GitHub repository now includes a LICENSE file (#1701)\n\n\n\nChanged\n\nDestinations are now identified by the title field in the configuration file. You’ll be prompted for a title when creating a new destination (#1536)\nDeployment and configuration files are automatically named (#1536)\nThe Files and Packages sections now start out collapsed (#1629)\nConfigurations are now referenced by the relative path (#1653, #1711)\n\n\n\nFixed\n\nThe renv/staging and renv/sandbox directories are now excluded from deployment (#1627)\nDeploying without the wildcard * in the files section of the configuration file now includes the correct files (#1647)\nThe Python interpreter selected in VSCode is now used when deploying Python content (#1514)\nAdding a new destination on Windows no longer fails with a 500 error for R projects (#1631)\nDeploying R projects on Linux no longer fails (#1637)\nDisposables are now correctly disposed in the home view improving performance on workspace changes (#1673)\n\n\n\nRemoved\n\nThe Deployments detail view no longer includes Add and Redeploy buttons. Use the Destinations view to manage the list of deployment destinations, and to deploy your project (#1696, #1700)"
+  },
+  {
+    "objectID": "changelog.html#alpha7",
+    "href": "changelog.html#alpha7",
+    "title": "Changelog",
+    "section": "[1.0.alpha7]",
+    "text": "[1.0.alpha7]\n\nAdded\n\nCredentials are now managed within the extension. A Connect API key is required. (#1483)\nCredentials must be unique per server URL (#1534)\nR content can now be deployed (#1452). You must have an renv.lock file in your project and have the project’s renv library populated (for example via renv::restore()).\nDeployment records now include package dependencies that were included in the deployment (#1329)\nJupyter notebooks can now be deployed in Quarto mode (#963)\n\n\n\nChanged\n\nRedesigned the main extension UI to simplify the deployment process. Creating a Destination creates a new Deployment target as well as a Configuration. (#1517)\nChanged TOML attributes across files to use snake_case (#1377)\n\n\n\nFixed\n\nFixed opening project files on Windows (#1512)\n\n\n\nRemoved\n\nRemove documentation for the publisher CLI until the CLI is officially supported (#1561)"
+  },
+  {
+    "objectID": "changelog.html#alpha6",
+    "href": "changelog.html#alpha6",
+    "title": "Changelog",
+    "section": "[1.0.alpha6]",
+    "text": "[1.0.alpha6]\n\nAdded\n\nConfiguration files can now include a files list to specify which files are included in the deployment (#1350)\nYou can now include and exclude files from the Project Files view (#1360)\nThe deployment UI remembers the last selection (#1229, #1271)\nViews show progress indicators more accurately when performing actions (#1385)\n\n\n\nChanged\n\nThe Requirements and Project Files view now update based on the selected configuration (#1362)\nCombined the “basic” and “advanced” views into a single, easier to use view (#1336)\n\n\n\nFixed\n\nFixed handling of include/exclude file paths on Windows (#1500)\nAlignment of deployment error messages (#1504)\nFixed forward / backward navigation and step count in multi-step inputs (#1424)\n\n\n\nRemoved\n\n.positignore files are no longer used to select which files are included in the deployment (#1350)\nCredentials are no longer imported from rsconnect and rsconnect-python (#1539)"
+  },
+  {
+    "objectID": "changelog.html#alpha5",
+    "href": "changelog.html#alpha5",
+    "title": "Changelog",
+    "section": "[1.0.alpha5]",
+    "text": "[1.0.alpha5]\n\nAdded\n\nAdd new Home view with a simplified deploy UI (#1250)\nAdd new Initialize Project step to prepare the project for deployment (#1270)\nShow a help message in the Credentials panel if there are no credentials defined (#1186)\nProvide a Show Logs button in the deployment failure notification window (#1202)\nLog API accesses in the Output panel to aid in debugging (#1245)\nSupport negative matching (patterns beginning with !) in positignore files (#420)\n\n\n\nChanged\n\nMost of the Publisher views now start out collapsed to make room for the Home view (#1196)\n\n\n\nFixed\n\nDeploying a configuration with an empty entrypoint no longer produces an invalid deployment record (#1212)\nNewly created deployment files (that haven’t been deployed yet) no longer include extra fields that are not valid (#1244)\n.positignore paths now match correctly on Windows (#1161)\nConfiguration file validation now enforces the presence of the python and quarto sections for content types that require them (#1159)\nThe deployment process now prevents the section of invalid configuration files (#1135)\nImproved compatibility with pyenv projects that use .python-version by always ensuring that the current directory is set before inspecting the Python environment (#1080)\nThe deployed-at, configuration-name, and configuration fields in deployment files updates even if a deployment fails early in the process (#1254, #1308)\nRedeploying a content item with a credential from a different server results fails with a message, instead of invalidating the deployment file (#1263)\nPublisher views now load earlier, eliminating a VSCode placeholder that indicated a data provider was not registered (#1090)\nUI text changes based on user feedback (#1230)\n\n\n\nRemoved\n\nRemoved the Skipping deployment of this project message if you choose not to deploy (#1268)"
+  },
+  {
+    "objectID": "changelog.html#alpha4",
+    "href": "changelog.html#alpha4",
+    "title": "Changelog",
+    "section": "[1.0.alpha4]",
+    "text": "[1.0.alpha4]\n\nAdded\n\nProvide a Visit button in the deployment success notification window (#1173)\nMake the URL in the success log message clickable (#1171)\nAdd a Visit button to each deployment in the Deployments list (#1170)"
+  },
+  {
+    "objectID": "changelog.html#alpha3",
+    "href": "changelog.html#alpha3",
+    "title": "Changelog",
+    "section": "[1.0.alpha3]",
+    "text": "[1.0.alpha3]\nMove the extension from an Editor webview to a using native VSCode views, navigable via the Activity Bar. Move functionality that was previously in an Editor webview to views in the VSCode Primary Sidebar. Deployment Records and Configurations can now be created, opened, and in the case of Configurations edited directly via the Extension’s views.\n\nAdded\n\nInclude links to documentation and feedback channel (#1140)\nAdd comments to deployment records indicating they should not editted by users (#1092)\nDeployment staged logs view in the bottom VSCode panel\nAbility to select a Configuration when deploying\n\n\n\nChanged\n\nUse relative paths for the configuration entrypoint for Quarto projects (#960)\n\n\n\nFixed\n\nFix being unable to ignore subdirectories in .positignore (#1117)\nImprove error serialization with errors from Connect or networking (#1074)\nFixed cases where an unnamed .toml deployment record was created (#1076, #1113)\n\n\n\nRemoved\n\nStand-alone webview opened via an Editor button on files"
+  },
+  {
+    "objectID": "changelog.html#alpha2",
+    "href": "changelog.html#alpha2",
+    "title": "Changelog",
+    "section": "[1.0.alpha2]",
+    "text": "[1.0.alpha2]\n\nAdded\n\nVSCode extension package includes the publisher binary (#737)\npublisher init recognizes Quarto projects (jupyter and markdown engines only) (#814)\npublisher init recognizes Bottle and Pycnic apps as WSGI/Flask variants (#794)\npublisher init creates a .positignore file (#764)\nUI automatically sets light/dark mode based on the selected VSCode theme (#796)\nDeployment details page shows configuration changes since last deployment (#783)\nDeployment history includes the URLs where the deployed content can be accessed (#742), error information if the deployment failed (#747), and the date/time the deployment was created (#639, #836, #839)\n\n\n\nChanged\n\nRequire the user to choose an account, if they have more than one (#636)\nUse CONNECT_SERVER and CONNECT_API_KEY environment variables if they are defined and no account is selected (#722)\nDeployment names in the UI are now case-insensitive (#808)\nRecord new deployments immediately, instead of waiting until Deploy is clicked (#773, #775, #776, #777)\n\n\n\nFixed\n\nImprove UI navigation, especially when going back or viewing progress/logs (#788, #824)\nEnable copy/paste in the VSCode publisher window (#612)\nEnable command palette in the VSCode publisher window (#633)\nEnable clickable links in the VSCode publisher window (#589, #609, #759)\nImprove messages for TOML parsing/validation errors (#631)\n\n\n\nRemoved\n\nLight/dark mode selection menu when running in VSCode (#804)"
+  },
+  {
+    "objectID": "changelog.html#alpha1",
+    "href": "changelog.html#alpha1",
+    "title": "Changelog",
+    "section": "[1.0.alpha1]",
+    "text": "[1.0.alpha1]\nInitial release."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Posit Publisher",
+    "section": "",
+    "text": "Current version: 2.6.0 | Changelog\nPosit Publisher lets you deploy projects to Connect from VS Code and Positron.\nKey concepts:\nFor a full list of features and supported content types, see the extension README."
+  },
+  {
+    "objectID": "index.html#installation",
+    "href": "index.html#installation",
+    "title": "Posit Publisher",
+    "section": "Installation",
+    "text": "Installation\nInstall via the Visual Studio Code Marketplace\nOr open the VS Code Extensions view and search for “Posit Publisher” and then click “Install”.\n\nPre-release version\nIf a pre-release version is available, you can install it by following the same steps as above and then after installation click “Switch to Pre-release Version”.\nIf the “Switch to Pre-release Version” button is not available there is currently no pre-release version available or you are already on a pre-release version.\n\n\nOpen VSX Registry\nOpen the Publisher extension page on Open VSX Registry\nOn the extension’s page, click the “Download” button to download the extension as a .vsix file.\nOpen your IDE extension manager and look for an option to install from a .vsix file. Select the downloaded .vsix file to install the extension."
+  },
+  {
+    "objectID": "index.html#using-the-extension",
+    "href": "index.html#using-the-extension",
+    "title": "Posit Publisher",
+    "section": "Using the Extension",
+    "text": "Using the Extension\nSee the VS Code Extension page."
+  },
+  {
+    "objectID": "index.html#configuration-reference",
+    "href": "index.html#configuration-reference",
+    "title": "Posit Publisher",
+    "section": "Configuration Reference",
+    "text": "Configuration Reference\nSee the Configuration Reference page."
+  },
+  {
+    "objectID": "index.html#troubleshooting",
+    "href": "index.html#troubleshooting",
+    "title": "Posit Publisher",
+    "section": "Troubleshooting",
+    "text": "Troubleshooting\nSee the Troubleshooting page."
+  },
+  {
     "objectID": "troubleshooting.html",
     "href": "troubleshooting.html",
     "title": "Troubleshooting",
@@ -70,97 +525,6 @@
     "text": "Still having trouble?\nIf you’re still having trouble with Posit Publisher or have any questions, please reach out to us using a new GitHub discussion.\nYou may also want to check out the Posit Connect Cloud docs, or the FAQs and known issues.\nIf you think you’ve found a bug or have a feature request, please open a GitHub Issue."
   },
   {
-    "objectID": "configuration.html",
-    "href": "configuration.html",
-    "title": "Configuration File Reference",
-    "section": "",
-    "text": "The type of server the content is being deployed to. May be set to connect or connect_cloud. Defaults to connect.\nMany of the fields described here are only valid for one product_type value. If not otherwise specified, fields are valid for both.\n\n\n\nIndicates the type of content being deployed. Valid values are:\n\nhtml\njupyter-notebook\njupyter-voila\nnodejs\npython-bokeh\npython-dash\npython-fastapi\npython-flask\npython-gradio\npython-panel\npython-shiny\npython-streamlit\nquarto-shiny\nquarto-static\nquarto (Deprecated use quarto-static instead)\nr-plumber\nr-shiny\nrmd-shiny\nrmd\n\n\n\n\nName of the primary file containing the content. For Python flask, dash, fastapi, and python-shiny projects, this specifies the object within the file in module:object format. See the documentation at https://docs.posit.co/connect/user/publishing-cli-apps/#publishing-rsconnect-python-entrypoint.\n\n\n\nTitle for this content. If specified, it must be a single line containing between 3 and 1000 characters.\n\n\n\nDescription for this content. It may span multiple lines and be up to 4000 characters.\n\n\n\nProject-relative paths of the files to be included in the deployment. Uses .gitignore syntax for file include patterns, like wildcards.\nHere are some examples given an example project structure:\nproject-root/\n|\n├── dir/\n│   ├── util.py\n│   └─  helper.py\n│\n└── app.py\n\nTo include all Python files in your project, you can use a wildcard pattern. *.py would include all .py files in any directory.\n/dir/util.py would include the specific util.py file in the dir directory under the root of the project to be published.\nTo include the file app.py at the root of the project, you can use /app.py.\n\n\n\n\nOnly valid when product_type is connect\ntrue if this is a report that accepts parameters.\n\n\n\nOnly valid when product_type is connect\nAccess the content after deploying, to validate that it is live. Defaults to true.\n\n\n\nURL of the json-schema definition for this file. Must be ‘https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json’. TOML editing tools may use this to provide validation and/or autocomplete.\nExample:\n\"$schema\" = \"https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json\"\ntype = \"quarto-static\"\nentrypoint = \"report.qmd\"\ntitle = \"Regional Quarterly Sales Report\"\ndescription = \"This is the quarterly sales report, broken down by region.\"\nvalidate = true\n\nfiles = [\n    \"*.py\",\n    \"*.qmd\",\n    \"requirements.txt\",\n]"
-  },
-  {
-    "objectID": "configuration.html#general-settings",
-    "href": "configuration.html#general-settings",
-    "title": "Configuration File Reference",
-    "section": "",
-    "text": "The type of server the content is being deployed to. May be set to connect or connect_cloud. Defaults to connect.\nMany of the fields described here are only valid for one product_type value. If not otherwise specified, fields are valid for both.\n\n\n\nIndicates the type of content being deployed. Valid values are:\n\nhtml\njupyter-notebook\njupyter-voila\nnodejs\npython-bokeh\npython-dash\npython-fastapi\npython-flask\npython-gradio\npython-panel\npython-shiny\npython-streamlit\nquarto-shiny\nquarto-static\nquarto (Deprecated use quarto-static instead)\nr-plumber\nr-shiny\nrmd-shiny\nrmd\n\n\n\n\nName of the primary file containing the content. For Python flask, dash, fastapi, and python-shiny projects, this specifies the object within the file in module:object format. See the documentation at https://docs.posit.co/connect/user/publishing-cli-apps/#publishing-rsconnect-python-entrypoint.\n\n\n\nTitle for this content. If specified, it must be a single line containing between 3 and 1000 characters.\n\n\n\nDescription for this content. It may span multiple lines and be up to 4000 characters.\n\n\n\nProject-relative paths of the files to be included in the deployment. Uses .gitignore syntax for file include patterns, like wildcards.\nHere are some examples given an example project structure:\nproject-root/\n|\n├── dir/\n│   ├── util.py\n│   └─  helper.py\n│\n└── app.py\n\nTo include all Python files in your project, you can use a wildcard pattern. *.py would include all .py files in any directory.\n/dir/util.py would include the specific util.py file in the dir directory under the root of the project to be published.\nTo include the file app.py at the root of the project, you can use /app.py.\n\n\n\n\nOnly valid when product_type is connect\ntrue if this is a report that accepts parameters.\n\n\n\nOnly valid when product_type is connect\nAccess the content after deploying, to validate that it is live. Defaults to true.\n\n\n\nURL of the json-schema definition for this file. Must be ‘https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json’. TOML editing tools may use this to provide validation and/or autocomplete.\nExample:\n\"$schema\" = \"https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json\"\ntype = \"quarto-static\"\nentrypoint = \"report.qmd\"\ntitle = \"Regional Quarterly Sales Report\"\ndescription = \"This is the quarterly sales report, broken down by region.\"\nvalidate = true\n\nfiles = [\n    \"*.py\",\n    \"*.qmd\",\n    \"requirements.txt\",\n]"
-  },
-  {
-    "objectID": "configuration.html#environment",
-    "href": "configuration.html#environment",
-    "title": "Configuration File Reference",
-    "section": "Environment",
-    "text": "Environment\nEnvironment variable/value map. All values must be strings. Secrets such as API keys or tokens should not be stored here.\nExample:\n[environment]\nAPI_URL = \"https://example.com/api\""
-  },
-  {
-    "objectID": "configuration.html#python-settings",
-    "href": "configuration.html#python-settings",
-    "title": "Configuration File Reference",
-    "section": "Python settings",
-    "text": "Python settings\n\npackage_file\nOnly valid when product_type is connect\nFile containing package dependencies. The file must exist and be listed under ‘files’. The default is ‘requirements.txt’.\n\n\npackage_manager\nOnly valid when product_type is connect\nPackage manager that will install the dependencies. Supported values are pip, uv and none.\n\nOmitting the value will let the server decide.\nIf package_manager is uv, dependencies will be installed using uv pip\nIf package_manager is pip, dependencies will be installed using pip\nIf package_manager is none, dependencies will not be installed.\n\n\n\nversion\nPython version. The server must have a matching Python major/minor version in order to run the content.\nExample:\n[python]\nversion = \"3.11.3\"\npackage_file = \"requirements.txt\"\npackage_manager = \"pip\""
-  },
-  {
-    "objectID": "configuration.html#r-settings",
-    "href": "configuration.html#r-settings",
-    "title": "Configuration File Reference",
-    "section": "R settings",
-    "text": "R settings\n\npackage_file\nOnly valid when product_type is connect\nFile containing package dependencies. This is usually renv.lock. The file must exist and be listed under ‘files’.\n\n\npackage_manager\nOnly valid when product_type is connect\nPackage manager that will install the dependencies. Supported values are renv and none. If package-manager is none, dependencies will be assumed to be pre-installed on the server.\n\n\npackages_from_library\nOnly valid when product_type is connect\nControls how Publisher retrieves dependencies for R projects.\n\nfalse (default): Read package metadata directly from renv.lock. This does not require a local renv library to be present in your workspace.\ntrue: Read package metadata from the local renv library (legacy behavior). This requires an initialized renv library matching your lockfile.\n\n\n\nversion\nR version. The server will use the nearest R version to run the content.\nExample:\n[r]\nversion = \"4.3.1\"\npackage_file = \"renv.lock\"\npackage_manager = \"renv\""
-  },
-  {
-    "objectID": "configuration.html#jupyter-settings",
-    "href": "configuration.html#jupyter-settings",
-    "title": "Configuration File Reference",
-    "section": "Jupyter settings",
-    "text": "Jupyter settings\nOnly valid when product_type is connect\n\nhide_all_input\nHide all input cells when rendering output.\n\n\nhide_tagged_input\nHide input code cells with the ‘hide_input’ tag when rendering output.\nExample:\n[jupyter]\nhide_all_input = false\nhide_tagged_input = false"
-  },
-  {
-    "objectID": "configuration.html#quarto-settings",
-    "href": "configuration.html#quarto-settings",
-    "title": "Configuration File Reference",
-    "section": "Quarto settings",
-    "text": "Quarto settings\nOnly valid when product_type is connect\n\nengines\nList of Quarto engines required for this content.\n\n\nversion\nQuarto version. The server must have a similar Quarto version in order to run the content.\n[quarto]\nversion = \"1.4.554\"\nengines = [\"knitr\"]"
-  },
-  {
-    "objectID": "configuration.html#node.js-settings",
-    "href": "configuration.html#node.js-settings",
-    "title": "Configuration File Reference",
-    "section": "Node.js settings",
-    "text": "Node.js settings\nOnly valid when product_type is connect\nPosit Connect supports deploying Node.js applications.\nBoth package.json and package-lock.json must be present and listed under files. Connect uses npm ci to install dependencies; if package-lock.json is missing, run npm install to generate it.\nIf package.json specifies an engines.node constraint, Connect uses it to select the runtime version. Otherwise Connect uses the latest version of Node.js available on the server.\nNode.js deployment requires an Advanced Connect license, and the server administrator must enable Node.js support. Publisher reports when the target server has Node.js disabled.\nConnect Cloud does not support Node.js content.\nExample:\ntype = \"nodejs\"\nentrypoint = \"index.js\"\nfiles = [\"*.js\", \"package.json\", \"package-lock.json\"]"
-  },
-  {
-    "objectID": "configuration.html#connect-specific-settings",
-    "href": "configuration.html#connect-specific-settings",
-    "title": "Configuration File Reference",
-    "section": "Connect-specific settings",
-    "text": "Connect-specific settings\n\nAccess settings\nOnly valid when product_type is connect\n\nrun_as\nThe system username under which the content should be run. Must be an existing user in the allowed group. You must be an administrator to set this value.\n\n\nrun_as_current_user\nFor application content types, run a separate process under the user account of each visiting user under that user’s server account. Requires PAM authentication on the Posit Connect server. You must be an administrator to set this value.\nExample:\n[connect.access]\nrun_as = \"myuser\"\nrun_as_current_user = true\n\n\n\nKubernetes settings\nOnly valid when product_type is connect\nSettings used with Posit Connect’s off-host execution feature, where content is run in Kubernetes.\n\namd_gpu_limit\nThe number of AMD GPUs that will be allocated by Kubernetes to run this content.\n\n\ncpu_limit\nThe maximum amount of compute power this content will be allowed to consume when executing or rendering, expressed in CPU Units, where 1.0 unit is equivalent to 1 physical or virtual core. Fractional values are allowed. If the process tries to use more CPU than allowed, it will be throttled.\n\n\ncpu_request\nThe minimum amount of compute power this content needs when executing virtual core. Fractional values are allowed.\n\n\ndefault_image_name\nName of the target container image.\n\n\ndefault_py_environment_management\nEnables or disables Python environment management. When false, Posit Connect will not install Python packages and instead assume that all required packages are present in the container image.\n\n\ndefault_r_environment_management\nEnables or disables R environment management. When false, Posit Connect will not install R packages and instead assume that all required packages are present in the container image.\n\n\nmemory_limit\nThe maximum amount of RAM this content will be allowed to consume when executing or rendering, expressed in bytes. If the process tries to use more memory than allowed, it will be terminated\n\n\nmemory_request\nThe minimum amount of RAM this content needs when executing or rendering, expressed in bytes.\n\n\nnvidia_gpu_limit\nThe number of NVIDIA GPUs that will be allocated by Kubernetes to run this content.\n\n\nservice_account_name\nThe name of the Kubernetes service account that is used to run this content. It must adhere to Kubernetes service account naming rules. You must be an administrator to set this value.\nExample:\n[connect.kubernetes]\namd_gpu_limit = 0\ncpu_limit = 1.5\ncpu_request = 0.5\ndefault_image_name = \"posit/connect-runtime-python3.11-r4.3\"\ndefault_py_environment_management = true\ndefault_r_environment_management = true\nmemory_limit = 100000000\nmemory_request = 20000000\nnvidia_gpu_limit = 1\nservice_account_name = \"posit-connect-content\"\n\n\n\nRuntime settings\nValid when product_type is connect or connect_cloud\nRuntime settings for application content types\n\nconnection_timeout\nMaximum number of seconds allowed without data sent or received across a client connection. A value of 0 means connections will never time-out (not recommended).\n\n\nidle_timeout\nThe maximum number of seconds a worker process for an interactive application to remain alive after it goes idle (no active connections).\n\n\ninit_timeout\nThe maximum number of seconds allowed for an interactive application to start. Posit Connect must be able to connect to a newly launched application before this threshold has elapsed.\n\n\nload_factor\nControls how aggressively new processes are spawned. The valid range is between 0.0 and 1.0.\n\n\nmax_conns_per_process\nSpecifies the maximum number of client connections allowed to an individual process. Incoming connections which will exceed this limit are routed to a new process or rejected.\n\n\nmax_processes\nSpecifies the total number of concurrent processes allowed for a single interactive application.\n\n\nmin_processes\nSpecifies the minimum number of concurrent processes allowed for a single interactive application.\n\n\nread_timeout\nMaximum number of seconds allowed without data received from a client connection. A value of 0 means a lack of client (browser) interaction never causes the connection to close.\nExample:\n[connect.runtime]\nconnection_timeout = 5\nidle_timeout = 120\ninit_timeout = 60\nload_factor = 0.5\nmax_conns_per_process = 50\nmax_processes = 5\nmin_processes = 1\nread_timeout = 30"
-  },
-  {
-    "objectID": "configuration.html#connect-cloud-specific-settings",
-    "href": "configuration.html#connect-cloud-specific-settings",
-    "title": "Configuration File Reference",
-    "section": "Connect Cloud-specific settings",
-    "text": "Connect Cloud-specific settings\nOnly valid when product_type is connect_cloud\n\nvanity_name\nThe custom component of the vanity URL. If your account name is ‘my-account’ and this value is ‘vanity’, the vanity URL will be https://my-account-vanity.share.connect.posit.cloud.\nOnly supported for organizational accounts.\n\n\naccess_control\nSettings for who can do what with the content.\nOnly supported for organizational accounts.\n\npublic_access\nSpecifies whether the content is publicly accessible. Defaults to true on free accounts and false on paid accounts.\n\n\norganization_access\nSpecifies the default level of access for account members within an organizational account. Can be disabled, view, or editor."
-  },
-  {
-    "objectID": "vscode.html",
-    "href": "vscode.html",
-    "title": "VS Code Extension",
-    "section": "",
-    "text": "In VSCode, open the folder containing the project you want to deploy.\nOpen the Posit Publisher UI by clicking the icon in the activity bar.\n\n\n\n\nThe Home view shows information about the selected deployment destination.\nTo create your first deployment, click the Add Deployment button.\n\nThis will take you through the process of creating a new deployment, which includes a credential, configuration, and content record.\n\nA credential defines the server you will deploy to and the API key that will be used to authenticate you. Once you have created a credential, you can use it for all of your deployments to that server.\nA configuration file describes how your project will be deployed. If the extension detects more than one possible project type, you will be asked which one to use when creating the configuration file.\nA content record describes where your project is going to be deployed, and records the settings used for that deployment and the result.\n\n\n[!TIP] If you have the Even Better TOML extension installed, VSCode will show tooltips for the fields. It will also validate the structure and contents of the configuration file using the provided schema.\n\n\n\n\n\nBefore you can deploy a Python project, you must set up the requirements file for your project. If you don’t already have a requirements.txt you can open the Requirements view and click the Scan button to generate one. Review the generated requirements file to ensure it includes all the packages your project needs.\n\n\n\n\nIf a renv.lock file is provided, Publisher reads package information directly from the lockfile (no local renv library required to publish).\nIf a lockfile is not provided Publisher will try to detect dependencies from the code itself.\nIn case you want Publisher to read dependencies from the renv library, set packages_from_library = true under [r] in your configuration.\n\n\n\nYou are all set to Deploy!\nClick the Deploy Your Project button in the Home view to start the deployment process.\n\nDuring deployment, the extension will show a progress window with the status of the deployment. Once the deployment completes, the result will be displayed in the Home view."
-  },
-  {
-    "objectID": "vscode.html#tutorial",
-    "href": "vscode.html#tutorial",
-    "title": "VS Code Extension",
-    "section": "",
-    "text": "In VSCode, open the folder containing the project you want to deploy.\nOpen the Posit Publisher UI by clicking the icon in the activity bar.\n\n\n\n\nThe Home view shows information about the selected deployment destination.\nTo create your first deployment, click the Add Deployment button.\n\nThis will take you through the process of creating a new deployment, which includes a credential, configuration, and content record.\n\nA credential defines the server you will deploy to and the API key that will be used to authenticate you. Once you have created a credential, you can use it for all of your deployments to that server.\nA configuration file describes how your project will be deployed. If the extension detects more than one possible project type, you will be asked which one to use when creating the configuration file.\nA content record describes where your project is going to be deployed, and records the settings used for that deployment and the result.\n\n\n[!TIP] If you have the Even Better TOML extension installed, VSCode will show tooltips for the fields. It will also validate the structure and contents of the configuration file using the provided schema.\n\n\n\n\n\nBefore you can deploy a Python project, you must set up the requirements file for your project. If you don’t already have a requirements.txt you can open the Requirements view and click the Scan button to generate one. Review the generated requirements file to ensure it includes all the packages your project needs.\n\n\n\n\nIf a renv.lock file is provided, Publisher reads package information directly from the lockfile (no local renv library required to publish).\nIf a lockfile is not provided Publisher will try to detect dependencies from the code itself.\nIn case you want Publisher to read dependencies from the renv library, set packages_from_library = true under [r] in your configuration.\n\n\n\nYou are all set to Deploy!\nClick the Deploy Your Project button in the Home view to start the deployment process.\n\nDuring deployment, the extension will show a progress window with the status of the deployment. Once the deployment completes, the result will be displayed in the Home view."
-  },
-  {
-    "objectID": "vscode.html#other-views-and-features",
-    "href": "vscode.html#other-views-and-features",
-    "title": "VS Code Extension",
-    "section": "Other Views and Features",
-    "text": "Other Views and Features\n\nDeploy via Entrypoint\nYou can deploy or create a new deployment directly from an open file. If it is a valid entrypoint a Posit Publisher button will appear in the editor menu.\n\n\n\nMultiple Deployments\nYou can create multiple deployments for different purposes. For example, you can use a staging deployment for testing before creating or updating a production deployment that is shared with your users.\nClicking the Deployment dropdown lets you choose which deployment to target.\n\nThen choose from the displayed list.\n\n\n\nUpdating Previously Deployed Content\nIf you have previously deployed content on Connect that you want to update, but you don’t already have a Deployment and Configuration file setup, you can use a prompt in the Home View to allow for this.\n\nAfter creating a new deployment in the extension pressing “update that previous deployment” will prompt you with the content URL. Once provided your new deployment will be setup to update that content URL, rather than creating a new deployment entirely.\n\n\nProject Files\nThis view shows the files in your workspace:\n\nIncluded files show as checked and will be included in your deployment. They are sent to the server as part of the uploaded content.\nExcluded files show as unchecked and will not be included in your deployment. The tooltip on an excluded file will indicate the reason it is excluded. Some files are excluded by the publisher and cannot be added.\n\n\nThe files included in your project are controlled by the files list in the deployment configuration file. The buttons in the UI update that list. If you have more than one destination with different configuration files, they can have different sets of included and excluded files.\nThe files list accepts wildcards in .gitignore format. For example, to include all Python source files from your project directory, you can use *.py. Exclude files (or wildcard patterns) by prefixing them with !. If a file matches multiple entries, the last match wins. For example, you can exclude all CSV files except data.csv with the configuration entry:\nfiles = [\n  \"*\",\n  \"!*.csv\",\n  \"data.csv\"\n]\n\n\nSecrets\nYou can setup Secrets for your project in the Secrets view.\nSecrets are name-value pairs that you want to be available at runtime for content on the server. However, unlike environment variables, the value associated with a secret is considered “sensitive”, and should not be stored in the configuration file itself.\nSecret names are defined in the Configuration file using the secrets field. They can be added by clicking the + button in the Secrets view or by directly editing the configuration file.\nsecrets = ['API_KEY', '_DB_PASSWORD']\nThe names indicate what Secrets are required for the deployment. When they are sent up to the Connect server they become Environment Variables.\n\nSecrets are sent to the Connect server only when a value is supplied to avoid overwriting any values already set.\nTo set a Secret click the Edit Value button (the pencil icon) for the Secret you’d like to set and enter the value. The value is stored in the extension and is sent up during your next deploy.\nA badge indicates how many Secrets are set to send in your next deploy.\n\n\nPython Packages\nThis view shows the contents of the requirements file in your project directory. It’s required when deploying a Python project. By default, the filename is requirements.txt. You can specify an alternate name in the deployment configuration file using the package_file field under the [python] section.\n\nIf you don’t have a requirements file yet, you’ll see a message prompting you to scan it. Clicking Scan will scan your project code for imports and attempt to map those to package names and versions using the package metadata from your local Python installation. After scanning, verify the contents of the generated requirements file and make any changes needed.\nIf you already have a requirements file, you can scan your code again using the eye icon in the Requirements view.\n\n\nR Packages\nThis view shows the contents of the renv.lock file in your project directory. It’s required when deploying an R project. By default, the filename is renv.lock. You can specify an alternate name in the deployment configuration file using the package_file field under the [r] section.\n\nIf your renv.lock file and library are out of sync, you can still publish by default because Publisher uses the lockfile. However, it’s good practice to keep them in sync: run renv::snapshot() (update lockfile from library) or renv::restore() (update library from lockfile). Clicking the “eye” icon in the R Packages view runs renv::snapshot() for you.\n\n\nCredentials\nThis view lists the credentials you have defined. You need a credential for each Connect server you want to deploy to; each credential includes the server URL and an API key. Credentials are securely stored by VS Code.\nTo add a credential for a new server, click the + button. To remove a credential, right-click on it and select Delete.\n\nFor instructions on how to create a Connect API key, see the Connect documentation.\n\nFirst time deploying\nIf a deployment is pointed to a server that you have not deployed to before, you may need to set up a credential.\nPosit Publisher makes this easy by prompting you to Create a new Credential when the selected deployment requires a credential you don’t have.\n\n\n\n\nHelp and Feedback\nThis view contains links to this documentation and other resources.\n\n\nPosit Publisher Logs\nThe Posit Publisher logs are available in the VSCode bottom panel.\n\nThere are a few ways to easily get to them:\n\nRun Posit Publisher Logs: Focus on Logs View from the command palette.\nClick the Show Logs button in the error notification that appears on a deployment failure.\nSelect Go to Publishing Log in the status area ellipsis menu.\n\n\n\nOther Logs\nClicking the ellipsis menu in the status area provides options to view additional options which may be helpful when troubleshooting.\n\n\nBrowse Deployment Server opens a browser window showing the content list on the Connect server.\nShow Content Log opens a browser window showing the most recent log for your content on the Connect server.\nGo to Debug Log opens the Posit Publisher debug logs in the VSCode output panel.\nGo to Publishing Log opens the Posit Publisher Logs panel."
-  },
-  {
     "objectID": "collaboration.html",
     "href": "collaboration.html",
     "title": "Collaborative Publishing",
@@ -194,40 +558,5 @@
     "title": "Collaborative Publishing",
     "section": "Tips",
     "text": "Tips\n\nStay updated while collaborating\nDepending on whether or not you’re using source control, make sure to either pull down the latest changes from source control or download the content bundle from the latest Source Version on Posit Connect before deploying. This ensures that you have the most up-to-date content, configuration settings, and deployment details."
-  },
-  {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "Posit Publisher",
-    "section": "",
-    "text": "Current version: 2.4.0 | Changelog\nPosit Publisher lets you deploy projects to Connect from VS Code and Positron.\nKey concepts:\nFor a full list of features and supported content types, see the extension README."
-  },
-  {
-    "objectID": "index.html#installation",
-    "href": "index.html#installation",
-    "title": "Posit Publisher",
-    "section": "Installation",
-    "text": "Installation\nInstall via the Visual Studio Code Marketplace\nOr open the VS Code Extensions view and search for “Posit Publisher” and then click “Install”.\n\nPre-release version\nIf a pre-release version is available, you can install it by following the same steps as above and then after installation click “Switch to Pre-release Version”.\nIf the “Switch to Pre-release Version” button is not available there is currently no pre-release version available or you are already on a pre-release version.\n\n\nOpen VSX Registry\nOpen the Publisher extension page on Open VSX Registry\nOn the extension’s page, click the “Download” button to download the extension as a .vsix file.\nOpen your IDE extension manager and look for an option to install from a .vsix file. Select the downloaded .vsix file to install the extension."
-  },
-  {
-    "objectID": "index.html#using-the-extension",
-    "href": "index.html#using-the-extension",
-    "title": "Posit Publisher",
-    "section": "Using the Extension",
-    "text": "Using the Extension\nSee the VS Code Extension page."
-  },
-  {
-    "objectID": "index.html#configuration-reference",
-    "href": "index.html#configuration-reference",
-    "title": "Posit Publisher",
-    "section": "Configuration Reference",
-    "text": "Configuration Reference\nSee the Configuration Reference page."
-  },
-  {
-    "objectID": "index.html#troubleshooting",
-    "href": "index.html#troubleshooting",
-    "title": "Posit Publisher",
-    "section": "Troubleshooting",
-    "text": "Troubleshooting\nSee the Troubleshooting page."
   }
 ]

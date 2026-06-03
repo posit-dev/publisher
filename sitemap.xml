@@ -1,23 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://posit-dev.github.io/publisher/troubleshooting.html</loc>
-    <lastmod>2026-05-15T19:02:45.148Z</lastmod>
+    <loc>https://posit-dev.github.io/publisher/vscode.html</loc>
+    <lastmod>2026-06-03T17:55:48.832Z</lastmod>
   </url>
   <url>
     <loc>https://posit-dev.github.io/publisher/configuration.html</loc>
-    <lastmod>2026-05-15T19:02:45.148Z</lastmod>
+    <lastmod>2026-06-03T17:55:48.832Z</lastmod>
   </url>
   <url>
-    <loc>https://posit-dev.github.io/publisher/vscode.html</loc>
-    <lastmod>2026-05-15T19:02:45.148Z</lastmod>
-  </url>
-  <url>
-    <loc>https://posit-dev.github.io/publisher/collaboration.html</loc>
-    <lastmod>2026-05-15T19:02:45.148Z</lastmod>
+    <loc>https://posit-dev.github.io/publisher/changelog.html</loc>
+    <lastmod>2026-06-03T17:55:59.289Z</lastmod>
   </url>
   <url>
     <loc>https://posit-dev.github.io/publisher/index.html</loc>
-    <lastmod>2026-05-15T19:02:45.148Z</lastmod>
+    <lastmod>2026-06-03T17:55:48.832Z</lastmod>
+  </url>
+  <url>
+    <loc>https://posit-dev.github.io/publisher/troubleshooting.html</loc>
+    <lastmod>2026-06-03T17:55:48.832Z</lastmod>
+  </url>
+  <url>
+    <loc>https://posit-dev.github.io/publisher/collaboration.html</loc>
+    <lastmod>2026-06-03T17:55:48.832Z</lastmod>
   </url>
 </urlset>
