@@ -14,36 +14,45 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  check-release:
     runs-on: ubuntu-latest
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
 
-      - name: Check if production release
+      - name: Check if pre-release
         if: github.event_name == 'workflow_run'
-        id: check-release
+        id: check
         run: |
-          TAG="${{ github.event.workflow_run.head_branch }}"
-          MINOR=$(echo "$TAG" | sed 's/^v//' | cut -d. -f2)
-          if [ $((MINOR % 2)) -ne 0 ]; then
+          if [ "$(./scripts/is-pre-release.bash)" = "true" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "Skipping docs deploy for pre-release tag: $TAG"
+            echo "Skipping docs deploy for pre-release"
           fi
 
-      - if: steps.check-release.outputs.skip != 'true'
-        uses: quarto-dev/quarto-actions/setup@v2
+  deploy:
+    needs: check-release
+    runs-on: ubuntu-latest
+    if: >-
+      needs.check-release.outputs.skip != 'true' &&
+      (github.event_name == 'workflow_dispatch' ||
+       github.event.workflow_run.conclusion == 'success')
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: quarto-dev/quarto-actions/setup@v2
 
       - name: Render
-        if: steps.check-release.outputs.skip != 'true'
         run: quarto render docs
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - if: steps.check-release.outputs.skip != 'true'
-        uses: peaceiris/actions-gh-pages@v4.1.0
+      - uses: peaceiris/actions-gh-pages@v4.1.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: docs/_site
