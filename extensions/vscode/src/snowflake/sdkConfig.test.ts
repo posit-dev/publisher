@@ -16,7 +16,7 @@ describe("configureSnowflakeSDK", () => {
     vi.clearAllMocks();
   });
 
-  it("configures snowflake-sdk exactly once with a credential manager", () => {
+  it("configures snowflake-sdk with a credential manager", () => {
     configureSnowflakeSDK(new mockSecretStorage());
 
     expect(snowflake.configure).toHaveBeenCalledTimes(1);
