@@ -218,6 +218,7 @@ export class ConnectContentFileSystemProvider implements FileSystemProvider {
   ) {
     let normalizedServerUrl = serverUrl;
     try {
+      const state = await this.publisherStateReady;
       normalizedServerUrl = await this.ensureCredentialsForServer(serverUrl);
       const credential =
         await this.findCredentialForServer(normalizedServerUrl);
@@ -226,9 +227,13 @@ export class ConnectContentFileSystemProvider implements FileSystemProvider {
           .getConfiguration("positPublisher")
           .get<boolean>("verifyCertificates") ?? true;
       const connectApi = new ConnectAPI(
-        await connectAPIOptionsFromCredential(credential, {
-          rejectUnauthorized: verifyCerts,
-        }),
+        await connectAPIOptionsFromCredential(
+          state.credentialsService,
+          credential,
+          {
+            rejectUnauthorized: verifyCerts,
+          },
+        ),
       );
       const { data: content } = await connectApi.contentDetails(
         ContentID(contentGuid),

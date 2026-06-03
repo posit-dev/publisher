@@ -11,6 +11,7 @@ import { Commands } from "src/constants";
 import { DocumentTracker } from "./entrypointTracker";
 import { getXDGConfigProperty } from "src/utils/config";
 import { PublisherState } from "./state";
+import { configureSnowflakeSDK } from "src/snowflake/sdkConfig";
 import { PublisherAuthProvider } from "./authProvider";
 import { logger } from "./logging";
 import { copySystemInfoCommand } from "src/commands";
@@ -90,6 +91,8 @@ function initializeExtension(context: ExtensionContext) {
 
   const watchers = new WatcherManager();
   context.subscriptions.push(watchers);
+
+  configureSnowflakeSDK(context.secrets);
 
   const state = new PublisherState(context);
   resolvePublisherState(state);
