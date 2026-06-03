@@ -1,8 +1,9 @@
 name: Deploy docs
 
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -15,17 +16,34 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v6
 
-      - uses: quarto-dev/quarto-actions/setup@v2
+      - name: Check if production release
+        if: github.event_name == 'workflow_run'
+        id: check-release
+        run: |
+          TAG="${{ github.event.workflow_run.head_branch }}"
+          MINOR=$(echo "$TAG" | sed 's/^v//' | cut -d. -f2)
+          if [ $((MINOR % 2)) -ne 0 ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Skipping docs deploy for pre-release tag: $TAG"
+          fi
+
+      - if: steps.check-release.outputs.skip != 'true'
+        uses: quarto-dev/quarto-actions/setup@v2
 
       - name: Render
+        if: steps.check-release.outputs.skip != 'true'
         run: quarto render docs
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - uses: peaceiris/actions-gh-pages@v4.1.0
+      - if: steps.check-release.outputs.skip != 'true'
+        uses: peaceiris/actions-gh-pages@v4.1.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: docs/_site
