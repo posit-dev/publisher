@@ -47,7 +47,7 @@ jobs:
             echo "::error::extensionFile not found at: $EXTENSION_FILE"
             exit 1
           fi
-          npx --yes @vscode/vsce@2 publish --packagePath "$EXTENSION_FILE" --skip-duplicate
+          npx --yes @vscode/vsce@3 publish --packagePath "$EXTENSION_FILE" --skip-duplicate
 
   publish-open-vsx:
     needs:
@@ -79,4 +79,4 @@ jobs:
             echo "::error::extensionFile not found at: $EXTENSION_FILE"
             exit 1
           fi
-          npx --yes ovsx@0 publish "$EXTENSION_FILE" --skip-duplicate
+          npx --yes ovsx@1 publish "$EXTENSION_FILE" --skip-duplicate
