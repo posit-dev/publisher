@@ -179,18 +179,25 @@ export async function scanRPackages(
   rPath: string,
   saveName?: string,
   positronR?: PositronRSettings,
+  renvTargetDir?: string,
 ): Promise<void> {
   const lockfileName = saveName || DEFAULT_RENV_LOCKFILE;
   validateSaveName(lockfileName);
+
+  // renvTargetDir separates where renv runs (init/hydrate/snapshot) from where
+  // deps are scanned. Defaults to projectDir so existing callers are unchanged.
+  const targetDir = renvTargetDir ?? projectDir;
 
   const repoURL = repoURLFromOptions(positronR);
 
   // Normalize paths for the R script (use forward slashes)
   const normalizedProjectPath = projectDir.split(path.sep).join("/");
+  const normalizedTargetPath = targetDir.split(path.sep).join("/");
   const normalizedLockfile = lockfileName.split(path.sep).join("/");
 
   // Validate strings before injecting into R code
   validateRStringLiteral(normalizedProjectPath, "Project path");
+  validateRStringLiteral(normalizedTargetPath, "renv target path");
   validateRStringLiteral(normalizedLockfile, "Lockfile name");
   validateRStringLiteral(repoURL, "Repository URL");
 
@@ -210,9 +217,8 @@ export async function scanRPackages(
     })
   }
   deps <- setdiff(deps, c("renv"))
-  targetPath <- "${normalizedProjectPath}"
-  # initialize project with bare = TRUE to avoid polluting user's project
-  # then hydrate() manually to copy installed packages over
+  targetPath <- "${normalizedTargetPath}"
+  # bare = TRUE skips auto-installing packages; hydrate() does it explicitly below
   renv::init(project = targetPath, bare = TRUE, force = TRUE)
   renv::hydrate(packages = deps, project = targetPath, prompt = FALSE)
   lockfile <- file.path(targetPath, "${normalizedLockfile}")
@@ -238,8 +244,8 @@ export async function scanRPackages(
     }
   }
 
-  // Verify the lockfile was created
-  const lockfilePath = path.join(projectDir, lockfileName);
+  // Verify the lockfile was created in the target directory
+  const lockfilePath = path.join(targetDir, lockfileName);
   const exists = await fileExistsAt(lockfilePath);
   if (!exists) {
     throw new Error(`renv could not create lockfile: ${lockfilePath}`);

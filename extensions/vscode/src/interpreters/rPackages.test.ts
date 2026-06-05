@@ -423,4 +423,72 @@ describe("scanRPackages", () => {
       "Project path contains invalid characters",
     );
   });
+
+  test("uses renvTargetDir for renv init/hydrate/snapshot when provided", async () => {
+    setupExecFileSuccess();
+    mockFileExistsAt.mockResolvedValue(true);
+
+    await scanRPackages("/project", "R", "renv.lock", undefined, "/tmp/renv");
+
+    const [, script] = mockWriteFile.mock.calls[0]!;
+    // Deps scan still points at the user's project
+    expect(script).toContain('rPathsVec <- c("/project")');
+    // renv target is the temp dir, not the project
+    expect(script).toContain('targetPath <- "/tmp/renv"');
+    expect(script).toContain('lockfile <- file.path(targetPath, "renv.lock")');
+
+    // Lockfile existence checked in the temp dir, not the project
+    expect(mockFileExistsAt).toHaveBeenCalledWith(
+      path.join("/tmp/renv", "renv.lock"),
+    );
+  });
+
+  test("cwd stays as projectDir even when renvTargetDir differs", async () => {
+    setupExecFileSuccess();
+    mockFileExistsAt.mockResolvedValue(true);
+
+    await scanRPackages("/project", "R", "renv.lock", undefined, "/tmp/renv");
+
+    const [, , opts] = mockExecFile.mock.calls[0]!;
+    expect(opts.cwd).toBe("/project");
+  });
+
+  test("renvTargetDir with spaces is handled correctly", async () => {
+    setupExecFileSuccess();
+    mockFileExistsAt.mockResolvedValue(true);
+
+    await scanRPackages(
+      "/project",
+      "R",
+      "renv.lock",
+      undefined,
+      "/tmp/my renv dir",
+    );
+
+    const [, script] = mockWriteFile.mock.calls[0]!;
+    expect(script).toContain('targetPath <- "/tmp/my renv dir"');
+    expect(mockFileExistsAt).toHaveBeenCalledWith(
+      path.join("/tmp/my renv dir", "renv.lock"),
+    );
+  });
+
+  test("rejects renvTargetDir with double-quote character", async () => {
+    await expect(
+      scanRPackages("/project", "R", "renv.lock", undefined, '/tmp/bad"dir'),
+    ).rejects.toThrow("renv target path contains invalid characters");
+  });
+
+  test("defaults to projectDir when renvTargetDir is not provided", async () => {
+    setupExecFileSuccess();
+    mockFileExistsAt.mockResolvedValue(true);
+
+    await scanRPackages("/project", "R");
+
+    const [, script] = mockWriteFile.mock.calls[0]!;
+    expect(script).toContain('rPathsVec <- c("/project")');
+    expect(script).toContain('targetPath <- "/project"');
+    expect(mockFileExistsAt).toHaveBeenCalledWith(
+      path.join("/project", "renv.lock"),
+    );
+  });
 });
