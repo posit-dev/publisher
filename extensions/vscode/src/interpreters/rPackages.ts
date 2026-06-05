@@ -184,8 +184,9 @@ export async function scanRPackages(
   const lockfileName = saveName || DEFAULT_RENV_LOCKFILE;
   validateSaveName(lockfileName);
 
-  // renvTargetDir separates where renv runs (init/hydrate/snapshot) from where
-  // deps are scanned. Defaults to projectDir so existing callers are unchanged.
+  // renvTargetDir gives the ability to separate where renv runs
+  // (init/hydrate/snapshot) from where deps are scanned. Defaults to the
+  // project dir but can be set to elsewhere.
   const targetDir = renvTargetDir ?? projectDir;
 
   const repoURL = repoURLFromOptions(positronR);
