@@ -178,6 +178,12 @@ jobs:
         run: |
           git push -u origin "release/v$VERSION"
 
+      - name: Ensure do-not-merge label exists
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          gh label create "do-not-merge" --description "PR should not be merged" --color "B60205" 2>/dev/null || true
+
       - name: Create pull request (success)
         if: steps.cherry-pick.outputs.conflict != 'true'
         env:
