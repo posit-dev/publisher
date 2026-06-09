@@ -332,11 +332,20 @@ The workflow will:
 - Branch from the base tag
 - Cherry-pick each PR's squash-merge commit
 - Run `prepare-release.py` with `--allow-downgrade --from-cherry-pick`
-- Open a release PR
+- Open a **draft** PR for review (this PR must NOT be merged — it targets main only for diff visibility)
 
-If a cherry-pick conflict occurs, the workflow opens a **draft** PR with instructions for manual resolution. Resolve locally, push, and mark the PR ready.
+If a cherry-pick conflict occurs, the workflow opens a draft PR with instructions for manual resolution. Resolve locally and push to the release branch.
 
-Once the patch release PR merges, the same `tag-on-release-merge` automation handles tagging and publishing — no additional steps needed.
+#### Tagging the patch release
+
+Once the draft PR has been reviewed:
+
+1. Go to [Actions > Tag Patch Release](https://github.com/posit-dev/publisher/actions/workflows/tag-patch-release.yaml)
+2. Click "Run workflow"
+3. Enter the **version** (e.g., `2.0.1`)
+4. Click "Run workflow"
+
+This will tag the release branch directly, close the review PR, and trigger the release pipeline. The release branch can be deleted after the release workflow completes.
 
 ## Updating Dependencies
 
