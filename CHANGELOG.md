@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support for deploying Markdown (`.md`) files as Quarto content to Posit Connect. (#4219)
+
 ### Fixed
 
 - Fixed Publisher creating a persistent `renv.lock` and `renv/` folder in R projects that don't use renv, which caused re-deploys to fail when new packages were added. (#4233)

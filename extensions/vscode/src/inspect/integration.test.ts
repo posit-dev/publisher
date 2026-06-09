@@ -598,6 +598,26 @@ describe(
         expect(quarto?.configuration.entrypoint).toBe("doc.qmd");
       }));
 
+    test("detects Markdown file (.md) as Quarto with explicit entrypoint", () =>
+      withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "notes.md"),
+          "---\ntitle: My Notes\n---\n\nSome content\n",
+          "utf-8",
+        );
+
+        const results = await inspectProject({
+          projectDir: dir,
+          entrypoint: "notes.md",
+        });
+
+        const quarto = results.find(
+          (r) => r.configuration.type === ContentType.QUARTO_STATIC,
+        );
+        expect(quarto).toBeDefined();
+        expect(quarto?.configuration.entrypoint).toBe("notes.md");
+      }));
+
     test("filters to specific entrypoint", () =>
       withTempDir(async (dir) => {
         await writeFile(
@@ -1442,6 +1462,35 @@ describe(
           /^\d+\.\d+\.\d+$/,
         );
         expect(quarto?.configuration.title).toBe("Quarto Doc");
+      });
+    });
+
+    test("detects Markdown file (.md) with quarto inspect", ({ skip }) => {
+      if (!quartoAvailable) skip();
+      return withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "notes.md"),
+          "---\ntitle: My Notes\n---\n\nHello from markdown\n",
+          "utf-8",
+        );
+
+        const results = await inspectProject({
+          projectDir: dir,
+          entrypoint: "notes.md",
+        });
+
+        const quarto = results.find(
+          (r) => r.configuration.type === ContentType.QUARTO_STATIC,
+        );
+        expect(quarto).toBeDefined();
+        expect(quarto?.configuration.entrypoint).toBe("notes.md");
+        expect(quarto?.configuration.title).toBe("My Notes");
+        expect(quarto?.configuration.quarto?.version).toMatch(
+          /^\d+\.\d+\.\d+$/,
+        );
+        expect(quarto?.configuration.quarto?.engines).toContain("markdown");
+        expect(quarto?.configuration.python).toBeUndefined();
+        expect(quarto?.configuration.r).toBeUndefined();
       });
     });
 

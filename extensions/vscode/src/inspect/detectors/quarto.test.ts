@@ -386,6 +386,26 @@ describe("QuartoDetector", () => {
     });
   });
 
+  test("fallback when quarto binary missing: .md", async () => {
+    setupGlobDir(["notes.md"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    mockExecFile.mockRejectedValue(
+      new Error("executable file not found in $PATH"),
+    );
+
+    const configs = await detector.inferType("/project", "notes.md");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.type).toBe(ContentType.QUARTO_STATIC);
+    expect(configs[0]?.python).toBeUndefined();
+    expect(configs[0]?.r).toBeUndefined();
+    expect(configs[0]?.quarto).toEqual({
+      version: "1.7.34",
+      engines: ["markdown"],
+    });
+    expect(configs[0]?.files).toContain("/notes.md");
+  });
+
   test("skips non-quarto entrypoints", async () => {
     const configs = await detector.inferType("/project", "index.html");
     expect(configs).toHaveLength(0);
@@ -938,6 +958,26 @@ describe("QuartoDetector", () => {
     const configs = await detector.inferType("/project", "doc.QMD");
     expect(configs).toHaveLength(1);
     expect(configs[0]?.type).toBe(ContentType.QUARTO_STATIC);
+  });
+
+  test("accepts uppercase .MD entrypoints", async () => {
+    setupGlobDir(["NOTES.MD"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    mockExecFile.mockRejectedValue(
+      new Error("executable file not found in $PATH"),
+    );
+
+    const configs = await detector.inferType("/project", "NOTES.MD");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.type).toBe(ContentType.QUARTO_STATIC);
+    expect(configs[0]?.python).toBeUndefined();
+    expect(configs[0]?.r).toBeUndefined();
+    expect(configs[0]?.quarto).toEqual({
+      version: "1.7.34",
+      engines: ["markdown"],
+    });
+    expect(configs[0]?.files).toContain("/NOTES.MD");
   });
 
   describe("quarto inspect error logging (#4011)", () => {

@@ -22,6 +22,7 @@ export const ENTRYPOINT_FILE_EXTENSIONS = [
   ".html",
   ".ipynb",
   ".js",
+  ".md",
   ".mjs",
   ".mts",
   ".py",
