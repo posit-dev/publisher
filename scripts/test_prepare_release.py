@@ -335,6 +335,95 @@ class TestDowngradeGuard(unittest.TestCase):
             self.assertEqual(pkg_data["version"], "2.0.0")
 
 
+class TestFromCherryPick(unittest.TestCase):
+    """Tests for --from-cherry-pick flag."""
+
+    def _setup_release_dir(self, tmpdir, package_version, unreleased_content=""):
+        root_changelog = Path(tmpdir) / "CHANGELOG.md"
+        vscode_dir = Path(tmpdir) / "extensions" / "vscode"
+        vscode_dir.mkdir(parents=True)
+        vscode_changelog = vscode_dir / "CHANGELOG.md"
+        package_json = vscode_dir / "package.json"
+
+        root_changelog.write_text(
+            "# Changelog\n\n"
+            "## [Unreleased]\n\n"
+            f"{unreleased_content}"
+            "## [2.0.0]\n\n"
+            "### Added\n\n"
+            "- Something\n"
+        )
+        vscode_changelog.write_text(SAMPLE_VSCODE_CHANGELOG)
+        package_json.write_text(f'{{\n  "version": "{package_version}"\n}}\n')
+        return package_json
+
+    def test_empty_unreleased_exits_without_flag(self):
+        """Empty Unreleased section should exit 1 when user declines and --from-cherry-pick is not set."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self._setup_release_dir(tmpdir, "2.0.0")
+
+            result = subprocess.run(
+                [
+                    "python3",
+                    str(Path(__file__).parent / "prepare-release.py"),
+                    "2.0.1",
+                    "--allow-downgrade",
+                ],
+                cwd=tmpdir,
+                capture_output=True,
+                text=True,
+                input="n\n",
+            )
+
+            self.assertEqual(result.returncode, 1)
+
+    def test_empty_unreleased_skipped_with_flag(self):
+        """--from-cherry-pick should skip the empty-Unreleased prompt entirely."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            package_json = self._setup_release_dir(tmpdir, "2.0.0")
+
+            result = subprocess.run(
+                [
+                    "python3",
+                    str(Path(__file__).parent / "prepare-release.py"),
+                    "2.0.1",
+                    "--allow-downgrade",
+                    "--from-cherry-pick",
+                ],
+                cwd=tmpdir,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, f"Script failed: {result.stderr}")
+            pkg_data = json.loads(package_json.read_text())
+            self.assertEqual(pkg_data["version"], "2.0.1")
+
+    def test_nonempty_unreleased_with_flag(self):
+        """--from-cherry-pick with content in Unreleased should still succeed."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            package_json = self._setup_release_dir(
+                tmpdir, "2.0.0", "### Fixed\n\n- A bug fix\n\n"
+            )
+
+            result = subprocess.run(
+                [
+                    "python3",
+                    str(Path(__file__).parent / "prepare-release.py"),
+                    "2.0.1",
+                    "--allow-downgrade",
+                    "--from-cherry-pick",
+                ],
+                cwd=tmpdir,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, f"Script failed: {result.stderr}")
+            pkg_data = json.loads(package_json.read_text())
+            self.assertEqual(pkg_data["version"], "2.0.1")
+
+
 class TestFullReleasePreparation(unittest.TestCase):
     """Tests for full release preparation flow."""
 
