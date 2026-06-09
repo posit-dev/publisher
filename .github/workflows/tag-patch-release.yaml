@@ -1,0 +1,113 @@
+name: Tag Patch Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Patch version to tag (e.g., 2.4.1) - must match an existing release/v* branch"
+        required: true
+        type: string
+
+permissions:
+  # Write operations (tag push, PR close) use the GitHub App token, not GITHUB_TOKEN
+  contents: read
+
+jobs:
+  tag:
+    name: Tag patch release branch
+    runs-on: ubuntu-latest
+    env:
+      INPUT_VERSION: ${{ inputs.version }}
+    steps:
+      - name: Generate token for GitHub App
+        id: generate-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.POSIT_CONNECT_PROJECTS_APP_ID }}
+          private-key: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ steps.generate-token.outputs.token }}
+
+      - name: Validate inputs
+        run: |
+          VERSION="${INPUT_VERSION#v}"
+
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid version format: $VERSION (expected x.y.z)"
+            exit 1
+          fi
+
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+          if [ $((MINOR % 2)) -ne 0 ]; then
+            echo "::error::Production releases must have even minor version. Got: $VERSION (minor=$MINOR is odd)"
+            exit 1
+          fi
+
+          PATCH=$(echo "$VERSION" | cut -d. -f3)
+          if [ "$PATCH" -eq 0 ]; then
+            echo "::error::This workflow is for patch releases only (patch > 0). Use the normal release flow for .0 releases."
+            exit 1
+          fi
+
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Verify release branch exists
+        run: |
+          BRANCH="release/v$VERSION"
+          if ! git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            echo "::error::Release branch $BRANCH does not exist. Run the Prepare Patch Release workflow first."
+            exit 1
+          fi
+          git checkout "$BRANCH"
+
+      - name: Verify tag does not already exist
+        run: |
+          if git tag -l "v$VERSION" | grep -q "v$VERSION"; then
+            echo "::error::Tag v$VERSION already exists"
+            exit 1
+          fi
+
+      - name: Verify version in package.json matches
+        run: |
+          PKG_VERSION=$(node -p "require('./extensions/vscode/package.json').version")
+          if [ "$PKG_VERSION" != "$VERSION" ]; then
+            echo "::error::package.json version ($PKG_VERSION) does not match requested version ($VERSION)"
+            exit 1
+          fi
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push tag
+        run: |
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          git push origin "v$VERSION"
+          echo "✅ Created and pushed tag: v$VERSION"
+
+      - name: Close review PR
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          PR_NUMBER=$(gh pr list --head "release/v$VERSION" --state open --json number -q '.[0].number')
+          if [ -n "$PR_NUMBER" ]; then
+            gh pr close "$PR_NUMBER" --comment "Closed by Tag Patch Release workflow. Tag \`v$VERSION\` has been created on the release branch and the release pipeline is running."
+            echo "Closed PR #$PR_NUMBER"
+          else
+            echo "No open PR found for release/v$VERSION"
+          fi
+
+      - name: Add summary
+        run: |
+          echo "## 🏷️ Patch Release Tagged" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** \`v$VERSION\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`release/v$VERSION\` (can be deleted after the release workflow completes)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The release workflow will now build and publish automatically." >> $GITHUB_STEP_SUMMARY
