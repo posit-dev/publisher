@@ -38,6 +38,8 @@ vi.mock("node:fs/promises", () => ({
   mkdir: vi.fn().mockResolvedValue(undefined),
   copyFile: vi.fn().mockResolvedValue(undefined),
   unlink: vi.fn().mockResolvedValue(undefined),
+  mkdtemp: vi.fn().mockResolvedValue("/tmp/publisher-renv-test"),
+  rm: vi.fn().mockResolvedValue(undefined),
   stat: vi.fn(),
 }));
 
@@ -1029,6 +1031,7 @@ describe("connectPublish — R package resolution", () => {
       "/usr/bin/R",
       "renv.lock",
       undefined, // positronR
+      "/tmp/publisher-renv-test", // tmpDir from mkdtemp mock
     );
   });
 

@@ -1,8 +1,9 @@
 name: Deploy docs
 
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -13,10 +14,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  check-release:
     runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Check if pre-release
+        if: github.event_name == 'workflow_run'
+        id: check
+        run: |
+          if [ "$(./scripts/is-pre-release.bash)" = "true" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Skipping docs deploy for pre-release"
+          fi
+
+  deploy:
+    needs: check-release
+    runs-on: ubuntu-latest
+    if: >-
+      needs.check-release.outputs.skip != 'true' &&
+      (github.event_name == 'workflow_dispatch' ||
+       github.event.workflow_run.conclusion == 'success')
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - uses: quarto-dev/quarto-actions/setup@v2
 

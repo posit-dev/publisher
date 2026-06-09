@@ -305,6 +305,48 @@ Once the workflows complete, verify:
 
 It may take some time after the workflows complete for the new version to appear in the marketplaces.
 
+### Patch Releases (older release lines)
+
+Use the **Prepare Patch Release** workflow when you need to ship a fix on an older release line (e.g., `2.0.1` while `2.1.x` pre-releases are in flight on `main`).
+
+#### When to use which workflow
+
+| Scenario                                                                                       | Workflow                  |
+| ---------------------------------------------------------------------------------------------- | ------------------------- |
+| New production release from `main` (e.g., `2.2.0`)                                             | **Prepare Release**       |
+| Patch for the _current_ release line (e.g., `2.2.1` and `main` is still on `2.2.x` or `2.3.x`) | **Prepare Patch Release** |
+| Hotfix for an _older_ release line (e.g., `2.0.1` while `main` has moved to `2.2.x`)           | **Prepare Patch Release** |
+
+#### Running the Prepare Patch Release workflow
+
+1. Go to [Actions > Prepare Patch Release](https://github.com/posit-dev/publisher/actions/workflows/prepare-patch-release.yaml)
+2. Click "Run workflow"
+3. Fill in:
+   - **version** — the patch version (e.g., `2.0.1`). Must be even minor, patch > 0.
+   - **base_tag** (optional) — the tag to branch from. If omitted, the workflow finds the highest `vMAJOR.MINOR.*` tag automatically.
+   - **pr_numbers** — comma-separated PR numbers to cherry-pick (e.g., `4082,4087`).
+4. Click "Run workflow"
+
+The workflow will:
+
+- Branch from the base tag
+- Cherry-pick each PR's squash-merge commit
+- Run `prepare-release.py` with `--allow-downgrade --from-cherry-pick`
+- Open a **draft** PR for review (this PR must NOT be merged — it targets main only for diff visibility)
+
+If a cherry-pick conflict occurs, the workflow opens a draft PR with instructions for manual resolution. Resolve locally and push to the release branch.
+
+#### Tagging the patch release
+
+Once the draft PR has been reviewed:
+
+1. Go to [Actions > Tag Patch Release](https://github.com/posit-dev/publisher/actions/workflows/tag-patch-release.yaml)
+2. Click "Run workflow"
+3. Enter the **version** (e.g., `2.0.1`)
+4. Click "Run workflow"
+
+This will tag the release branch directly, close the review PR, and trigger the release pipeline. The release branch can be deleted after the release workflow completes.
+
 ## Updating Dependencies
 
 Dependencies can be updated through two approaches:

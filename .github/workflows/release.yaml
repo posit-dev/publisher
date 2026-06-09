@@ -7,9 +7,9 @@ on:
 permissions:
   contents: write # Required to create GitHub releases
 jobs:
-  # Security: Verify the tag points to a commit on main branch
+  # Security: Verify the tag points to a commit on main or a release branch
   verify-tag:
-    name: Verify tag is on main branch
+    name: Verify tag is on main or release branch
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

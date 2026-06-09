@@ -1,6 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import * as fs from "fs/promises";
+import * as os from "os";
 import * as path from "path";
 import { stringify as stringifyTOML } from "smol-toml";
 
@@ -273,7 +274,12 @@ export async function buildManifest(
         lockfile = resolved.lockfile;
       }
     } else {
-      // No lockfile — scan project for R dependencies
+      // No lockfile — scan project for R dependencies ephemerally.
+      //
+      // We generate renv.lock in a temporary directory so nothing persists in
+      // the user's project (no renv/ folder, no renv.lock). Because no file is
+      // written to the project, every deploy re-scans and always picks up newly
+      // added packages.
       onProgress({
         step: "createManifest",
         status: "log",
@@ -293,7 +299,9 @@ export async function buildManifest(
         message: "Detect dependencies from project",
       });
 
-      // Inject implicit deps (e.g. shiny, rmarkdown) so renv can discover them
+      // Inject implicit deps (e.g. shiny, rmarkdown) so renv can discover them.
+      // The deps file is written to the project so renv::dependencies() finds it;
+      // it is cleaned up in the finally block below.
       const extraDeps = await findExtraDependencies(
         config.type,
         config.hasParameters,
@@ -301,25 +309,38 @@ export async function buildManifest(
       );
       const depsFile = await recordExtraDependencies(projectDir, extraDeps);
 
+      let tmpDir: string | undefined;
+
       try {
-        await scanRPackages(projectDir, rPath, packageFile, positronR);
+        // Create a temp dir for renv to initialize into so the user's project
+        // is not modified. The temp dir (including renv/ library) is removed
+        // in the finally block below.
+        tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "publisher-renv-"));
+
+        // Scan deps from the project, but run renv init/hydrate/snapshot in
+        // tmpDir
+        await scanRPackages(projectDir, rPath, "renv.lock", positronR, tmpDir);
+
+        // Load the lockfile from the temp dir, not the project
+        onProgress({
+          step: "createManifest",
+          status: "log",
+          message: `Loading packages from renv.lock`,
+        });
+        const resolved = await resolveRPackages(tmpDir, {
+          packageFile: "renv.lock",
+        });
+        if (resolved) {
+          manifest.packages = resolved.packages;
+          lockfile = resolved.lockfile;
+        }
       } finally {
         if (depsFile) {
           await cleanupExtraDependencies(depsFile);
         }
-      }
-
-      // Now resolve from the generated lockfile
-      onProgress({
-        step: "createManifest",
-        status: "log",
-        message: `Loading packages from renv.lock`,
-      });
-      const resolved = await resolveRPackages(projectDir, config.r);
-      if (resolved) {
-        manifest.packages = resolved.packages;
-        lockfilePath = resolved.lockfilePath;
-        lockfile = resolved.lockfile;
+        if (tmpDir) {
+          await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+        }
       }
     }
 

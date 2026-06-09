@@ -1,18 +1,19 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, it, test, vi } from "vitest";
 import { GUID } from "@posit-dev/connect-api";
 
 import { credentialFactory } from "src/test/unit-test-utils/factories";
 import { mockSecretStorage } from "src/test/unit-test-utils/vscode-mocks";
 import { ServerType } from "src/api/types/contentRecords";
 import { listConnections } from "src/snowflake/connections";
-import { createTokenProvider } from "src/snowflake/tokenProviders";
+import type { SnowflakeConnectionConfig } from "src/snowflake/types";
 import { storeCredential } from "./storage";
 import {
   CredentialsService,
   CreateCredentialInput,
   connectAPIOptionsFromCredential,
+  SNOWFLAKE_DESTROY_TIMEOUT_MS,
 } from "./service";
 import {
   CredentialNotFoundError,
@@ -24,13 +25,9 @@ import {
 vi.mock("vscode");
 vi.mock("src/logging");
 vi.mock("src/snowflake/connections");
-vi.mock("src/snowflake/tokenProviders");
+vi.mock("snowflake-sdk");
 
-vi.mock("snowflake-sdk", () => ({
-  default: {
-    configure: vi.fn(),
-  },
-}));
+import snowflake from "snowflake-sdk";
 
 vi.mock("src/config", () => ({
   default: {
@@ -353,9 +350,16 @@ describe("CredentialsService", () => {
 });
 
 describe("connectAPIOptionsFromCredential", () => {
+  let service: CredentialsService;
+
+  beforeEach(() => {
+    const secrets = new mockSecretStorage();
+    service = new CredentialsService(secrets);
+  });
+
   describe("API key auth", () => {
     test("returns apiKey options when apiKey is present", async () => {
-      const result = await connectAPIOptionsFromCredential({
+      const result = await connectAPIOptionsFromCredential(service, {
         url: "https://connect.example.com",
         apiKey: "my-key",
         token: "",
@@ -373,7 +377,7 @@ describe("connectAPIOptionsFromCredential", () => {
 
   describe("token auth", () => {
     test("returns token options when token and privateKey are present", async () => {
-      const result = await connectAPIOptionsFromCredential({
+      const result = await connectAPIOptionsFromCredential(service, {
         url: "https://connect.example.com",
         apiKey: "",
         token: "my-token",
@@ -390,7 +394,7 @@ describe("connectAPIOptionsFromCredential", () => {
     });
 
     test("prefers token auth over API key auth when both are present", async () => {
-      const result = await connectAPIOptionsFromCredential({
+      const result = await connectAPIOptionsFromCredential(service, {
         url: "https://connect.example.com",
         apiKey: "my-key",
         token: "my-token",
@@ -409,7 +413,7 @@ describe("connectAPIOptionsFromCredential", () => {
 
   describe("no auth", () => {
     test("returns url-only options when no auth fields are set", async () => {
-      const result = await connectAPIOptionsFromCredential({
+      const result = await connectAPIOptionsFromCredential(service, {
         url: "https://connect.example.com",
         apiKey: "",
         token: "",
@@ -427,6 +431,7 @@ describe("connectAPIOptionsFromCredential", () => {
   describe("extra options", () => {
     test("spreads extra options onto the result", async () => {
       const result = await connectAPIOptionsFromCredential(
+        service,
         {
           url: "https://connect.example.com",
           apiKey: "my-key",
@@ -463,18 +468,18 @@ describe("connectAPIOptionsFromCredential", () => {
         },
       });
 
-      vi.mocked(createTokenProvider).mockImplementation((config) => {
+      vi.spyOn(service, "getSnowflakeToken").mockImplementation((config) => {
         if (config.authenticator === "unsupported") {
-          throw new Error('unsupported authenticator type: "unsupported"');
+          return Promise.reject(
+            new Error('unsupported authenticator type: "unsupported"'),
+          );
         }
-        return {
-          getToken: vi.fn().mockResolvedValue("sf-test-token-123"),
-        };
+        return Promise.resolve("sf-test-token-123");
       });
     });
 
     test("returns snowflakeToken + apiKey options for Snowflake credentials with API key", async () => {
-      const result = await connectAPIOptionsFromCredential({
+      const result = await connectAPIOptionsFromCredential(service, {
         url: "https://my-org.snowflakecomputing.app",
         apiKey: "connect-api-key",
         token: "",
@@ -491,7 +496,7 @@ describe("connectAPIOptionsFromCredential", () => {
     });
 
     test("returns snowflakeToken + token+privateKey options for Snowflake credentials with token auth", async () => {
-      const result = await connectAPIOptionsFromCredential({
+      const result = await connectAPIOptionsFromCredential(service, {
         url: "https://my-org.snowflakecomputing.app",
         apiKey: "",
         token: "connect-token-id",
@@ -509,7 +514,7 @@ describe("connectAPIOptionsFromCredential", () => {
     });
 
     test("returns snowflakeToken-only for legacy Snowflake credentials with no Connect auth", async () => {
-      const result = await connectAPIOptionsFromCredential({
+      const result = await connectAPIOptionsFromCredential(service, {
         url: "https://my-org.snowflakecomputing.app",
         apiKey: "",
         token: "",
@@ -528,6 +533,7 @@ describe("connectAPIOptionsFromCredential", () => {
 
     test("passes extra options through for Snowflake credentials", async () => {
       const result = await connectAPIOptionsFromCredential(
+        service,
         {
           url: "https://my-org.snowflakecomputing.app",
           apiKey: "",
@@ -547,7 +553,7 @@ describe("connectAPIOptionsFromCredential", () => {
 
     test("throws when Snowflake connection name is not found", async () => {
       await expect(
-        connectAPIOptionsFromCredential({
+        connectAPIOptionsFromCredential(service, {
           url: "https://my-org.snowflakecomputing.app",
           apiKey: "",
           token: "",
@@ -560,7 +566,7 @@ describe("connectAPIOptionsFromCredential", () => {
 
     test("throws when token provider creation fails", async () => {
       await expect(
-        connectAPIOptionsFromCredential({
+        connectAPIOptionsFromCredential(service, {
           url: "https://my-org.snowflakecomputing.app",
           apiKey: "",
           token: "",
@@ -569,6 +575,629 @@ describe("connectAPIOptionsFromCredential", () => {
           snowflakeConnection: "bad-authenticator",
         }),
       ).rejects.toThrow("unsupported authenticator type");
+    });
+  });
+});
+
+describe("CredentialsService cache invalidation", () => {
+  let service: CredentialsService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    service = new CredentialsService(new mockSecretStorage());
+  });
+
+  const testConnection = {
+    account: "myaccount",
+    user: "myuser",
+    authenticator: "externalbrowser",
+  };
+
+  const setupMockConnection = (isValid: boolean, tokenValue = "test-token") => {
+    const mockConnectAsync = vi.fn().mockResolvedValue(undefined);
+    const mockSerialize = vi.fn().mockReturnValue(
+      JSON.stringify({
+        services: { sf: { tokenInfo: { sessionToken: tokenValue } } },
+      }),
+    );
+    const mockIsValidAsync = vi.fn().mockResolvedValue(isValid);
+    const mockDestroy = vi.fn((callback: (err?: Error) => void) => {
+      callback();
+    });
+
+    vi.mocked(snowflake.createConnection).mockReturnValue({
+      connectAsync: mockConnectAsync,
+      serialize: mockSerialize,
+      isValidAsync: mockIsValidAsync,
+      destroy: mockDestroy,
+    } as unknown as ReturnType<typeof snowflake.createConnection>);
+
+    return { mockConnectAsync, mockSerialize, mockIsValidAsync, mockDestroy };
+  };
+
+  describe("cache hit with valid connection", () => {
+    it("returns cached connection without destroying it", async () => {
+      const { mockDestroy } = setupMockConnection(true);
+
+      // First call creates and caches the connection
+      await service.getSnowflakeToken(testConnection);
+
+      // Second call should return cached version
+      await service.getSnowflakeToken(testConnection);
+
+      // Connection should never be destroyed
+      expect(mockDestroy).not.toHaveBeenCalled();
+      // createConnection should only be called once (for the first call)
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("cache hit with invalid connection", () => {
+    it("destroys invalid cached connection and creates a new one", async () => {
+      const { mockIsValidAsync, mockDestroy } = setupMockConnection(true);
+
+      // First call creates and caches the connection
+      await service.getSnowflakeToken(testConnection);
+
+      // Make the cached connection invalid for the next call
+      mockIsValidAsync.mockResolvedValue(false);
+
+      // Second call should detect invalid connection
+      await service.getSnowflakeToken(testConnection);
+
+      // Connection should be destroyed
+      expect(mockDestroy).toHaveBeenCalledOnce();
+      // createConnection should be called twice (first and replacement)
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("cache key computation", () => {
+    it("uses account:user:authenticator as cache key", async () => {
+      setupMockConnection(true, "token1");
+
+      // First connection
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "externalbrowser",
+      });
+
+      // Different account - should create new connection
+      await service.getSnowflakeToken({
+        account: "acct2",
+        user: "user1",
+        authenticator: "externalbrowser",
+      });
+
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+
+    it("treats different authenticators as different cache keys", async () => {
+      setupMockConnection(true);
+
+      // JWT auth
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "snowflake_jwt",
+        private_key_file: "/path/to/key.p8",
+      });
+
+      // OAuth auth - different authenticator
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "oauth",
+        token: "oauth-token",
+      });
+
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+
+    it("treats different users as different cache keys", async () => {
+      setupMockConnection(true);
+
+      // User 1
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "externalbrowser",
+      });
+
+      // User 2 - different user
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user2",
+        authenticator: "externalbrowser",
+      });
+
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+
+    it("treats oauth connections with different tokens as different cache keys", async () => {
+      setupMockConnection(true);
+
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "oauth",
+        token: "oauth-token-1",
+      });
+
+      // Same account/user/authenticator, rotated token - must not reuse the
+      // cached connection or it would hand back the stale token.
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "oauth",
+        token: "oauth-token-2",
+      });
+
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+
+    it("treats jwt connections with different key files as different cache keys", async () => {
+      setupMockConnection(true);
+
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "snowflake_jwt",
+        private_key_file: "/path/to/key-a.p8",
+      });
+
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "snowflake_jwt",
+        private_key_file: "/path/to/key-b.p8",
+      });
+
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+
+    it("treats different roles as different cache keys", async () => {
+      setupMockConnection(true);
+
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "externalbrowser",
+        role: "ANALYST",
+      });
+
+      await service.getSnowflakeToken({
+        account: "acct1",
+        user: "user1",
+        authenticator: "externalbrowser",
+        role: "ADMIN",
+      });
+
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+
+    it("normalizes case/whitespace so equivalent configs share a connection", async () => {
+      setupMockConnection(true);
+
+      await service.getSnowflakeToken({
+        account: "MyAccount",
+        user: "MyUser",
+        authenticator: "externalbrowser",
+        role: "Analyst",
+      });
+
+      // Account/user are case-insensitive identifiers, authenticator and role
+      // are matched case-insensitively, and surrounding whitespace is trimmed.
+      await service.getSnowflakeToken({
+        account: "myaccount",
+        user: "myuser  ",
+        authenticator: "EXTERNALBROWSER",
+        role: " analyst",
+      });
+
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("concurrent cache access", () => {
+    it("handles concurrent calls with the same cache key serially", async () => {
+      const { mockConnectAsync } = setupMockConnection(true);
+
+      // Simulate a slow connection
+      let connectStarted = 0;
+      let connectFinished = 0;
+      mockConnectAsync.mockImplementation(async () => {
+        connectStarted++;
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        connectFinished++;
+      });
+
+      // Start two concurrent calls
+      await Promise.all([
+        service.getSnowflakeToken(testConnection),
+        service.getSnowflakeToken(testConnection),
+      ]);
+
+      // Connection should only be created once (mutex ensures serial access)
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(1);
+      // connectAsync should only be called once
+      expect(connectStarted).toBe(1);
+      expect(connectFinished).toBe(1);
+    });
+
+    it("allows concurrent calls with different cache keys", async () => {
+      let callCount = 0;
+      const mockConnectAsync = vi.fn().mockResolvedValue(undefined);
+      const mockIsValidAsync = vi.fn().mockResolvedValue(true);
+      const mockDestroy = vi.fn((callback: (err?: Error) => void) => {
+        callback();
+      });
+
+      // Return different tokens for each connection
+      const mockSerialize = vi.fn().mockImplementation(() => {
+        callCount++;
+        return JSON.stringify({
+          services: {
+            sf: { tokenInfo: { sessionToken: `token-${callCount}` } },
+          },
+        });
+      });
+
+      vi.mocked(snowflake.createConnection).mockReturnValue({
+        connectAsync: mockConnectAsync,
+        serialize: mockSerialize,
+        isValidAsync: mockIsValidAsync,
+        destroy: mockDestroy,
+      } as unknown as ReturnType<typeof snowflake.createConnection>);
+
+      const [token1, token2] = await Promise.all([
+        service.getSnowflakeToken({
+          account: "acct1",
+          user: "user1",
+          authenticator: "externalbrowser",
+        }),
+        service.getSnowflakeToken({
+          account: "acct2",
+          user: "user1",
+          authenticator: "externalbrowser",
+        }),
+      ]);
+
+      // Different keys - different tokens
+      expect(token1).not.toBe(token2);
+      // createConnection should be called twice
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("destroy error handling", () => {
+    it("logs destroy error but still removes from cache", async () => {
+      const mockConnectAsync = vi.fn().mockResolvedValue(undefined);
+      const mockSerialize = vi.fn().mockReturnValue(
+        JSON.stringify({
+          services: { sf: { tokenInfo: { sessionToken: "token" } } },
+        }),
+      );
+      const mockIsValidAsync = vi.fn().mockResolvedValue(false);
+      const mockDestroy = vi
+        .fn()
+        .mockImplementation((callback: (err?: Error) => void) =>
+          callback(new Error("destroy failed")),
+        );
+
+      vi.mocked(snowflake.createConnection).mockReturnValue({
+        connectAsync: mockConnectAsync,
+        serialize: mockSerialize,
+        isValidAsync: mockIsValidAsync,
+        destroy: mockDestroy,
+      } as unknown as ReturnType<typeof snowflake.createConnection>);
+
+      // First call creates and caches the connection
+      await service.getSnowflakeToken(testConnection);
+
+      // Second call attempts to destroy invalid connection
+      await service.getSnowflakeToken(testConnection);
+
+      // Connection should still be destroyed (attempt made)
+      expect(mockDestroy).toHaveBeenCalledOnce();
+      // A new connection should be created despite destroy error
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("validity check failure", () => {
+    it("rebuilds the connection when isValidAsync rejects", async () => {
+      const { mockIsValidAsync, mockDestroy } = setupMockConnection(true);
+
+      // First call creates and caches the connection.
+      await service.getSnowflakeToken(testConnection);
+
+      // The validity check on the cached connection throws (e.g. a network
+      // error during the heartbeat) rather than returning false.
+      mockIsValidAsync.mockRejectedValue(new Error("heartbeat failed"));
+
+      // Second call must not surface the validation error; it should evict the
+      // poisoned entry and build a fresh connection instead.
+      await expect(service.getSnowflakeToken(testConnection)).resolves.toBe(
+        "test-token",
+      );
+
+      expect(mockDestroy).toHaveBeenCalledOnce();
+      expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("destroy timeout", () => {
+    it("recovers if destroy never invokes its callback", async () => {
+      vi.useFakeTimers();
+      try {
+        const mockConnectAsync = vi.fn().mockResolvedValue(undefined);
+        const mockSerialize = vi.fn().mockReturnValue(
+          JSON.stringify({
+            services: { sf: { tokenInfo: { sessionToken: "test-token" } } },
+          }),
+        );
+        const mockIsValidAsync = vi.fn().mockResolvedValue(false);
+        // A destroy() that never reports back, simulating a wedged connection.
+        const mockDestroy = vi.fn(() => {});
+
+        vi.mocked(snowflake.createConnection).mockReturnValue({
+          connectAsync: mockConnectAsync,
+          serialize: mockSerialize,
+          isValidAsync: mockIsValidAsync,
+          destroy: mockDestroy,
+        } as unknown as ReturnType<typeof snowflake.createConnection>);
+
+        // First call: cache miss, caches the connection (isValidAsync is not
+        // consulted on a freshly created connection).
+        await service.getSnowflakeToken(testConnection);
+
+        // Second call: cache hit, but the connection reports invalid and its
+        // destroy() hangs. The timeout must let the call complete anyway rather
+        // than holding the mutex forever.
+        const pending = service.getSnowflakeToken(testConnection);
+        await vi.advanceTimersByTimeAsync(SNOWFLAKE_DESTROY_TIMEOUT_MS);
+
+        await expect(pending).resolves.toBe("test-token");
+        expect(mockDestroy).toHaveBeenCalledOnce();
+        expect(snowflake.createConnection).toHaveBeenCalledTimes(2);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+});
+
+describe("CredentialsService.getSnowflakeToken", () => {
+  let service: CredentialsService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    service = new CredentialsService(new mockSecretStorage());
+  });
+
+  it("throws for unsupported authenticator type", async () => {
+    await expect(
+      service.getSnowflakeToken({
+        account: "myaccount",
+        user: "myuser",
+        authenticator: "unsupported",
+      }),
+    ).rejects.toThrow('unsupported authenticator type: "unsupported"');
+  });
+
+  describe("JWT token provider (snowflake_jwt)", () => {
+    it("throws when private_key_file is missing", async () => {
+      await expect(
+        service.getSnowflakeToken({
+          account: "myaccount",
+          user: "myuser",
+          authenticator: "snowflake_jwt",
+        }),
+      ).rejects.toThrow("private_key_file is required for snowflake_jwt");
+    });
+
+    it("creates connection with correct account, username, authenticator, and privateKeyPath", async () => {
+      const mockConnect = vi.fn().mockResolvedValue(undefined);
+      const mockSerialize = vi.fn().mockReturnValue(
+        JSON.stringify({
+          services: { sf: { tokenInfo: { sessionToken: "token" } } },
+        }),
+      );
+      vi.mocked(snowflake.createConnection).mockReturnValue({
+        connectAsync: mockConnect,
+        serialize: mockSerialize,
+      } as unknown as ReturnType<typeof snowflake.createConnection>);
+
+      await service.getSnowflakeToken({
+        account: "myaccount",
+        user: "myuser",
+        authenticator: "snowflake_jwt",
+        private_key_file: "/path/to/key.p8",
+      });
+      expect(snowflake.createConnection).toHaveBeenCalledWith({
+        account: "myaccount",
+        username: "myuser",
+        authenticator: "SNOWFLAKE_JWT",
+        privateKeyPath: "/path/to/key.p8",
+        clientStoreTemporaryCredential: true,
+      });
+    });
+
+    it("forwards the configured role to createConnection", async () => {
+      const mockConnect = vi.fn().mockResolvedValue(undefined);
+      const mockSerialize = vi.fn().mockReturnValue(
+        JSON.stringify({
+          services: { sf: { tokenInfo: { sessionToken: "token" } } },
+        }),
+      );
+      vi.mocked(snowflake.createConnection).mockReturnValue({
+        connectAsync: mockConnect,
+        serialize: mockSerialize,
+      } as unknown as ReturnType<typeof snowflake.createConnection>);
+
+      await service.getSnowflakeToken({
+        account: "myaccount",
+        user: "myuser",
+        authenticator: "snowflake_jwt",
+        private_key_file: "/path/to/key.p8",
+        role: "MY_ROLE",
+      });
+      expect(snowflake.createConnection).toHaveBeenCalledWith(
+        expect.objectContaining({ role: "MY_ROLE" }),
+      );
+    });
+  });
+
+  describe("OAuth token provider (oauth)", () => {
+    it("throws when token is missing", async () => {
+      await expect(
+        service.getSnowflakeToken({
+          account: "myaccount",
+          user: "myuser",
+          authenticator: "oauth",
+        }),
+      ).rejects.toThrow("token is required for oauth");
+    });
+
+    it("creates connection with correct account, authenticator, and token", async () => {
+      const mockConnect = vi.fn().mockResolvedValue(undefined);
+      const mockSerialize = vi.fn().mockReturnValue(
+        JSON.stringify({
+          services: { sf: { tokenInfo: { sessionToken: "token" } } },
+        }),
+      );
+      vi.mocked(snowflake.createConnection).mockReturnValue({
+        connectAsync: mockConnect,
+        serialize: mockSerialize,
+      } as unknown as ReturnType<typeof snowflake.createConnection>);
+
+      await service.getSnowflakeToken({
+        account: "myaccount",
+        user: "myuser",
+        authenticator: "oauth",
+        token: "my-oauth-token",
+      });
+      expect(snowflake.createConnection).toHaveBeenCalledWith({
+        account: "myaccount",
+        authenticator: "OAUTH",
+        token: "my-oauth-token",
+        clientStoreTemporaryCredential: true,
+      });
+    });
+  });
+
+  describe("External browser token provider (externalbrowser)", () => {
+    it("creates connection with correct account, username, and authenticator", async () => {
+      const mockConnect = vi.fn().mockResolvedValue(undefined);
+      const mockSerialize = vi.fn().mockReturnValue(
+        JSON.stringify({
+          services: { sf: { tokenInfo: { sessionToken: "token" } } },
+        }),
+      );
+      vi.mocked(snowflake.createConnection).mockReturnValue({
+        connectAsync: mockConnect,
+        serialize: mockSerialize,
+      } as unknown as ReturnType<typeof snowflake.createConnection>);
+
+      await service.getSnowflakeToken({
+        account: "myaccount",
+        user: "myuser",
+        authenticator: "externalbrowser",
+      });
+      expect(snowflake.createConnection).toHaveBeenCalledWith({
+        account: "myaccount",
+        username: "myuser",
+        authenticator: "EXTERNALBROWSER",
+        clientStoreTemporaryCredential: true,
+      });
+    });
+  });
+
+  describe("shared token extraction and error handling", () => {
+    const testCases: Array<{
+      authenticator: string;
+      tokenValue: string;
+      connectionInput: SnowflakeConnectionConfig;
+    }> = [
+      {
+        authenticator: "snowflake_jwt",
+        tokenValue: "mock-jwt-token-123",
+        connectionInput: {
+          account: "myaccount",
+          user: "myuser",
+          authenticator: "snowflake_jwt",
+          private_key_file: "/path/to/key.p8",
+        },
+      },
+      {
+        authenticator: "oauth",
+        tokenValue: "mock-oauth-token-456",
+        connectionInput: {
+          account: "myaccount",
+          user: "myuser",
+          authenticator: "oauth",
+          token: "my-oauth-token",
+        },
+      },
+      {
+        authenticator: "externalbrowser",
+        tokenValue: "mock-token-abc",
+        connectionInput: {
+          account: "myaccount",
+          user: "myuser",
+          authenticator: "externalbrowser",
+        },
+      },
+    ];
+
+    testCases.forEach(({ authenticator, tokenValue, connectionInput }) => {
+      describe(`for ${authenticator}`, () => {
+        let mockConnectAsync: ReturnType<typeof vi.fn>;
+        let mockSerialize: ReturnType<typeof vi.fn>;
+
+        beforeEach(() => {
+          mockConnectAsync = vi.fn().mockResolvedValue(undefined);
+          mockSerialize = vi.fn().mockReturnValue(
+            JSON.stringify({
+              services: { sf: { tokenInfo: { sessionToken: tokenValue } } },
+            }),
+          );
+          vi.mocked(snowflake.createConnection).mockReturnValue({
+            connectAsync: mockConnectAsync,
+            serialize: mockSerialize,
+          } as unknown as ReturnType<typeof snowflake.createConnection>);
+        });
+
+        it("returns the session token from serialized connection state", async () => {
+          const token = await service.getSnowflakeToken(connectionInput);
+          expect(token).toBe(tokenValue);
+        });
+
+        it("throws if session token is absent from serialized state", async () => {
+          mockSerialize.mockReturnValue(JSON.stringify({ services: {} }));
+          await expect(
+            service.getSnowflakeToken(connectionInput),
+          ).rejects.toThrow("missing session token");
+        });
+
+        it("throws a friendly error if serialized state is not valid JSON", async () => {
+          mockSerialize.mockReturnValue("not valid json{");
+          await expect(
+            service.getSnowflakeToken(connectionInput),
+          ).rejects.toThrow(`unable to read ${authenticator} connection state`);
+        });
+
+        it("throws if connectAsync rejects", async () => {
+          mockConnectAsync.mockRejectedValue(
+            new Error(`${authenticator} auth failed`),
+          );
+          await expect(
+            service.getSnowflakeToken(connectionInput),
+          ).rejects.toThrow(`${authenticator} auth failed`);
+        });
+      });
     });
   });
 });

@@ -490,9 +490,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         });
       } else {
         const connectApi = new ConnectAPI(
-          await connectAPIOptionsFromCredential(credential, {
-            rejectUnauthorized: extensionSettings.verifyCertificates(),
-          }),
+          await connectAPIOptionsFromCredential(
+            this.state.credentialsService,
+            credential,
+            {
+              rejectUnauthorized: extensionSettings.verifyCertificates(),
+            },
+          ),
         );
 
         runDeployWithProgress({
@@ -517,6 +521,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           ...progressOptions,
         });
       }
+    } catch (error: unknown) {
+      // Surface failures that happen while setting up the deployment (e.g.
+      // fetching a Snowflake token). Do not rethrow: the message dispatch in
+      // WebviewConduit does not await or catch this handler, so rethrowing
+      // would only produce an unhandled rejection after the user has already
+      // been shown the error.
+      const msg = getSummaryStringFromError("initiateDeployment", error);
+      window.showErrorMessage(`Deployment failed: ${msg}`);
     } finally {
       this.webviewConduit.sendMsg({
         kind: HostToWebviewMessageType.PUBLISH_INIT,
@@ -912,9 +924,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           (credential?.apiKey || (credential?.token && credential?.privateKey))
         ) {
           const connectApi = new ConnectAPI(
-            await connectAPIOptionsFromCredential(credential, {
-              rejectUnauthorized: extensionSettings.verifyCertificates(),
-            }),
+            await connectAPIOptionsFromCredential(
+              this.state.credentialsService,
+              credential,
+              {
+                rejectUnauthorized: extensionSettings.verifyCertificates(),
+              },
+            ),
           );
           const response = await connectApi.getIntegrations();
           integrations = response.data ?? [];
@@ -1053,9 +1069,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     try {
       const connectApi = new ConnectAPI(
-        await connectAPIOptionsFromCredential(credential, {
-          rejectUnauthorized: extensionSettings.verifyCertificates(),
-        }),
+        await connectAPIOptionsFromCredential(
+          this.state.credentialsService,
+          credential,
+          {
+            rejectUnauthorized: extensionSettings.verifyCertificates(),
+          },
+        ),
       );
       const allSettings = await connectApi.getSettings();
 
@@ -1558,9 +1578,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         Views.HomeView,
         async () => {
           const connectApi = new ConnectAPI(
-            await connectAPIOptionsFromCredential(credential, {
-              rejectUnauthorized: extensionSettings.verifyCertificates(),
-            }),
+            await connectAPIOptionsFromCredential(
+              this.state.credentialsService,
+              credential,
+              {
+                rejectUnauthorized: extensionSettings.verifyCertificates(),
+              },
+            ),
           );
           const response = await connectApi.getIntegrations();
           integrations = response.data;
@@ -2316,9 +2340,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         Views.HomeView,
         async () => {
           const connectApi = new ConnectAPI(
-            await connectAPIOptionsFromCredential(credential, {
-              rejectUnauthorized: extensionSettings.verifyCertificates(),
-            }),
+            await connectAPIOptionsFromCredential(
+              this.state.credentialsService,
+              credential,
+              {
+                rejectUnauthorized: extensionSettings.verifyCertificates(),
+              },
+            ),
           );
           return connectApi.getEnvVars(deployment.id);
         },

@@ -174,10 +174,6 @@ vi.mock("src/snowflake/connections", () => ({
   listConnections: vi.fn(() => ({})),
 }));
 
-vi.mock("src/snowflake/tokenProviders", () => ({
-  createTokenProvider: vi.fn(),
-}));
-
 vi.mock("src/commands", () => ({
   openConfigurationCommand: "command:open-config",
 }));

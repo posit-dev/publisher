@@ -1,12 +1,14 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { SecretStorage } from "vscode";
-import { randomUUID } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { GUID, ConnectAPIOptions } from "@posit-dev/connect-api";
+import { Mutex } from "async-mutex";
 import snowflake from "snowflake-sdk";
 
 import { Credential } from "src/api/types/credentials";
 import { ServerType } from "src/api/types/contentRecords";
+import type { SnowflakeConnectionConfig } from "src/snowflake/types";
 import {
   getAllCredentials,
   getCredential,
@@ -15,7 +17,6 @@ import {
   deleteAllCredentials,
 } from "./storage";
 import { listConnections } from "src/snowflake/connections";
-import { createTokenProvider } from "src/snowflake/tokenProviders";
 import { normalizeServerURL, isConnectLike } from "src/utils/serverUrl";
 import {
   CredentialNotFoundError,
@@ -26,7 +27,12 @@ import {
 import { CONNECT_CLOUD_ENV } from "src/constants";
 import config from "src/config";
 import { logger } from "src/logging";
-import { SnowflakeSecretStorageCredentialManager } from "src/snowflake/secretStorageCredentialManager";
+
+// Upper bound on how long to wait for snowflake-sdk's destroy() callback before
+// giving up. destroy() is async and, on a wedged connection, may never invoke
+// its callback; without a bound it would hold the connection-cache mutex
+// indefinitely and stall every other token fetch.
+export const SNOWFLAKE_DESTROY_TIMEOUT_MS = 5_000;
 
 export interface CreateCredentialInput {
   name: string;
@@ -51,6 +57,7 @@ export interface CreateCredentialInput {
  * connection from connections.toml and exchanging credentials with Snowflake.
  */
 export async function connectAPIOptionsFromCredential(
+  service: CredentialsService,
   credential: Pick<
     Credential,
     | "url"
@@ -66,7 +73,7 @@ export async function connectAPIOptionsFromCredential(
     credential.serverType === ServerType.SNOWFLAKE &&
     credential.snowflakeConnection
   ) {
-    return await buildSnowflakeOptions(credential, extra);
+    return await service.buildSnowflakeOptions(credential, extra);
   }
 
   if (credential.token && credential.privateKey) {
@@ -86,64 +93,15 @@ export async function connectAPIOptionsFromCredential(
   }
   return {
     url: credential.url,
-    ...extra,
-  };
-}
-
-async function buildSnowflakeOptions(
-  credential: Pick<
-    Credential,
-    "url" | "snowflakeConnection" | "apiKey" | "token" | "privateKey"
-  >,
-  extra?: Pick<ConnectAPIOptions, "rejectUnauthorized" | "timeout">,
-): Promise<ConnectAPIOptions> {
-  const connections = listConnections();
-  const connectionName = credential.snowflakeConnection;
-  const connectionConfig = connections[connectionName];
-  if (!connectionConfig) {
-    throw new Error(
-      `Snowflake connection "${connectionName}" not found in connections.toml`,
-    );
-  }
-
-  const tokenProvider = createTokenProvider(connectionConfig);
-  const hostname = new URL(credential.url).hostname;
-  const snowflakeToken = await tokenProvider.getToken(hostname);
-
-  if (credential.token && credential.privateKey) {
-    return {
-      url: credential.url,
-      snowflakeToken,
-      token: credential.token,
-      privateKey: credential.privateKey,
-      ...extra,
-    };
-  }
-  if (credential.apiKey) {
-    return {
-      url: credential.url,
-      snowflakeToken,
-      apiKey: credential.apiKey,
-      ...extra,
-    };
-  }
-  // Legacy credential with no Connect auth — will fail at request time
-  // but we still need to allow loading/displaying it.
-  return {
-    url: credential.url,
-    snowflakeToken,
     ...extra,
   };
 }
 
 export class CredentialsService {
-  constructor(private readonly secrets: SecretStorage) {
-    snowflake.configure({
-      customCredentialManager: new SnowflakeSecretStorageCredentialManager(
-        secrets,
-      ),
-    });
-  }
+  private snowflakeConnectionCache = new Map<string, snowflake.Connection>();
+  private snowflakeConnectionCacheMutex = new Mutex();
+
+  constructor(private readonly secrets: SecretStorage) {}
 
   list(): Promise<Credential[]> {
     return getAllCredentials(this.secrets);
@@ -293,5 +251,294 @@ export class CredentialsService {
     if (newCred.name === existing.name) {
       throw new CredentialNameCollisionError(existing.name, existing.url);
     }
+  }
+
+  private getCacheKeyForConnection(
+    connection: SnowflakeConnectionConfig,
+  ): string {
+    // Account and user are case-insensitive Snowflake identifiers;
+    // authenticator and role are matched case-insensitively by the SDK.
+    // Normalize them so equivalent configs share one cached connection.
+    const account = connection.account.trim().toLowerCase();
+    const user = (connection.user ?? "").trim().toLowerCase();
+    const authenticator = connection.authenticator.trim().toUpperCase();
+    const role = (connection.role ?? "").trim().toUpperCase();
+
+    // token (oauth) and private_key_file (jwt) are the distinguishing
+    // credential material. They must be part of the key so a rotated token or
+    // a different key file produces a fresh connection rather than reusing a
+    // stale one — but they are hashed so a secret never lands in a log line.
+    //
+    // NUL separates the fields: it can't appear in a token or a filesystem
+    // path, so distinct field pairs can't collide into the same digest.
+    //
+    // We aren't hashing the key file, so if somebody changes their key in
+    // place during a session, we will keep using the connection established
+    // with the old key until that session goes invalid (or the extension
+    // restarts). This is a pretty edge case.
+    const credentialDigest = createHash("sha256")
+      .update(connection.token ?? "")
+      .update("\u0000")
+      .update(connection.private_key_file ?? "")
+      .digest("hex");
+
+    return [account, user, authenticator, role, credentialDigest].join("|");
+  }
+
+  private createSnowflakeConnection(
+    connection: SnowflakeConnectionConfig,
+  ): snowflake.Connection {
+    const authenticator = connection.authenticator.toUpperCase();
+
+    let connectionConfig: Record<string, unknown>;
+
+    switch (authenticator) {
+      case "SNOWFLAKE_JWT": {
+        if (!connection.private_key_file) {
+          throw new Error("private_key_file is required for snowflake_jwt");
+        }
+        connectionConfig = {
+          username: connection.user,
+          authenticator,
+          privateKeyPath: connection.private_key_file,
+        };
+        break;
+      }
+      case "OAUTH": {
+        if (!connection.token) {
+          throw new Error("token is required for oauth");
+        }
+        connectionConfig = {
+          authenticator,
+          token: connection.token,
+        };
+        break;
+      }
+      case "EXTERNALBROWSER":
+        connectionConfig = {
+          username: connection.user,
+          authenticator,
+        };
+        break;
+      default:
+        throw new Error(
+          `unsupported authenticator type: "${connection.authenticator}"`,
+        );
+    }
+
+    return snowflake.createConnection({
+      account: connection.account,
+      // Avoids repeated browser prompts by caching the SSO id-token in the
+      // credential manager. Currently a (harmless) no-op for JWT/OAUTH.
+      clientStoreTemporaryCredential: true,
+      // Authenticate under the configured role when one is set; otherwise the
+      // session uses the user's default role. Applies to every authenticator.
+      ...(connection.role ? { role: connection.role } : {}),
+      ...connectionConfig,
+    });
+  }
+
+  /**
+   * Destroys a Snowflake connection, resolving once the SDK reports completion
+   * or {@link SNOWFLAKE_DESTROY_TIMEOUT_MS} elapses — whichever comes first.
+   * Never rejects: destroy is best-effort cleanup of an already-invalid
+   * connection, so a failure or hang is logged and swallowed rather than
+   * propagated to the caller (who is about to rebuild the connection anyway).
+   */
+  private destroyConnection(
+    conn: snowflake.Connection,
+    cacheKey: string,
+  ): Promise<void> {
+    return new Promise<void>((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(timer);
+        resolve();
+      };
+
+      const timer = setTimeout(() => {
+        logger.debug(
+          `Timed out destroying invalid Snowflake connection for ${cacheKey}`,
+        );
+        finish();
+      }, SNOWFLAKE_DESTROY_TIMEOUT_MS);
+
+      try {
+        conn.destroy((err) => {
+          if (err) {
+            logger.debug(
+              `Error destroying invalid Snowflake connection for ${cacheKey}: ${err.message}`,
+            );
+          } else {
+            logger.debug(
+              `Destroyed invalid Snowflake connection for ${cacheKey}`,
+            );
+          }
+          finish();
+        });
+      } catch (err) {
+        // destroy() threw synchronously rather than reporting via callback.
+        logger.debug(
+          `Error destroying invalid Snowflake connection for ${cacheKey}: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+        finish();
+      }
+    });
+  }
+
+  private getOrCreateSnowflakeConnection(
+    connection: SnowflakeConnectionConfig,
+  ): Promise<snowflake.Connection> {
+    const cacheKey = this.getCacheKeyForConnection(connection);
+
+    return this.snowflakeConnectionCacheMutex.runExclusive(async () => {
+      // Check cache
+      const cached = this.snowflakeConnectionCache.get(cacheKey);
+      if (cached) {
+        let isValid = false;
+        try {
+          // NOTE: this potentially refreshes an expired session token using the
+          // master token, and sends a heartbeat request to Snowflake. Do not
+          // replace with isUp or isTokenValid. Always reread the session token
+          // after this (see getSnowflakeToken) to pick up the refreshed value.
+          isValid = await cached.isValidAsync();
+        } catch (err) {
+          // A validity check that throws (e.g. a network error during the
+          // heartbeat) means we can't trust the cached connection. Treat it as
+          // invalid and rebuild rather than leaving a poisoned entry behind.
+          logger.debug(
+            `Error validating cached Snowflake connection for ${cacheKey}: ${
+              err instanceof Error ? err.message : String(err)
+            }`,
+          );
+        }
+
+        if (isValid) {
+          logger.debug(`Snowflake connection cache hit for ${cacheKey}`);
+          return cached;
+        }
+
+        // Connection is no longer valid - destroy it and remove from cache
+        await this.destroyConnection(cached, cacheKey);
+        this.snowflakeConnectionCache.delete(cacheKey);
+      }
+
+      logger.debug(
+        `Snowflake connection cache miss for ${cacheKey}, creating new connection`,
+      );
+
+      // Not in cache - create connection
+      const conn = this.createSnowflakeConnection(connection);
+      await conn.connectAsync();
+
+      logger.debug(`Snowflake connection created and cached for ${cacheKey}`);
+
+      // Cache it
+      this.snowflakeConnectionCache.set(cacheKey, conn);
+
+      return conn;
+    });
+  }
+
+  /**
+   * Obtains a session token from Snowflake using the authenticator and credentials
+   * from the connection config. Supports "snowflake_jwt", "oauth", and "externalbrowser"
+   * authenticators (case-insensitive).
+   *
+   * The session token is extracted directly from the SDK's internal connection state.
+   * Do NOT call conn.destroy() — it invalidates the token.
+   *
+   * Connections are cached by account + user + authenticator + role plus a
+   * digest of the credential material (oauth token / jwt key file) to avoid
+   * repeated connection establishment for the same configuration. See
+   * getCacheKeyForConnection for the exact key.
+   */
+  async getSnowflakeToken(
+    connection: SnowflakeConnectionConfig,
+  ): Promise<string> {
+    const conn = await this.getOrCreateSnowflakeConnection(connection);
+    const authenticator = connection.authenticator.toLowerCase();
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(conn.serialize());
+    } catch (err) {
+      throw new Error(
+        `unable to read ${authenticator} connection state: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+        { cause: err },
+      );
+    }
+
+    const sessionToken = this.extractSerializedToken(parsed);
+
+    if (!sessionToken || typeof sessionToken !== "string") {
+      throw new Error(
+        `missing session token in ${authenticator} connection state`,
+      );
+    }
+
+    return sessionToken;
+  }
+
+  /**
+   * Extracts the session token from the private state returned by
+   * connection.serialize(). This is an undocumented SDK internal; the SDK is
+   * pinned to avoid breakage from internal restructuring.
+   */
+  private extractSerializedToken(parsed: unknown): unknown {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (parsed as any)?.services?.sf?.tokenInfo?.sessionToken;
+  }
+
+  async buildSnowflakeOptions(
+    credential: Pick<
+      Credential,
+      "url" | "snowflakeConnection" | "apiKey" | "token" | "privateKey"
+    >,
+    extra?: Pick<ConnectAPIOptions, "rejectUnauthorized" | "timeout">,
+  ): Promise<ConnectAPIOptions> {
+    const connections = listConnections();
+    const connectionName = credential.snowflakeConnection;
+    const connectionConfig = connections[connectionName];
+    if (!connectionConfig) {
+      throw new Error(
+        `Snowflake connection "${connectionName}" not found in connections.toml`,
+      );
+    }
+
+    const snowflakeToken = await this.getSnowflakeToken(connectionConfig);
+
+    if (credential.token && credential.privateKey) {
+      return {
+        url: credential.url,
+        snowflakeToken,
+        token: credential.token,
+        privateKey: credential.privateKey,
+        ...extra,
+      };
+    }
+    if (credential.apiKey) {
+      return {
+        url: credential.url,
+        snowflakeToken,
+        apiKey: credential.apiKey,
+        ...extra,
+      };
+    }
+    // Legacy credential with no Connect auth — will fail at request time
+    // but we still need to allow loading/displaying it.
+    return {
+      url: credential.url,
+      snowflakeToken,
+      ...extra,
+    };
   }
 }

@@ -1,5 +1,5 @@
 name: Verify Tag Ancestry
-description: Verify that the triggering tag points to a commit on the main branch
+description: Verify that the triggering tag points to a commit on main or a release branch
 
 runs:
   using: composite
@@ -7,12 +7,26 @@ runs:
     - uses: actions/checkout@v6
       with:
         fetch-depth: 0
-    - name: Verify tag points to commit on main
+    - name: Verify tag points to commit on main or a release branch
       shell: bash
       run: |
+        COMMIT_SHA="${{ github.sha }}"
         git fetch origin main
-        if ! git merge-base --is-ancestor ${{ github.sha }} origin/main; then
-          echo "::error::Tag must point to a commit on the main branch. This tag points to a commit not reachable from main."
-          exit 1
+        if git merge-base --is-ancestor "$COMMIT_SHA" origin/main; then
+          echo "✅ Verified: Tag points to commit on main branch"
+          exit 0
         fi
-        echo "✅ Verified: Tag points to commit on main branch"
+
+        # For patch releases, allow tags on release/v* branches
+        # Tag "v2.4.1" → branch "release/v2.4.1"
+        TAG_NAME="${GITHUB_REF_NAME}"
+        RELEASE_BRANCH="release/${TAG_NAME}"
+        git fetch origin "$RELEASE_BRANCH" 2>/dev/null || true
+        if git rev-parse "origin/$RELEASE_BRANCH" >/dev/null 2>&1 && \
+           git merge-base --is-ancestor "$COMMIT_SHA" "origin/$RELEASE_BRANCH"; then
+          echo "✅ Verified: Tag points to commit on release branch $RELEASE_BRANCH"
+          exit 0
+        fi
+
+        echo "::error::Tag must point to a commit on main or a release/v* branch."
+        exit 1

@@ -190,6 +190,14 @@ def main() -> None:
             "Required when preparing a patch release of an older release line."
         ),
     )
+    parser.add_argument(
+        "--from-cherry-pick",
+        action="store_true",
+        help=(
+            "Skip the empty-Unreleased check. Use when CHANGELOG entries were "
+            "already brought in by cherry-picked commits (patch releases)."
+        ),
+    )
     args = parser.parse_args()
 
     # Parse and validate version
@@ -232,7 +240,7 @@ def main() -> None:
     unreleased_content = extract_unreleased_content(root_changelog)
     trimmed_content = unreleased_content.strip()
 
-    if not trimmed_content:
+    if not trimmed_content and not args.from_cherry_pick:
         warn("No content found under [Unreleased] section")
         print()
         print("The [Unreleased] section appears to be empty.")
