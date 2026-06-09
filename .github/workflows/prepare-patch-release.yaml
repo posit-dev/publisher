@@ -151,7 +151,7 @@ jobs:
           done
 
           echo "BACKPORTED_PRS<<EOF" >> "$GITHUB_ENV"
-          printf '%s\n' "$BACKPORTED_PRS" >> "$GITHUB_ENV"
+          printf '%s' "$BACKPORTED_PRS" >> "$GITHUB_ENV"
           echo "EOF" >> "$GITHUB_ENV"
 
       - uses: actions/setup-node@v6
