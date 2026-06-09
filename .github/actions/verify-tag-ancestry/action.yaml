@@ -10,18 +10,20 @@ runs:
     - name: Verify tag points to commit on main or a release branch
       shell: bash
       run: |
+        COMMIT_SHA="${{ github.sha }}"
         git fetch origin main
-        if git merge-base --is-ancestor ${{ github.sha }} origin/main; then
+        if git merge-base --is-ancestor "$COMMIT_SHA" origin/main; then
           echo "✅ Verified: Tag points to commit on main branch"
           exit 0
         fi
 
         # For patch releases, allow tags on release/v* branches
+        # Tag "v2.4.1" → branch "release/v2.4.1"
         TAG_NAME="${GITHUB_REF_NAME}"
         RELEASE_BRANCH="release/${TAG_NAME}"
         git fetch origin "$RELEASE_BRANCH" 2>/dev/null || true
         if git rev-parse "origin/$RELEASE_BRANCH" >/dev/null 2>&1 && \
-           git merge-base --is-ancestor ${{ github.sha }} "origin/$RELEASE_BRANCH"; then
+           git merge-base --is-ancestor "$COMMIT_SHA" "origin/$RELEASE_BRANCH"; then
           echo "✅ Verified: Tag points to commit on release branch $RELEASE_BRANCH"
           exit 0
         fi

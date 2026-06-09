@@ -9,6 +9,7 @@ on:
         type: string
 
 permissions:
+  # Write operations (tag push, PR close) use the GitHub App token, not GITHUB_TOKEN
   contents: read
 
 jobs:
