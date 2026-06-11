@@ -129,10 +129,11 @@ Do NOT use `git push origin main` under any circumstances. If you find yourself 
 
 When adding entries to CHANGELOG.md:
 
+- **Edit the root `CHANGELOG.md` only.** Do NOT touch `extensions/vscode/CHANGELOG.md` in feature PRs — the release process syncs it from the root at release time, and editing it during a feature PR creates churn and conflicts for the release flow.
 - **Reference issue numbers, not PR numbers.** Issues represent the user-facing problem or feature request. Use `(#1234)` format where `1234` is the GitHub issue number.
 - If no issue exists for the change, create one before adding the changelog entry.
 - Follow [Keep a Changelog](https://keepachangelog.com/) format with sections: Added, Changed, Fixed, Deprecated, Removed, Security.
-- Write entries from the user's perspective, focusing on what changed for them.
+- **Write entries for user-facing changes only.** Before adding an entry, ask: would a Publisher user notice this in their workflow, error messages, output, performance, or behavior? If no, skip it. Skip internal-only changes (test infra, mock servers, build/CI scripts, dev-tooling, lint rules, internal refactors with no behavior change).
 - Use the `/changelog` skill to help draft entries.
 
 # Schema Updates
