@@ -12,21 +12,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support for deploying Markdown (`.md`) files as Quarto content to Posit Connect. (#4219)
+- Support for browser-based Snowflake authentication when creating a new credential for Connect running within the Posit Team Native App in Snowpark Container Services. (#3466)
 
 ### Fixed
 
 - Fixed Publisher creating a persistent `renv.lock` and `renv/` folder in R projects that don't use renv, which caused re-deploys to fail when new packages were added. (#4233)
+- Fixed Publisher's sidebar rendering unstyled with missing icons in Positron on Posit Workbench when accessed via Firefox. (#4013)
 
 ## [2.6.0]
 
 ### Added
 
 - Support for deploying Node.js applications (Express, Fastify, Hono, etc.) to Posit Connect. (#3964)
-- Support for browser-based Snowflake authentication when creating a new credential for Connect running within the Posit Team Native App in Snowpark Container Services. (#3466)
 
 ### Fixed
 
-- Fixed Publisher's sidebar rendering unstyled with missing icons in Positron on Posit Workbench when accessed via Firefox. (#4013)
 - Fixed Quarto availability check opening a visible terminal and showing a confusing "process exited with code 1" error when Quarto is not installed. The check now runs silently in the background. (#3801)
 - Fixed deploying content to Connect running within the Posit Team Native App in Snowpark Container Services from Publisher running outside of SPCS. Users with existing credentials for SPCS servers must delete and recreate those credentials. Credentials now require a valid Snowflake connection and valid Connect authentication (either API key or token). (#3465)
 - Cancelling the "new credential" flow at the final step (input credential name) actually cancels instead of saving the new credential. (#4159)
