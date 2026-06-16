@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.0]
+
 ### Added
 
 - Support for deploying Markdown (`.md`) files as Quarto content to Posit Connect. (#4219)
