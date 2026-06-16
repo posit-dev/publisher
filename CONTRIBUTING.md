@@ -288,11 +288,11 @@ This workflow will:
 
 When the release PR is merged, automation takes over:
 
-1. The `tag-on-release-merge` workflow automatically creates the version tag
-2. The tag triggers the `release` workflow which:
+1. The `tag-on-release-merge` [workflow](https://github.com/posit-dev/publisher/actions/workflows/tag-on-release-merge.yaml) automatically creates the version tag
+2. The tag triggers the `release` [workflow](https://github.com/posit-dev/publisher/actions/workflows/release.yaml) which:
    - Builds release artifacts
    - Creates a GitHub release
-   - Publishes to VS Code Marketplace and Open VSX
+   - [Publishes](https://github.com/posit-dev/publisher/actions/workflows/publish.yaml) to VS Code Marketplace and Open VSX
    - Sends a Slack notification to announce the release
 
 #### Step 4: Confirm the release
