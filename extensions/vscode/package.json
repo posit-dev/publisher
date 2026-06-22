@@ -696,7 +696,7 @@
     "debounce": "^3.0.0",
     "entities": "^8.0.0",
     "filenamify": "^7.0.2",
-    "js-yaml": "^4.2.0",
+    "js-yaml": "^5.0.0",
     "jsonwebtoken": "^9.0.3",
     "picomatch": "^4.0.4",
     "retry": "^0.13.1",
