@@ -2492,7 +2492,7 @@ describe("connectPublish — server settings validation", () => {
     const opts = makeOptions({ config });
 
     await expect(connectPublish(opts)).rejects.toThrow(
-      "Missing package-lock.json — file not found in the project directory. Run `npm install` to generate it.",
+      "Missing package-lock.json — file not found in the project directory. Connect installs Node.js dependencies with npm. Run `npm install` to generate it.",
     );
   });
 

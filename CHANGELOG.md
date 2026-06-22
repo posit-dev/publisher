@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The "missing package-lock.json" error when publishing Node.js content now states that Connect installs Node.js dependencies with npm, helping publishers who build with yarn or pnpm understand why a `package-lock.json` is required. (#4260)
+
 ## [2.8.0]
 
 ### Added

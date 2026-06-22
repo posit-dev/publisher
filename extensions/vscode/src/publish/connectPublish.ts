@@ -306,7 +306,8 @@ export async function connectPublish({
         },
         {
           name: "package-lock.json",
-          missingOnDiskHint: "Run `npm install` to generate it.",
+          missingOnDiskHint:
+            "Connect installs Node.js dependencies with npm. Run `npm install` to generate it.",
         },
       ] as const;
       const notIncludedHint =
