@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>VS Code Extension – Posit Publisher</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="site_libs/quarto-contrib/quarto-project/posit-dev/posit-docs/assets/images/favicon.svg" rel="icon" type="image/svg+xml">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-c2b04ac753575a39acaa53a016e0db1c.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-bfa26a4c1e8b77f9495bd0694bdf7c57.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-c2b04ac753575a39acaa53a016e0db1c.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-6a67ae482af8ee09f5ccc67023d1a518.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark-34d21330e11f7d2f999531094fff86bd.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="site_libs/bootstrap/bootstrap-6a67ae482af8ee09f5ccc67023d1a518.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": true,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "/"
+  ],
+  "show-item-context": true,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<!-- Google Tag Manager -->
+<script type="text/javascript">
+  const sURL = window.location.href;
+  if (sURL.includes("docs.posit.co") || sURL.includes("netlify.app")) {
+    (function (w, d, s, l, i) {
+      w[l] = w[l] || [];
+      w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+      var f = d.getElementsByTagName(s)[0],
+        j = d.createElement(s),
+        dl = l != "dataLayer" ? "&l=" + l : "";
+      j.async = true;
+      j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
+      f.parentNode.insertBefore(j, f);
+    })(window, document, "script", "dataLayer", "GTM-KHBDBW7");
+  }
+</script>
+<!-- End Google Tag Manager -->
+
+<!-- Display cookie icon in footer in docs.posit.co/netlify.app URLs; hide icon on other URLs -->
+<script type="text/javascript">
+  window.onload = function () {
+    // target the <li> instead of the icon to allow screenreaders to properly
+    // calculate the size of the list when the icon is hidden
+    const prefCenter = document.querySelector(
+      "li:has(#open_preferences_center)",
+    );
+    if (prefCenter) {
+      // Test for prefCenter ID presence
+      const sURL = window.location.href;
+      // Show the icon only if the URL contains "docs.posit.co" or "netlify.app"
+      if (sURL.includes("docs.posit.co") || sURL.includes("netlify.app")) {
+        prefCenter.style.display = "inline";
+        prefCenter.style.visibility = "visible";
+      } else {
+        // Hide the icon for all other URLs
+        prefCenter.style.display = "none";
+        prefCenter.style.visibility = "hidden";
+      }
+    }
+  };
+</script>
+<!-- End display/hide cookie icon -->
+
+
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="./index.html" class="navbar-brand navbar-brand-logo">
+    <img src="site_libs/quarto-contrib/quarto-project/posit-dev/posit-docs/assets/images/posit-icon-fullcolor.svg" alt="Posit Documentation" class="navbar-logo light-content">
+    <img src="site_libs/quarto-contrib/quarto-project/posit-dev/posit-docs/assets/images/posit-icon-fullcolor.svg" alt="Posit Documentation" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Posit Publisher</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link active" href="./vscode.html" aria-current="page"> 
+<span class="menu-text">VS Code Guide</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./configuration.html"> 
+<span class="menu-text">Configuration</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./collaboration.html"> 
+<span class="menu-text">Collaboration</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./troubleshooting.html"> 
+<span class="menu-text">Troubleshooting</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./changelog.html"> 
+<span class="menu-text">Changelog</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-help" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Help</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-help">    
+        <li>
+    <a class="dropdown-item" href="https://docs.posit.co">
+ <span class="dropdown-text">Return to Posit Docs</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://support.posit.co/hc/en-us/">
+ <span class="dropdown-text">Posit Support</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+    <a href="https://github.com/posit-dev/publisher" title="" class="quarto-navigation-tool px-1" aria-label=""><i class="bi bi-github"></i></a>
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="99">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#tutorial" id="toc-tutorial" class="nav-link active" data-scroll-target="#tutorial">Tutorial</a>
+  <ul class="collapse">
+  <li><a href="#opening-the-ui" id="toc-opening-the-ui" class="nav-link" data-scroll-target="#opening-the-ui">Opening the UI</a></li>
+  <li><a href="#home" id="toc-home" class="nav-link" data-scroll-target="#home">Home</a></li>
+  <li><a href="#setting-up-python-requirements" id="toc-setting-up-python-requirements" class="nav-link" data-scroll-target="#setting-up-python-requirements">Setting up Python Requirements</a></li>
+  <li><a href="#r-packages" id="toc-r-packages" class="nav-link" data-scroll-target="#r-packages">R Packages</a></li>
+  <li><a href="#ready-to-deploy" id="toc-ready-to-deploy" class="nav-link" data-scroll-target="#ready-to-deploy">Ready to Deploy</a></li>
+  </ul></li>
+  <li><a href="#other-views-and-features" id="toc-other-views-and-features" class="nav-link" data-scroll-target="#other-views-and-features">Other Views and Features</a>
+  <ul class="collapse">
+  <li><a href="#deploy-via-entrypoint" id="toc-deploy-via-entrypoint" class="nav-link" data-scroll-target="#deploy-via-entrypoint">Deploy via Entrypoint</a></li>
+  <li><a href="#multiple-deployments" id="toc-multiple-deployments" class="nav-link" data-scroll-target="#multiple-deployments">Multiple Deployments</a></li>
+  <li><a href="#updating-previously-deployed-content" id="toc-updating-previously-deployed-content" class="nav-link" data-scroll-target="#updating-previously-deployed-content">Updating Previously Deployed Content</a></li>
+  <li><a href="#project-files" id="toc-project-files" class="nav-link" data-scroll-target="#project-files">Project Files</a></li>
+  <li><a href="#secrets" id="toc-secrets" class="nav-link" data-scroll-target="#secrets">Secrets</a></li>
+  <li><a href="#python-packages" id="toc-python-packages" class="nav-link" data-scroll-target="#python-packages">Python Packages</a></li>
+  <li><a href="#r-packages-1" id="toc-r-packages-1" class="nav-link" data-scroll-target="#r-packages-1">R Packages</a></li>
+  <li><a href="#credentials" id="toc-credentials" class="nav-link" data-scroll-target="#credentials">Credentials</a></li>
+  <li><a href="#help-and-feedback" id="toc-help-and-feedback" class="nav-link" data-scroll-target="#help-and-feedback">Help and Feedback</a></li>
+  <li><a href="#posit-publisher-logs" id="toc-posit-publisher-logs" class="nav-link" data-scroll-target="#posit-publisher-logs">Posit Publisher Logs</a></li>
+  <li><a href="#other-logs" id="toc-other-logs" class="nav-link" data-scroll-target="#other-logs">Other Logs</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">VS Code Extension</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="tutorial" class="level2">
+<h2 class="anchored" data-anchor-id="tutorial">Tutorial</h2>
+<section id="opening-the-ui" class="level3">
+<h3 class="anchored" data-anchor-id="opening-the-ui">Opening the UI</h3>
+<p>In VSCode, open the folder containing the project you want to deploy.</p>
+<p>Open the <em>Posit Publisher</em> UI by clicking the icon in the activity bar.</p>
+<p><img src="https://cdn.posit.co/publisher/assets/img/new-icon.png" class="img-fluid"></p>
+</section>
+<section id="home" class="level3">
+<h3 class="anchored" data-anchor-id="home">Home</h3>
+<p>The Home view shows information about the selected deployment destination.</p>
+<p>To create your first deployment, click the Add Deployment button.</p>
+<p><img src="https://cdn.posit.co/publisher/assets/img/new-home-view-2.png" class="img-fluid"></p>
+<p>This will take you through the process of creating a new deployment, which includes a credential, configuration, and content record.</p>
+<ul>
+<li>A credential defines the server you will deploy to and the API key that will be used to authenticate you. Once you have created a credential, you can use it for all of your deployments to that server.</li>
+<li>A configuration file describes how your project will be deployed. If the extension detects more than one possible project type, you will be asked which one to use when creating the configuration file.</li>
+<li>A content record describes where your project is going to be deployed, and records the settings used for that deployment and the result.</li>
+</ul>
+<blockquote class="blockquote">
+<p>[!TIP] If you have the <a href="https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml">Even Better TOML extension</a> installed, VSCode will show tooltips for the fields. It will also validate the structure and contents of the configuration file using the provided schema.</p>
+</blockquote>
+<p><img src="https://cdn.posit.co/publisher/assets/img/configuration-file-tooltip.png" class="img-fluid"></p>
+</section>
+<section id="setting-up-python-requirements" class="level3">
+<h3 class="anchored" data-anchor-id="setting-up-python-requirements">Setting up Python Requirements</h3>
+<p>Before you can deploy a Python project, you must set up the requirements file for your project. If you don’t already have a <code>requirements.txt</code> you can open the Requirements view and click the <code>Scan</code> button to generate one. Review the generated requirements file to ensure it includes all the packages your project needs.</p>
+<p><img src="https://cdn.posit.co/publisher/assets/img/python-packages-scan.png" class="img-fluid"></p>
+</section>
+<section id="r-packages" class="level3">
+<h3 class="anchored" data-anchor-id="r-packages">R Packages</h3>
+<p>If a <code>renv.lock</code> file is provided, Publisher reads package information directly from the lockfile (no local <code>renv</code> library required to publish).</p>
+<p>If a lockfile is not provided Publisher will try to detect dependencies from the code itself.</p>
+<p>In case you want Publisher to read dependencies from the <code>renv</code> library, set <code>packages_from_library = true</code> under <code>[r]</code> in your configuration.</p>
+</section>
+<section id="ready-to-deploy" class="level3">
+<h3 class="anchored" data-anchor-id="ready-to-deploy">Ready to Deploy</h3>
+<p>You are all set to Deploy!</p>
+<p>Click the <code>Deploy Your Project</code> button in the Home view to start the deployment process.</p>
+<p><img src="https://cdn.posit.co/publisher/assets/img/deploy-your-project-4.png" class="img-fluid"></p>
+<p>During deployment, the extension will show a progress window with the status of the deployment. Once the deployment completes, the result will be displayed in the Home view.</p>
+<p><img src="https://cdn.posit.co/publisher/assets/img/deployment-successful2.png" class="img-fluid"></p>
+<hr>
+</section>
+</section>
+<section id="other-views-and-features" class="level2">
+<h2 class="anchored" data-anchor-id="other-views-and-features">Other Views and Features</h2>
+<section id="deploy-via-entrypoint" class="level3">
+<h3 class="anchored" data-anchor-id="deploy-via-entrypoint">Deploy via Entrypoint</h3>
+<p>You can deploy or create a new deployment directly from an open file. If it is a valid entrypoint a Posit Publisher button will appear in the editor menu.</p>
+<p><img src="https://cdn.posit.co/publisher/assets/img/new-entrypoint-button.png" class="img-fluid"></p>
+</section>
+<section id="multiple-deployments" class="level3">
+<h3 class="anchored" data-anchor-id="multiple-deployments">Multiple Deployments</h3>
+<p>You can create multiple deployments for different purposes. For example, you can use a staging deployment for testing before creating or updating a production deployment that is shared with your users.</p>
+<p>Clicking the <code>Deployment</code> dropdown lets you choose which deployment to target.</p>
+<p><img src="https://cdn.posit.co/publisher/assets/img/deploy-your-project-4.png" class="img-fluid"></p>
+<p>Then choose from the displayed list.</p>
+<p><img src="https://cdn.posit.co/publisher/assets/img/select-deployment-2.png" class="img-fluid"></p>
+</section>
+<section id="updating-previously-deployed-content" class="level3">
+<h3 class="anchored" data-anchor-id="updating-previously-deployed-content">Updating Previously Deployed Content</h3>
+<p>If you have previously deployed content on Connect that you want to update, but you don’t already have a Deployment and Configuration file setup, you can use a prompt in the Home View to allow for this.</p>
+<p><img src="https://cdn.posit.co/publisher/assets/img/update-previous-deployment.png" class="img-fluid"></p>
+<p>After creating a new deployment in the extension pressing “update that previous deployment” will prompt you with the content URL. Once provided your new deployment will be setup to update that content URL, rather than creating a new deployment entirely.</p>
+</section>
+<section id="project-files" class="level3">
+<h3 class="anchored" data-anchor-id="project-files">Project Files</h3>
+<p>This view shows the files in your workspace:</p>
+<ul>
+<li>Included files show as checked and will be included in your deployment. They are sent to the server as part of the uploaded content.</li>
+<li>Excluded files show as unchecked and will not be included in your deployment. The tooltip on an excluded file will indicate the reason it is excluded. Some files are excluded by the publisher and cannot be added.</li>
+</ul>
+<p><img src="https://cdn.posit.co/publisher/assets/img/project-files-tree-view.png" class="img-fluid"></p>
+<p>The files included in your project are controlled by the <code>files</code> list in the deployment configuration file. The buttons in the UI update that list. If you have more than one destination with different configuration files, they can have different sets of included and excluded files.</p>
+<p>The <code>files</code> list accepts wildcards in <a href="https://git-scm.com/docs/gitignore"><code>.gitignore</code> format</a>. For example, to include all Python source files from your project directory, you can use <code>*.py</code>. Exclude files (or wildcard patterns) by prefixing them with <code>!</code>. If a file matches multiple entries, the last match wins. For example, you can exclude all CSV files except <code>data.csv</code> with the configuration entry:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">files</span> <span class="op">=</span> <span class="op">[</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"*"</span><span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"!*.csv"</span><span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"data.csv"</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="op">]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="secrets" class="level3">
+<h3 class="anchored" data-anchor-id="secrets">Secrets</h3>
+<p>You can setup Secrets for your project in the Secrets view.</p>
+<p>Secrets are name-value pairs that you want to be available at runtime for content on the server. However, unlike environment variables, the value associated with a secret is considered “sensitive”, and should not be stored in the configuration file itself.</p>
+<p>Secret names are defined in the Configuration file using the <code>secrets</code> field. They can be added by clicking the <code>+</code> button in the Secrets view or by directly editing the configuration file.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">secrets</span> <span class="op">=</span> <span class="op">[</span><span class="st">'</span><span class="vs">API_KEY</span><span class="st">'</span><span class="op">,</span> <span class="st">'</span><span class="vs">_DB_PASSWORD</span><span class="st">'</span><span class="op">]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The names indicate what Secrets are required for the deployment. When they are sent up to the Connect server they become Environment Variables.</p>
+<p><img src="https://cdn.posit.co/publisher/assets/img/secrets-view.png" class="img-fluid"></p>
+<p>Secrets are sent to the Connect server only when a value is supplied to avoid overwriting any values already set.</p>
+<p>To set a Secret click the <code>Edit Value</code> button (the pencil icon) for the Secret you’d like to set and enter the value. The value is stored in the extension and is sent up during your next deploy.</p>
+<p>A badge indicates how many Secrets are set to send in your next deploy.</p>
+</section>
+<section id="python-packages" class="level3">
+<h3 class="anchored" data-anchor-id="python-packages">Python Packages</h3>
+<p>This view shows the contents of the requirements file in your project directory. It’s required when deploying a Python project. By default, the filename is <code>requirements.txt</code>. You can specify an alternate name in the deployment configuration file using the <code>package_file</code> field under the <code>[python]</code> section.</p>
+<p><img src="https://cdn.posit.co/publisher/assets/img/python-packages.png" class="img-fluid"></p>
+<p>If you don’t have a requirements file yet, you’ll see a message prompting you to scan it. Clicking Scan will scan your project code for imports and attempt to map those to package names and versions using the package metadata from your local Python installation. After scanning, verify the contents of the generated requirements file and make any changes needed.</p>
+<p>If you already have a requirements file, you can scan your code again using the eye icon in the Requirements view.</p>
+</section>
+<section id="r-packages-1" class="level3">
+<h3 class="anchored" data-anchor-id="r-packages-1">R Packages</h3>
+<p>This view shows the contents of the <code>renv.lock</code> file in your project directory. It’s required when deploying an R project. By default, the filename is <code>renv.lock</code>. You can specify an alternate name in the deployment configuration file using the <code>package_file</code> field under the <code>[r]</code> section.</p>
+<p><img src="https://cdn.posit.co/publisher/assets/img/r-packages.png" class="img-fluid"></p>
+<p>If your <code>renv.lock</code> file and library are out of sync, you can still publish by default because Publisher uses the lockfile. However, it’s good practice to keep them in sync: run <code>renv::snapshot()</code> (update lockfile from library) or <code>renv::restore()</code> (update library from lockfile). Clicking the “eye” icon in the R Packages view runs <code>renv::snapshot()</code> for you.</p>
+</section>
+<section id="credentials" class="level3">
+<h3 class="anchored" data-anchor-id="credentials">Credentials</h3>
+<p>This view lists the credentials you have defined. You need a credential for each Connect server you want to deploy to; each credential includes the server URL and an API key. Credentials are securely stored by VS Code.</p>
+<p>To add a credential for a new server, click the <code>+</code> button. To remove a credential, right-click on it and select <code>Delete</code>.</p>
+<p><img src="https://cdn.posit.co/publisher/assets/img/credentials2.png" class="img-fluid"></p>
+<p>For instructions on how to create a Connect API key, see the <a href="https://docs.posit.co/connect/user/api-keys/index.html#api-keys-creating">Connect documentation</a>.</p>
+<section id="first-time-deploying" class="level4">
+<h4 class="anchored" data-anchor-id="first-time-deploying">First time deploying</h4>
+<p>If a deployment is pointed to a server that you have not deployed to before, you may need to set up a credential.</p>
+<p>Posit Publisher makes this easy by prompting you to <strong>Create a new Credential</strong> when the selected deployment requires a credential you don’t have.</p>
+<p><img src="https://cdn.posit.co/publisher/assets/img/publisher-missing-credential.png" class="img-fluid"></p>
+</section>
+</section>
+<section id="help-and-feedback" class="level3">
+<h3 class="anchored" data-anchor-id="help-and-feedback">Help and Feedback</h3>
+<p>This view contains links to this documentation and other resources.</p>
+</section>
+<section id="posit-publisher-logs" class="level3">
+<h3 class="anchored" data-anchor-id="posit-publisher-logs">Posit Publisher Logs</h3>
+<p>The Posit Publisher logs are available in the VSCode bottom panel.</p>
+<p><img src="https://cdn.posit.co/publisher/assets/img/deployment-logs-view2.png" class="img-fluid"></p>
+<p>There are a few ways to easily get to them:</p>
+<ul>
+<li>Run <code>Posit Publisher Logs: Focus on Logs View</code> from the command palette.</li>
+<li>Click the <code>Show Logs</code> button in the error notification that appears on a deployment failure.</li>
+<li>Select <code>Go to Publishing Log</code> in the status area ellipsis menu.</li>
+</ul>
+</section>
+<section id="other-logs" class="level3">
+<h3 class="anchored" data-anchor-id="other-logs">Other Logs</h3>
+<p>Clicking the ellipsis menu in the status area provides options to view additional options which may be helpful when troubleshooting.</p>
+<p><img src="https://cdn.posit.co/publisher/assets/img/status-menu.png" class="img-fluid"></p>
+<ul>
+<li><code>Browse Deployment Server</code> opens a browser window showing the content list on the Connect server.</li>
+<li><code>Show Content Log</code> opens a browser window showing the most recent log for your content on the Connect server.</li>
+<li><code>Go to Debug Log</code> opens the Posit Publisher debug logs in the VSCode output panel.</li>
+<li><code>Go to Publishing Log</code> opens the Posit Publisher Logs panel.</li>
+</ul>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/posit-dev\.github\.io\/publisher");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+            // default icon
+            link.classList.add("external");
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
