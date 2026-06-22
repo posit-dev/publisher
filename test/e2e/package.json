@@ -27,6 +27,6 @@
     "eslint-plugin-mocha": "^11.3.0",
     "playwright": "^1.61.0",
     "prettier": "^3.8.4",
-    "smol-toml": "^1.6.1"
+    "smol-toml": "^1.7.0"
   }
 }
