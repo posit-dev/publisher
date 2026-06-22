@@ -682,7 +682,7 @@
     "globals": "^17.6.0",
     "mocha": "^11.7.6",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.61.0",
+    "typescript-eslint": "^8.61.1",
     "vitest": "^4.1.9"
   },
   "dependencies": {
@@ -695,12 +695,12 @@
     "axios": "^1.18.0",
     "debounce": "^3.0.0",
     "entities": "^8.0.0",
-    "filenamify": "^7.0.1",
+    "filenamify": "^7.0.2",
     "js-yaml": "^4.2.0",
     "jsonwebtoken": "^9.0.3",
     "picomatch": "^4.0.4",
     "retry": "^0.13.1",
-    "smol-toml": "^1.6.1",
+    "smol-toml": "^1.7.0",
     "snowflake-sdk": "2.4.3",
     "tar-stream": "^3.2.0",
     "vscode-uri": "^3.0.8"
