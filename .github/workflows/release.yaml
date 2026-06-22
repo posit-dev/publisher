@@ -12,7 +12,7 @@ jobs:
     name: Verify tag is on main or release branch
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/verify-tag-ancestry
   package:
     needs: verify-tag
@@ -24,7 +24,7 @@ jobs:
     outputs:
       prerelease: ${{ steps.get-prerelease.outputs.prerelease }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: extractions/setup-just@v4
