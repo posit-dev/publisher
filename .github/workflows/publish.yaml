@@ -12,7 +12,7 @@ jobs:
     name: Verify tag is on main branch
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/verify-tag-ancestry
   package:
     needs: verify-tag
@@ -22,7 +22,7 @@ jobs:
       - package
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: extractions/setup-just@v4
       - uses: actions/setup-node@v6
         with:
@@ -54,7 +54,7 @@ jobs:
       - package
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: extractions/setup-just@v4
       - uses: actions/setup-node@v6
         with:

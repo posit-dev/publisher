@@ -21,7 +21,7 @@ jobs:
       has_errors: ${{ steps.run-audit.outputs.has_errors }}
       json_results: ${{ steps.run-audit.outputs.json_results }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -73,7 +73,7 @@ jobs:
           echo "Actor ${{ github.actor }} authorized with '$PERMISSION' permission"
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
