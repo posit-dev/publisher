@@ -98,7 +98,7 @@ describe("getSummaryStringFromError", () => {
           statusText: "Bad Request",
           headers: new AxiosHeaders(),
           config: { headers: new AxiosHeaders(), baseURL: "localhost:9874" },
-          data: "open /Users/billsager/dev/publishing-client/test/sample-content/shinyapp/.posit/publish/shinyapp-file-check-DUQ4.toml: operation not permitted",
+          data: "open /project/shinyapp/.posit/publish/shinyapp-file-check-DUQ4.toml: operation not permitted",
         },
       );
       const summary = getSummaryStringFromError(
@@ -106,7 +106,7 @@ describe("getSummaryStringFromError", () => {
         readOnlyError,
       );
       expect(summary).toBe(
-        "open /Users/billsager/dev/publishing-client/test/sample-content/shinyapp/.posit/publish/shinyapp-file-check-DUQ4.toml: operation not permitted",
+        "open /project/shinyapp/.posit/publish/shinyapp-file-check-DUQ4.toml: operation not permitted",
       );
     });
   });
