@@ -315,6 +315,7 @@ export async function connectCloudPublish({
         }
       },
       syntheticFiles,
+      signal,
     );
     bundleTmpDir = path.dirname(bundlePath);
     record.files = getFilenames(finalManifest);

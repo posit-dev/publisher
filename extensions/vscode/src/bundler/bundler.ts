@@ -37,7 +37,7 @@ export async function createBundle(
     entrypointFile = path.basename(projectPath);
   }
 
-  const files = await collectFiles(baseDir, patterns);
+  const files = await collectFiles(baseDir, patterns, options.signal);
 
   // If deploying a single file, ensure it's included even if patterns excluded it
   if (entrypointFile) {
@@ -61,5 +61,11 @@ export async function createBundle(
 
   onProgress?.({ kind: "sourceDir", sourceDir: baseDir });
 
-  return createArchive(files, manifest, onProgress, options.syntheticFiles);
+  return createArchive(
+    files,
+    manifest,
+    onProgress,
+    options.syntheticFiles,
+    options.signal,
+  );
 }

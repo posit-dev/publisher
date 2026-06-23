@@ -549,6 +549,7 @@ export async function connectPublish({
         }
       },
       syntheticFiles,
+      signal,
     );
     bundleTmpDir = path.dirname(bundlePath);
     record.files = getFilenames(finalManifest);

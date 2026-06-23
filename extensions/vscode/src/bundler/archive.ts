@@ -35,6 +35,7 @@ export async function createArchive(
   manifest: Manifest,
   onProgress?: BundleProgressCallback,
   syntheticFiles?: Map<string, Buffer>,
+  signal?: AbortSignal,
 ): Promise<{
   bundlePath: string;
   bundleSize: number;
@@ -58,10 +59,13 @@ export async function createArchive(
       updatedManifest,
       onProgress,
       syntheticFiles,
+      signal,
     );
   } catch (err) {
-    // Don't leak a partial bundle if archive creation fails. Cleanup is
-    // best-effort — never let a removal failure mask the original error.
+    // Don't leak a partial bundle if archive creation fails — including when
+    // the deployment is canceled mid-creation, which makes writeArchive throw.
+    // Cleanup is best-effort — never let a removal failure mask the original
+    // error.
     await fs.promises
       .rm(tmpDir, { recursive: true, force: true })
       .catch(() => {});
@@ -75,6 +79,7 @@ async function writeArchive(
   updatedManifest: Manifest,
   onProgress?: BundleProgressCallback,
   syntheticFiles?: Map<string, Buffer>,
+  signal?: AbortSignal,
 ): Promise<{
   bundlePath: string;
   bundleSize: number;
@@ -99,99 +104,123 @@ async function writeArchive(
     },
   });
 
-  const pipelinePromise = pipeline(pack, gzip, hashStream, out);
-  // If assembling the archive below throws (e.g. a source file is missing),
-  // the awaits in the loop reject before we reach `await pipelinePromise`,
-  // leaving the pipeline's own rejection unobserved. Attach a no-op handler so
-  // that secondary rejection can never surface as an unhandled rejection; the
-  // original error is still propagated by the awaits below, which keep their
-  // own handle on this promise (so genuine write failures are not masked).
+  // Passing the signal lets the write/compress side abort promptly too —
+  // notably during the final flush after `pack.finalize()`, which the loop's
+  // own cancellation checks don't cover. (The per-file read streams are not
+  // part of this pipeline; they get their own signal below.)
+  const pipelinePromise = pipeline(pack, gzip, hashStream, out, { signal });
+  // If assembling the archive below throws (e.g. a source file is missing, or
+  // the deployment is canceled), the awaits in the loop reject before we reach
+  // `await pipelinePromise`, leaving the pipeline's own rejection unobserved.
+  // Attach a no-op handler so that secondary rejection can never surface as an
+  // unhandled rejection; the original error is still propagated by the awaits
+  // below, which keep their own handle on this promise (so genuine write
+  // failures are not masked).
   pipelinePromise.catch(() => {});
 
-  let fileCount = 0;
-  let totalSize = 0;
+  try {
+    let fileCount = 0;
+    let totalSize = 0;
 
-  for (const entry of files) {
-    if (entry.isDirectory) {
-      // tar-stream treats directory entries as "void" — they auto-finish
-      // internally in _continueOpen(), so no .end(), callback, or empty
-      // buffer is needed. See Sink._isVoid in tar-stream/pack.js.
-      pack.entry({ name: entry.relativePath + "/", type: "directory" });
-      continue;
-    }
+    for (const entry of files) {
+      // Stop promptly if the deployment was canceled between files.
+      signal?.throwIfAborted();
 
-    // Remap staged renv.lock to bundle root
-    const archiveName =
-      entry.relativePath === RENV_LOCK_STAGED_PATH
-        ? "renv.lock"
-        : entry.relativePath;
+      if (entry.isDirectory) {
+        // tar-stream treats directory entries as "void" — they auto-finish
+        // internally in _continueOpen(), so no .end(), callback, or empty
+        // buffer is needed. See Sink._isVoid in tar-stream/pack.js.
+        pack.entry({ name: entry.relativePath + "/", type: "directory" });
+        continue;
+      }
 
-    // Stream file contents through both the tar entry and MD5 hash
-    // simultaneously and avoid buffering entire files in memory.
-    const hash = crypto.createHash("md5");
-    const entryStream = pack.entry({
-      name: archiveName,
-      size: entry.size,
-      mode: entry.mode,
-    });
-    const fileStream = fs.createReadStream(entry.absolutePath);
-    fileStream.on("data", (chunk) => hash.update(chunk));
-    fileStream.on("error", (err) => entryStream.destroy(err));
-    await finished(fileStream.pipe(entryStream));
-    const md5 = hash.digest();
+      // Remap staged renv.lock to bundle root
+      const archiveName =
+        entry.relativePath === RENV_LOCK_STAGED_PATH
+          ? "renv.lock"
+          : entry.relativePath;
 
-    addFile(updatedManifest, archiveName, md5);
-    fileCount++;
-    totalSize += entry.size;
-    onProgress?.({ kind: "file", path: archiveName, size: entry.size });
-  }
-
-  // Add synthetic (in-memory) files to the bundle
-  if (syntheticFiles) {
-    for (const [name, content] of syntheticFiles) {
+      // Stream file contents through both the tar entry and MD5 hash
+      // simultaneously and avoid buffering entire files in memory. Passing the
+      // signal aborts an in-progress copy of a large file mid-stream rather
+      // than only between files.
       const hash = crypto.createHash("md5");
-      hash.update(content);
+      const entryStream = pack.entry({
+        name: archiveName,
+        size: entry.size,
+        mode: entry.mode,
+      });
+      const fileStream = fs.createReadStream(entry.absolutePath, { signal });
+      fileStream.on("data", (chunk) => hash.update(chunk));
+      fileStream.on("error", (err) => entryStream.destroy(err));
+      await finished(fileStream.pipe(entryStream));
       const md5 = hash.digest();
 
-      const syntheticEntry = pack.entry({
-        name,
-        size: content.length,
-        mode: 0o666,
-      });
-      syntheticEntry.end(content);
-      await finished(syntheticEntry);
-
-      addFile(updatedManifest, name, md5);
+      addFile(updatedManifest, archiveName, md5);
       fileCount++;
-      totalSize += content.length;
-      onProgress?.({ kind: "file", path: name, size: content.length });
+      totalSize += entry.size;
+      onProgress?.({ kind: "file", path: archiveName, size: entry.size });
     }
+
+    // Add synthetic (in-memory) files to the bundle
+    if (syntheticFiles) {
+      for (const [name, content] of syntheticFiles) {
+        signal?.throwIfAborted();
+
+        const hash = crypto.createHash("md5");
+        hash.update(content);
+        const md5 = hash.digest();
+
+        const syntheticEntry = pack.entry({
+          name,
+          size: content.length,
+          mode: 0o666,
+        });
+        syntheticEntry.end(content);
+        await finished(syntheticEntry);
+
+        addFile(updatedManifest, name, md5);
+        fileCount++;
+        totalSize += content.length;
+        onProgress?.({ kind: "file", path: name, size: content.length });
+      }
+    }
+
+    onProgress?.({ kind: "summary", files: fileCount, totalBytes: totalSize });
+
+    // Add manifest.json as the final entry
+    signal?.throwIfAborted();
+    const manifestJSON = manifestToJSON(updatedManifest);
+    const manifestEntry = pack.entry({
+      name: "manifest.json",
+      size: manifestJSON.length,
+      mode: 0o666,
+    });
+    manifestEntry.end(manifestJSON);
+    await finished(manifestEntry);
+
+    pack.finalize();
+    await pipelinePromise;
+
+    const { size: bundleSize } = await fs.promises.stat(bundlePath);
+    const bundleChecksum = bundleHash.digest("base64");
+
+    return {
+      bundlePath,
+      bundleSize,
+      bundleChecksum,
+      manifest: updatedManifest,
+      fileCount,
+      totalSize,
+    };
+  } catch (err) {
+    // On any failure (including cancellation), tear down the pipeline so the
+    // write stream's handle on bundle.tar.gz is released before the caller
+    // removes the temp directory — otherwise the removal fails on Windows,
+    // where an open file handle blocks deletion. Destroying `pack` propagates
+    // through gzip/hashStream to close `out`; wait for it to settle.
+    pack.destroy();
+    await pipelinePromise.catch(() => {});
+    throw err;
   }
-
-  onProgress?.({ kind: "summary", files: fileCount, totalBytes: totalSize });
-
-  // Add manifest.json as the final entry
-  const manifestJSON = manifestToJSON(updatedManifest);
-  const manifestEntry = pack.entry({
-    name: "manifest.json",
-    size: manifestJSON.length,
-    mode: 0o666,
-  });
-  manifestEntry.end(manifestJSON);
-  await finished(manifestEntry);
-
-  pack.finalize();
-  await pipelinePromise;
-
-  const { size: bundleSize } = await fs.promises.stat(bundlePath);
-  const bundleChecksum = bundleHash.digest("base64");
-
-  return {
-    bundlePath,
-    bundleSize,
-    bundleChecksum,
-    manifest: updatedManifest,
-    fileCount,
-    totalSize,
-  };
 }

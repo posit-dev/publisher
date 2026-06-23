@@ -94,6 +94,37 @@ describe("createBundle", () => {
     expect(result.manifest.files["app.py"]?.checksum).toMatch(/^[0-9a-f]+$/);
   });
 
+  it("rejects without leaking a temp dir when the signal is aborted", async () => {
+    makeFile("app.py", "print('hello')");
+
+    const before = new Set(
+      fs
+        .readdirSync(os.tmpdir())
+        .filter((name) => name.startsWith("posit-publisher-bundle-")),
+    );
+
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      createBundle({
+        projectPath: tmpDir,
+        manifest: newManifest(),
+        signal: controller.signal,
+      }),
+    ).rejects.toThrow(/abort/i);
+
+    // The aborted walk runs before any bundle temp dir is created, so none
+    // should be left behind.
+    const leaked = fs
+      .readdirSync(os.tmpdir())
+      .filter(
+        (name) =>
+          name.startsWith("posit-publisher-bundle-") && !before.has(name),
+      );
+    expect(leaked).toEqual([]);
+  });
+
   it("includes manifest.json in the tar archive", async () => {
     makeFile("app.py", "print('hello')");
 
@@ -577,6 +608,73 @@ describe("createArchive error cleanup", () => {
     await expect(createArchive(files, newManifest())).rejects.toThrow(/ENOENT/);
 
     // No new posit-publisher-bundle-* temp dir should be left behind.
+    const leaked = [...listBundleTmpDirs()].filter((name) => !before.has(name));
+    expect(leaked).toEqual([]);
+  });
+
+  // Build a FileEntry for a real file created under the test tmpDir.
+  function fileEntry(relativePath: string): FileEntry {
+    const absolutePath = path.join(tmpDir, relativePath);
+    const stats = fs.statSync(absolutePath);
+    return {
+      relativePath,
+      absolutePath,
+      isDirectory: false,
+      size: stats.size,
+      mode: stats.mode & 0o777,
+    };
+  }
+
+  it("removes the temp dir when canceled before archiving starts", async () => {
+    // Path with a space to exercise cross-platform path handling.
+    makeFile("file with spaces.py", "print('hi')");
+    const files = [fileEntry("file with spaces.py")];
+
+    const before = listBundleTmpDirs();
+
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      createArchive(
+        files,
+        newManifest(),
+        undefined,
+        undefined,
+        controller.signal,
+      ),
+    ).rejects.toThrow();
+
+    const leaked = [...listBundleTmpDirs()].filter((name) => !before.has(name));
+    expect(leaked).toEqual([]);
+  });
+
+  it("removes the temp dir when canceled during archiving", async () => {
+    makeFile("first file.py", "a".repeat(1000));
+    makeFile("second file.py", "b".repeat(1000));
+    const files = [fileEntry("first file.py"), fileEntry("second file.py")];
+
+    const before = listBundleTmpDirs();
+
+    // Cancel as soon as the first file has been added; the next loop iteration
+    // observes the aborted signal and throws, triggering cleanup.
+    const controller = new AbortController();
+    const onProgress = (event: BundleProgressEvent) => {
+      if (event.kind === "file") {
+        controller.abort();
+      }
+    };
+
+    await expect(
+      createArchive(
+        files,
+        newManifest(),
+        onProgress,
+        undefined,
+        controller.signal,
+      ),
+    ).rejects.toThrow();
+
     const leaked = [...listBundleTmpDirs()].filter((name) => !before.has(name));
     expect(leaked).toEqual([]);
   });

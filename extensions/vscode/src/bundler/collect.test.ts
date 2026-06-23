@@ -542,3 +542,46 @@ describe("collectFiles with symlinks", () => {
     expect(files).toEqual(["app.py"]);
   });
 });
+
+describe("collectFiles cancellation", () => {
+  it("throws immediately when the signal is already aborted", async () => {
+    makeFile("app.py");
+
+    const controller = new AbortController();
+    controller.abort();
+
+    // Hits the guard at the top of collectFiles, before the walk starts.
+    await expect(collectFiles(tmpDir, [], controller.signal)).rejects.toThrow(
+      /abort/i,
+    );
+  });
+
+  it("aborts mid-walk when the signal fires after the walk begins", async () => {
+    // Dir name with a space exercises cross-platform path handling.
+    makeFile(path.join("dir with space", "a.py"));
+    makeFile(path.join("dir with space", "b.py"));
+    makeFile("c.py");
+
+    const controller = new AbortController();
+    // collectFiles runs its own throwIfAborted() synchronously (signal not yet
+    // aborted) and then yields at the first `await`. Aborting right after means
+    // only walkDirectory's per-entry guard observes the abort.
+    const promise = collectFiles(tmpDir, [], controller.signal);
+    controller.abort();
+
+    await expect(promise).rejects.toThrow(/abort/i);
+  });
+
+  it("collects normally when a non-aborted signal is provided", async () => {
+    makeFile("app.py");
+    makeFile(path.join("subdir", "helper.py"));
+
+    const controller = new AbortController();
+    const entries = await collectFiles(tmpDir, [], controller.signal);
+    const files = entries
+      .filter((e) => !e.isDirectory)
+      .map((e) => e.relativePath)
+      .sort();
+    expect(files).toEqual(["app.py", "subdir/helper.py"]);
+  });
+});

@@ -110,6 +110,12 @@ export type BundleOptions = {
    * These are added to the tar and registered in the manifest like regular files.
    */
   syntheticFiles?: Map<string, Buffer>;
+  /**
+   * Optional abort signal. When aborted (e.g. the user cancels the deployment),
+   * archive creation stops promptly and its temporary directory is removed
+   * rather than running to completion.
+   */
+  signal?: AbortSignal;
 };
 
 export type BundleResult = {

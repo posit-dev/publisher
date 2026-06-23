@@ -197,6 +197,7 @@ async function walkDirectory(
   rules: PatternRule[],
   entries: FileEntry[],
   visitedDirs: Set<string>,
+  signal?: AbortSignal,
 ): Promise<void> {
   let dirEntries: Dirent[];
   try {
@@ -212,6 +213,11 @@ async function walkDirectory(
   dirEntries.sort((a, b) => a.name.localeCompare(b.name));
 
   for (const entry of dirEntries) {
+    // Stop promptly if the deployment was canceled mid-walk. Must stay at the
+    // top of the loop, outside the try/catch blocks below that deliberately
+    // swallow EACCES/broken-symlink errors, so the abort isn't swallowed too.
+    signal?.throwIfAborted();
+
     const absolutePath = path.join(currentDir, entry.name);
     const isSymlink = entry.isSymbolicLink();
     let isDir: boolean;
@@ -271,7 +277,14 @@ async function walkDirectory(
         mode: 0o755,
       });
 
-      await walkDirectory(baseDir, absolutePath, rules, entries, visitedDirs);
+      await walkDirectory(
+        baseDir,
+        absolutePath,
+        rules,
+        entries,
+        visitedDirs,
+        signal,
+      );
     } else if (isFile) {
       const match = shouldInclude(relativePath, false, rules);
       // Files need an explicit inclusion match
@@ -331,11 +344,20 @@ function isPermissionError(err: unknown): boolean {
 export async function collectFiles(
   projectDir: string,
   filePatterns: string[],
+  signal?: AbortSignal,
 ): Promise<FileEntry[]> {
+  signal?.throwIfAborted();
   const patterns = filePatterns.length > 0 ? filePatterns : ["*"];
   const rules = compilePatterns(patterns);
   const entries: FileEntry[] = [];
   const visitedDirs = new Set<string>([await fs.realpath(projectDir)]);
-  await walkDirectory(projectDir, projectDir, rules, entries, visitedDirs);
+  await walkDirectory(
+    projectDir,
+    projectDir,
+    rules,
+    entries,
+    visitedDirs,
+    signal,
+  );
   return entries;
 }

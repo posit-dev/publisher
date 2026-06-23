@@ -365,6 +365,7 @@ export async function buildBundleArchive(
   lockfilePath: string | undefined,
   onBundleProgress?: BundleProgressCallback,
   syntheticFiles?: Map<string, Buffer>,
+  signal?: AbortSignal,
 ): Promise<{
   bundlePath: string;
   bundleSize: number;
@@ -395,6 +396,7 @@ export async function buildBundleArchive(
       filePatterns,
       onProgress: onBundleProgress,
       syntheticFiles,
+      signal,
     });
 
     return {
