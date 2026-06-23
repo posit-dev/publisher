@@ -1,5 +1,8 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import crypto from "crypto";
+import { Readable } from "stream";
+
 import {
   ConnectAPI,
   ContentID,
@@ -112,10 +115,17 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         return undefined;
 
       case Method.UploadBundle: {
+        const bundleData = params.bundleData as Uint8Array;
+        const checksum = crypto
+          .createHash("md5")
+          .update(bundleData)
+          .digest("base64");
         // Map id → bundleId to match contract expectations
         const { data } = await c.uploadBundle(
           ContentID(params.contentId as string),
-          params.bundleData as Uint8Array,
+          Readable.from(Buffer.from(bundleData)),
+          bundleData.length,
+          checksum,
         );
         return { bundleId: data.id };
       }
