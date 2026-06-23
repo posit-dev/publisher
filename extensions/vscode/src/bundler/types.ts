@@ -113,8 +113,16 @@ export type BundleOptions = {
 };
 
 export type BundleResult = {
-  /** The tar.gz bundle contents */
-  bundle: Buffer;
+  /**
+   * Filesystem path to the tar.gz bundle, written to a temporary directory.
+   * The caller owns this file and is responsible for deleting it (and its
+   * containing temp directory) once the bundle has been uploaded.
+   */
+  bundlePath: string;
+  /** Size of the tar.gz bundle file in bytes */
+  bundleSize: number;
+  /** Base64-encoded MD5 checksum of the entire tar.gz bundle file */
+  bundleChecksum: string;
   /** The manifest with the `files` section populated */
   manifest: Manifest;
   /** Number of files included in the bundle */

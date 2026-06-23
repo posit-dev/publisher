@@ -2,6 +2,7 @@
 
 import {
   afterAll,
+  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -10,7 +11,10 @@ import {
   vi,
 } from "vitest";
 import { writeFile, mkdir } from "node:fs/promises";
+import { existsSync, readdirSync, rmSync } from "node:fs";
+import * as os from "node:os";
 import path from "node:path";
+import { Readable } from "node:stream";
 
 import {
   connectCloudPublish,
@@ -39,6 +43,21 @@ import {
   watchCloudLogs,
 } from "@posit-dev/connect-cloud-api";
 
+// The bundler mock backs each bundle with a real temp dir. connectCloudPublish
+// removes it in its finally block, but a test that fails before reaching that
+// finally would leak the dir — sweep any leftovers after every test so they
+// don't accumulate. The prefix is unique to this test file so the sweep never
+// deletes a dir another test file's worker is still using in parallel.
+const BUNDLE_TMP_PREFIX = "publisher-bundle-test-ccloud-";
+afterEach(() => {
+  const t = os.tmpdir();
+  for (const name of readdirSync(t)) {
+    if (name.startsWith(BUNDLE_TMP_PREFIX)) {
+      rmSync(path.join(t, name), { recursive: true, force: true });
+    }
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
@@ -53,14 +72,53 @@ vi.mock("node:fs/promises", () => ({
   stat: vi.fn(),
 }));
 
+// Production streams the bundle via fs.createReadStream(bundlePath). In tests
+// the upload API is mocked and never consumes that stream, while the publish
+// flow removes the bundle's temp dir as soon as the upload mock returns. A
+// lazily-opened read stream can therefore lose a race with that removal and
+// emit an ENOENT with no listener — an unhandled exception (real axios
+// consumes the body before cleanup runs, so this is a test-only concern).
+// Attach a swallowing error handler to every bundle read stream so that race
+// can't surface as an unhandled error, while keeping every other fs API real —
+// notably fs.promises.rm, which the finally-block cleanup the tests assert on
+// uses.
+vi.mock("fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("fs")>();
+  return {
+    ...actual,
+    default: actual,
+    createReadStream: (filePath: string) => {
+      const stream = actual.createReadStream(filePath);
+      stream.on("error", () => {});
+      return stream;
+    },
+  };
+});
+
 // Mock the bundler
 vi.mock("../bundler/bundler", () => ({
-  createBundle: vi.fn().mockImplementation((options) => {
+  createBundle: vi.fn().mockImplementation(async (options) => {
     if (options.onProgress) {
       options.onProgress({ kind: "summary", files: 1, totalBytes: 100 });
     }
-    return Promise.resolve({
-      bundle: Buffer.from("fake-bundle"),
+    // The publish flow streams the bundle from this path and removes its temp
+    // directory afterward, so back it with a real throwaway file on disk. Only
+    // fs.createReadStream and node:fs/promises are mocked, so the real file is
+    // written, statted, and removed. The prefix must match BUNDLE_TMP_PREFIX
+    // so the per-test sweep finds any leftovers (kept in sync by hand — the
+    // hoisted mock factory can't reference module-level constants).
+    const os = await import("node:os");
+    const realFs = await import("node:fs");
+    const nodePath = await import("node:path");
+    const dir = realFs.mkdtempSync(
+      nodePath.join(os.tmpdir(), "publisher-bundle-test-ccloud-"),
+    );
+    const bundlePath = nodePath.join(dir, "bundle.tar.gz");
+    realFs.writeFileSync(bundlePath, "fake-bundle");
+    return {
+      bundlePath,
+      bundleSize: realFs.statSync(bundlePath).size,
+      bundleChecksum: "ZmFrZS1jaGVja3N1bQ==",
       manifest: {
         version: 1,
         metadata: { appmode: "python-shiny" },
@@ -69,7 +127,7 @@ vi.mock("../bundler/bundler", () => ({
       },
       fileCount: 1,
       totalSize: 100,
-    });
+    };
   }),
 }));
 
@@ -138,6 +196,17 @@ function makeConfig(
     validate: false,
     ...overrides,
   };
+}
+
+// Resolve the BundleResult returned by the (mocked) createBundle on its first
+// call, so tests can assert on the streamed bundle's path.
+async function firstBundleResult() {
+  const { createBundle } = await import("../bundler/bundler");
+  const result = vi.mocked(createBundle).mock.results[0];
+  if (!result || result.type !== "return") {
+    throw new Error("createBundle did not return a bundle");
+  }
+  return result.value;
 }
 
 function createMockApi(): ConnectCloudAPI {
@@ -543,8 +612,33 @@ describe("connectCloudPublish", () => {
 
     expect(api.uploadBundle).toHaveBeenCalledWith(
       "https://s3.example.com/upload",
-      expect.any(Uint8Array),
+      expect.any(Readable),
+      expect.any(Number),
     );
+  });
+
+  test("removes the streamed bundle's temp dir after a successful publish", async () => {
+    const opts = baseOptions();
+
+    const resultPromise = connectCloudPublish(opts);
+    await vi.runAllTimersAsync();
+    await resultPromise;
+
+    const bundle = await firstBundleResult();
+    expect(existsSync(path.dirname(bundle.bundlePath))).toBe(false);
+  });
+
+  test("removes the streamed bundle's temp dir when the upload fails", async () => {
+    const api = createMockApi();
+    vi.mocked(api.uploadBundle).mockRejectedValue(new Error("upload failed"));
+    const opts = baseOptions({ api });
+
+    const resultPromise = connectCloudPublish(opts);
+    await vi.runAllTimersAsync();
+    await expect(resultPromise).rejects.toThrow("upload failed");
+
+    const bundle = await firstBundleResult();
+    expect(existsSync(path.dirname(bundle.bundlePath))).toBe(false);
   });
 
   test("streams logs from log channel", async () => {

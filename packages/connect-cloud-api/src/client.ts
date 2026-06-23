@@ -1,5 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import { Readable } from "stream";
 import axios from "axios";
 import type { AxiosInstance } from "axios";
 
@@ -199,10 +200,28 @@ export class ConnectCloudAPI {
   /**
    * Uploads a bundle to a pre-signed URL.
    * This does not use the authenticated client since the URL is pre-signed.
+   *
+   * The body is streamed from the staged bundle file so uploads of arbitrary
+   * size never have to be buffered in memory. `contentLength` is already known
+   * from writing that temp file to disk (its byte size), so we pass it here
+   * rather than have axios try to derive it from the stream.
+   *
+   * `maxRedirects: 0` keeps axios on its native http/https transport, which
+   * truly streams the body. The default follow-redirects transport buffers the
+   * entire request body in memory (so it can replay it on a redirect), which
+   * would defeat streaming and exhaust memory on large bundles.
    */
-  async uploadBundle(uploadUrl: string, bundle: Uint8Array): Promise<void> {
-    await axios.post(uploadUrl, bundle, {
-      headers: { "Content-Type": "application/gzip" },
+  async uploadBundle(
+    uploadUrl: string,
+    body: Readable,
+    contentLength: number,
+  ): Promise<void> {
+    await axios.post(uploadUrl, body, {
+      headers: {
+        "Content-Type": "application/gzip",
+        "Content-Length": contentLength,
+      },
+      maxRedirects: 0,
     });
   }
 }

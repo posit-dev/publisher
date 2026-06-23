@@ -365,7 +365,12 @@ export async function buildBundleArchive(
   lockfilePath: string | undefined,
   onBundleProgress?: BundleProgressCallback,
   syntheticFiles?: Map<string, Buffer>,
-): Promise<{ bundle: Buffer; manifest: Manifest }> {
+): Promise<{
+  bundlePath: string;
+  bundleSize: number;
+  bundleChecksum: string;
+  manifest: Manifest;
+}> {
   const basePatterns = config.files?.length ? [...config.files] : ["*"];
   const extraPatterns: string[] = [];
   let stagedLockfile: string | undefined;
@@ -392,7 +397,12 @@ export async function buildBundleArchive(
       syntheticFiles,
     });
 
-    return { bundle: result.bundle, manifest: result.manifest };
+    return {
+      bundlePath: result.bundlePath,
+      bundleSize: result.bundleSize,
+      bundleChecksum: result.bundleChecksum,
+      manifest: result.manifest,
+    };
   } finally {
     if (stagedLockfile) {
       await fs.unlink(stagedLockfile).catch(() => {});

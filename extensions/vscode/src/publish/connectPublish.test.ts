@@ -1,8 +1,11 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { writeFile, mkdir, copyFile, unlink } from "node:fs/promises";
+import { existsSync, readdirSync, rmSync } from "node:fs";
+import * as os from "node:os";
 import path from "node:path";
+import { Readable } from "node:stream";
 
 import { connectPublish, type ConnectPublishOptions } from "./connectPublish";
 import {
@@ -27,6 +30,21 @@ import type {
 import { AxiosError, AxiosHeaders } from "axios";
 import { generateRequirements } from "../interpreters/pythonDependencySources";
 
+// The bundler mock backs each bundle with a real temp dir. connectPublish
+// removes it in its finally block, but a test that fails before reaching that
+// finally would leak the dir — sweep any leftovers after every test so they
+// don't accumulate. The prefix is unique to this test file so the sweep never
+// deletes a dir another test file's worker is still using in parallel.
+const BUNDLE_TMP_PREFIX = "publisher-bundle-test-cpub-";
+afterEach(() => {
+  const t = os.tmpdir();
+  for (const name of readdirSync(t)) {
+    if (name.startsWith(BUNDLE_TMP_PREFIX)) {
+      rmSync(path.join(t, name), { recursive: true, force: true });
+    }
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
@@ -43,9 +61,32 @@ vi.mock("node:fs/promises", () => ({
   stat: vi.fn(),
 }));
 
+// Production streams the bundle via fs.createReadStream(bundlePath). In tests
+// the upload API is mocked and never consumes that stream, while the publish
+// flow removes the bundle's temp dir as soon as the upload mock returns. A
+// lazily-opened read stream can therefore lose a race with that removal and
+// emit an ENOENT with no listener — an unhandled exception (real axios
+// consumes the body before cleanup runs, so this is a test-only concern).
+// Attach a swallowing error handler to every bundle read stream so that race
+// can't surface as an unhandled error, while keeping every other fs API real —
+// notably fs.promises.rm, which the finally-block cleanup the tests assert on
+// uses.
+vi.mock("fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("fs")>();
+  return {
+    ...actual,
+    default: actual,
+    createReadStream: (filePath: string) => {
+      const stream = actual.createReadStream(filePath);
+      stream.on("error", () => {});
+      return stream;
+    },
+  };
+});
+
 // Mock the bundler
 vi.mock("../bundler/bundler", () => ({
-  createBundle: vi.fn().mockImplementation((options) => {
+  createBundle: vi.fn().mockImplementation(async (options) => {
     // Invoke the progress callback if provided
     if (options.onProgress) {
       options.onProgress({
@@ -63,8 +104,32 @@ vi.mock("../bundler/bundler", () => ({
         totalBytes: 100,
       });
     }
-    return Promise.resolve({
-      bundle: Buffer.from("fake-bundle"),
+    // The publish flow streams the bundle from this path and removes its temp
+    // directory afterward, so back it with a real throwaway file on disk. Only
+    // fs.createReadStream and node:fs/promises are mocked, so the real file is
+    // written, statted, and removed. The prefix must match BUNDLE_TMP_PREFIX
+    // so the per-test sweep finds any leftovers (kept in sync by hand — the
+    // hoisted mock factory can't reference module-level constants).
+    const os = await import("node:os");
+    const realFs = await import("node:fs");
+    const nodePath = await import("node:path");
+    const crypto = await import("node:crypto");
+    const dir = realFs.mkdtempSync(
+      nodePath.join(os.tmpdir(), "publisher-bundle-test-cpub-"),
+    );
+    const bundlePath = nodePath.join(dir, "bundle.tar.gz");
+    const contents = Buffer.from("fake-bundle");
+    realFs.writeFileSync(bundlePath, contents);
+    return {
+      bundlePath,
+      bundleSize: realFs.statSync(bundlePath).size,
+      // Compute the checksum from the fake file's bytes (rather than a fixed
+      // string) so the upload-argument assertions catch a regression in which
+      // value gets passed as the bundle checksum.
+      bundleChecksum: crypto
+        .createHash("md5")
+        .update(contents)
+        .digest("base64"),
       manifest: {
         version: 1,
         metadata: { appmode: "python-shiny" },
@@ -73,7 +138,7 @@ vi.mock("../bundler/bundler", () => ({
       },
       fileCount: 1,
       totalSize: 100,
-    });
+    };
   }),
 }));
 
@@ -354,6 +419,17 @@ function makeOptions(
   };
 }
 
+// Resolve the BundleResult returned by the (mocked) createBundle on its first
+// call, so tests can assert on the streamed bundle's path/size/checksum.
+async function firstBundleResult() {
+  const { createBundle } = await import("../bundler/bundler");
+  const result = vi.mocked(createBundle).mock.results[0];
+  if (!result || result.type !== "return") {
+    throw new Error("createBundle did not return a bundle");
+  }
+  return result.value;
+}
+
 function progressSteps(
   onProgress: ReturnType<typeof vi.fn>,
 ): Array<{ step: PublishStep; status: string }> {
@@ -397,6 +473,44 @@ describe("connectPublish", () => {
 
     // Validate should not have been called (config.validate = false)
     expect(api.validateDeployment).not.toHaveBeenCalled();
+  });
+
+  test("streams the built bundle into uploadBundle with its size and checksum", async () => {
+    const opts = makeOptions();
+    await connectPublish(opts);
+
+    // The size and checksum produced by createBundle must flow through
+    // unchanged into the correct uploadBundle arguments — token-auth request
+    // signing depends on the checksum matching the streamed bytes.
+    const bundle = await firstBundleResult();
+    expect(opts.api.uploadBundle).toHaveBeenCalledWith(
+      expect.anything(), // ContentID branded type
+      expect.any(Readable),
+      bundle.bundleSize,
+      bundle.bundleChecksum,
+      undefined, // signal
+    );
+  });
+
+  test("removes the streamed bundle's temp dir after a successful publish", async () => {
+    const opts = makeOptions();
+    await connectPublish(opts);
+
+    const bundle = await firstBundleResult();
+    expect(existsSync(path.dirname(bundle.bundlePath))).toBe(false);
+  });
+
+  test("removes the streamed bundle's temp dir when the upload fails", async () => {
+    const api = makeMockApi();
+    (api.uploadBundle as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("upload failed"),
+    );
+    const opts = makeOptions({ api });
+
+    await expect(connectPublish(opts)).rejects.toThrow("upload failed");
+
+    const bundle = await firstBundleResult();
+    expect(existsSync(path.dirname(bundle.bundlePath))).toBe(false);
   });
 
   test("happy path — redeploy (existing content ID)", async () => {

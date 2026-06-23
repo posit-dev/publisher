@@ -1,6 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import crypto from "crypto";
+import { Readable } from "stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConnectAPI } from "./client.js";
 import { ContentID, BundleID, TaskID } from "./types.js";
@@ -45,6 +46,14 @@ vi.mock("axios", () => {
             ...baseHeaders,
             set: (key: string, value: string) => {
               headerStore[key] = value;
+            },
+            get: (key: string) => {
+              const stored = headerStore[key];
+              if (typeof stored === "string") {
+                return stored;
+              }
+              const base = baseHeaders[key];
+              return typeof base === "string" ? base : undefined;
             },
           };
 
@@ -701,7 +710,7 @@ describe("setEnvVars", () => {
 describe("uploadBundle", () => {
   const contentId = ContentID("content-123");
 
-  it("sends application/gzip with raw bytes and returns full BundleDTO", async () => {
+  it("streams application/gzip with content-length and returns full BundleDTO", async () => {
     const bundleResponse = {
       id: "bundle-42",
       content_guid: contentId,
@@ -710,31 +719,35 @@ describe("uploadBundle", () => {
     };
     mockRequest.mockResolvedValue(jsonResponse(bundleResponse));
 
-    const bundle = new Uint8Array([0x1f, 0x8b, 0x08]);
+    const body = Readable.from(Buffer.from([0x1f, 0x8b, 0x08]));
     const client = createClient();
-    const { data } = await client.uploadBundle(contentId, bundle);
+    const { data } = await client.uploadBundle(contentId, body, 3, "abc123==");
 
     expect(data).toEqual(bundleResponse);
     const call = mockRequest.mock.calls[0][0];
     expect(call.url).toBe(`/__api__/v1/content/${contentId}/bundles`);
     expect(call.method).toBe("POST");
+    expect(call.data).toBe(body);
     expect(call.headers["Content-Type"]).toBe("application/gzip");
+    expect(call.headers["Content-Length"]).toBe(3);
+    expect(call.headers["X-Content-Checksum"]).toBe("abc123==");
+    // Forces axios's native streaming transport instead of follow-redirects,
+    // which would otherwise buffer the whole body in memory.
+    expect(call.maxRedirects).toBe(0);
   });
 
-  it("preserves binary payload bytes without mutation", async () => {
-    const gzipBytes = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0xff, 0xfe]);
+  it("forwards the stream body unchanged", async () => {
     mockRequest.mockResolvedValue(
       jsonResponse({ id: "b-1", content_guid: contentId, active: true }),
     );
 
+    const body = Readable.from(Buffer.from([0x1f, 0x8b, 0x08, 0x00]));
     const client = createClient();
-    await client.uploadBundle(contentId, gzipBytes);
+    await client.uploadBundle(contentId, body, 4, "deadbeef==");
 
     const call = mockRequest.mock.calls[0][0];
-    const sent = call.data as Uint8Array;
-    expect(sent).toBeInstanceOf(Uint8Array);
-    expect(sent.length).toBe(gzipBytes.length);
-    expect(Array.from(sent)).toEqual(Array.from(gzipBytes));
+    expect(call.data).toBe(body);
+    expect(call.headers["Content-Length"]).toBe(4);
   });
 
   it("throws on non-2xx", async () => {
@@ -744,7 +757,7 @@ describe("uploadBundle", () => {
 
     const client = createClient();
     await expect(
-      client.uploadBundle(contentId, new Uint8Array([1])),
+      client.uploadBundle(contentId, Readable.from(Buffer.from([1])), 1, "x=="),
     ).rejects.toThrow();
   });
 });
@@ -1457,23 +1470,56 @@ describe("Token authentication", () => {
     expect(signedHeaders["X-Content-Checksum"]).toBe(expectedChecksum);
   });
 
-  it("computes checksum from raw bytes for binary uploads", async () => {
+  it("signs the precomputed checksum for streamed bundle uploads", async () => {
     const bundleResponse = { id: "b-1", content_guid: "c-1", active: true };
     mockRequest.mockResolvedValue(jsonResponse(bundleResponse));
 
-    const gzipBytes = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0xff, 0xfe]);
+    const gzipBytes = Buffer.from([0x1f, 0x8b, 0x08, 0x00, 0xff, 0xfe]);
+    // The caller precomputes the bundle checksum (the stream can't be hashed
+    // in the interceptor) and passes it; signing must use that exact value.
+    const checksum = crypto
+      .createHash("md5")
+      .update(gzipBytes)
+      .digest("base64");
+
     const client = createTokenClient();
-    await client.uploadBundle(ContentID("c-1"), gzipBytes);
+    await client.uploadBundle(
+      ContentID("c-1"),
+      Readable.from(gzipBytes),
+      gzipBytes.length,
+      checksum,
+    );
 
     const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
     const signedHeaders = config._signedHeaders as Record<string, string>;
 
-    // Checksum must be MD5 of the raw bytes, not JSON.stringify(bytes)
-    const expectedChecksum = crypto
-      .createHash("md5")
-      .update(gzipBytes)
-      .digest("base64");
-    expect(signedHeaders["X-Content-Checksum"]).toBe(expectedChecksum);
+    expect(signedHeaders["X-Content-Checksum"]).toBe(checksum);
+  });
+
+  it("throws when a streamed body has no precomputed checksum", async () => {
+    const client = createTokenClient();
+
+    // The signing interceptor cannot hash a stream, so a streamed body must
+    // carry a precomputed X-Content-Checksum header. No public method streams a
+    // body without also supplying that header, so reach the underlying axios
+    // instance to exercise the interceptor directly.
+    const inner: {
+      post: (
+        url: string,
+        data: unknown,
+        config?: Record<string, unknown>,
+      ) => Promise<unknown>;
+    } = (client as unknown as { client: typeof inner }).client;
+
+    await expect(
+      inner.post(
+        "/__api__/v1/content/c-1/bundles",
+        Readable.from(Buffer.from([0x1f, 0x8b, 0x08])),
+        { headers: { "Content-Type": "application/gzip" } },
+      ),
+    ).rejects.toThrow(
+      "Streamed request body requires a precomputed X-Content-Checksum header",
+    );
   });
 
   it("Date header ends with GMT", async () => {
@@ -1870,7 +1916,9 @@ describe("AbortSignal support", () => {
     await expect(
       client.uploadBundle(
         ContentID("c-1"),
-        new Uint8Array([1, 2]),
+        Readable.from(Buffer.from([1, 2])),
+        2,
+        "x==",
         abortedSignal(),
       ),
     ).rejects.toThrow();

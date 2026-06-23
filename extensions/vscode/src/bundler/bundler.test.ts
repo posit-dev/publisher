@@ -8,11 +8,12 @@ import * as zlib from "zlib";
 import { extract as tarExtract, Headers } from "tar-stream";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createBundle } from "./bundler";
+import { createArchive } from "./archive";
 import { manifestFromConfig } from "./manifestFromConfig";
 import { newManifest } from "./manifest";
 import { ContentType } from "../api/types/configurations";
 import { ProductType } from "../api/types/contentRecords";
-import { Manifest, BundleProgressEvent } from "./types";
+import { Manifest, BundleProgressEvent, FileEntry } from "./types";
 
 let tmpDir: string;
 
@@ -22,7 +23,21 @@ beforeEach(() => {
 
 afterEach(() => {
   fs.rmSync(tmpDir, { recursive: true, force: true });
+  // createArchive writes each bundle to its own temp directory; the caller
+  // owns cleanup, so remove any left behind by this test run.
+  const t = os.tmpdir();
+  for (const name of fs.readdirSync(t)) {
+    if (name.startsWith("posit-publisher-bundle-")) {
+      fs.rmSync(path.join(t, name), { recursive: true, force: true });
+    }
+  }
 });
+
+// The bundle is written to disk; read it back into a Buffer for assertions.
+// Test bundles are tiny, so reading the whole file is fine here.
+function readBundle(bundlePath: string): Buffer {
+  return fs.readFileSync(bundlePath);
+}
 
 function makeFile(relativePath: string, content = "test"): void {
   const fullPath = path.join(tmpDir, relativePath);
@@ -71,7 +86,7 @@ describe("createBundle", () => {
 
     expect(result.fileCount).toBe(2);
     expect(result.totalSize).toBeGreaterThan(0);
-    expect(result.bundle.length).toBeGreaterThan(0);
+    expect(result.bundleSize).toBeGreaterThan(0);
 
     // Manifest should have files populated
     expect(result.manifest.files["app.py"]).toBeDefined();
@@ -87,7 +102,7 @@ describe("createBundle", () => {
       manifest: newManifest(),
     });
 
-    const entries = await extractTarEntries(result.bundle);
+    const entries = await extractTarEntries(readBundle(result.bundlePath));
     expect(entries.has("manifest.json")).toBe(true);
 
     const manifestContent = JSON.parse(
@@ -106,7 +121,7 @@ describe("createBundle", () => {
       manifest: newManifest(),
     });
 
-    const entries = await extractTarEntries(result.bundle);
+    const entries = await extractTarEntries(readBundle(result.bundlePath));
     expect(entries.has("app.py")).toBe(true);
     expect(entries.has("subdir/helper.py")).toBe(true);
     expect(entries.get("app.py")!.data.toString()).toBe("content");
@@ -122,7 +137,7 @@ describe("createBundle", () => {
       filePatterns: ["*.py"],
     });
 
-    const entries = await extractTarEntries(result.bundle);
+    const entries = await extractTarEntries(readBundle(result.bundlePath));
     expect(entries.has("app.py")).toBe(true);
     expect(entries.has("data.csv")).toBe(false);
   });
@@ -150,7 +165,7 @@ describe("createBundle", () => {
       manifest: newManifest(),
     });
 
-    const entries = await extractTarEntries(result.bundle);
+    const entries = await extractTarEntries(readBundle(result.bundlePath));
     // Should appear as renv.lock at root, not at the staged path
     expect(entries.has("renv.lock")).toBe(true);
     expect(entries.has(".posit/publish/deployments/renv.lock")).toBe(false);
@@ -170,7 +185,7 @@ describe("createBundle", () => {
       manifest: newManifest(),
     });
 
-    const entries = await extractTarEntries(result.bundle);
+    const entries = await extractTarEntries(readBundle(result.bundlePath));
     expect(entries.has("app.py")).toBe(true);
     expect(entries.has(".git/config")).toBe(false);
     expect(entries.has("__pycache__/module.pyc")).toBe(false);
@@ -214,7 +229,7 @@ describe("createBundle", () => {
     ).toBe(false);
 
     // The bundled manifest.json has no packages block (Node.js manifests omit it)
-    const entries = await extractTarEntries(result.bundle);
+    const entries = await extractTarEntries(readBundle(result.bundlePath));
     const manifestContent = JSON.parse(
       entries.get("manifest.json")!.data.toString(),
     );
@@ -258,8 +273,37 @@ describe("createBundle", () => {
     });
 
     // Should decompress without error
-    const decompressed = zlib.gunzipSync(result.bundle);
+    const decompressed = zlib.gunzipSync(readBundle(result.bundlePath));
     expect(decompressed.length).toBeGreaterThan(0);
+  });
+
+  it("writes the bundle to a temp file the caller must clean up", async () => {
+    makeFile("app.py", "print('hello')");
+
+    const result = await createBundle({
+      projectPath: tmpDir,
+      manifest: newManifest(),
+    });
+
+    // The bundle file exists on disk after createBundle returns (caller owns
+    // cleanup) and reports its own size.
+    expect(fs.existsSync(result.bundlePath)).toBe(true);
+    expect(result.bundleSize).toBe(fs.statSync(result.bundlePath).size);
+  });
+
+  it("reports the base64 MD5 of the whole bundle file", async () => {
+    makeFile("app.py", "print('hello')");
+
+    const result = await createBundle({
+      projectPath: tmpDir,
+      manifest: newManifest(),
+    });
+
+    const expected = crypto
+      .createHash("md5")
+      .update(readBundle(result.bundlePath))
+      .digest("base64");
+    expect(result.bundleChecksum).toBe(expected);
   });
 
   it("preserves manifest metadata through bundling", async () => {
@@ -320,7 +364,7 @@ describe("createBundle", () => {
         manifest: newManifest(),
       });
 
-      const entries = await extractTarEntries(result.bundle);
+      const entries = await extractTarEntries(readBundle(result.bundlePath));
       const appHeader = entries.get("app.py")!.header;
       const shHeader = entries.get("run.sh")!.header;
 
@@ -417,7 +461,7 @@ describe("createBundle", () => {
     });
 
     // Synthetic file should be in the tar
-    const entries = await extractTarEntries(result.bundle);
+    const entries = await extractTarEntries(readBundle(result.bundlePath));
     expect(entries.has("requirements.txt")).toBe(true);
     expect(entries.get("requirements.txt")!.data.toString()).toBe(
       "dash==2.0\n",
@@ -488,7 +532,7 @@ describe("pre-rendered Quarto website bundle", () => {
       filePatterns: ["/_site"],
     });
 
-    const entries = await extractTarEntries(result.bundle);
+    const entries = await extractTarEntries(readBundle(result.bundlePath));
     const archivedManifest = JSON.parse(
       entries.get("manifest.json")!.data.toString(),
     );
@@ -501,5 +545,39 @@ describe("pre-rendered Quarto website bundle", () => {
     expect(entries.has("_site/index.html")).toBe(true);
     expect(entries.has("_site/slides.html")).toBe(true);
     expect(entries.has("_site/site_libs/revealjs/reveal.js")).toBe(true);
+  });
+});
+
+describe("createArchive error cleanup", () => {
+  function listBundleTmpDirs(): Set<string> {
+    return new Set(
+      fs
+        .readdirSync(os.tmpdir())
+        .filter((name) => name.startsWith("posit-publisher-bundle-")),
+    );
+  }
+
+  it("removes the temp dir and propagates the original error when archiving fails", async () => {
+    // A FileEntry pointing at a path that doesn't exist makes the read stream
+    // emit ENOENT, failing archive creation partway through.
+    const missing = path.join(tmpDir, "does not exist.py");
+    const files: FileEntry[] = [
+      {
+        relativePath: "does not exist.py",
+        absolutePath: missing,
+        isDirectory: false,
+        size: 10,
+        mode: 0o644,
+      },
+    ];
+
+    const before = listBundleTmpDirs();
+
+    // The original ENOENT must surface unmasked by any cleanup failure.
+    await expect(createArchive(files, newManifest())).rejects.toThrow(/ENOENT/);
+
+    // No new posit-publisher-bundle-* temp dir should be left behind.
+    const leaked = [...listBundleTmpDirs()].filter((name) => !before.has(name));
+    expect(leaked).toEqual([]);
   });
 });

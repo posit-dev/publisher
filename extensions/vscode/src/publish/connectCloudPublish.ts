@@ -1,5 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import * as fs from "fs";
 import * as path from "path";
 import { isAxiosError } from "axios";
 
@@ -154,6 +155,9 @@ export async function connectCloudPublish({
   await writePublishRecord(deploymentPath, record);
 
   let lastStep: CloudPublishStep | undefined;
+  // Temp directory holding the streamed bundle; cleaned up in the finally
+  // block, regardless of how publishing ends.
+  let bundleTmpDir: string | undefined;
 
   /** Check if canceled; if so, write dismissedAt and throw CanceledError. */
   async function throwIfCanceled(): Promise<void> {
@@ -269,7 +273,11 @@ export async function connectCloudPublish({
       );
     }
 
-    const { bundle, manifest: finalManifest } = await buildBundleArchive(
+    const {
+      bundlePath,
+      bundleSize,
+      manifest: finalManifest,
+    } = await buildBundleArchive(
       projectDir,
       config,
       manifest,
@@ -308,6 +316,7 @@ export async function connectCloudPublish({
       },
       syntheticFiles,
     );
+    bundleTmpDir = path.dirname(bundlePath);
     record.files = getFilenames(finalManifest);
 
     // Record dependencies in the deployment record
@@ -480,7 +489,14 @@ export async function connectCloudPublish({
       message: "Uploading files",
     });
 
-    await api.uploadBundle(uploadUrl, new Uint8Array(bundle));
+    // The bundle is streamed from its temp file so it never has to be held in
+    // memory. The temp directory is removed in the finally block below,
+    // regardless of how publishing ends.
+    await api.uploadBundle(
+      uploadUrl,
+      fs.createReadStream(bundlePath),
+      bundleSize,
+    );
 
     record.bundleId = bundleId;
     await writePublishRecord(deploymentPath, record);
@@ -655,6 +671,13 @@ export async function connectCloudPublish({
       // Don't mask the original error
     }
     throw err;
+  } finally {
+    // Remove the streamed bundle's temp directory on every exit path.
+    if (bundleTmpDir) {
+      await fs.promises
+        .rm(bundleTmpDir, { recursive: true, force: true })
+        .catch(() => {});
+    }
   }
 }
 

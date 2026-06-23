@@ -1,5 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import * as fs from "fs";
 import * as path from "path";
 import { isAxiosError } from "axios";
 
@@ -151,6 +152,9 @@ export async function connectPublish({
   await writePublishRecord(deploymentPath, record);
 
   let lastStep: PublishStep | undefined;
+  // Temp directory holding the streamed bundle; cleaned up in the finally
+  // block, regardless of how publishing ends.
+  let bundleTmpDir: string | undefined;
 
   /** Check if canceled; if so, write dismissedAt and throw CanceledError. */
   async function throwIfCanceled(): Promise<void> {
@@ -502,7 +506,12 @@ export async function connectPublish({
       );
     }
 
-    const { bundle, manifest: finalManifest } = await buildBundleArchive(
+    const {
+      bundlePath,
+      bundleSize,
+      bundleChecksum,
+      manifest: finalManifest,
+    } = await buildBundleArchive(
       projectDir,
       config,
       manifest,
@@ -541,6 +550,7 @@ export async function connectPublish({
       },
       syntheticFiles,
     );
+    bundleTmpDir = path.dirname(bundlePath);
     record.files = getFilenames(finalManifest);
 
     // Record dependencies in the deployment record
@@ -571,7 +581,9 @@ export async function connectPublish({
 
     await throwIfCanceled();
 
-    // Step 5: Upload bundle
+    // Step 5: Upload bundle. The bundle is streamed from its temp file so it
+    // never has to be held in memory. The temp directory is removed in the
+    // finally block below, regardless of how publishing ends.
     lastStep = "uploadBundle";
     onProgress({ step: "uploadBundle", status: "start" });
     onProgress({
@@ -581,7 +593,9 @@ export async function connectPublish({
     });
     const { data: bundleDTO } = await api.uploadBundle(
       ContentID(contentId),
-      new Uint8Array(bundle),
+      fs.createReadStream(bundlePath),
+      bundleSize,
+      bundleChecksum,
       signal,
     );
     const bundleId = BundleID(bundleDTO.id);
@@ -809,6 +823,13 @@ export async function connectPublish({
       // Don't mask the original error
     }
     throw err;
+  } finally {
+    // Remove the streamed bundle's temp directory on every exit path.
+    if (bundleTmpDir) {
+      await fs.promises
+        .rm(bundleTmpDir, { recursive: true, force: true })
+        .catch(() => {});
+    }
   }
 }
 

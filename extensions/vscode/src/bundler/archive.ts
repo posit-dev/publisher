@@ -1,11 +1,13 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import * as crypto from "crypto";
 import { pack as tarPack } from "tar-stream";
 import { createGzip } from "zlib";
 import { finished, pipeline } from "stream/promises";
-import { PassThrough } from "stream";
+import { Transform } from "stream";
 
 import { FileEntry, Manifest, BundleProgressCallback } from "./types";
 import { addFile, cloneManifest, manifestToJSON } from "./manifest";
@@ -15,8 +17,15 @@ const RENV_LOCK_STAGED_PATH = ".posit/publish/deployments/renv.lock";
 /**
  * Create a tar.gz archive from collected files and a manifest.
  *
- * Returns a Buffer containing the tar.gz data and the updated manifest
- * with the `files` section populated (including checksums).
+ * The archive is streamed to a temporary file on disk (never buffered whole
+ * in memory) so bundles of arbitrary size can be created. The whole-bundle
+ * MD5 checksum is computed in the same streaming pass.
+ *
+ * Returns the path to the tar.gz file, its size, its base64-encoded MD5
+ * checksum, and the updated manifest with the `files` section populated
+ * (including per-file checksums). The caller owns the temporary file and is
+ * responsible for deleting it (and its containing temp directory) once it has
+ * been uploaded.
  *
  * The staged renv.lock path (.posit/publish/deployments/renv.lock) is
  * remapped to the bundle root as renv.lock.
@@ -27,21 +36,77 @@ export async function createArchive(
   onProgress?: BundleProgressCallback,
   syntheticFiles?: Map<string, Buffer>,
 ): Promise<{
-  bundle: Buffer;
+  bundlePath: string;
+  bundleSize: number;
+  bundleChecksum: string;
   manifest: Manifest;
   fileCount: number;
   totalSize: number;
 }> {
   const updatedManifest = cloneManifest(manifest);
+
+  // Stream the archive to a temporary file rather than buffering it in memory.
+  // The caller is responsible for removing this directory after upload.
+  const tmpDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), "posit-publisher-bundle-"),
+  );
+
+  try {
+    return await writeArchive(
+      tmpDir,
+      files,
+      updatedManifest,
+      onProgress,
+      syntheticFiles,
+    );
+  } catch (err) {
+    // Don't leak a partial bundle if archive creation fails. Cleanup is
+    // best-effort — never let a removal failure mask the original error.
+    await fs.promises
+      .rm(tmpDir, { recursive: true, force: true })
+      .catch(() => {});
+    throw err;
+  }
+}
+
+async function writeArchive(
+  tmpDir: string,
+  files: FileEntry[],
+  updatedManifest: Manifest,
+  onProgress?: BundleProgressCallback,
+  syntheticFiles?: Map<string, Buffer>,
+): Promise<{
+  bundlePath: string;
+  bundleSize: number;
+  bundleChecksum: string;
+  manifest: Manifest;
+  fileCount: number;
+  totalSize: number;
+}> {
   const pack = tarPack();
   const gzip = createGzip();
 
-  // Collect the output into a buffer
-  const chunks: Buffer[] = [];
-  const collector = new PassThrough();
-  collector.on("data", (chunk: Buffer) => chunks.push(chunk));
+  const bundlePath = path.join(tmpDir, "bundle.tar.gz");
+  const out = fs.createWriteStream(bundlePath);
 
-  const pipelinePromise = pipeline(pack, gzip, collector);
+  // Compute the whole-bundle MD5 in the same streaming pass that writes the
+  // file, so token-auth uploads can sign the bundle without re-reading it.
+  const bundleHash = crypto.createHash("md5");
+  const hashStream = new Transform({
+    transform(chunk, _enc, cb) {
+      bundleHash.update(chunk);
+      cb(null, chunk);
+    },
+  });
+
+  const pipelinePromise = pipeline(pack, gzip, hashStream, out);
+  // If assembling the archive below throws (e.g. a source file is missing),
+  // the awaits in the loop reject before we reach `await pipelinePromise`,
+  // leaving the pipeline's own rejection unobserved. Attach a no-op handler so
+  // that secondary rejection can never surface as an unhandled rejection; the
+  // original error is still propagated by the awaits below, which keep their
+  // own handle on this promise (so genuine write failures are not masked).
+  pipelinePromise.catch(() => {});
 
   let fileCount = 0;
   let totalSize = 0;
@@ -118,8 +183,13 @@ export async function createArchive(
   pack.finalize();
   await pipelinePromise;
 
+  const { size: bundleSize } = await fs.promises.stat(bundlePath);
+  const bundleChecksum = bundleHash.digest("base64");
+
   return {
-    bundle: Buffer.concat(chunks),
+    bundlePath,
+    bundleSize,
+    bundleChecksum,
     manifest: updatedManifest,
     fileCount,
     totalSize,

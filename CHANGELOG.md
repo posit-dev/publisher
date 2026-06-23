@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed deploying large projects (multiple GiB) failing at the "Create Bundle" step. The bundle is now streamed to disk and uploaded as a stream instead of being held in memory, so bundles are no longer limited by available memory. (#4249)
 - Fixed Publisher creating a persistent `renv.lock` and `renv/` folder in R projects that don't use renv, which caused re-deploys to fail when new packages were added. (#4233)
 
 ## [2.6.0]
