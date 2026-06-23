@@ -497,6 +497,7 @@ export async function connectCloudPublish({
       uploadUrl,
       fs.createReadStream(bundlePath),
       bundleSize,
+      signal,
     );
 
     record.bundleId = bundleId;

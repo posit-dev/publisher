@@ -597,6 +597,28 @@ describe("uploadBundle", () => {
       ),
     ).rejects.toThrow();
   });
+
+  it("forwards the abort signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const controller = new AbortController();
+    controller.abort();
+
+    const client = createClient();
+    await expect(
+      client.uploadBundle(
+        "https://upload.example.com/presigned",
+        Readable.from(Buffer.from([1])),
+        1,
+        controller.signal,
+      ),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.signal).toBe(controller.signal);
+  });
 });
 
 // ---------------------------------------------------------------------------

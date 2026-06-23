@@ -215,6 +215,7 @@ export class ConnectCloudAPI {
     uploadUrl: string,
     body: Readable,
     contentLength: number,
+    signal?: AbortSignal,
   ): Promise<void> {
     await axios.post(uploadUrl, body, {
       headers: {
@@ -222,6 +223,7 @@ export class ConnectCloudAPI {
         "Content-Length": contentLength,
       },
       maxRedirects: 0,
+      signal,
     });
   }
 }

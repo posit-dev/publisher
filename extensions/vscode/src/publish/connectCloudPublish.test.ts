@@ -614,6 +614,25 @@ describe("connectCloudPublish", () => {
       "https://s3.example.com/upload",
       expect.any(Readable),
       expect.any(Number),
+      // The abort signal is forwarded so cancellation aborts the in-flight
+      // upload promptly. It is undefined here because no signal was supplied.
+      undefined,
+    );
+  });
+
+  test("forwards the abort signal to uploadBundle", async () => {
+    const controller = new AbortController();
+    const opts = baseOptions({ signal: controller.signal });
+
+    const resultPromise = connectCloudPublish(opts);
+    await vi.runAllTimersAsync();
+    await resultPromise;
+
+    expect(opts.api.uploadBundle).toHaveBeenCalledWith(
+      "https://s3.example.com/upload",
+      expect.any(Readable),
+      expect.any(Number),
+      controller.signal,
     );
   });
 
@@ -1072,5 +1091,10 @@ describe("connectCloudPublish", () => {
     const content = lastWrite![1] as string;
     expect(content).toContain("dismissed_at");
     expect(content).not.toContain("deployment_error");
+
+    // The streamed bundle's temp dir must be removed even when the deploy is
+    // cancelled mid-upload — otherwise the staged bundle leaks.
+    const bundle = await firstBundleResult();
+    expect(existsSync(path.dirname(bundle.bundlePath))).toBe(false);
   });
 });
