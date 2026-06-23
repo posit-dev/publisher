@@ -17,7 +17,7 @@ jobs:
       current-sha: ${{ steps.check-tag.outputs.sha }}
       latest-tag: ${{ steps.fetch-tag.outputs.latest_tag }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 500
           ref: main
@@ -64,7 +64,7 @@ jobs:
     outputs:
       next-version: ${{ steps.calculate.outputs.version }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: main
@@ -136,7 +136,7 @@ jobs:
           # Tags are part of repository contents, so we need this permission
           permission-contents: write
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: main

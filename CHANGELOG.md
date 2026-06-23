@@ -7,25 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+### Changed
 
-- Support for deploying Markdown (`.md`) files as Quarto content to Posit Connect. (#4219)
+- The "missing package-lock.json" error when publishing Node.js content now states that Connect installs Node.js dependencies with npm, helping publishers who build with yarn or pnpm understand why a `package-lock.json` is required. (#4260)
 
 ### Fixed
 
 - Fixed deploying large projects (multiple GiB) failing at the "Create Bundle" step. The bundle is now streamed to disk and uploaded as a stream instead of being held in memory, so bundles are no longer limited by available memory. (#4249)
+
+## [2.8.0]
+
+### Added
+
+- Support for deploying Markdown (`.md`) files as Quarto content to Posit Connect. (#4219)
+- Support for browser-based Snowflake authentication when creating a new credential for Connect running within the Posit Team Native App in Snowpark Container Services. (#3466)
+
+### Fixed
+
 - Fixed Publisher creating a persistent `renv.lock` and `renv/` folder in R projects that don't use renv, which caused re-deploys to fail when new packages were added. (#4233)
+- Fixed Publisher's sidebar rendering unstyled with missing icons in Positron on Posit Workbench when accessed via Firefox. (#4013)
 
 ## [2.6.0]
 
 ### Added
 
 - Support for deploying Node.js applications (Express, Fastify, Hono, etc.) to Posit Connect. (#3964)
-- Support for browser-based Snowflake authentication when creating a new credential for Connect running within the Posit Team Native App in Snowpark Container Services. (#3466)
 
 ### Fixed
 
-- Fixed Publisher's sidebar rendering unstyled with missing icons in Positron on Posit Workbench when accessed via Firefox. (#4013)
 - Fixed Quarto availability check opening a visible terminal and showing a confusing "process exited with code 1" error when Quarto is not installed. The check now runs silently in the background. (#3801)
 - Fixed deploying content to Connect running within the Posit Team Native App in Snowpark Container Services from Publisher running outside of SPCS. Users with existing credentials for SPCS servers must delete and recreate those credentials. Credentials now require a valid Snowflake connection and valid Connect authentication (either API key or token). (#3465)
 - Cancelling the "new credential" flow at the final step (input credential name) actually cancels instead of saving the new credential. (#4159)

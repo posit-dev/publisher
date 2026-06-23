@@ -6,6 +6,18 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0]
+
+### Added
+
+- Support for deploying Markdown (`.md`) files as Quarto content to Posit Connect. (#4219)
+- Support for browser-based Snowflake authentication when creating a new credential for Connect running within the Posit Team Native App in Snowpark Container Services. (#3466)
+
+### Fixed
+
+- Fixed Publisher creating a persistent `renv.lock` and `renv/` folder in R projects that don't use renv, which caused re-deploys to fail when new packages were added. (#4233)
+- Fixed Publisher's sidebar rendering unstyled with missing icons in Positron on Posit Workbench when accessed via Firefox. (#4013)
+
 ## [2.6.0]
 
 ### Added

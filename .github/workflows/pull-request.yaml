@@ -23,7 +23,7 @@ jobs:
       # has-docs is true if any file under docs/ changed
       has-docs: ${{ steps.check.outputs.has-docs }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # Need full history for diff
       - name: Check for code changes
@@ -156,7 +156,7 @@ jobs:
     if: needs.detect-changes.outputs.has-docs == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: quarto-dev/quarto-actions/setup@v2
 
