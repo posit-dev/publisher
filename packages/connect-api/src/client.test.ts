@@ -556,6 +556,7 @@ describe("contentDetails", () => {
     dashboard_url:
       "https://connect.example.com/connect/#/apps/content-guid-abc",
     app_role: "owner",
+    locked: false,
     id: "42",
   };
 
