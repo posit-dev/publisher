@@ -128,6 +128,7 @@ import { PublisherState } from "src/state";
 import { throttleWithLastPending } from "src/utils/throttle";
 import { showAssociateGUID } from "src/actions/showAssociateGUID";
 import { extensionSettings } from "src/extension";
+import { logger } from "src/logging";
 import { openFileInEditor } from "src/commands";
 import {
   SelectionCredentialMatch,
@@ -489,12 +490,18 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           ...progressOptions,
         });
       } else {
+        const verifyCertificates = extensionSettings.verifyCertificates();
+        logger.info(
+          `Deploying to ${credential.url} with TLS certificate verification ${
+            verifyCertificates ? "enabled" : "disabled"
+          }`,
+        );
         const connectApi = new ConnectAPI(
           await connectAPIOptionsFromCredential(
             this.state.credentialsService,
             credential,
             {
-              rejectUnauthorized: extensionSettings.verifyCertificates(),
+              rejectUnauthorized: verifyCertificates,
             },
           ),
         );

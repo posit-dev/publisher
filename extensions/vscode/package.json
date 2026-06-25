@@ -51,7 +51,8 @@
           "positPublisher.verifyCertificates": {
             "markdownDescription": "Verify TLS certificates for connections. Only **disable** this setting if you experience certificate verification errors and the Posit Connect server is using a self-signed, expired, or otherwise misconfigured certificate.",
             "type": "boolean",
-            "default": true
+            "default": true,
+            "scope": "machine-overridable"
           },
           "positPublisher.defaultConnectServer": {
             "markdownDescription": "Provides the default URL for the Posit Connect server when defining new credentials.",

@@ -830,6 +830,15 @@ function classifyDeploymentError(
   // Must be checked before the generic network error check below, because
   // TLS failures also have no `response`.
   if (isAxiosError(err) && isCertificateError(err)) {
+    // Surface the underlying TLS error code in the logs. The user-facing
+    // message is intentionally generic, but the code (e.g.
+    // UNABLE_TO_GET_ISSUER_CERT_LOCALLY) is what tells you whether the server's
+    // CA is simply untrusted versus expired or hostname-mismatched.
+    logger.error(
+      `Certificate verification failed during ${lastStep ?? "deployment"}: ${
+        err.code ?? "unknown TLS error"
+      } (${fallbackMessage})`,
+    );
     return {
       code: "errorCertificateVerification",
       message:
