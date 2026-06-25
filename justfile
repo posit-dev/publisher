@@ -84,6 +84,15 @@ check-extension-contract-conformance:
 
     cd test/extension-contract-tests && npm run check:conformance
 
+# Type-check the shared API packages
+typecheck-packages:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    (cd packages/connect-api && npm run typecheck)
+    (cd packages/connect-cloud-api && npm run typecheck)
+
 # Run Connect API contract tests
 test-connect-contracts:
     #!/usr/bin/env bash
