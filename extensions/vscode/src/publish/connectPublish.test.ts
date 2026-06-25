@@ -1562,6 +1562,9 @@ describe("connectPublish — error classification", () => {
     "SELF_SIGNED_CERT_IN_CHAIN",
     "ERR_TLS_CERT_ALTNAME_INVALID",
     "CERT_HAS_EXPIRED",
+    "UNABLE_TO_GET_ISSUER_CERT_LOCALLY",
+    "UNABLE_TO_GET_ISSUER_CERT",
+    "CERT_UNTRUSTED",
   ])(
     "certificate error (%s) classifies as errorCertificateVerification",
     async (code) => {

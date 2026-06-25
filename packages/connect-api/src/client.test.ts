@@ -274,6 +274,27 @@ describe("TLS certificate verification", () => {
     expect(call?.httpsAgent).toBeDefined();
     expect(call?.httpsAgent?.options?.rejectUnauthorized).toBe(false);
   });
+
+  it("installs a transport injecting rejectUnauthorized:false when option is false", () => {
+    // A custom Agent's rejectUnauthorized is ignored by VS Code's proxy
+    // patch; the per-request transport is what actually disables verification.
+    new ConnectAPI({
+      url: BASE_URL,
+      apiKey: API_KEY,
+      rejectUnauthorized: false,
+    });
+
+    // `transport` is typed `any` on the axios config; no cast needed.
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(typeof call?.transport?.request).toBe("function");
+  });
+
+  it("does not install a custom transport when verification is enabled", () => {
+    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY });
+
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.transport).toBeUndefined();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -419,6 +440,9 @@ describe("testAuthentication", () => {
     "SELF_SIGNED_CERT_IN_CHAIN",
     "ERR_TLS_CERT_ALTNAME_INVALID",
     "CERT_HAS_EXPIRED",
+    "UNABLE_TO_GET_ISSUER_CERT_LOCALLY",
+    "UNABLE_TO_GET_ISSUER_CERT",
+    "CERT_UNTRUSTED",
   ])("certificate error (%s) is not wrapped as network error", async (code) => {
     // TLS/certificate errors also have no `response`, but they should NOT
     // be caught by the network-error check — callers need the original

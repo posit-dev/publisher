@@ -1,6 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import https from "https";
+import type { ClientRequest, IncomingMessage } from "http";
 import axios from "axios";
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 
@@ -106,11 +107,24 @@ export class ConnectAPI {
       };
     }
 
-    // Support disabling TLS certificate verification (for self-signed certs)
+    // Support disabling TLS certificate verification (for self-signed certs).
     if (options.rejectUnauthorized === false) {
-      config.httpsAgent = new https.Agent({
-        rejectUnauthorized: false,
-      });
+      config.httpsAgent = new https.Agent({ rejectUnauthorized: false });
+      // VS Code's proxy support (the `http.proxySupport` setting, "override"
+      // by default) patches Node's https module in the extension host and
+      // discards the `rejectUnauthorized` option configured on a custom Agent,
+      // so the httpsAgent above is not enough on its own. The patch does
+      // honour `rejectUnauthorized` when it is set on the per-request options,
+      // so we route requests through a transport that injects it. This
+      // transport does not follow redirects, which is acceptable for the
+      // misconfigured servers where a user has explicitly disabled verification.
+      config.transport = {
+        request: (
+          reqOptions: https.RequestOptions,
+          callback: (res: IncomingMessage) => void,
+        ): ClientRequest =>
+          https.request({ ...reqOptions, rejectUnauthorized: false }, callback),
+      };
     }
 
     if (options.timeout !== undefined) {
@@ -523,6 +537,11 @@ export function isCertificateError(err: { code?: string }): boolean {
     "SELF_SIGNED_CERT_IN_CHAIN",
     "ERR_TLS_CERT_ALTNAME_INVALID",
     "CERT_HAS_EXPIRED",
+    // "signed by unknown authority": the issuing CA is not in the trust
+    // store. Common behind internal/corporate CAs and TLS-intercepting proxies.
+    "UNABLE_TO_GET_ISSUER_CERT_LOCALLY",
+    "UNABLE_TO_GET_ISSUER_CERT",
+    "CERT_UNTRUSTED",
   ];
   return !!err.code && certCodes.includes(err.code);
 }
