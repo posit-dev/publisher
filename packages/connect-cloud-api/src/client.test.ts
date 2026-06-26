@@ -1,5 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import { Readable } from "stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConnectCloudAPI } from "./client.js";
 import {
@@ -561,18 +562,24 @@ describe("publishContent", () => {
 // ---------------------------------------------------------------------------
 
 describe("uploadBundle", () => {
-  it("POSTs bundle to the upload URL with application/gzip content type", async () => {
+  it("streams the bundle to the upload URL with content-length and gzip type", async () => {
     mockRequest.mockResolvedValue(jsonResponse(null, 200));
 
-    const bundle = new Uint8Array([0x1f, 0x8b, 0x08]);
+    const body = Readable.from(Buffer.from([0x1f, 0x8b, 0x08]));
     const client = createClient();
-    await client.uploadBundle("https://upload.example.com/presigned", bundle);
+    await client.uploadBundle("https://upload.example.com/presigned", body, 3);
 
     // uploadBundle uses axios.post directly, not the instance
     expect(axios.post).toHaveBeenCalledWith(
       "https://upload.example.com/presigned",
-      bundle,
-      { headers: { "Content-Type": "application/gzip" } },
+      body,
+      {
+        headers: {
+          "Content-Type": "application/gzip",
+          "Content-Length": 3,
+        },
+        maxRedirects: 0,
+      },
     );
   });
 
@@ -585,9 +592,32 @@ describe("uploadBundle", () => {
     await expect(
       client.uploadBundle(
         "https://upload.example.com/presigned",
-        new Uint8Array([1]),
+        Readable.from(Buffer.from([1])),
+        1,
       ),
     ).rejects.toThrow();
+  });
+
+  it("forwards the abort signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const controller = new AbortController();
+    controller.abort();
+
+    const client = createClient();
+    await expect(
+      client.uploadBundle(
+        "https://upload.example.com/presigned",
+        Readable.from(Buffer.from([1])),
+        1,
+        controller.signal,
+      ),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.signal).toBe(controller.signal);
   });
 });
 

@@ -13,7 +13,8 @@ import { createArchive } from "./archive";
  * Takes a project path, a pre-built manifest (with metadata, python/R config,
  * packages, etc. already populated), and optional file patterns.
  *
- * Returns the tar.gz buffer and the manifest updated with the `files` section.
+ * Returns the path to the tar.gz file (in a temporary directory the caller
+ * must clean up) and the manifest updated with the `files` section.
  *
  * If `projectPath` points to a file instead of a directory, the containing
  * directory is used as the base and the file is force-included in the bundle
@@ -36,7 +37,7 @@ export async function createBundle(
     entrypointFile = path.basename(projectPath);
   }
 
-  const files = await collectFiles(baseDir, patterns);
+  const files = await collectFiles(baseDir, patterns, options.signal);
 
   // If deploying a single file, ensure it's included even if patterns excluded it
   if (entrypointFile) {
@@ -60,5 +61,11 @@ export async function createBundle(
 
   onProgress?.({ kind: "sourceDir", sourceDir: baseDir });
 
-  return createArchive(files, manifest, onProgress, options.syntheticFiles);
+  return createArchive(
+    files,
+    manifest,
+    onProgress,
+    options.syntheticFiles,
+    options.signal,
+  );
 }

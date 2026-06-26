@@ -3,9 +3,10 @@
 import * as fs from "fs/promises";
 import * as os from "os";
 import * as path from "path";
+import { PassThrough } from "stream";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-import { buildManifest } from "./publishShared";
+import { buildManifest, cleanUpBundle } from "./publishShared";
 import type { ConfigurationDetails } from "../api/types/configurations";
 import { ContentType } from "../api/types/configurations";
 
@@ -275,5 +276,62 @@ describe("buildManifest — lockExists branch (existing renv.lock)", () => {
     expect(result.lockfilePath).toBe(path.join(projectDir, "renv.lock"));
     expect(mockScanRPackages).not.toHaveBeenCalled();
     expect(mockMkdtemp).not.toHaveBeenCalled();
+  });
+});
+
+describe("cleanUpBundle", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRm.mockResolvedValue(undefined);
+  });
+
+  test("no-op when both args are undefined", async () => {
+    await expect(cleanUpBundle(undefined, undefined)).resolves.toBeUndefined();
+    expect(mockRm).not.toHaveBeenCalled();
+  });
+
+  test("destroys an open stream and removes tmpDir", async () => {
+    const stream = new PassThrough();
+    await cleanUpBundle(stream, "/tmp/bundle-dir");
+
+    expect(stream.destroyed).toBe(true);
+    expect(mockRm).toHaveBeenCalledWith("/tmp/bundle-dir", {
+      recursive: true,
+      force: true,
+    });
+  });
+
+  test("skips destroy when stream is already closed", async () => {
+    const stream = new PassThrough();
+    stream.destroy();
+    await new Promise<void>((resolve) => stream.once("close", resolve));
+
+    const destroySpy = vi.spyOn(stream, "destroy");
+    await cleanUpBundle(stream, undefined);
+
+    expect(destroySpy).not.toHaveBeenCalled();
+  });
+
+  test("does not throw if fs.rm rejects", async () => {
+    mockRm.mockRejectedValueOnce(new Error("EACCES: permission denied"));
+    await expect(
+      cleanUpBundle(undefined, "/tmp/bundle-dir"),
+    ).resolves.toBeUndefined();
+  });
+
+  test("does not throw if stream finalization rejects", async () => {
+    const stream = new PassThrough();
+    // destroy() with no error causes finished() to reject with
+    // ERR_STREAM_PREMATURE_CLOSE — cleanUpBundle must swallow it
+    await expect(cleanUpBundle(stream, undefined)).resolves.toBeUndefined();
+    expect(stream.destroyed).toBe(true);
+  });
+
+  test("removes tmpDir even when no stream is provided", async () => {
+    await cleanUpBundle(undefined, "/tmp/bundle-dir");
+    expect(mockRm).toHaveBeenCalledWith("/tmp/bundle-dir", {
+      recursive: true,
+      force: true,
+    });
   });
 });

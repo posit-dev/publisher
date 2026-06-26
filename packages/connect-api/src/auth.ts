@@ -48,6 +48,31 @@ export function rsaSha1Sign(
 }
 
 /**
+ * Computes per-request authentication headers for Connect token auth using a
+ * precomputed base64 MD5 checksum of the request body. Use this when the body
+ * is streamed and cannot be hashed in place (e.g. large bundle uploads).
+ * Returns an object with Date, X-Content-Checksum, X-Auth-Token, and X-Auth-Signature headers.
+ */
+export function signRequestWithChecksum(
+  method: string,
+  path: string,
+  checksum: string,
+  token: string,
+  privateKeyBase64: string,
+): Record<string, string> {
+  const date = new Date().toUTCString();
+  const canonical = buildCanonicalRequest(method, path, date, checksum);
+  const signature = rsaSha1Sign(canonical, privateKeyBase64);
+
+  return {
+    Date: date,
+    "X-Content-Checksum": checksum,
+    "X-Auth-Token": token,
+    "X-Auth-Signature": signature,
+  };
+}
+
+/**
  * Computes per-request authentication headers for Connect token auth.
  * Returns an object with Date, X-Content-Checksum, X-Auth-Token, and X-Auth-Signature headers.
  */
@@ -58,15 +83,11 @@ export function signRequest(
   token: string,
   privateKeyBase64: string,
 ): Record<string, string> {
-  const date = new Date().toUTCString();
-  const checksum = md5Checksum(body);
-  const canonical = buildCanonicalRequest(method, path, date, checksum);
-  const signature = rsaSha1Sign(canonical, privateKeyBase64);
-
-  return {
-    Date: date,
-    "X-Content-Checksum": checksum,
-    "X-Auth-Token": token,
-    "X-Auth-Signature": signature,
-  };
+  return signRequestWithChecksum(
+    method,
+    path,
+    md5Checksum(body),
+    token,
+    privateKeyBase64,
+  );
 }

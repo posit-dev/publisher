@@ -7,6 +7,7 @@ import {
   buildCanonicalRequest,
   rsaSha1Sign,
   signRequest,
+  signRequestWithChecksum,
 } from "./auth.js";
 
 // ---------------------------------------------------------------------------
@@ -249,6 +250,71 @@ describe("signRequest", () => {
     const publicKeyDer = Buffer.from(publicKeyBase64, "base64");
     const publicKey = crypto.createPublicKey({
       key: publicKeyDer,
+      format: "der",
+      type: "spki",
+    });
+    const verifier = crypto.createVerify("SHA1");
+    verifier.update(canonical);
+    expect(
+      verifier.verify(publicKey, headers["X-Auth-Signature"], "base64"),
+    ).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// signRequestWithChecksum
+// ---------------------------------------------------------------------------
+
+describe("signRequestWithChecksum", () => {
+  it("uses the provided checksum verbatim", () => {
+    const { privateKeyBase64 } = generateTestKeyPair();
+    const checksum = "Zm9vYmFyChecksumValue==";
+    const headers = signRequestWithChecksum(
+      "POST",
+      "/path",
+      checksum,
+      "token",
+      privateKeyBase64,
+    );
+
+    expect(headers["X-Content-Checksum"]).toBe(checksum);
+    expect(headers["X-Auth-Token"]).toBe("token");
+    expect(headers["X-Auth-Signature"]).toBeDefined();
+    expect(headers["Date"]).toMatch(/GMT$/);
+  });
+
+  it("matches signRequest when given the body's checksum", () => {
+    const { privateKeyBase64 } = generateTestKeyPair();
+    const body = '{"key":"value"}';
+    const viaBody = signRequest("POST", "/path", body, "t", privateKeyBase64);
+    const viaChecksum = signRequestWithChecksum(
+      "POST",
+      "/path",
+      md5Checksum(body),
+      "t",
+      privateKeyBase64,
+    );
+
+    expect(viaChecksum["X-Content-Checksum"]).toBe(
+      viaBody["X-Content-Checksum"],
+    );
+  });
+
+  it("produces a signature verifiable with the public key", () => {
+    const { privateKeyBase64, publicKeyBase64 } = generateTestKeyPair();
+    const checksum = md5Checksum("streamed-body-bytes");
+    const headers = signRequestWithChecksum(
+      "POST",
+      "/__api__/v1/content/c-1/bundles",
+      checksum,
+      "Ttoken123",
+      privateKeyBase64,
+    );
+
+    const date = headers["Date"];
+    const canonical = `POST\n/__api__/v1/content/c-1/bundles\n${date}\n${checksum}`;
+    const publicKey = crypto.createPublicKey({
+      key: Buffer.from(publicKeyBase64, "base64"),
       format: "der",
       type: "spki",
     });

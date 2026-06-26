@@ -1,11 +1,12 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import https from "https";
+import { Readable } from "stream";
 import type { ClientRequest, IncomingMessage } from "http";
 import axios from "axios";
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 
-import { signRequest } from "./auth.js";
+import { md5Checksum, signRequestWithChecksum } from "./auth.js";
 import type {
   AllSettings,
   ApplicationSettings,
@@ -142,18 +143,41 @@ export class ConnectAPI {
         const method = (reqConfig.method ?? "GET").toUpperCase();
         // Extract the path from the url (which is relative to baseURL)
         const path = reqConfig.url ?? "/";
-        // For binary bodies (bundle uploads), pass raw bytes to signRequest
-        // so the MD5 checksum matches what Connect receives. JSON.stringify
-        // on a Uint8Array produces {"0":31,"1":139,...} which is wrong.
-        const body: string | Buffer | Uint8Array | undefined =
-          reqConfig.data == null
-            ? undefined
-            : Buffer.isBuffer(reqConfig.data) ||
-                reqConfig.data instanceof Uint8Array
-              ? reqConfig.data
-              : JSON.stringify(reqConfig.data);
 
-        const headers = signRequest(method, path, body, token, privateKey);
+        // The signature covers a base64 MD5 of the exact bytes Connect
+        // receives. Streamed bodies (large bundle uploads) can't be hashed
+        // here, so the caller must precompute the checksum and pass it as the
+        // X-Content-Checksum header; we sign that value. For in-memory bodies
+        // we hash directly — using raw bytes for Buffer/Uint8Array (bundle
+        // uploads), since JSON.stringify on a Uint8Array produces
+        // {"0":31,"1":139,...} which is wrong.
+        let checksum: string;
+        const data = reqConfig.data;
+        if (data instanceof Readable) {
+          const provided = reqConfig.headers.get("X-Content-Checksum");
+          if (typeof provided !== "string") {
+            throw new Error(
+              "Streamed request body requires a precomputed X-Content-Checksum header",
+            );
+          }
+          checksum = provided;
+        } else {
+          const body: string | Buffer | Uint8Array | undefined =
+            data == null
+              ? undefined
+              : Buffer.isBuffer(data) || data instanceof Uint8Array
+                ? data
+                : JSON.stringify(data);
+          checksum = md5Checksum(body);
+        }
+
+        const headers = signRequestWithChecksum(
+          method,
+          path,
+          checksum,
+          token,
+          privateKey,
+        );
         for (const [key, value] of Object.entries(headers)) {
           reqConfig.headers.set(key, value);
         }
@@ -340,16 +364,41 @@ export class ConnectAPI {
     );
   }
 
-  /** Uploads a bundle archive (gzip) for a content item. */
+  /**
+   * Uploads a bundle archive (gzip) for a content item.
+   *
+   * The body is streamed from the staged bundle file so uploads of arbitrary
+   * size never have to be buffered in memory. `contentLength` and `checksum`
+   * are already known from writing that temp file to disk — `contentLength` is
+   * its byte size and `checksum` is the base64 MD5 of its contents — so we pass
+   * both here rather than have axios try to derive them from the stream.
+   * `checksum` is sent as X-Content-Checksum so token-auth request signing can
+   * cover the body without re-reading it.
+   *
+   * `maxRedirects: 0` keeps axios on its native http/https transport, which
+   * truly streams the body. The default follow-redirects transport buffers the
+   * entire request body in memory (so it can replay it on a redirect), which
+   * would defeat streaming and exhaust memory on large bundles.
+   */
   async uploadBundle(
     contentId: ContentID,
-    bundle: Uint8Array,
+    body: Readable,
+    contentLength: number,
+    checksum: string,
     signal?: AbortSignal,
   ): Promise<AxiosResponse<BundleDTO>> {
     return this.client.post<BundleDTO>(
       `/__api__/v1/content/${contentId}/bundles`,
-      bundle,
-      { headers: { "Content-Type": "application/gzip" }, signal },
+      body,
+      {
+        headers: {
+          "Content-Type": "application/gzip",
+          "Content-Length": contentLength,
+          "X-Content-Checksum": checksum,
+        },
+        maxRedirects: 0,
+        signal,
+      },
     );
   }
 

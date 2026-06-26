@@ -1,5 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import * as fs from "fs";
 import * as path from "path";
 import { isAxiosError } from "axios";
 
@@ -28,6 +29,7 @@ import {
   CanceledError,
   buildManifest,
   buildBundleArchive,
+  cleanUpBundle,
   writePublishRecord,
   setRecordContentInfo,
   lockfileToDeploymentRenv,
@@ -154,6 +156,12 @@ export async function connectCloudPublish({
   await writePublishRecord(deploymentPath, record);
 
   let lastStep: CloudPublishStep | undefined;
+  // Temp directory holding the streamed bundle; cleaned up in the finally
+  // block, regardless of how publishing ends.
+  let bundleTmpDir: string | undefined;
+  // ReadStream for the bundle file; closed in the finally block,
+  // regardless of how publishing ends.
+  let bundleReadStream: fs.ReadStream | undefined;
 
   /** Check if canceled; if so, write dismissedAt and throw CanceledError. */
   async function throwIfCanceled(): Promise<void> {
@@ -269,7 +277,11 @@ export async function connectCloudPublish({
       );
     }
 
-    const { bundle, manifest: finalManifest } = await buildBundleArchive(
+    const {
+      bundlePath,
+      bundleSize,
+      manifest: finalManifest,
+    } = await buildBundleArchive(
       projectDir,
       config,
       manifest,
@@ -307,7 +319,9 @@ export async function connectCloudPublish({
         }
       },
       syntheticFiles,
+      signal,
     );
+    bundleTmpDir = path.dirname(bundlePath);
     record.files = getFilenames(finalManifest);
 
     // Record dependencies in the deployment record
@@ -480,7 +494,11 @@ export async function connectCloudPublish({
       message: "Uploading files",
     });
 
-    await api.uploadBundle(uploadUrl, new Uint8Array(bundle));
+    // The bundle is streamed from its temp file so it never has to be held in
+    // memory. The temp directory is removed in the finally block below,
+    // regardless of how publishing ends.
+    bundleReadStream = fs.createReadStream(bundlePath);
+    await api.uploadBundle(uploadUrl, bundleReadStream, bundleSize, signal);
 
     record.bundleId = bundleId;
     await writePublishRecord(deploymentPath, record);
@@ -492,6 +510,11 @@ export async function connectCloudPublish({
       data: { bundle_id: bundleId },
     });
     onProgress({ step: "uploadBundle", status: "success" });
+
+    // we no longer need the bundle so try to clean it up right away
+    await cleanUpBundle(bundleReadStream, bundleTmpDir);
+    bundleReadStream = undefined;
+    bundleTmpDir = undefined;
 
     await throwIfCanceled();
 
@@ -655,6 +678,8 @@ export async function connectCloudPublish({
       // Don't mask the original error
     }
     throw err;
+  } finally {
+    await cleanUpBundle(bundleReadStream, bundleTmpDir);
   }
 }
 
