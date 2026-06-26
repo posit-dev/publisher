@@ -32,6 +32,7 @@ import {
   CanceledError,
   buildManifest,
   buildBundleArchive,
+  cleanUpBundle,
   mergeEnvVars,
   writePublishRecord,
   setRecordContentInfo,
@@ -155,6 +156,9 @@ export async function connectPublish({
   // Temp directory holding the streamed bundle; cleaned up in the finally
   // block, regardless of how publishing ends.
   let bundleTmpDir: string | undefined;
+  // ReadStream for the bundle file; closed in the finally block,
+  // regardless of how publishing ends.
+  let bundleReadStream: fs.ReadStream | undefined;
 
   /** Check if canceled; if so, write dismissedAt and throw CanceledError. */
   async function throwIfCanceled(): Promise<void> {
@@ -593,9 +597,10 @@ export async function connectPublish({
       status: "log",
       message: "Uploading files",
     });
+    bundleReadStream = fs.createReadStream(bundlePath);
     const { data: bundleDTO } = await api.uploadBundle(
       ContentID(contentId),
-      fs.createReadStream(bundlePath),
+      bundleReadStream,
       bundleSize,
       bundleChecksum,
       signal,
@@ -611,6 +616,11 @@ export async function connectPublish({
       data: { bundle_id: bundleDTO.id },
     });
     onProgress({ step: "uploadBundle", status: "success" });
+
+    // we no longer need the bundle so try to clean it up right away
+    await cleanUpBundle(bundleReadStream, bundleTmpDir);
+    bundleReadStream = undefined;
+    bundleTmpDir = undefined;
 
     await throwIfCanceled();
 
@@ -826,12 +836,7 @@ export async function connectPublish({
     }
     throw err;
   } finally {
-    // Remove the streamed bundle's temp directory on every exit path.
-    if (bundleTmpDir) {
-      await fs.promises
-        .rm(bundleTmpDir, { recursive: true, force: true })
-        .catch(() => {});
-    }
+    await cleanUpBundle(bundleReadStream, bundleTmpDir);
   }
 }
 

@@ -1,8 +1,8 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { writeFile, mkdir, copyFile, unlink } from "node:fs/promises";
-import { existsSync, readdirSync, rmSync } from "node:fs";
+import { writeFile, mkdir, copyFile, unlink, rm } from "node:fs/promises";
+import { readdirSync, rmSync } from "node:fs";
 import * as os from "node:os";
 import path from "node:path";
 import { Readable } from "node:stream";
@@ -30,10 +30,9 @@ import type {
 import { AxiosError, AxiosHeaders } from "axios";
 import { generateRequirements } from "../interpreters/pythonDependencySources";
 
-// The bundler mock backs each bundle with a real temp dir. connectPublish
-// removes it in its finally block, but a test that fails before reaching that
-// finally would leak the dir — sweep any leftovers after every test so they
-// don't accumulate. The prefix is unique to this test file so the sweep never
+// The bundler mock backs each bundle with a real temp dir. rm is mocked, so
+// connectPublish never actually deletes it — the afterEach sweep below is the
+// sole cleanup path. The prefix is unique to this test file so the sweep never
 // deletes a dir another test file's worker is still using in parallel.
 const BUNDLE_TMP_PREFIX = "publisher-bundle-test-cpub-";
 afterEach(() => {
@@ -49,7 +48,8 @@ afterEach(() => {
 // Mocks
 // ---------------------------------------------------------------------------
 
-// Mock fs/promises
+// Mock fs/promises — rm is a no-op spy; cleanup assertions check the spy.
+// The afterEach sweep handles actual temp-dir removal.
 vi.mock("node:fs/promises", () => ({
   readFile: vi.fn().mockResolvedValue("{}"),
   writeFile: vi.fn().mockResolvedValue(undefined),
@@ -62,15 +62,13 @@ vi.mock("node:fs/promises", () => ({
 }));
 
 // Production streams the bundle via fs.createReadStream(bundlePath). In tests
-// the upload API is mocked and never consumes that stream, while the publish
-// flow removes the bundle's temp dir as soon as the upload mock returns. A
-// lazily-opened read stream can therefore lose a race with that removal and
-// emit an ENOENT with no listener — an unhandled exception (real axios
-// consumes the body before cleanup runs, so this is a test-only concern).
-// Attach a swallowing error handler to every bundle read stream so that race
-// can't surface as an unhandled error, while keeping every other fs API real —
-// notably fs.promises.rm, which the finally-block cleanup the tests assert on
-// uses.
+// the upload API is mocked and never consumes that stream, while cleanUpBundle
+// destroys the stream and removes the temp dir as soon as the upload mock
+// returns. A lazily-opened read stream can therefore lose a race with that
+// destruction and emit an ENOENT with no listener — an unhandled exception
+// (real axios consumes the body before cleanup runs, so this is a test-only
+// concern). Attach a swallowing error handler to every bundle read stream so
+// that race can't surface as an unhandled error.
 vi.mock("fs", async (importOriginal) => {
   const actual = await importOriginal<typeof import("fs")>();
   return {
@@ -202,6 +200,7 @@ const mockWriteFile = vi.mocked(writeFile);
 const mockMkdir = vi.mocked(mkdir);
 const mockCopyFile = vi.mocked(copyFile);
 const mockUnlink = vi.mocked(unlink);
+const mockRm = vi.mocked(rm);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -497,7 +496,10 @@ describe("connectPublish", () => {
     await connectPublish(opts);
 
     const bundle = await firstBundleResult();
-    expect(existsSync(path.dirname(bundle.bundlePath))).toBe(false);
+    expect(mockRm).toHaveBeenCalledWith(path.dirname(bundle.bundlePath), {
+      recursive: true,
+      force: true,
+    });
   });
 
   test("removes the streamed bundle's temp dir when the upload fails", async () => {
@@ -510,7 +512,10 @@ describe("connectPublish", () => {
     await expect(connectPublish(opts)).rejects.toThrow("upload failed");
 
     const bundle = await firstBundleResult();
-    expect(existsSync(path.dirname(bundle.bundlePath))).toBe(false);
+    expect(mockRm).toHaveBeenCalledWith(path.dirname(bundle.bundlePath), {
+      recursive: true,
+      force: true,
+    });
   });
 
   test("happy path — redeploy (existing content ID)", async () => {

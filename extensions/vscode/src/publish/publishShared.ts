@@ -3,11 +3,17 @@
 import * as fs from "fs/promises";
 import * as os from "os";
 import * as path from "path";
+import { Readable } from "stream";
+import { finished } from "stream/promises";
 import { stringify as stringifyTOML } from "smol-toml";
 
 import { manifestFromConfig } from "../bundler/manifestFromConfig";
 import { createBundle } from "../bundler/bundler";
-import type { Manifest, BundleProgressCallback } from "../bundler/types";
+import type {
+  Manifest,
+  BundleProgressCallback,
+  BundleResult,
+} from "../bundler/types";
 
 import { resolveRPackages } from "./dependencies";
 import {
@@ -366,12 +372,7 @@ export async function buildBundleArchive(
   onBundleProgress?: BundleProgressCallback,
   syntheticFiles?: Map<string, Buffer>,
   signal?: AbortSignal,
-): Promise<{
-  bundlePath: string;
-  bundleSize: number;
-  bundleChecksum: string;
-  manifest: Manifest;
-}> {
+): Promise<BundleResult> {
   const basePatterns = config.files?.length ? [...config.files] : ["*"];
   const extraPatterns: string[] = [];
   let stagedLockfile: string | undefined;
@@ -399,16 +400,28 @@ export async function buildBundleArchive(
       signal,
     });
 
-    return {
-      bundlePath: result.bundlePath,
-      bundleSize: result.bundleSize,
-      bundleChecksum: result.bundleChecksum,
-      manifest: result.manifest,
-    };
+    return result;
   } finally {
     if (stagedLockfile) {
       await fs.unlink(stagedLockfile).catch(() => {});
     }
+  }
+}
+
+// Helper for consistent bundle tempfile cleanup, as it is used in multiple
+// places (Connect, Cloud, on success, on failure/cancellation).
+export async function cleanUpBundle(
+  readStream: Readable | undefined,
+  tmpDir: string | undefined,
+): Promise<void> {
+  // best effort cleanup: destroy the stream and remove the temp dir, but don't
+  // throw if they fail as that might mask other errors
+  if (readStream !== undefined && !readStream.closed) {
+    readStream.destroy();
+    await finished(readStream).catch(() => {});
+  }
+  if (tmpDir) {
+    await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
   }
 }
 

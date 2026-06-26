@@ -10,8 +10,8 @@ import {
   test,
   vi,
 } from "vitest";
-import { writeFile, mkdir } from "node:fs/promises";
-import { existsSync, readdirSync, rmSync } from "node:fs";
+import { writeFile, mkdir, rm } from "node:fs/promises";
+import { readdirSync, rmSync } from "node:fs";
 import * as os from "node:os";
 import path from "node:path";
 import { Readable } from "node:stream";
@@ -62,7 +62,9 @@ afterEach(() => {
 // Mocks
 // ---------------------------------------------------------------------------
 
-// Mock fs/promises
+// Mock fs/promises — rm is kept as a no-op spy so fake-timer-driven tests
+// aren't disrupted by real I/O. Cleanup assertions check the spy instead of
+// the filesystem.
 vi.mock("node:fs/promises", () => ({
   readFile: vi.fn().mockResolvedValue("{}"),
   writeFile: vi.fn().mockResolvedValue(undefined),
@@ -70,6 +72,7 @@ vi.mock("node:fs/promises", () => ({
   copyFile: vi.fn().mockResolvedValue(undefined),
   unlink: vi.fn().mockResolvedValue(undefined),
   stat: vi.fn(),
+  rm: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Production streams the bundle via fs.createReadStream(bundlePath). In tests
@@ -165,6 +168,15 @@ vi.mock("../toml/configCompliance", () => ({
   forceProductTypeCompliance: vi.fn(),
 }));
 
+// stream/promises.finished listens for the stream 'close' event which fires
+// via process.nextTick — not faked by vi.useFakeTimers(). If finished() were
+// real, cleanUpBundle's extra await would fire after vi.runAllTimersAsync()
+// returns, causing the log-watching timer setup to miss the run-all window.
+// Mock it to resolve immediately so the async chain stays in sync.
+vi.mock("stream/promises", () => ({
+  finished: vi.fn().mockResolvedValue(undefined),
+}));
+
 // Mock watchCloudLogs - DO NOT mock the entire @posit-dev/connect-cloud-api
 // Instead, mock just the watchCloudLogs function
 vi.mock("@posit-dev/connect-cloud-api", async (importOriginal) => {
@@ -178,6 +190,7 @@ vi.mock("@posit-dev/connect-cloud-api", async (importOriginal) => {
 
 const mockWriteFile = vi.mocked(writeFile);
 const mockMkdir = vi.mocked(mkdir);
+const mockRm = vi.mocked(rm);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -644,7 +657,10 @@ describe("connectCloudPublish", () => {
     await resultPromise;
 
     const bundle = await firstBundleResult();
-    expect(existsSync(path.dirname(bundle.bundlePath))).toBe(false);
+    expect(mockRm).toHaveBeenCalledWith(path.dirname(bundle.bundlePath), {
+      recursive: true,
+      force: true,
+    });
   });
 
   test("removes the streamed bundle's temp dir when the upload fails", async () => {
@@ -653,11 +669,17 @@ describe("connectCloudPublish", () => {
     const opts = baseOptions({ api });
 
     const resultPromise = connectCloudPublish(opts);
+    // Attach rejection handler before running timers to avoid unhandled-
+    // rejection noise (the upload-fail path resolves entirely in microtasks).
+    const assertion = expect(resultPromise).rejects.toThrow("upload failed");
     await vi.runAllTimersAsync();
-    await expect(resultPromise).rejects.toThrow("upload failed");
+    await assertion;
 
     const bundle = await firstBundleResult();
-    expect(existsSync(path.dirname(bundle.bundlePath))).toBe(false);
+    expect(mockRm).toHaveBeenCalledWith(path.dirname(bundle.bundlePath), {
+      recursive: true,
+      force: true,
+    });
   });
 
   test("streams logs from log channel", async () => {
@@ -1095,6 +1117,9 @@ describe("connectCloudPublish", () => {
     // The streamed bundle's temp dir must be removed even when the deploy is
     // cancelled mid-upload — otherwise the staged bundle leaks.
     const bundle = await firstBundleResult();
-    expect(existsSync(path.dirname(bundle.bundlePath))).toBe(false);
+    expect(mockRm).toHaveBeenCalledWith(path.dirname(bundle.bundlePath), {
+      recursive: true,
+      force: true,
+    });
   });
 });
