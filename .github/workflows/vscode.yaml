@@ -30,14 +30,14 @@ jobs:
       - id: get-date
         run: echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
         shell: bash
-      - uses: actions/cache/restore@v5
+      - uses: actions/cache/restore@v6
         id: cache
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
           key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
       - run: just vscode configure
       - run: just vscode test
-      - uses: actions/cache/save@v5
+      - uses: actions/cache/save@v6
         if: steps.cache.outputs.cache-hit != 'true'
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
