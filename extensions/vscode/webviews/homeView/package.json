@@ -8,9 +8,9 @@
     "test": "TZ=UTC vitest"
   },
   "dependencies": {
-    "axios": "^1.18.0",
+    "axios": "^1.18.1",
     "pinia": "^3.0.4",
-    "vue": "^3.5.38",
+    "vue": "^3.5.39",
     "vue-virtual-scroller": "2.0.0-beta.8"
   },
   "overrides": {
@@ -28,7 +28,7 @@
     "jsdom": "^29.1.1",
     "sass-embedded": "^1.100.0",
     "typescript": "^6.0.3",
-    "vite": "^8.0.16",
+    "vite": "^8.1.0",
     "vitest": "^4.1.9",
     "vue-tsc": "^3.3.5"
   }
