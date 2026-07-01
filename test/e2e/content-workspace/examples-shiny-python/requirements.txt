@@ -1,7 +1,7 @@
 faicons==0.2.2
 shiny==1.6.3
 shinywidgets==0.8.1
-plotly==6.7.0
+plotly==6.8.0
 pandas==3.0.3
 ridgeplot==0.6.0
-scipy==1.17.1
+scipy==1.18.0
