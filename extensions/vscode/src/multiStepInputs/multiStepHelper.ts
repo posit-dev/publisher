@@ -59,10 +59,7 @@ export function isQuickPickItemWithInspectionResult(
 }
 
 export type StateData =
-  | QuickPickItem
-  | QuickPickItemWithInspectionResult
-  | string
-  | undefined;
+  QuickPickItem | QuickPickItemWithInspectionResult | string | undefined;
 
 export interface MultiStepState {
   title: string;
@@ -339,9 +336,7 @@ export class MultiStepInput {
               validateError = await validate(value);
             }
             let finalValidateError:
-              | string
-              | InputBoxValidationMessage
-              | undefined = undefined;
+              string | InputBoxValidationMessage | undefined = undefined;
             if (!validateError && finalValidation) {
               finalValidateError = await finalValidation(value);
               input.validationMessage = finalValidateError;

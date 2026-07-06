@@ -67,7 +67,10 @@ import CodeCheckbox, { type CheckState } from "src/components/CodeCheckbox.vue";
 
 export type TreeItemStyle = "emphasized" | "default" | "deemphasized";
 
-const expanded = defineModel("expanded", { required: false, default: false });
+const expanded = defineModel<boolean>("expanded", {
+  required: false,
+  default: false,
+});
 
 interface Props {
   title: string;

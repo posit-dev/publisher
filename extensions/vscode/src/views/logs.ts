@@ -458,17 +458,16 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     });
 
     Array.from(this.stages.keys()).forEach((stageName) => {
-      this.stream.register(
-        `${stageName}/start`,
-        (/* _: EventStreamMessage */) => {
-          const stage = this.stages.get(stageName);
-          if (stage) {
-            stage.status = LogStageStatus.inProgress;
-          }
-          this.refresh();
-          this.expandStage(stageName);
-        },
-      );
+      this.stream.register(`${stageName}/start`, (
+        /* _: EventStreamMessage */
+      ) => {
+        const stage = this.stages.get(stageName);
+        if (stage) {
+          stage.status = LogStageStatus.inProgress;
+        }
+        this.refresh();
+        this.expandStage(stageName);
+      });
 
       this.stream.register(`${stageName}/log`, (msg: EventStreamMessage) => {
         const stage = this.stages.get(stageName);
@@ -479,16 +478,15 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         this.revealLatestLog(stageName);
       });
 
-      this.stream.register(
-        `${stageName}/success`,
-        (/* _: EventStreamMessage */) => {
-          const stage = this.stages.get(stageName);
-          if (stage) {
-            stage.status = LogStageStatus.completed;
-          }
-          this.refresh();
-        },
-      );
+      this.stream.register(`${stageName}/success`, (
+        /* _: EventStreamMessage */
+      ) => {
+        const stage = this.stages.get(stageName);
+        if (stage) {
+          stage.status = LogStageStatus.completed;
+        }
+        this.refresh();
+      });
 
       this.stream.register(
         `${stageName}/failure`,

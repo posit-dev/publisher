@@ -41,7 +41,10 @@
 import ActionToolbar, { ActionButton } from "src/components/ActionToolbar.vue";
 import CountBadge from "src/components/CountBadge.vue";
 
-const expanded = defineModel("expanded", { required: false, default: false });
+const expanded = defineModel<boolean>("expanded", {
+  required: false,
+  default: false,
+});
 
 defineProps<{
   title: string;
