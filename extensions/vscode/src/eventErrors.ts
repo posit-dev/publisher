@@ -38,10 +38,7 @@ type renvPackageEvtErr = baseEvtErr & {
 };
 
 export type RenvAction =
-  | "renvsetup"
-  | "renvinit"
-  | "renvsnapshot"
-  | "renvstatus";
+  "renvsetup" | "renvinit" | "renvsnapshot" | "renvstatus";
 
 export type renvSetupEvtErr = baseEvtErr & {
   command: string;

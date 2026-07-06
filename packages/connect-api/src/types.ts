@@ -75,11 +75,7 @@ interface NoAuth extends ConnectAPIBaseOptions {
 }
 
 export type ConnectAPIOptions =
-  | ApiKeyAuth
-  | TokenAuth
-  | SnowflakeApiKeyAuth
-  | SnowflakeTokenAuth
-  | NoAuth;
+  ApiKeyAuth | TokenAuth | SnowflakeApiKeyAuth | SnowflakeTokenAuth | NoAuth;
 
 // ---------------------------------------------------------------------------
 // User types

@@ -72,9 +72,7 @@ To add a new message type for extension ↔ webview communication:
    ```typescript
    this.webviewConduit.sendMsg({
      kind: HostToWebviewMessageType.MY_MESSAGE,
-     content: {
-       /* typed payload */
-     },
+     content: {/* typed payload */},
    });
    ```
 

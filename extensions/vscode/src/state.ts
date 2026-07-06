@@ -305,9 +305,8 @@ export class PublisherState implements Disposable {
           (
             r,
           ): r is
-            | ContentRecord
-            | PreContentRecord
-            | PreContentRecordWithConfig => !isContentRecordError(r),
+            ContentRecord | PreContentRecord | PreContentRecordWithConfig =>
+            !isContentRecordError(r),
         );
       });
     } catch (error: unknown) {
@@ -429,9 +428,7 @@ export class PublisherState implements Disposable {
 
   findCredentialForContentRecord(
     contentRecord:
-      | ContentRecord
-      | PreContentRecord
-      | PreContentRecordWithConfig,
+      ContentRecord | PreContentRecord | PreContentRecordWithConfig,
   ) {
     return findCredentialForContentRecord(contentRecord, this.credentials);
   }
