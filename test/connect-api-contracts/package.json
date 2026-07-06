@@ -11,11 +11,11 @@
   "dependencies": {
     "@posit-dev/connect-api": "*",
     "@posit-dev/mock-connect": "*",
-    "axios": "^1.18.0"
+    "axios": "^1.18.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.10"
   }
 }
