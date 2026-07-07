@@ -389,8 +389,10 @@ Cypress.Commands.add(
 
     // Activate the publisher extension
     // Note in Workbench the viewport size causes Publisher item to be hidden in the "..." menu
+    // Match on aria-haspopup + aria-label rather than role: newer Positron builds
+    // switched the overflow button's role from "button" to "tab".
     cy.get(
-      '[id="workbench.parts.activitybar"] .action-item[role="button"][aria-label="Additional Views"]',
+      '[id="workbench.parts.activitybar"] .action-item[aria-haspopup="true"][aria-label="Additional Views"]',
       {
         timeout: 30_000,
       },
