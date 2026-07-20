@@ -69,7 +69,7 @@ jobs:
           fetch-depth: 0
           ref: main
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: "lts/*"
 
@@ -142,7 +142,7 @@ jobs:
           ref: main
           token: ${{ steps.generate-token.outputs.token }}
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: "lts/*"
 
