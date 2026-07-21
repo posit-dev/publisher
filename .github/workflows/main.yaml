@@ -13,6 +13,9 @@ jobs:
   extension-contract-tests:
     uses: ./.github/workflows/extension-contract-tests.yaml
 
+  positron-api-tests:
+    uses: ./.github/workflows/positron-api-tests.yaml
+
   connect-contract-tests:
     uses: ./.github/workflows/connect-contract-tests.yaml
 
@@ -34,7 +37,14 @@ jobs:
   # Slack notification on failure
   slack-notification:
     needs:
-      [vscode, extension-contract-tests, connect-contract-tests, package, e2e]
+      [
+        vscode,
+        extension-contract-tests,
+        positron-api-tests,
+        connect-contract-tests,
+        package,
+        e2e,
+      ]
     if: failure()
     runs-on: ubuntu-latest
     steps:
@@ -54,7 +64,14 @@ jobs:
   # Slack notification when CI recovers from failure
   slack-notification-resolved:
     needs:
-      [vscode, extension-contract-tests, connect-contract-tests, package, e2e]
+      [
+        vscode,
+        extension-contract-tests,
+        positron-api-tests,
+        connect-contract-tests,
+        package,
+        e2e,
+      ]
     if: success()
     runs-on: ubuntu-latest
     steps:

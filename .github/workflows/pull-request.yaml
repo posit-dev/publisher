@@ -109,6 +109,11 @@ jobs:
     if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/extension-contract-tests.yaml
 
+  positron-api-tests:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-code == 'true'
+    uses: ./.github/workflows/positron-api-tests.yaml
+
   connect-contract-tests:
     needs: detect-changes
     if: needs.detect-changes.outputs.has-code == 'true'

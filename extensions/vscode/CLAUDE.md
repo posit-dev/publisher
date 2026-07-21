@@ -45,9 +45,12 @@ npm run test-unit
 
 # Run only Mocha integration tests (opens VSCode test instance)
 npm test
+
+# Run Positron API integration tests (downloads a Positron build; macOS only)
+npm run test-positron
 ```
 
-Unit tests are in `src/**/*.test.ts` (excluding `src/test/`). Integration tests using VSCode APIs are in `src/test/`.
+Unit tests are in `src/**/*.test.ts` (excluding `src/test/`). Integration tests using VSCode APIs are in `src/test/suite/`. Positron-only integration tests, which run inside a real Positron build, are in `src/test/positron/` (see its README).
 
 # Architecture
 

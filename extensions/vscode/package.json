@@ -656,6 +656,8 @@
     "esbuild-tests": "node ./esbuild.tests.mjs",
     "pretest": "npm run esbuild-tests && npm run esbuild-base",
     "test": "vscode-test",
+    "pretest-positron": "npm run esbuild-tests && npm run esbuild-base",
+    "test-positron": "node ./scripts/run-positron-tests.mjs",
     "test-unit": "vitest run",
     "test-integration-interpreters": "vitest run src/interpreters/integration.test.ts",
     "test-integration-inspect": "vitest run src/inspect/integration.test.ts",
@@ -664,6 +666,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@posit-dev/mock-connect": "*",
+    "@posit-dev/positron-test-electron": "^0.0.2",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mocha": "^10.0.2",
     "@types/node": "^22.0.0",

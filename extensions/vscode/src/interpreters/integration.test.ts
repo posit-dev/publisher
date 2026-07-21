@@ -716,7 +716,10 @@ describe("scanRPackages (real R + renv)", async () => {
 
 describe(
   "scanPythonDependencies (real Python)",
-  { timeout: 30_000 },
+  // Scanning spawns a real Python that enumerates installed packages, which
+  // can approach 30s on its own under parallel suite load; match the ceiling
+  // used by the scanRPackages block above.
+  { timeout: 120_000 },
   async () => {
     const python3Available = await isExecutableAvailable("python3");
     const pythonAvailable =
