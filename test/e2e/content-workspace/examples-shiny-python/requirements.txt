@@ -4,4 +4,4 @@ shinywidgets==0.8.1
 plotly==6.9.0
 pandas==3.0.3
 ridgeplot==0.6.0
-scipy==1.17.1
+scipy==1.18.0
