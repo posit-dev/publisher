@@ -1,0 +1,45 @@
+name: Positron-API-Tests
+on: [workflow_call]
+permissions:
+  contents: read
+env:
+  POSITRON_CHANNEL: stable
+jobs:
+  test:
+    # @posit-dev/positron-test-electron currently supports macOS only.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      # The interpreter-discovery tests need Python and R installed so
+      # Positron's runtime discovery can find them.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.4"
+      - id: get-date
+        run: echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
+        shell: bash
+      - uses: actions/cache/restore@v6
+        id: cache
+        with:
+          path: ./extensions/vscode/.positron-test
+          key: positron-${{ env.POSITRON_CHANNEL }}-${{ steps.get-date.outputs.date }}
+      - run: npm ci --no-audit --no-fund
+      - name: Run Positron API tests
+        uses: posit-dev/setup-positron@main
+        with:
+          positron-channel: ${{ env.POSITRON_CHANNEL }}
+          working-directory: extensions/vscode
+          run: npm run test-positron
+      - uses: actions/cache/save@v6
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: ./extensions/vscode/.positron-test
+          key: positron-${{ env.POSITRON_CHANNEL }}-${{ steps.get-date.outputs.date }}
