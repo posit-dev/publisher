@@ -101,7 +101,7 @@ test-connect-contracts:
 
     cd test/connect-api-contracts && npm test
 
-# Validate mock Connect server fixtures and responses against the public Swagger spec
+# Validate mock Connect server fixtures and responses against the public OpenAPI spec
 validate-fixtures:
     #!/usr/bin/env bash
     set -eou pipefail
