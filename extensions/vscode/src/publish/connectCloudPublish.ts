@@ -159,9 +159,6 @@ export async function connectCloudPublish({
   // Temp directory holding the streamed bundle; cleaned up in the finally
   // block, regardless of how publishing ends.
   let bundleTmpDir: string | undefined;
-  // ReadStream for the bundle file; closed in the finally block,
-  // regardless of how publishing ends.
-  let bundleReadStream: fs.ReadStream | undefined;
 
   /** Check if canceled; if so, write dismissedAt and throw CanceledError. */
   async function throwIfCanceled(): Promise<void> {
@@ -494,11 +491,16 @@ export async function connectCloudPublish({
       message: "Uploading files",
     });
 
-    // The bundle is streamed from its temp file so it never has to be held in
-    // memory. The temp directory is removed in the finally block below,
-    // regardless of how publishing ends.
-    bundleReadStream = fs.createReadStream(bundlePath);
-    await api.uploadBundle(uploadUrl, bundleReadStream, bundleSize, signal);
+    // The client owns the stream lifecycle — it opens a fresh read stream from
+    // the temp file for each redirect hop and destroys the streams it created,
+    // so the bundle is never held in memory. The temp directory is removed here
+    // on success and in the finally block otherwise.
+    await api.uploadBundle(
+      uploadUrl,
+      () => fs.createReadStream(bundlePath),
+      bundleSize,
+      signal,
+    );
 
     record.bundleId = bundleId;
     await writePublishRecord(deploymentPath, record);
@@ -512,8 +514,7 @@ export async function connectCloudPublish({
     onProgress({ step: "uploadBundle", status: "success" });
 
     // we no longer need the bundle so try to clean it up right away
-    await cleanUpBundle(bundleReadStream, bundleTmpDir);
-    bundleReadStream = undefined;
+    await cleanUpBundle(bundleTmpDir);
     bundleTmpDir = undefined;
 
     await throwIfCanceled();
@@ -679,7 +680,7 @@ export async function connectCloudPublish({
     }
     throw err;
   } finally {
-    await cleanUpBundle(bundleReadStream, bundleTmpDir);
+    await cleanUpBundle(bundleTmpDir);
   }
 }
 

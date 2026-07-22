@@ -61,11 +61,11 @@ vi.mock("node:fs/promises", () => ({
   stat: vi.fn(),
 }));
 
-// Production streams the bundle via fs.createReadStream(bundlePath). In tests
-// the upload API is mocked and never consumes that stream, while cleanUpBundle
-// destroys the stream and removes the temp dir as soon as the upload mock
-// returns. A lazily-opened read stream can therefore lose a race with that
-// destruction and emit an ENOENT with no listener — an unhandled exception
+// Production passes a stream factory (`() => fs.createReadStream(bundlePath)`)
+// to the upload API, which owns the stream lifecycle. In tests the upload API
+// is mocked and never invokes the factory, but tests that do invoke it (to
+// assert factory behavior) open a read stream after the temp dir has been
+// removed, so it can emit an ENOENT with no listener — an unhandled exception
 // (real axios consumes the body before cleanup runs, so this is a test-only
 // concern). Attach a swallowing error handler to every bundle read stream so
 // that race can't surface as an unhandled error.
@@ -482,13 +482,23 @@ describe("connectPublish", () => {
     // unchanged into the correct uploadBundle arguments — token-auth request
     // signing depends on the checksum matching the streamed bytes.
     const bundle = await firstBundleResult();
-    expect(opts.api.uploadBundle).toHaveBeenCalledWith(
-      expect.anything(), // ContentID branded type
-      expect.any(Readable),
-      bundle.bundleSize,
-      bundle.bundleChecksum,
-      undefined, // signal
-    );
+    const call = vi.mocked(opts.api.uploadBundle).mock.calls[0]!;
+    expect(call[0]).toEqual(expect.anything()); // ContentID branded type
+    // The second argument is a stream factory: the client opens a fresh read
+    // stream from the bundle file for each redirect hop, so invoking it twice
+    // yields two distinct fs.ReadStreams rather than one reusable stream.
+    const makeBody = call[1];
+    expect(typeof makeBody).toBe("function");
+    const s1 = makeBody();
+    const s2 = makeBody();
+    expect(s1).toBeInstanceOf(Readable);
+    expect(s2).toBeInstanceOf(Readable);
+    expect(s1).not.toBe(s2);
+    s1.destroy();
+    s2.destroy();
+    expect(call[2]).toBe(bundle.bundleSize);
+    expect(call[3]).toBe(bundle.bundleChecksum);
+    expect(call[4]).toBeUndefined(); // signal
   });
 
   test("removes the streamed bundle's temp dir after a successful publish", async () => {

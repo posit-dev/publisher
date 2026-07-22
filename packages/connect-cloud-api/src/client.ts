@@ -5,6 +5,7 @@ import axios from "axios";
 import type { AxiosInstance } from "axios";
 
 import { CloudAuthClient } from "./auth.js";
+import { attachRedirectHandling } from "./redirects.js";
 import type {
   Account,
   AccountListResponse,
@@ -20,6 +21,13 @@ import type {
   UpdateContentRequest,
   UserResponse,
 } from "./types.js";
+
+// Presigned-URL uploads bypass the authenticated client; give them their own
+// instance so redirect handling (fresh stream per hop) still applies.
+// `maxRedirects: 0` keeps axios on its native streaming transport. Created once
+// at module load — it holds no per-request or credential state.
+const uploadClient = axios.create({ maxRedirects: 0 });
+attachRedirectHandling(uploadClient);
 
 /**
  * TypeScript client for the Posit Connect Cloud API.
@@ -43,9 +51,16 @@ export class ConnectCloudAPI {
     this.environment = options.environment;
     this.onTokenRefresh = options.onTokenRefresh;
 
+    // `maxRedirects: 0` keeps axios on its native http/https transport (which
+    // truly streams request bodies); redirects are followed manually by
+    // `attachRedirectHandling`, which re-issues each hop through this instance
+    // so the Bearer-token request interceptor re-runs and forwards the token to
+    // the redirect target.
     this.client = axios.create({
       baseURL: options.apiBaseUrl,
+      maxRedirects: 0,
     });
+    attachRedirectHandling(this.client);
 
     // Use request interceptor to set auth header dynamically (token may change after refresh)
     this.client.interceptors.request.use((config) => {
@@ -199,31 +214,48 @@ export class ConnectCloudAPI {
 
   /**
    * Uploads a bundle to a pre-signed URL.
-   * This does not use the authenticated client since the URL is pre-signed.
+   * This does not use the authenticated client since the URL is pre-signed; it
+   * goes through a dedicated `uploadClient` instance that follows redirects.
    *
    * The body is streamed from the staged bundle file so uploads of arbitrary
    * size never have to be buffered in memory. `contentLength` is already known
    * from writing that temp file to disk (its byte size), so we pass it here
    * rather than have axios try to derive it from the stream.
    *
-   * `maxRedirects: 0` keeps axios on its native http/https transport, which
-   * truly streams the body. The default follow-redirects transport buffers the
-   * entire request body in memory (so it can replay it on a redirect), which
-   * would defeat streaming and exhaust memory on large bundles.
+   * `makeBody` is a factory that opens a fresh read stream from the bundle file
+   * on disk. A stream can only be consumed once, so on each redirect hop the
+   * redirect handler destroys the consumed stream and calls the factory again
+   * for a new one — the bundle is re-streamed from disk, never buffered in
+   * memory. S3-style presigned endpoints can themselves redirect (e.g. region
+   * redirects), which is why this parity with the Connect client matters.
    */
   async uploadBundle(
     uploadUrl: string,
-    body: Readable,
+    makeBody: () => Readable,
     contentLength: number,
     signal?: AbortSignal,
   ): Promise<void> {
-    await axios.post(uploadUrl, body, {
-      headers: {
-        "Content-Type": "application/gzip",
-        "Content-Length": contentLength,
-      },
-      maxRedirects: 0,
-      signal,
-    });
+    // Track the live stream so each redirect hop can destroy the consumed one
+    // before opening a fresh read from disk, and so the final stream is always
+    // cleaned up even when the request fails or is aborted.
+    let current: Readable | undefined;
+    const bodyFactory = (): Readable => {
+      current?.destroy();
+      current = makeBody();
+      return current;
+    };
+    try {
+      await uploadClient.post(uploadUrl, bodyFactory(), {
+        headers: {
+          "Content-Type": "application/gzip",
+          "Content-Length": contentLength,
+        },
+        bodyFactory,
+        signal,
+      });
+    } finally {
+      // On success the stream is fully consumed; destroy() is then a no-op.
+      current?.destroy();
+    }
   }
 }

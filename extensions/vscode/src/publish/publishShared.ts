@@ -3,8 +3,6 @@
 import * as fs from "fs/promises";
 import * as os from "os";
 import * as path from "path";
-import { Readable } from "stream";
-import { finished } from "stream/promises";
 import { stringify as stringifyTOML } from "smol-toml";
 
 import { manifestFromConfig } from "../bundler/manifestFromConfig";
@@ -409,17 +407,10 @@ export async function buildBundleArchive(
 }
 
 // Helper for consistent bundle tempfile cleanup, as it is used in multiple
-// places (Connect, Cloud, on success, on failure/cancellation).
-export async function cleanUpBundle(
-  readStream: Readable | undefined,
-  tmpDir: string | undefined,
-): Promise<void> {
-  // best effort cleanup: destroy the stream and remove the temp dir, but don't
-  // throw if they fail as that might mask other errors
-  if (readStream !== undefined && !readStream.closed) {
-    readStream.destroy();
-    await finished(readStream).catch(() => {});
-  }
+// places (Connect, Cloud, on success, on failure/cancellation). Upload
+// streams are owned and destroyed by the API clients, so only the temp
+// directory needs removing here.
+export async function cleanUpBundle(tmpDir: string | undefined): Promise<void> {
   if (tmpDir) {
     await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
   }

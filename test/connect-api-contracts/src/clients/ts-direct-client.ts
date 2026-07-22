@@ -123,7 +123,7 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         // Map id → bundleId to match contract expectations
         const { data } = await c.uploadBundle(
           ContentID(params.contentId as string),
-          Readable.from(Buffer.from(bundleData)),
+          () => Readable.from(Buffer.from(bundleData)),
           bundleData.length,
           checksum,
         );

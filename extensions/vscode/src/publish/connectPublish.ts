@@ -156,9 +156,6 @@ export async function connectPublish({
   // Temp directory holding the streamed bundle; cleaned up in the finally
   // block, regardless of how publishing ends.
   let bundleTmpDir: string | undefined;
-  // ReadStream for the bundle file; closed in the finally block,
-  // regardless of how publishing ends.
-  let bundleReadStream: fs.ReadStream | undefined;
 
   /** Check if canceled; if so, write dismissedAt and throw CanceledError. */
   async function throwIfCanceled(): Promise<void> {
@@ -587,9 +584,10 @@ export async function connectPublish({
 
     await throwIfCanceled();
 
-    // Step 5: Upload bundle. The bundle is streamed from its temp file so it
-    // never has to be held in memory. The temp directory is removed in the
-    // finally block below, regardless of how publishing ends.
+    // Step 5: Upload bundle. The client owns the stream lifecycle — it opens a
+    // fresh read stream from the temp file for each redirect hop and destroys
+    // the streams it created, so the bundle is never held in memory. The temp
+    // directory is removed here on success and in the finally block otherwise.
     lastStep = "uploadBundle";
     onProgress({ step: "uploadBundle", status: "start" });
     onProgress({
@@ -597,10 +595,9 @@ export async function connectPublish({
       status: "log",
       message: "Uploading files",
     });
-    bundleReadStream = fs.createReadStream(bundlePath);
     const { data: bundleDTO } = await api.uploadBundle(
       ContentID(contentId),
-      bundleReadStream,
+      () => fs.createReadStream(bundlePath),
       bundleSize,
       bundleChecksum,
       signal,
@@ -618,8 +615,7 @@ export async function connectPublish({
     onProgress({ step: "uploadBundle", status: "success" });
 
     // we no longer need the bundle so try to clean it up right away
-    await cleanUpBundle(bundleReadStream, bundleTmpDir);
-    bundleReadStream = undefined;
+    await cleanUpBundle(bundleTmpDir);
     bundleTmpDir = undefined;
 
     await throwIfCanceled();
@@ -836,7 +832,7 @@ export async function connectPublish({
     }
     throw err;
   } finally {
-    await cleanUpBundle(bundleReadStream, bundleTmpDir);
+    await cleanUpBundle(bundleTmpDir);
   }
 }
 

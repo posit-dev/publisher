@@ -7,6 +7,7 @@ import axios from "axios";
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 
 import { md5Checksum, signRequestWithChecksum } from "./auth.js";
+import { attachRedirectHandling } from "./redirects.js";
 import type {
   AllSettings,
   ApplicationSettings,
@@ -91,8 +92,14 @@ export class ConnectAPI {
       );
     }
 
+    // The whole client stays on axios's native http/https transport
+    // (`maxRedirects: 0`), which truly streams request bodies rather than
+    // buffering them to replay on a redirect. Redirects are instead followed
+    // manually by `attachRedirectHandling` below, which re-issues each hop
+    // through this instance so token-auth signing and cookie forwarding rerun.
     const config: AxiosRequestConfig = {
       baseURL: options.url,
+      maxRedirects: 0,
     };
 
     if (hasSnowflake) {
@@ -134,6 +141,13 @@ export class ConnectAPI {
 
     this.client = axios.create(config);
 
+    // Follow redirects manually (see the config comment above). Registered
+    // before the token/cookie interceptors: the cookie-capture response
+    // interceptor has no rejected handler, so 3xx rejections flow past it into
+    // this handler regardless of ordering, and request interceptors re-run on
+    // each re-issued hop either way.
+    attachRedirectHandling(this.client);
+
     // For token auth, add a request interceptor that computes per-request signing headers
     if (hasToken) {
       const token = options.token!;
@@ -141,8 +155,15 @@ export class ConnectAPI {
 
       this.client.interceptors.request.use((reqConfig) => {
         const method = (reqConfig.method ?? "GET").toUpperCase();
-        // Extract the path from the url (which is relative to baseURL)
-        const path = reqConfig.url ?? "/";
+        // Extract the path from the url (which is relative to baseURL).
+        // After a redirect the re-issued request carries an absolute URL; the
+        // signature covers only the path, matching what we sign for relative
+        // URLs (the query never participates — getTaskLogs' params are unsigned
+        // today).
+        const rawUrl = reqConfig.url ?? "/";
+        const path = /^https?:\/\//i.test(rawUrl)
+          ? new URL(rawUrl).pathname
+          : rawUrl;
 
         // The signature covers a base64 MD5 of the exact bytes Connect
         // receives. Streamed bodies (large bundle uploads) can't be hashed
@@ -375,31 +396,49 @@ export class ConnectAPI {
    * `checksum` is sent as X-Content-Checksum so token-auth request signing can
    * cover the body without re-reading it.
    *
-   * `maxRedirects: 0` keeps axios on its native http/https transport, which
-   * truly streams the body. The default follow-redirects transport buffers the
-   * entire request body in memory (so it can replay it on a redirect), which
-   * would defeat streaming and exhaust memory on large bundles.
+   * `makeBody` is a factory that opens a fresh read stream from the bundle file
+   * on disk. A stream can only be consumed once, so on each redirect hop the
+   * redirect handler destroys the consumed stream and calls the factory again
+   * for a new one — the bundle is re-streamed from disk, never buffered in
+   * memory. `Content-Length` and `X-Content-Checksum` are constant across hops
+   * (the file on disk does not change) and ride on the request headers; the
+   * token-auth interceptor re-signs each redirect target's path against that
+   * same precomputed checksum. `Date` and `X-Auth-*` are recomputed per hop.
    */
   async uploadBundle(
     contentId: ContentID,
-    body: Readable,
+    makeBody: () => Readable,
     contentLength: number,
     checksum: string,
     signal?: AbortSignal,
   ): Promise<AxiosResponse<BundleDTO>> {
-    return this.client.post<BundleDTO>(
-      `/__api__/v1/content/${contentId}/bundles`,
-      body,
-      {
-        headers: {
-          "Content-Type": "application/gzip",
-          "Content-Length": contentLength,
-          "X-Content-Checksum": checksum,
+    // Track the live stream so each redirect hop can destroy the consumed
+    // one before opening a fresh read from disk, and so the final stream is
+    // always cleaned up even when the request fails or is aborted.
+    let current: Readable | undefined;
+    const bodyFactory = (): Readable => {
+      current?.destroy();
+      current = makeBody();
+      return current;
+    };
+    try {
+      return await this.client.post<BundleDTO>(
+        `/__api__/v1/content/${contentId}/bundles`,
+        bodyFactory(),
+        {
+          headers: {
+            "Content-Type": "application/gzip",
+            "Content-Length": contentLength,
+            "X-Content-Checksum": checksum,
+          },
+          bodyFactory,
+          signal,
         },
-        maxRedirects: 0,
-        signal,
-      },
-    );
+      );
+    } finally {
+      // On success the stream is fully consumed; destroy() is then a no-op.
+      current?.destroy();
+    }
   }
 
   /** Downloads a bundle archive as raw bytes. */
