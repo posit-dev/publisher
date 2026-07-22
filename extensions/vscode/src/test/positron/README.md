@@ -30,10 +30,13 @@ npm run test-positron          # against the latest stable Positron
 POSITRON_CHANNEL=daily npm run test-positron   # against a daily build
 ```
 
-> **Note:** `@posit-dev/positron-test-electron` currently supports **macOS
-> only**. On other platforms, rely on the `Positron-API-Tests` GitHub Actions
-> workflow (`.github/workflows/positron-api-tests.yaml`), which runs on every
-> PR and push to `main`.
+> **Note:** the released `@posit-dev/positron-test-electron` supports **macOS
+> only**; Windows/Linux support has landed upstream
+> ([posit-dev/positron-test-electron#3](https://github.com/posit-dev/positron-test-electron/issues/3))
+> and is pending an npm release. Until then, on other platforms rely on the
+> `Positron-API-Tests` GitHub Actions workflow
+> (`.github/workflows/positron-api-tests.yaml`), which runs on every PR and
+> push to `main`.
 
 The interpreter-discovery tests expect a Python and an R installation that
 Positron can discover on the machine.

@@ -23,7 +23,11 @@ export function run(): Promise<void> {
   });
 
   const testsRoot = __dirname;
-  for (const file of fs.readdirSync(testsRoot)) {
+  const files = fs.readdirSync(testsRoot, {
+    recursive: true,
+    encoding: "utf-8",
+  });
+  for (const file of files) {
     if (file.endsWith(".test.js")) {
       mocha.addFile(path.resolve(testsRoot, file));
     }

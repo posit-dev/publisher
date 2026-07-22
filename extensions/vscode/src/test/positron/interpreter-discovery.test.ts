@@ -31,32 +31,34 @@ async function waitForPreferredRuntime(
 ): Promise<LanguageRuntimeMetadata> {
   const api = acquirePositronApi();
   const deadline = Date.now() + 120000;
-  let lastError: unknown;
+  let lastFailure = "getPreferredRuntime was never attempted";
 
-  for (;;) {
+  while (Date.now() < deadline) {
     try {
       const runtime = await api.runtime.getPreferredRuntime(languageId);
       if (runtime) {
         return runtime;
       }
+      lastFailure = "Positron resolved without reporting a preferred runtime";
     } catch (error: unknown) {
-      lastError = error;
+      lastFailure = `getPreferredRuntime threw: ${String(error)}`;
     }
-    assert.ok(
-      Date.now() < deadline,
-      `Positron did not report a preferred ${languageId} runtime before the ` +
-        `deadline; is a ${languageId} interpreter installed? ` +
-        `Last error: ${String(lastError)}`,
-    );
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }
+
+  return assert.fail(
+    `Positron did not report a preferred ${languageId} runtime before the ` +
+      `deadline; is a ${languageId} interpreter installed? ${lastFailure}`,
+  );
 }
 
 /**
- * Positron may report runtime paths with a leading `~/`, which Publisher
- * expands before use (https://github.com/posit-dev/positron/issues/12942).
- * Mirror that expansion so the expected value matches on machines where
- * Positron reports home-relative paths.
+ * Older Positron builds report runtime paths with a leading `~/`
+ * (https://github.com/posit-dev/positron/issues/12942 — fixed in July 2026
+ * releases), and Publisher expands them before use to stay compatible with
+ * those builds. Mirror that expansion so the expected value matches
+ * Publisher's output either way; drop this helper when the expansion leaves
+ * src/utils/vscode.ts.
  */
 function expandTilde(runtimePath: string): string {
   return runtimePath.startsWith("~/")

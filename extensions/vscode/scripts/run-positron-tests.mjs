@@ -10,8 +10,8 @@
 // first). Set POSITRON_CHANNEL=daily to test against a daily Positron build
 // (default: stable).
 //
-// NOTE: @posit-dev/positron-test-electron currently supports macOS only;
-// Windows/Linux support is planned upstream.
+// NOTE: the released @posit-dev/positron-test-electron supports macOS only;
+// Windows/Linux support has landed upstream and is pending an npm release.
 
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -49,9 +49,16 @@ async function main() {
     extensionTestsPath,
     // The interpreter-discovery tests need Positron's bundled runtime
     // extensions (Python, Ark/R) to register language runtimes, so opt out of
-    // the default --disable-extensions.
+    // the default --disable-extensions. Copilot is bundled too and spams the
+    // logs with failed GitHub auth attempts on credential-less machines, so
+    // disable it individually.
     disableExtensions: false,
-    launchArgs: [workspacePath, "--disable-workspace-trust"],
+    launchArgs: [
+      workspacePath,
+      "--disable-workspace-trust",
+      "--disable-extension",
+      "GitHub.copilot-chat",
+    ],
   });
 
   process.exit(code);
