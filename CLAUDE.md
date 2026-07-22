@@ -41,7 +41,7 @@ just test-connect-contracts
 # Run Python script tests (license checker, prepare-release, etc.).
 just test-scripts
 
-# Validate Connect API fixtures against the public Swagger spec.
+# Validate Connect API fixtures against the public OpenAPI spec.
 just validate-fixtures
 
 # Print pre-release status based on the version.

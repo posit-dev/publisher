@@ -68,7 +68,7 @@ cd test/connect-api-contracts && npm test
 # Update snapshots (currently only one inline snapshot in authentication.test.ts)
 cd test/connect-api-contracts && npm run test:update
 
-# Validate mock server and fixtures against the Connect Swagger spec
+# Validate mock server and fixtures against the Connect OpenAPI spec
 just validate-fixtures
 ```
 
@@ -94,7 +94,7 @@ describe("NewMethod", () => {
 ```
 
 4. Add a fixture file in `test/mock-connect/fixtures/connect-responses/`
-5. Add a fixture mapping in `test/mock-connect/src/validation/fixture-map.ts` for Swagger validation
+5. Add a fixture mapping in `test/mock-connect/src/validation/fixture-map.ts` for OpenAPI validation
 
 ## Project structure
 
