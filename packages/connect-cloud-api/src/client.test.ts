@@ -3,6 +3,7 @@
 import { Readable } from "stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConnectCloudAPI } from "./client.js";
+import { MAX_REDIRECTS } from "./redirects.js";
 import {
   ContentID,
   ContentAccess,
@@ -28,87 +29,115 @@ import type {
 const mockRequest = vi.fn();
 
 vi.mock("axios", () => {
-  // Store request interceptors so we can apply them
-  const requestInterceptors: Array<
-    (config: Record<string, unknown>) => Record<string, unknown>
-  > = [];
+  type Cfg = Record<string, unknown>;
+  type Resp = { status: number; headers?: Record<string, unknown> } & Record<
+    string,
+    unknown
+  >;
+  type Fulfilled = (config: Cfg) => Cfg;
+  type ResFulfilled = (resp: Resp) => Resp | Promise<Resp>;
+  type ResRejected = (error: unknown) => unknown;
 
-  async function request(config: Record<string, unknown>) {
-    // Apply request interceptors
-    let processedConfig = { ...config };
-    for (const interceptor of requestInterceptors) {
-      processedConfig = interceptor(processedConfig);
+  const defaultValidate = (s: number) => s >= 200 && s < 300;
+
+  // Each created instance gets its own interceptor managers so, e.g., the
+  // main client's Bearer interceptor is not attached to the presigned-upload
+  // instance.
+  function makeInstance(createConfig: Cfg = {}) {
+    const reqInterceptors: Fulfilled[] = [];
+    const resInterceptors: Array<{
+      onFulfilled?: ResFulfilled;
+      onRejected?: ResRejected;
+    }> = [];
+    const instanceHeaders = (createConfig.headers ?? {}) as Record<
+      string,
+      unknown
+    >;
+
+    // Runs the request and applies validateStatus. On a non-2xx status rejects
+    // with an AxiosError carrying `config` (like real axios) so the redirect
+    // handler can re-issue it.
+    async function dispatch(cfg: Cfg): Promise<Resp> {
+      const resp: Resp = await mockRequest(cfg);
+      const validate =
+        (cfg.validateStatus as ((s: number) => boolean) | undefined) ??
+        defaultValidate;
+      if (!validate(resp.status)) {
+        return Promise.reject(
+          Object.assign(
+            new Error(`Request failed with status code ${resp.status}`),
+            { isAxiosError: true, response: resp, config: cfg },
+          ),
+        );
+      }
+      return resp;
     }
 
-    const resp = await mockRequest(processedConfig);
-    const validate =
-      (processedConfig.validateStatus as
-        ((s: number) => boolean) | undefined) ??
-      ((s: number) => s >= 200 && s < 300);
-    if (!validate(resp.status as number)) {
-      throw Object.assign(
-        new Error(`Request failed with status code ${resp.status}`),
-        { isAxiosError: true, response: resp },
-      );
+    async function request(config: Cfg): Promise<Resp> {
+      // Instance defaults (baseURL, maxRedirects, headers) merge under the
+      // per-request config, matching real axios mergeConfig behavior.
+      const headers: Record<string, unknown> = {
+        ...instanceHeaders,
+        ...((config.headers ?? {}) as Record<string, unknown>),
+      };
+      let cfg: Cfg = {
+        baseURL: createConfig.baseURL,
+        maxRedirects: createConfig.maxRedirects,
+        ...config,
+        headers,
+      };
+
+      for (const handler of reqInterceptors) {
+        cfg = handler(cfg);
+      }
+
+      let result: Promise<Resp> = dispatch(cfg);
+      for (const { onFulfilled, onRejected } of resInterceptors) {
+        result = result.then(
+          onFulfilled ?? ((r: Resp) => r),
+          onRejected,
+        ) as Promise<Resp>;
+      }
+      return result;
     }
-    return resp;
+
+    return {
+      request,
+      get: (url: string, config?: Cfg) =>
+        request({ method: "GET", url, ...config }),
+      post: (url: string, data?: unknown, config?: Cfg) =>
+        request({ method: "POST", url, data, ...config }),
+      patch: (url: string, data?: unknown, config?: Cfg) =>
+        request({ method: "PATCH", url, data, ...config }),
+      interceptors: {
+        request: {
+          use: (fn: Fulfilled) => {
+            reqInterceptors.push(fn);
+          },
+        },
+        response: {
+          use: (onFulfilled?: ResFulfilled, onRejected?: ResRejected) => {
+            resInterceptors.push({ onFulfilled, onRejected });
+          },
+        },
+      },
+    };
   }
 
   return {
     default: {
-      create: vi.fn(() => ({
-        request,
-        get: (url: string, config?: Record<string, unknown>) =>
-          request({ method: "GET", url, ...config }),
-        post: (url: string, data?: unknown, config?: Record<string, unknown>) =>
-          request({ method: "POST", url, data, ...config }),
-        patch: (
-          url: string,
-          data?: unknown,
-          config?: Record<string, unknown>,
-        ) => request({ method: "PATCH", url, data, ...config }),
-        interceptors: {
-          request: {
-            use: (
-              fn: (config: Record<string, unknown>) => Record<string, unknown>,
-            ) => {
-              requestInterceptors.push(fn);
-            },
-          },
-        },
-      })),
-      post: vi.fn(
-        async (
-          url: string,
-          data?: unknown,
-          config?: Record<string, unknown>,
-        ) => {
-          const resp = await mockRequest({
-            method: "POST",
-            url,
-            data,
-            ...config,
-          });
-          const validate = (s: number) => s >= 200 && s < 300;
-          if (!validate(resp.status as number)) {
-            throw Object.assign(
-              new Error(`Request failed with status code ${resp.status}`),
-              { isAxiosError: true, response: resp },
-            );
-          }
-          return resp;
-        },
-      ),
+      create: vi.fn((createConfig: Cfg = {}) => makeInstance(createConfig)),
       isAxiosError: (err: unknown): boolean =>
         typeof err === "object" &&
         err !== null &&
         (err as Record<string, unknown>).isAxiosError === true,
+      isCancel: (err: unknown): boolean =>
+        typeof err === "object" &&
+        err !== null &&
+        (err as Record<string, unknown>).__CANCEL__ === true,
     },
   };
 });
-
-// Re-import axios so we can inspect axios.create calls
-import axios from "axios";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -128,6 +157,7 @@ function jsonResponse(
   body: unknown,
   status = 200,
   statusText = "OK",
+  headers: Record<string, string> = { "content-type": "application/json" },
 ): {
   status: number;
   statusText: string;
@@ -139,7 +169,7 @@ function jsonResponse(
     status,
     statusText,
     data: body,
-    headers: { "content-type": "application/json" },
+    headers,
     config: {},
   };
 }
@@ -148,6 +178,7 @@ function textResponse(
   body: string,
   status = 200,
   statusText = "OK",
+  headers: Record<string, string> = {},
 ): {
   status: number;
   statusText: string;
@@ -159,7 +190,27 @@ function textResponse(
     status,
     statusText,
     data: body,
-    headers: {},
+    headers,
+    config: {},
+  };
+}
+
+/** A 3xx redirect response with a lower-cased `location` header. */
+function redirectResponse(
+  status: number,
+  location?: string,
+): {
+  status: number;
+  statusText: string;
+  data: unknown;
+  headers: Record<string, string>;
+  config: object;
+} {
+  return {
+    status,
+    statusText: "Redirect",
+    data: "",
+    headers: location !== undefined ? { location } : {},
     config: {},
   };
 }
@@ -567,20 +618,23 @@ describe("uploadBundle", () => {
 
     const body = Readable.from(Buffer.from([0x1f, 0x8b, 0x08]));
     const client = createClient();
-    await client.uploadBundle("https://upload.example.com/presigned", body, 3);
-
-    // uploadBundle uses axios.post directly, not the instance
-    expect(axios.post).toHaveBeenCalledWith(
+    await client.uploadBundle(
       "https://upload.example.com/presigned",
-      body,
-      {
-        headers: {
-          "Content-Type": "application/gzip",
-          "Content-Length": 3,
-        },
-        maxRedirects: 0,
-      },
+      () => body,
+      3,
     );
+
+    // The upload goes through a dedicated created instance (not the
+    // authenticated client, and no Authorization header).
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.method).toBe("POST");
+    expect(call.url).toBe("https://upload.example.com/presigned");
+    expect(call.data).toBe(body);
+    expect(call.headers["Content-Type"]).toBe("application/gzip");
+    expect(call.headers["Content-Length"]).toBe(3);
+    expect(call.headers.Authorization).toBeUndefined();
+    // The upload instance keeps axios on its native streaming transport.
+    expect(call.maxRedirects).toBe(0);
   });
 
   it("throws on non-2xx", async () => {
@@ -592,7 +646,7 @@ describe("uploadBundle", () => {
     await expect(
       client.uploadBundle(
         "https://upload.example.com/presigned",
-        Readable.from(Buffer.from([1])),
+        () => Readable.from(Buffer.from([1])),
         1,
       ),
     ).rejects.toThrow();
@@ -610,7 +664,7 @@ describe("uploadBundle", () => {
     await expect(
       client.uploadBundle(
         "https://upload.example.com/presigned",
-        Readable.from(Buffer.from([1])),
+        () => Readable.from(Buffer.from([1])),
         1,
         controller.signal,
       ),
@@ -618,6 +672,145 @@ describe("uploadBundle", () => {
 
     const call = mockRequest.mock.calls[0][0];
     expect(call.signal).toBe(controller.signal);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Redirect handling (client-wide + presigned upload)
+// ---------------------------------------------------------------------------
+
+describe("Redirect handling", () => {
+  it("follows a 302 on an instance call and keeps the Authorization header", async () => {
+    mockRequest
+      .mockResolvedValueOnce(
+        redirectResponse(302, "https://api2.connect.posit.cloud/v1/users/me"),
+      )
+      .mockResolvedValueOnce(jsonResponse({ account_roles: {} }));
+
+    const client = createClient();
+    await client.getCurrentUser();
+
+    expect(mockRequest).toHaveBeenCalledTimes(2);
+    const second = mockRequest.mock.calls[1][0];
+    expect(second.url).toBe("https://api2.connect.posit.cloud/v1/users/me");
+    expect(second.headers.Authorization).toBe(`Bearer ${ACCESS_TOKEN}`);
+  });
+
+  it("follows a 307 from the presigned URL with a fresh stream per hop", async () => {
+    const responses = [
+      redirectResponse(307, "https://region2.example.com/presigned"),
+      jsonResponse(null, 200),
+    ];
+    const sentData: unknown[] = [];
+    const sentHeaders: Array<Record<string, unknown>> = [];
+    let hop = 0;
+    mockRequest.mockImplementation((cfg: Record<string, unknown>) => {
+      sentData.push(cfg.data);
+      sentHeaders.push(cfg.headers as Record<string, unknown>);
+      return Promise.resolve(responses[hop++]);
+    });
+
+    const streams: Readable[] = [];
+    const makeBody = (): Readable => {
+      const s = Readable.from(Buffer.from([0x1f, 0x8b]));
+      streams.push(s);
+      return s;
+    };
+
+    const client = createClient();
+    await client.uploadBundle(
+      "https://region1.example.com/presigned",
+      makeBody,
+      2,
+    );
+
+    // Initial request + 1 redirect = 2 distinct streams, each sent to its hop.
+    expect(streams).toHaveLength(2);
+    expect(new Set(streams).size).toBe(2);
+    expect(sentData).toEqual([streams[0], streams[1]]);
+    for (const headers of sentHeaders) {
+      expect(headers["Content-Type"]).toBe("application/gzip");
+      expect(headers["Content-Length"]).toBe(2);
+    }
+    // Consumed stream destroyed by the factory; final by uploadBundle's finally.
+    expect(streams[0].destroyed).toBe(true);
+    expect(streams[1].destroyed).toBe(true);
+  });
+
+  it("gives up after MAX_REDIRECTS hops on the presigned upload", async () => {
+    for (let i = 0; i <= MAX_REDIRECTS; i++) {
+      mockRequest.mockResolvedValueOnce(
+        redirectResponse(307, `https://h${i}.example.com/x`),
+      );
+    }
+
+    const client = createClient();
+    await expect(
+      client.uploadBundle(
+        "https://region1.example.com/presigned",
+        () => Readable.from(Buffer.from([1])),
+        1,
+      ),
+    ).rejects.toThrow(/Too many redirects/);
+    expect(mockRequest).toHaveBeenCalledTimes(MAX_REDIRECTS + 1);
+  });
+
+  it("does not follow a 303 and rejects with the original error", async () => {
+    mockRequest.mockResolvedValueOnce(
+      redirectResponse(303, "https://x.example.com/y"),
+    );
+
+    const client = createClient();
+    await expect(
+      client.uploadBundle(
+        "https://region1.example.com/presigned",
+        () => Readable.from(Buffer.from([1])),
+        1,
+      ),
+    ).rejects.toMatchObject({ response: { status: 303 } });
+    expect(mockRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not follow a 302 without a Location header", async () => {
+    mockRequest.mockResolvedValueOnce(redirectResponse(302));
+
+    const client = createClient();
+    await expect(client.getCurrentUser()).rejects.toMatchObject({
+      response: { status: 302 },
+    });
+    expect(mockRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("propagates an abort mid-redirect and destroys the live upload stream", async () => {
+    const cancelErr = Object.assign(new Error("canceled"), {
+      __CANCEL__: true,
+    });
+    mockRequest
+      .mockResolvedValueOnce(
+        redirectResponse(307, "https://region2.example.com/x"),
+      )
+      .mockRejectedValueOnce(cancelErr);
+
+    const streams: Readable[] = [];
+    const makeBody = (): Readable => {
+      const s = Readable.from(Buffer.from([1, 2, 3]));
+      streams.push(s);
+      return s;
+    };
+
+    const client = createClient();
+    await expect(
+      client.uploadBundle(
+        "https://region1.example.com/presigned",
+        makeBody,
+        3,
+        AbortSignal.abort(),
+      ),
+    ).rejects.toBe(cancelErr);
+
+    expect(streams).toHaveLength(2);
+    expect(streams[0].destroyed).toBe(true);
+    expect(streams[1].destroyed).toBe(true);
   });
 });
 

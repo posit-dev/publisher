@@ -168,15 +168,6 @@ vi.mock("../toml/configCompliance", () => ({
   forceProductTypeCompliance: vi.fn(),
 }));
 
-// stream/promises.finished listens for the stream 'close' event which fires
-// via process.nextTick — not faked by vi.useFakeTimers(). If finished() were
-// real, cleanUpBundle's extra await would fire after vi.runAllTimersAsync()
-// returns, causing the log-watching timer setup to miss the run-all window.
-// Mock it to resolve immediately so the async chain stays in sync.
-vi.mock("stream/promises", () => ({
-  finished: vi.fn().mockResolvedValue(undefined),
-}));
-
 // Mock watchCloudLogs - DO NOT mock the entire @posit-dev/connect-cloud-api
 // Instead, mock just the watchCloudLogs function
 vi.mock("@posit-dev/connect-cloud-api", async (importOriginal) => {
@@ -623,14 +614,23 @@ describe("connectCloudPublish", () => {
     await vi.runAllTimersAsync();
     await resultPromise;
 
-    expect(api.uploadBundle).toHaveBeenCalledWith(
-      "https://s3.example.com/upload",
-      expect.any(Readable),
-      expect.any(Number),
-      // The abort signal is forwarded so cancellation aborts the in-flight
-      // upload promptly. It is undefined here because no signal was supplied.
-      undefined,
-    );
+    const call = vi.mocked(api.uploadBundle).mock.calls[0]!;
+    expect(call[0]).toBe("https://s3.example.com/upload");
+    // The second argument is a stream factory: the client opens a fresh read
+    // stream from the bundle file for each redirect hop.
+    const makeBody = call[1];
+    expect(typeof makeBody).toBe("function");
+    const s1 = makeBody();
+    const s2 = makeBody();
+    expect(s1).toBeInstanceOf(Readable);
+    expect(s2).toBeInstanceOf(Readable);
+    expect(s1).not.toBe(s2);
+    s1.destroy();
+    s2.destroy();
+    expect(call[2]).toEqual(expect.any(Number));
+    // The abort signal is forwarded so cancellation aborts the in-flight
+    // upload promptly. It is undefined here because no signal was supplied.
+    expect(call[3]).toBeUndefined();
   });
 
   test("forwards the abort signal to uploadBundle", async () => {
@@ -641,12 +641,11 @@ describe("connectCloudPublish", () => {
     await vi.runAllTimersAsync();
     await resultPromise;
 
-    expect(opts.api.uploadBundle).toHaveBeenCalledWith(
-      "https://s3.example.com/upload",
-      expect.any(Readable),
-      expect.any(Number),
-      controller.signal,
-    );
+    const call = vi.mocked(opts.api.uploadBundle).mock.calls[0]!;
+    expect(call[0]).toBe("https://s3.example.com/upload");
+    expect(typeof call[1]).toBe("function");
+    expect(call[2]).toEqual(expect.any(Number));
+    expect(call[3]).toBe(controller.signal);
   });
 
   test("removes the streamed bundle's temp dir after a successful publish", async () => {

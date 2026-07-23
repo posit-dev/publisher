@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed deploying large projects (multiple GiB) failing at the "Create Bundle" step. The bundle is now streamed to disk and uploaded as a stream instead of being held in memory, so bundles are no longer limited by available memory. (#4249)
+- Publisher now follows HTTP redirects when talking to Connect, including during bundle upload — for example when a server redirects `http://` to `https://` or has moved to a new hostname. Bundle uploads re-stream from disk on each redirect, so large bundles still never need to be held in memory. (#4262)
 - Turning off `positPublisher.verifyCertificates` now skips certificate checks as expected, so you can deploy to Connect servers with self-signed or otherwise untrusted certificates. (#4265)
 
 ## [2.8.0]
