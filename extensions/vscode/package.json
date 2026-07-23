@@ -678,14 +678,14 @@
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.0.0",
     "esbuild": "^0.28.1",
-    "eslint": "^10.6.0",
+    "eslint": "^10.7.0",
     "eslint-config-prettier": "^10.0.1",
     "fantasticon": "^4.1.0",
     "fishery": "^2.4.0",
     "globals": "^17.7.0",
     "mocha": "^11.7.6",
     "typescript": "^7.0.2",
-    "typescript-eslint": "^8.62.1",
+    "typescript-eslint": "^8.65.0",
     "vitest": "^4.1.10"
   },
   "dependencies": {
