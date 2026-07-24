@@ -83,7 +83,7 @@ import {
 import type { Credential } from "src/api/types/credentials";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
-import { runDeployWithProgress } from "src/views/deployProgress";
+import { runDeployWithProgress, DeployOutcome } from "src/views/deployProgress";
 import { connectPublish } from "src/publish/connectPublish";
 import { connectCloudPublish } from "src/publish/connectCloudPublish";
 import { renderQuartoContent } from "src/views/renders";
@@ -385,19 +385,22 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     // Guards the OAuth re-auth retry so a persistently-failing session can't
     // loop: a re-authenticated deploy runs with isRetry=true and won't re-prompt.
     isRetry = false,
-  ) {
+  ): Promise<DeployOutcome> {
     try {
       const credential = this.state.findCredential(credentialName);
 
       if (!credential) {
         window.showErrorMessage(`Credential not found: ${credentialName}`);
-        return;
+        return {
+          status: "failed",
+          message: `Credential not found: ${credentialName}`,
+        };
       }
 
       const root = this.root?.uri.fsPath;
       if (!root) {
         window.showErrorMessage("No workspace folder open.");
-        return;
+        return { status: "failed", message: "No workspace folder open." };
       }
       const absProjectDir = path.resolve(root, projectDir);
       const rel = path.relative(root, absProjectDir);
@@ -410,7 +413,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         path.isAbsolute(rel)
       ) {
         window.showErrorMessage("Project directory is outside the workspace.");
-        return;
+        return {
+          status: "failed",
+          message: "Project directory is outside the workspace.",
+        };
       }
 
       const python = await getPythonInterpreterPath();
@@ -431,7 +437,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         r?.rPath,
       );
       if (!config) {
-        return;
+        return {
+          status: "failed",
+          message: "Configuration could not be loaded.",
+        };
       }
 
       const contentRecord = this.state.findContentRecord(
@@ -470,7 +479,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           },
         });
 
-        runDeployWithProgress({
+        return await runDeployWithProgress({
           deploy: (onProgress, signal) =>
             connectCloudPublish({
               api: cloudApi,
@@ -514,7 +523,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           ),
         );
 
-        runDeployWithProgress({
+        return await runDeployWithProgress({
           deploy: (onProgress, signal) =>
             connectPublish({
               api: connectApi,
@@ -552,11 +561,30 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // been shown the error.
       const msg = getSummaryStringFromError("initiateDeployment", error);
       window.showErrorMessage(`Deployment failed: ${msg}`);
+      return { status: "failed", message: msg };
     } finally {
       this.webviewConduit.sendMsg({
         kind: HostToWebviewMessageType.PUBLISH_INIT,
       });
     }
+  }
+
+  /**
+   * Headless deploy entry point for agent tooling. Runs the same deployment
+   * pipeline as the webview Deploy button and resolves the structured outcome.
+   */
+  public deployProject(
+    deploymentName: string,
+    credentialName: string,
+    configurationName: string,
+    projectDir: string,
+  ): Promise<DeployOutcome> {
+    return this.initiateDeployment(
+      deploymentName,
+      credentialName,
+      configurationName,
+      projectDir,
+    );
   }
 
   private onDeployMsg(msg: DeployMsg) {

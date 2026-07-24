@@ -646,6 +646,96 @@
           "type": "object",
           "properties": {}
         }
+      },
+      {
+        "name": "publish-content_planDeployment",
+        "tags": [
+          "posit",
+          "publisher",
+          "positron-assistant"
+        ],
+        "toolReferenceName": "planDeployment",
+        "displayName": "Plan a Deployment",
+        "modelDescription": "Inspect a project directory to determine what can be deployed to Posit Connect or Connect Cloud. Returns detected content type and entrypoint candidates, interpreter defaults, any existing deployment configurations and records, and the list of available server credentials (names and URLs only, never secrets). Use this before deploying to build a plan to confirm with the user.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(search-sparkle)",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "directory": {
+              "type": "string",
+              "description": "Workspace-relative directory to inspect. Defaults to the workspace root."
+            }
+          }
+        }
+      },
+      {
+        "name": "publish-content_deployContent",
+        "tags": [
+          "posit",
+          "publisher",
+          "positron-assistant"
+        ],
+        "toolReferenceName": "deployContent",
+        "displayName": "Deploy Content to Connect",
+        "modelDescription": "Deploy a project directory to Posit Connect or Connect Cloud. Creates a deployment configuration and record if they do not exist, then publishes and returns the deployed content URLs. Requires the name of an existing stored credential (never an API key). If no suitable credential exists it returns status 'needs-credential' — call addCredential first. Always confirm the deployment plan (from planDeployment) with the user before calling this tool.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(cloud-upload)",
+        "inputSchema": {
+          "type": "object",
+          "required": [
+            "directory",
+            "entrypoint",
+            "credentialName"
+          ],
+          "properties": {
+            "directory": {
+              "type": "string",
+              "description": "Workspace-relative project directory."
+            },
+            "entrypoint": {
+              "type": "string",
+              "description": "Entrypoint filename to deploy, e.g. app.py."
+            },
+            "credentialName": {
+              "type": "string",
+              "description": "Name of an existing stored credential to deploy with."
+            },
+            "title": {
+              "type": "string",
+              "description": "Human-readable content title. Optional."
+            },
+            "contentType": {
+              "type": "string",
+              "description": "Override the detected content type (e.g. python-shiny). Optional."
+            },
+            "deploymentName": {
+              "type": "string",
+              "description": "Reuse an existing deployment record by name to redeploy. Optional."
+            },
+            "configurationName": {
+              "type": "string",
+              "description": "Reuse an existing configuration by name. Optional."
+            }
+          }
+        }
+      },
+      {
+        "name": "publish-content_addCredential",
+        "tags": [
+          "posit",
+          "publisher",
+          "positron-assistant"
+        ],
+        "toolReferenceName": "addCredential",
+        "displayName": "Add a Connect Credential",
+        "modelDescription": "Open the Publisher UI for creating a new Posit Connect or Connect Cloud credential. Use this when a deployment needs a credential that does not yet exist. The user enters the API key or completes OAuth in the UI — do not ask the user for their API key directly and never pass secrets to any tool.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(key)",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
       }
     ]
   },

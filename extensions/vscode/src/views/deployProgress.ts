@@ -12,6 +12,17 @@ import { logger } from "src/logging";
 // Union of all possible publish step types (standard Connect + Cloud)
 export type AnyPublishStep = PublishStep | CloudPublishStep;
 
+export type DeployOutcome =
+  | { status: "success"; result: PublishResult }
+  | {
+      status: "failed";
+      message: string;
+      errCode?: ErrorCode;
+      logsUrl?: string;
+      dashboardUrl?: string;
+    }
+  | { status: "canceled" };
+
 type AnyPublishEvent = {
   step: AnyPublishStep;
   status: "start" | "success" | "failure" | "log";
@@ -150,11 +161,13 @@ export function isServerLogStep(step: AnyPublishStep): boolean {
  * Run a deployment inside a VSCode progress notification,
  * feeding events into the Publishing Log tree view via the EventStream.
  */
-export function runDeployWithProgress(options: DeployProgressOptions): void {
+export function runDeployWithProgress(
+  options: DeployProgressOptions,
+): Promise<DeployOutcome> {
   const { deploy, onComplete, onCancel, onError, stream, serverUrl, title } =
     options;
 
-  window.withProgress(
+  return window.withProgress(
     {
       location: ProgressLocation.Notification,
       title: "Deploying your project",
@@ -298,7 +311,7 @@ export function runDeployWithProgress(options: DeployProgressOptions): void {
         // deploy was completing, the cancel handler already injected
         // publish/failure — don't also inject publish/success.
         if (controller.signal.aborted) {
-          return;
+          return { status: "canceled" } as const;
         }
 
         // Inject publish/success — triggers HomeView's onPublishSuccess()
@@ -317,13 +330,15 @@ export function runDeployWithProgress(options: DeployProgressOptions): void {
         // Show the "View" prompt without awaiting — let the progress
         // notification close immediately.
         showSuccessNotification(result.dashboardUrl);
+
+        return { status: "success", result } as const;
       } catch (err) {
         // CanceledError is not a real failure — the cancellation handler
         // already injected publish/failure with canceled: "true".
         // Also check signal.aborted to catch in-flight abort errors
         // (axios CanceledError) that connectPublish may have normalized.
         if (err instanceof CanceledError || controller.signal.aborted) {
-          return;
+          return { status: "canceled" } as const;
         }
 
         // Use the classified message from the step failure event if
@@ -363,11 +378,19 @@ export function runDeployWithProgress(options: DeployProgressOptions): void {
             );
           }
         }
+
+        return {
+          status: "failed",
+          message,
+          errCode: lastErrCode,
+          logsUrl: lastLogsUrl,
+          dashboardUrl: lastDashboardUrl,
+        } as const;
       } finally {
         onComplete();
       }
     },
-  );
+  ) as Promise<DeployOutcome>;
 }
 
 /**
