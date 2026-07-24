@@ -15,22 +15,30 @@ import { Commands } from "src/constants";
  * user enters the API key / completes OAuth in the UI. The secret never enters
  * the model context or this tool's arguments.
  */
-export class AddCredentialTool
-  implements LanguageModelTool<Record<string, never>>
-{
+export class AddCredentialTool implements LanguageModelTool<
+  Record<string, never>
+> {
   async invoke(
     _options: LanguageModelToolInvocationOptions<Record<string, never>>,
     _token: CancellationToken,
   ): Promise<LanguageModelToolResult> {
-    await commands.executeCommand(Commands.HomeView.AddCredential);
+    const payload = await this.run();
     return new LanguageModelToolResult([
-      new LanguageModelTextPart(
-        JSON.stringify({
-          status: "initiated",
-          message:
-            "Opened the New Credential UI. Ask the user to finish entering the credential, then call planDeployment again to see it in the credential list.",
-        }),
-      ),
+      new LanguageModelTextPart(JSON.stringify(payload)),
     ]);
+  }
+
+  /**
+   * Core logic shared by the `vscode.lm` tool and the Positron agent command.
+   * Returns the plain payload object (never wrapped) so both call paths reuse
+   * the same implementation.
+   */
+  async run(): Promise<unknown> {
+    await commands.executeCommand(Commands.HomeView.AddCredential);
+    return {
+      status: "initiated",
+      message:
+        "Opened the New Credential UI. Ask the user to finish entering the credential, then call planDeployment again to see it in the credential list.",
+    };
   }
 }

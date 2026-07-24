@@ -573,18 +573,54 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
    * Headless deploy entry point for agent tooling. Runs the same deployment
    * pipeline as the webview Deploy button and resolves the structured outcome.
    */
-  public deployProject(
+  public async deployProject(
     deploymentName: string,
     credentialName: string,
     configurationName: string,
     projectDir: string,
   ): Promise<DeployOutcome> {
+    // Focus the sidebar on the deployment we are about to deploy (the tool has
+    // already written its config + record to disk) so the user watches progress
+    // on the selected target, and a failure leaves it selected with its logs.
+    // The webview Deploy path manages its own selection, so we only do this on
+    // the programmatic (tool) path.
+    await this.selectDeployment(deploymentName, projectDir);
     return this.initiateDeployment(
       deploymentName,
       credentialName,
       configurationName,
       projectDir,
     );
+  }
+
+  /**
+   * Select a deployment in the Home view sidebar by name + project directory.
+   * Refreshes the configuration and content-record caches first so freshly
+   * created files (e.g. those just written by the deploy tool) are present
+   * before the selection is pushed down to the webview. No-op if the record
+   * cannot be found.
+   */
+  public async selectDeployment(
+    deploymentName: string,
+    projectDir: string,
+  ): Promise<void> {
+    await Promise.all([
+      this.state.refreshContentRecords(),
+      this.state.refreshConfigurations(),
+    ]);
+    const contentRecord = this.state.findContentRecord(
+      deploymentName,
+      projectDir,
+    );
+    if (!contentRecord) {
+      return;
+    }
+    const deploymentSelector: DeploymentSelector = {
+      deploymentName: contentRecord.deploymentName,
+      deploymentPath: contentRecord.deploymentPath,
+      projectDir: contentRecord.projectDir,
+    };
+    this.propagateDeploymentSelection(deploymentSelector);
   }
 
   private onDeployMsg(msg: DeployMsg) {

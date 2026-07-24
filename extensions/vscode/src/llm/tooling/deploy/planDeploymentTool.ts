@@ -34,21 +34,29 @@ export interface PlanDeploymentInput {
  * configurations and deployment records, and the available server credentials
  * (names and URLs only — never secrets).
  */
-export class PlanDeploymentTool
-  implements LanguageModelTool<PlanDeploymentInput>
-{
+export class PlanDeploymentTool implements LanguageModelTool<PlanDeploymentInput> {
   constructor(private readonly state: PublisherState) {}
 
   async invoke(
     options: LanguageModelToolInvocationOptions<PlanDeploymentInput>,
     _token: CancellationToken,
   ): Promise<LanguageModelToolResult> {
+    const payload = await this.run(options.input ?? {});
+    return this.result(payload);
+  }
+
+  /**
+   * Core logic shared by the `vscode.lm` tool and the Positron agent command.
+   * Returns the plain payload object (never wrapped) so both call paths reuse
+   * the same implementation.
+   */
+  async run(input: PlanDeploymentInput): Promise<unknown> {
     const root = workspaces.path();
     if (!root) {
-      return this.result({ error: "No workspace folder is open." });
+      return { error: "No workspace folder is open." };
     }
 
-    const relDir = options.input?.directory ?? ".";
+    const relDir = input?.directory ?? ".";
     const absDir = path.resolve(root, relDir);
 
     const [inspections, interpreters, configs, deployments, credentials] =
@@ -86,7 +94,7 @@ export class PlanDeploymentTool
       )
       .map((d) => ({ name: d.deploymentName }));
 
-    return this.result({
+    return {
       projectDir: relDir,
       interpreters: {
         python: interpreters.python,
@@ -96,7 +104,7 @@ export class PlanDeploymentTool
       existingConfigurations,
       existingDeployments,
       credentials: credentials.map(redactCredential),
-    });
+    };
   }
 
   private result(payload: unknown): LanguageModelToolResult {

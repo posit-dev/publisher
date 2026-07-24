@@ -6,7 +6,7 @@ import { CancellationToken, LanguageModelToolInvocationOptions } from "vscode";
 // vi.mock is hoisted above module scope, so the mocked fn must be created via
 // vi.hoisted to be available inside the factory.
 const { executeCommand } = vi.hoisted(() => ({
-  executeCommand: vi.fn(async () => undefined),
+  executeCommand: vi.fn(() => undefined),
 }));
 vi.mock("vscode", () => ({
   commands: { executeCommand },

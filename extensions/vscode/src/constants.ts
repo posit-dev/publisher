@@ -104,6 +104,15 @@ const homeViewCommands = {
   Focus: "posit.publisher.homeView.focus",
 } as const;
 
+// Agent-compatible commands surfaced to Positron's `positron.ai` allow-list
+// (see posit-dev/positron#15077). These wrap the same logic as the `vscode.lm`
+// deploy tools so the operations are reachable via both host mechanisms.
+const agentCommands = {
+  PlanDeployment: "posit.publisher.agent.planDeployment",
+  DeployContent: "posit.publisher.agent.deployContent",
+  AddCredential: "posit.publisher.agent.addCredential",
+} as const;
+
 const homeViewContexts = {
   Initialized: "posit.publisher.homeView.initialized",
   UserHasInitiatedDeployment:
@@ -121,6 +130,7 @@ export const Commands = {
   PythonPackages: pythonPackagesCommands,
   RPackages: rPackagesCommands,
   HomeView: homeViewCommands,
+  Agent: agentCommands,
 };
 
 export const Contexts = {

@@ -41,7 +41,7 @@ export interface DeployContentInput {
   configurationName?: string;
 }
 
-type DeployToolResult =
+export type DeployToolResult =
   | {
       status: "needs-credential";
       message: string;
@@ -70,9 +70,7 @@ function isValidContentType(value: string): value is ContentType {
  * returns a structured result. Never accepts secrets — the target is named by
  * an existing stored credential.
  */
-export class DeployContentTool
-  implements LanguageModelTool<DeployContentInput>
-{
+export class DeployContentTool implements LanguageModelTool<DeployContentInput> {
   constructor(
     private readonly state: PublisherState,
     private readonly homeViewProvider: HomeViewProvider,
@@ -89,7 +87,12 @@ export class DeployContentTool
     ]);
   }
 
-  private async run(input: DeployContentInput): Promise<DeployToolResult> {
+  /**
+   * Core logic shared by the `vscode.lm` tool and the Positron agent command.
+   * Returns the structured result object (never wrapped) so both call paths
+   * reuse the same implementation.
+   */
+  async run(input: DeployContentInput): Promise<DeployToolResult> {
     const root = workspaces.path();
     if (!root) {
       return { status: "failed", error: "No workspace folder is open." };

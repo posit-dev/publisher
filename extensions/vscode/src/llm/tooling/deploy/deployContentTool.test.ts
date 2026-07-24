@@ -17,7 +17,7 @@ vi.mock("src/workspaces", () => ({ path: () => "/root" }));
 vi.mock("src/state", () => ({ PublisherState: class {} }));
 vi.mock("src/views/homeView", () => ({ HomeViewProvider: class {} }));
 vi.mock("src/inspect", () => ({
-  inspectProject: vi.fn(async () => [
+  inspectProject: vi.fn(() => [
     {
       projectDir: ".",
       configuration: {
@@ -31,12 +31,12 @@ vi.mock("src/inspect", () => ({
   ]),
 }));
 vi.mock("src/toml", () => ({
-  writeConfigToFile: vi.fn(async () => ({ configurationName: "app-ABCD" })),
-  createDeploymentRecord: vi.fn(async () => ({
+  writeConfigToFile: vi.fn(() => ({ configurationName: "app-ABCD" })),
+  createDeploymentRecord: vi.fn(() => ({
     deploymentName: "deployment-WXYZ",
   })),
-  loadAllConfigurations: vi.fn(async () => []),
-  loadAllDeployments: vi.fn(async () => []),
+  loadAllConfigurations: vi.fn(() => []),
+  loadAllDeployments: vi.fn(() => []),
 }));
 vi.mock("src/api", () => ({
   isConfigurationError: () => false,
@@ -57,13 +57,13 @@ function makeTool(overrides: {
   const state = {
     findCredential: vi.fn(() => overrides.credential),
     credentialsService: {
-      list: vi.fn(async () =>
+      list: vi.fn(() =>
         (overrides.credentialNames ?? []).map((name) => ({ name })),
       ),
     },
   };
   const homeView = {
-    deployProject: vi.fn(async () => overrides.deployOutcome),
+    deployProject: vi.fn(() => overrides.deployOutcome),
   };
   // @ts-expect-error minimal mocks for the unit test
   return new DeployContentTool(state, homeView, "9.9.9");

@@ -17,7 +17,7 @@ vi.mock("vscode", () => ({
 vi.mock("src/workspaces", () => ({ path: () => "/root" }));
 vi.mock("src/state", () => ({ PublisherState: class {} }));
 vi.mock("src/inspect", () => ({
-  inspectProject: vi.fn(async () => [
+  inspectProject: vi.fn(() => [
     {
       projectDir: ".",
       configuration: {
@@ -29,7 +29,7 @@ vi.mock("src/inspect", () => ({
   ]),
 }));
 vi.mock("src/interpreters", () => ({
-  getInterpreterDefaults: vi.fn(async () => ({
+  getInterpreterDefaults: vi.fn(() => ({
     python: {
       version: "3.11",
       packageFile: "requirements.txt",
@@ -41,8 +41,8 @@ vi.mock("src/interpreters", () => ({
   })),
 }));
 vi.mock("src/toml", () => ({
-  loadAllConfigurations: vi.fn(async () => []),
-  loadAllDeployments: vi.fn(async () => []),
+  loadAllConfigurations: vi.fn(() => []),
+  loadAllDeployments: vi.fn(() => []),
 }));
 vi.mock("src/api", () => ({
   isConfigurationError: () => false,
@@ -88,7 +88,7 @@ describe("redactCredential", () => {
 describe("PlanDeploymentTool", () => {
   const state = {
     credentialsService: {
-      list: vi.fn(async () => [
+      list: vi.fn(() => [
         {
           guid: GUID("g"),
           name: "prod",
