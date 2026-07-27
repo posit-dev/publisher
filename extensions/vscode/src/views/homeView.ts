@@ -42,8 +42,9 @@ import {
   IntegrationRequest,
   UpdateConfigWithDefaults,
 } from "src/api";
-import { ConnectAPI, GUID } from "@posit-dev/connect-api";
+import { ConnectAPI, GUID, SessionExpiredError } from "@posit-dev/connect-api";
 import type { Integration } from "@posit-dev/connect-api";
+import { ConnectOAuthActivator } from "src/auth/oauth";
 import {
   ConnectCloudAPI,
   ContentID,
@@ -75,7 +76,11 @@ import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
 import { getInterpreterDefaults } from "src/interpreters";
 import { scanRPackages } from "src/interpreters/rPackages";
 import { scanPythonDependencies } from "src/interpreters/scanPythonDependencies";
-import { getSummaryStringFromError } from "src/utils/errors";
+import {
+  getSummaryStringFromError,
+  getMessageFromError,
+} from "src/utils/errors";
+import type { Credential } from "src/api/types/credentials";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
 import { runDeployWithProgress } from "src/views/deployProgress";
@@ -377,6 +382,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     configurationName: string,
     projectDir: string,
     secrets?: Record<string, string>,
+    // Guards the OAuth re-auth retry so a persistently-failing session can't
+    // loop: a re-authenticated deploy runs with isRetry=true and won't re-prompt.
+    isRetry = false,
   ) {
     try {
       const credential = this.state.findCredential(credentialName);
@@ -526,6 +534,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
               signal,
             }),
           ...progressOptions,
+          onError: (err) =>
+            this.handleDeployError(err, credential, isRetry, {
+              deploymentName,
+              credentialName,
+              configurationName,
+              projectDir,
+              secrets,
+            }),
         });
       }
     } catch (error: unknown) {
@@ -550,6 +566,80 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       msg.content.configurationName,
       msg.content.projectDir,
       msg.content.secrets,
+    );
+  }
+
+  /**
+   * Reacts to a failed deployment. When an OAuth session could not be refreshed
+   * (SessionExpiredError), prompts the user to sign in again, persists the new
+   * tokens, and retries the deployment once. Other failures are already surfaced
+   * by runDeployWithProgress, so this is a no-op for them.
+   */
+  private async handleDeployError(
+    err: unknown,
+    credential: Credential,
+    isRetry: boolean,
+    deployArgs: {
+      deploymentName: string;
+      credentialName: string;
+      configurationName: string;
+      projectDir: string;
+      secrets?: Record<string, string>;
+    },
+  ): Promise<void> {
+    if (
+      isRetry ||
+      !(err instanceof SessionExpiredError) ||
+      !credential.oauthClientId
+    ) {
+      return;
+    }
+
+    const choice = await window.showWarningMessage(
+      `Your session for "${credential.name}" has expired. Sign in again to finish deploying?`,
+      "Sign In",
+      "Cancel",
+    );
+    if (choice !== "Sign In") {
+      return;
+    }
+
+    const activator = await ConnectOAuthActivator.forServer(
+      credential.url,
+      Views.HomeView,
+      !extensionSettings.verifyCertificates(),
+    );
+    if (!activator) {
+      window.showErrorMessage(
+        `${credential.url} no longer supports OAuth sign-in.`,
+      );
+      return;
+    }
+
+    try {
+      const result = await activator.authenticate();
+      await this.state.credentialsService.update(credential.guid, {
+        oauthClientId: result.oauthClientId,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+        tokenExpiresAt: result.tokenExpiresAt,
+      });
+      await this.refreshCredentials();
+    } catch (reauthErr) {
+      window.showErrorMessage(
+        `Sign-in failed: ${getMessageFromError(reauthErr)}`,
+      );
+      return;
+    }
+
+    // Retry the deployment once with the refreshed credential.
+    await this.initiateDeployment(
+      deployArgs.deploymentName,
+      deployArgs.credentialName,
+      deployArgs.configurationName,
+      deployArgs.projectDir,
+      deployArgs.secrets,
+      true,
     );
   }
 

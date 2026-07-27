@@ -27,6 +27,14 @@ import {
 import { CONNECT_CLOUD_ENV } from "src/constants";
 import config from "src/config";
 import { logger } from "src/logging";
+import {
+  discoverOAuthMetadata,
+  OAuthClient,
+  OAuthError,
+  INVALID_CLIENT,
+  tokenExpiresAt,
+  OAUTH_LOOPBACK_REDIRECT,
+} from "src/auth/oauth";
 
 // Upper bound on how long to wait for snowflake-sdk's destroy() callback before
 // giving up. destroy() is async and, on a wedged connection, may never invoke
@@ -46,6 +54,8 @@ export interface CreateCredentialInput {
   accessToken?: string;
   token?: string;
   privateKey?: string;
+  oauthClientId?: string;
+  tokenExpiresAt?: string;
 }
 
 /**
@@ -60,12 +70,16 @@ export async function connectAPIOptionsFromCredential(
   service: CredentialsService,
   credential: Pick<
     Credential,
+    | "guid"
     | "url"
     | "apiKey"
     | "token"
     | "privateKey"
     | "serverType"
     | "snowflakeConnection"
+    | "accessToken"
+    | "refreshToken"
+    | "oauthClientId"
   >,
   extra?: Pick<ConnectAPIOptions, "rejectUnauthorized" | "timeout">,
 ): Promise<ConnectAPIOptions> {
@@ -74,6 +88,30 @@ export async function connectAPIOptionsFromCredential(
     credential.snowflakeConnection
   ) {
     return await service.buildSnowflakeOptions(credential, extra);
+  }
+
+  // OAuth bearer credential. The refresh callback is invoked by the client on a
+  // 401: it refreshes the access token (re-registering the client if Connect
+  // reports it as deleted), persists the rotated tokens back to SecretStorage,
+  // and returns the new access token for a single retry. If refresh fails the
+  // client surfaces a SessionExpiredError for the caller to prompt re-auth.
+  if (credential.oauthClientId && credential.accessToken) {
+    const insecure = extra?.rejectUnauthorized === false;
+    return {
+      url: credential.url,
+      accessToken: credential.accessToken,
+      refreshAccessToken: () =>
+        service.refreshOAuthToken(
+          {
+            guid: credential.guid,
+            url: credential.url,
+            oauthClientId: credential.oauthClientId,
+            refreshToken: credential.refreshToken,
+          },
+          insecure,
+        ),
+      ...extra,
+    };
   }
 
   if (credential.token && credential.privateKey) {
@@ -124,25 +162,31 @@ export class CredentialsService {
       Boolean(input.refreshToken) &&
       Boolean(input.accessToken);
     const tokenAuthPresent = Boolean(input.token) && Boolean(input.privateKey);
+    const oauthPresent =
+      Boolean(input.oauthClientId) && Boolean(input.accessToken);
 
     switch (input.serverType) {
-      case ServerType.CONNECT:
-        if (
-          (connectPresent && tokenAuthPresent) ||
-          (!connectPresent && !tokenAuthPresent) ||
-          snowflakePresent ||
-          connectCloudPresent
-        ) {
+      case ServerType.CONNECT: {
+        // Exactly one of API key / token+key / OAuth, and no Snowflake or Cloud
+        // fields.
+        const connectMethods = [
+          connectPresent,
+          tokenAuthPresent,
+          oauthPresent,
+        ].filter(Boolean).length;
+        if (connectMethods !== 1 || snowflakePresent || connectCloudPresent) {
           throw new IncompleteCredentialError(
-            "Connect credential requires either an API Key or Token+PrivateKey (but not both)",
+            "Connect credential requires exactly one of: an API Key, Token+PrivateKey, or OAuth",
           );
         }
         break;
+      }
       case ServerType.SNOWFLAKE:
         if (
           !snowflakePresent ||
           (connectPresent && tokenAuthPresent) ||
           (!connectPresent && !tokenAuthPresent) ||
+          oauthPresent ||
           connectCloudPresent
         ) {
           throw new IncompleteCredentialError(
@@ -155,7 +199,8 @@ export class CredentialsService {
           !connectCloudPresent ||
           connectPresent ||
           snowflakePresent ||
-          tokenAuthPresent
+          tokenAuthPresent ||
+          Boolean(input.oauthClientId)
         ) {
           throw new IncompleteCredentialError(
             "Connect Cloud credential requires accountId, accountName, refreshToken, and accessToken",
@@ -200,6 +245,8 @@ export class CredentialsService {
         input.serverType === ServerType.CONNECT_CLOUD ? CONNECT_CLOUD_ENV : "",
       token: input.token || "",
       privateKey: input.privateKey || "",
+      oauthClientId: input.oauthClientId || "",
+      tokenExpiresAt: input.tokenExpiresAt || "",
     };
 
     // Conflict check against existing credentials
@@ -219,6 +266,83 @@ export class CredentialsService {
       throw new CredentialNotFoundError(guid);
     }
     await deleteCredential(this.secrets, guid);
+  }
+
+  /**
+   * Merges a partial update into an existing credential (by GUID) and persists
+   * it. Used to write back rotated OAuth tokens without disturbing the rest of
+   * the record. `guid` and `serverType` cannot be changed.
+   */
+  async update(
+    guid: GUID,
+    patch: Partial<Omit<Credential, "guid" | "serverType">>,
+  ): Promise<Credential> {
+    const cred = await getCredential(this.secrets, guid);
+    if (!cred) {
+      throw new CredentialNotFoundError(guid);
+    }
+    const updated: Credential = { ...cred, ...patch, guid: cred.guid };
+    await storeCredential(this.secrets, updated);
+    return updated;
+  }
+
+  /**
+   * Refreshes a Connect OAuth access token using the stored refresh token and
+   * persists the rotated tokens (Connect issues single-use refresh tokens, so
+   * the new refresh token must be saved). If Connect reports the client id as
+   * `invalid_client` (deleted server-side), the public client is re-registered
+   * — its id is deterministic — and the refresh is retried. Returns the fresh
+   * access token. Throws when discovery or refresh ultimately fails; the caller
+   * (the ConnectAPI client) surfaces that as a re-authentication prompt.
+   */
+  async refreshOAuthToken(
+    credential: Pick<Credential, "guid" | "url" | "oauthClientId"> & {
+      refreshToken: string;
+    },
+    insecure: boolean,
+  ): Promise<string> {
+    const metadata = await discoverOAuthMetadata(credential.url, insecure);
+    if (!metadata) {
+      throw new Error(
+        "Connect no longer advertises OAuth; please sign in again.",
+      );
+    }
+
+    const oauthClient = new OAuthClient(insecure);
+    let clientId = credential.oauthClientId;
+
+    let response;
+    try {
+      response = await oauthClient.refreshToken(metadata, {
+        clientId,
+        refreshToken: credential.refreshToken,
+      });
+    } catch (err) {
+      if (!(err instanceof OAuthError) || err.code !== INVALID_CLIENT) {
+        throw err;
+      }
+      // Client id was deleted on the server; re-register (deterministic id) and
+      // retry the refresh once.
+      const registration = await oauthClient.registerClient(metadata, [
+        OAUTH_LOOPBACK_REDIRECT,
+      ]);
+      clientId = registration.client_id;
+      response = await oauthClient.refreshToken(metadata, {
+        clientId,
+        refreshToken: credential.refreshToken,
+      });
+    }
+
+    await this.update(credential.guid, {
+      oauthClientId: clientId,
+      accessToken: response.access_token,
+      // Connect rotates refresh tokens (single-use); persist the new one when
+      // provided, otherwise keep the current token.
+      refreshToken: response.refresh_token || credential.refreshToken,
+      tokenExpiresAt: tokenExpiresAt(response),
+    });
+
+    return response.access_token;
   }
 
   async reset(): Promise<void> {

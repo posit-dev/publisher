@@ -38,6 +38,12 @@ import {
   ConnectAuthTokenActivator,
   TokenAuthResult,
 } from "src/auth/ConnectAuthTokenActivator";
+import {
+  ConnectOAuthActivator,
+  discoverOAuthMetadata,
+  OAuthAuthResult,
+  OAuthMetadata,
+} from "src/auth/oauth";
 
 enum AuthMethod {
   API_KEY = "apiKey",
@@ -71,6 +77,8 @@ export async function newConnectCredential(
   let serverType: ServerType = ServerType.CONNECT;
   const productName: ProductName = ProductName.CONNECT;
   let authMethod: AuthMethod = AuthMethod.TOKEN;
+  // OAuth metadata discovered for the entered server (null when unsupported).
+  let oauthMetadata: OAuthMetadata | null = null;
 
   enum step {
     INPUT_SERVER_URL = "inputServerUrl",
@@ -79,6 +87,7 @@ export async function newConnectCredential(
     INPUT_CRED_NAME = "inputCredentialName",
     INPUT_AUTH_METHOD = "inputAuthMethod",
     INPUT_TOKEN = "inputToken",
+    INPUT_OAUTH = "inputOAuth",
   }
 
   const steps: Record<
@@ -91,6 +100,7 @@ export async function newConnectCredential(
     [step.INPUT_CRED_NAME]: inputCredentialName,
     [step.INPUT_AUTH_METHOD]: inputAuthMethod,
     [step.INPUT_TOKEN]: inputToken,
+    [step.INPUT_OAUTH]: inputOAuth,
   };
 
   const isToken = (authMethod: AuthMethod) => {
@@ -144,6 +154,15 @@ export async function newConnectCredential(
     );
   };
 
+  const isValidOAuth = () => {
+    // OAuth requires a registered client id and an access token.
+    return (
+      isConnect(serverType) &&
+      isString(state.data.oauthClientId) &&
+      isString(state.data.accessToken)
+    );
+  };
+
   // ***************************************************************
   // Order of all steps for creating a new Connect credential
   // ***************************************************************
@@ -175,13 +194,20 @@ export async function newConnectCredential(
         snowflakeConnection: <string | undefined>undefined, // eventual type is string
         token: <string | undefined>undefined, // token ID for token authentication
         privateKey: <string | undefined>undefined, // private key for token authentication
+        oauthClientId: <string | undefined>undefined, // OAuth dynamic-client-registration id
+        accessToken: <string | undefined>undefined, // OAuth access token
+        refreshToken: <string | undefined>undefined, // OAuth refresh token
+        tokenExpiresAt: <string | undefined>undefined, // OAuth access-token expiry (ISO)
       },
       promptStepNumbers: {},
       isValid: () => {
         return (
           isString(state.data.name) &&
           isString(state.data.url) &&
-          (isValidApiKeyAuth() || isValidTokenAuth() || isValidSnowflakeAuth())
+          (isValidApiKeyAuth() ||
+            isValidTokenAuth() ||
+            isValidSnowflakeAuth() ||
+            isValidOAuth())
         );
       },
     };
@@ -301,6 +327,27 @@ export async function newConnectCredential(
       };
     }
 
+    // Probe for OAuth support (RFC 8414). When the server advertises it, default
+    // to OAuth with no method prompt; otherwise keep the token/API-key flow.
+    const serverUrl = typeof state.data.url === "string" ? state.data.url : "";
+    oauthMetadata = await showProgress(
+      "Checking authentication options",
+      viewId,
+      () =>
+        discoverOAuthMetadata(
+          serverUrl,
+          !extensionSettings.verifyCertificates(),
+        ),
+    );
+
+    if (oauthMetadata) {
+      return {
+        name: step.INPUT_OAUTH,
+        step: (input: MultiStepInput) => steps[step.INPUT_OAUTH](input, state),
+        skipStepHistory: true,
+      };
+    }
+
     return {
       name: step.INPUT_AUTH_METHOD,
       step: (input: MultiStepInput) =>
@@ -411,6 +458,91 @@ export async function newConnectCredential(
     } catch (_e) {
       // Error handling is done within the ConnectAuthTokenActivator
       return;
+    }
+
+    return {
+      name: step.INPUT_CRED_NAME,
+      step: (input: MultiStepInput) =>
+        steps[step.INPUT_CRED_NAME](input, state),
+    };
+  }
+
+  // ***************************************************************
+  // Step: Sign in with OAuth (Connect only, when the server supports it)
+  // ***************************************************************
+  async function inputOAuth(input: MultiStepInput, state: MultiStepState) {
+    const serverUrl = typeof state.data.url === "string" ? state.data.url : "";
+
+    // Defensive: should only be reached when metadata was discovered.
+    if (!oauthMetadata) {
+      return {
+        name: step.INPUT_AUTH_METHOD,
+        step: (input: MultiStepInput) =>
+          steps[step.INPUT_AUTH_METHOD](input, state),
+      };
+    }
+
+    const activator = new ConnectOAuthActivator(
+      serverUrl,
+      oauthMetadata,
+      viewId,
+      !extensionSettings.verifyCertificates(),
+    );
+
+    try {
+      const resp = await input.showInfoMessage<
+        OAuthAuthResult,
+        InfoMessageParameters<OAuthAuthResult>
+      >({
+        title: state.title,
+        step: 0,
+        totalSteps: 0,
+        enabled: false,
+        busy: true,
+        value: `Signing in to ${serverUrl}`,
+        valueSelection: [0, 0],
+        validationMessage: {
+          message:
+            "Complete sign-in in your browser, or press 'Escape' to use an API key instead.",
+          severity: InputBoxValidationSeverity.Info,
+        },
+        prompt: "",
+        shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
+        apiFunction: async () => ({
+          data: await activator.authenticate(),
+          intervalAdjustment: 0,
+        }),
+        exitPollingCondition: (r) => Boolean(r.data),
+      });
+
+      state.data.oauthClientId = resp.data?.oauthClientId;
+      state.data.accessToken = resp.data?.accessToken;
+      state.data.refreshToken = resp.data?.refreshToken;
+      state.data.tokenExpiresAt = resp.data?.tokenExpiresAt;
+
+      // Clear any other auth material picked up from a prior path.
+      state.data.apiKey = undefined;
+      state.data.token = undefined;
+      state.data.privateKey = undefined;
+
+      // Suggest the authenticated username as the credential name.
+      if (!state.data.name && resp.data?.userName) {
+        state.data.name = resp.data.userName;
+      }
+    } catch (e) {
+      // Escape (AbortError) or an OAuth failure both divert to the manual
+      // auth-method chooser so an API key is always reachable.
+      if (!(e instanceof AbortError)) {
+        window.showErrorMessage(
+          `OAuth sign-in did not complete: ${getMessageFromError(e)}. You can use an API key instead.`,
+        );
+      }
+      return {
+        name: step.INPUT_AUTH_METHOD,
+        step: (input: MultiStepInput) =>
+          steps[step.INPUT_AUTH_METHOD](input, state),
+      };
     }
 
     return {
@@ -608,8 +740,18 @@ export async function newConnectCredential(
     throw new AbortError();
   }
 
-  const { name, url, apiKey, token, privateKey, snowflakeConnection } =
-    state.data;
+  const {
+    name,
+    url,
+    apiKey,
+    token,
+    privateKey,
+    snowflakeConnection,
+    oauthClientId,
+    accessToken,
+    refreshToken,
+    tokenExpiresAt,
+  } = state.data;
 
   if (!isString(name) || !isString(url)) {
     return undefined;
@@ -628,6 +770,10 @@ export async function newConnectCredential(
       snowflakeConnection: isString(snowflakeConnection)
         ? snowflakeConnection
         : undefined,
+      oauthClientId: isString(oauthClientId) ? oauthClientId : undefined,
+      accessToken: isString(accessToken) ? accessToken : undefined,
+      refreshToken: isString(refreshToken) ? refreshToken : undefined,
+      tokenExpiresAt: isString(tokenExpiresAt) ? tokenExpiresAt : undefined,
     });
   } catch (error: unknown) {
     const summary = getSummaryStringFromError("credentials::add", error);

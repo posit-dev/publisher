@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support for signing in to Posit Connect with OAuth when creating a credential. When the server supports it, Publisher signs you in through your browser (no API key or token to copy) and keeps the session fresh automatically, prompting you to sign in again only if it can't. You can still choose to enter an API key instead, and existing API key and token credentials keep working unchanged. (#3878)
+
 ### Changed
 
 - The "missing package-lock.json" error when publishing Node.js content now states that Connect installs Node.js dependencies with npm, helping publishers who build with yarn or pnpm understand why a `package-lock.json` is required. (#4260)

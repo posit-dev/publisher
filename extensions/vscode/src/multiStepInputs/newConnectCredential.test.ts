@@ -40,7 +40,16 @@ vi.mock("./multiStepHelper", () => {
                   );
                 },
               ),
-              showInfoMessage: vi.fn(() => Promise.resolve()),
+              showInfoMessage: vi.fn(
+                async (params?: { apiFunction?: () => Promise<unknown> }) => {
+                  // Drive the polling primitive by invoking apiFunction once,
+                  // mirroring a successful (single) poll.
+                  if (params && typeof params.apiFunction === "function") {
+                    return await params.apiFunction();
+                  }
+                  return undefined;
+                },
+              ),
             };
 
             try {
@@ -203,6 +212,18 @@ vi.mock("src/auth/ConnectAuthTokenActivator", () => ({
   TokenAuthResult: {},
 }));
 
+const oauthStepperMocks = vi.hoisted(() => ({
+  discoverOAuthMetadata: vi.fn(),
+  authenticate: vi.fn(),
+}));
+
+vi.mock("src/auth/oauth", () => ({
+  discoverOAuthMetadata: oauthStepperMocks.discoverOAuthMetadata,
+  ConnectOAuthActivator: class {
+    authenticate = oauthStepperMocks.authenticate;
+  },
+}));
+
 vi.mock("src/utils/errors", () => ({
   getMessageFromError: vi.fn((e: unknown) => String(e)),
   getSummaryStringFromError: vi.fn((loc: string, e: unknown) => `${loc}: ${e}`),
@@ -211,6 +232,9 @@ vi.mock("src/utils/errors", () => ({
 describe("newConnectCredential cancellation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Default: server does not support OAuth, so the token/API-key flow runs.
+    oauthStepperMocks.discoverOAuthMetadata.mockResolvedValue(null);
 
     mockCredentialsServiceList.mockResolvedValue([]);
     mockCredentialsServiceCreate.mockResolvedValue({
@@ -266,5 +290,86 @@ describe("newConnectCredential cancellation", () => {
       }),
     );
     expect(result).toEqual(expect.objectContaining({ guid: "credential-123" }));
+  });
+});
+
+describe("newConnectCredential OAuth path", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCredentialsServiceList.mockResolvedValue([]);
+    mockCredentialsServiceCreate.mockResolvedValue({
+      guid: "credential-oauth",
+      name: "publisher1",
+      url: "https://connect.example.com",
+      serverType: ServerType.CONNECT,
+    });
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test("defaults to OAuth (no method prompt) and creates an OAuth credential", async () => {
+    oauthStepperMocks.discoverOAuthMetadata.mockResolvedValue({
+      token_endpoint: "https://connect.example.com/oauth/v1/token",
+      authorization_endpoint: "https://connect.example.com/oauth/v1/authorize",
+    });
+    oauthStepperMocks.authenticate.mockResolvedValue({
+      oauthClientId: "client-abc",
+      accessToken: "at",
+      refreshToken: "rt",
+      tokenExpiresAt: "2099-01-01T00:00:00.000Z",
+      userName: "publisher1",
+    });
+    const { inputCredentialNameStep } =
+      await import("src/multiStepInputs/common");
+    vi.mocked(inputCredentialNameStep).mockResolvedValue("publisher1");
+
+    const result = await newConnectCredential(
+      "test-view-id",
+      "Create a New Credential",
+      mockCredentialsService as unknown as import("src/credentials/service").CredentialsService,
+      "https://connect.example.com",
+    );
+
+    expect(oauthStepperMocks.authenticate).toHaveBeenCalledTimes(1);
+    expect(mockCredentialsServiceCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        oauthClientId: "client-abc",
+        accessToken: "at",
+        refreshToken: "rt",
+        tokenExpiresAt: "2099-01-01T00:00:00.000Z",
+        // No API key or token+privateKey on the OAuth path.
+        apiKey: undefined,
+        token: undefined,
+        privateKey: undefined,
+      }),
+    );
+    expect(result).toEqual(
+      expect.objectContaining({ guid: "credential-oauth" }),
+    );
+  });
+
+  test("falls back to the token/API-key flow when OAuth is unavailable", async () => {
+    oauthStepperMocks.discoverOAuthMetadata.mockResolvedValue(null);
+    const { inputCredentialNameStep } =
+      await import("src/multiStepInputs/common");
+    vi.mocked(inputCredentialNameStep).mockResolvedValue("My Server");
+
+    await newConnectCredential(
+      "test-view-id",
+      "Create a New Credential",
+      mockCredentialsService as unknown as import("src/credentials/service").CredentialsService,
+      "https://connect.example.com",
+    );
+
+    expect(oauthStepperMocks.authenticate).not.toHaveBeenCalled();
+    // The API-key path was taken (the QuickPick mock selects "API Key").
+    expect(mockCredentialsServiceCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        apiKey: "mock-api-key-value",
+        oauthClientId: undefined,
+      }),
+    );
   });
 });

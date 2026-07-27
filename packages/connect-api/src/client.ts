@@ -6,6 +6,13 @@ import type { ClientRequest, IncomingMessage } from "http";
 import axios from "axios";
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 
+declare module "axios" {
+  interface InternalAxiosRequestConfig {
+    /** Internal flag: this request was already retried after an OAuth refresh. */
+    _oauthRetried?: boolean;
+  }
+}
+
 import { md5Checksum, signRequestWithChecksum } from "./auth.js";
 import type {
   AllSettings,
@@ -41,6 +48,23 @@ export class ConnectAPIError extends Error {
   ) {
     super(message);
     this.name = "ConnectAPIError";
+  }
+}
+
+/**
+ * Thrown when an OAuth bearer session can no longer be used — either the silent
+ * token refresh failed, or a request still returned 401 after a refresh+retry.
+ * Callers (e.g. the publish flow) can catch this to prompt interactive
+ * re-authentication. Subclasses {@link ConnectAPIError} with `httpStatus: 401`
+ * so existing status-based handling still treats it as an auth failure.
+ */
+export class SessionExpiredError extends ConnectAPIError {
+  constructor(
+    message = "Your Connect session has expired. Please sign in again.",
+    public readonly cause?: unknown,
+  ) {
+    super(message, 401);
+    this.name = "SessionExpiredError";
   }
 }
 
@@ -82,6 +106,7 @@ export class ConnectAPI {
     const hasApiKey = !!options.apiKey;
     const hasToken = !!options.token && !!options.privateKey;
     const hasSnowflake = !!options.snowflakeToken;
+    const hasBearer = !!options.accessToken;
 
     // Allow no credentials (for URL reachability checks), but reject
     // partial token auth (token without privateKey or vice versa).
@@ -205,6 +230,58 @@ export class ConnectAPI {
       }
       return config;
     });
+
+    // OAuth bearer auth. The Authorization header is set on every request from a
+    // mutable token so that a token refreshed mid-session (below) is picked up
+    // by subsequent and retried requests.
+    if (hasBearer) {
+      let accessToken = options.accessToken!;
+      const refreshAccessToken = options.refreshAccessToken;
+
+      this.client.interceptors.request.use((reqConfig) => {
+        reqConfig.headers.set("Authorization", `Bearer ${accessToken}`);
+        return reqConfig;
+      });
+
+      // On a single 401, call the caller-provided refresh callback, swap in the
+      // fresh token, and replay the original request once. The `_oauthRetried`
+      // flag rides on the request config so a retry that still 401s does not
+      // loop; instead it surfaces a SessionExpiredError for the caller to
+      // prompt re-authentication. If no refresh callback was provided, 401s
+      // propagate unchanged.
+      if (refreshAccessToken) {
+        this.client.interceptors.response.use(undefined, async (error) => {
+          if (!axios.isAxiosError(error) || error.response?.status !== 401) {
+            throw error;
+          }
+          const config = error.config;
+          if (!config || config._oauthRetried) {
+            throw new SessionExpiredError(undefined, error);
+          }
+
+          // A streamed request body (e.g. a bundle upload) has already been
+          // consumed and cannot be replayed, so don't attempt a refresh+retry
+          // that would resend an empty body. Surface a clean session-expired
+          // error instead. In practice this is near-impossible: the token is
+          // refreshed by the first (non-streamed) call of a publish, seconds
+          // before any upload.
+          if (config.data instanceof Readable) {
+            throw new SessionExpiredError(undefined, error);
+          }
+
+          let refreshed: string;
+          try {
+            refreshed = await refreshAccessToken();
+          } catch (refreshErr) {
+            throw new SessionExpiredError(undefined, refreshErr);
+          }
+
+          accessToken = refreshed;
+          config._oauthRetried = true;
+          return this.client.request(config);
+        });
+      }
+    }
   }
 
   /**

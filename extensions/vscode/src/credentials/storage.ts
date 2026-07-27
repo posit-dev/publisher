@@ -29,6 +29,15 @@ const REQUIRED_CREDENTIAL_FIELDS: (keyof Credential)[] = [
   "serverType",
 ];
 
+// String fields added after the v1 envelope shipped. They are NOT required: a
+// credential stored before they existed simply lacks them, so we backfill "" on
+// read rather than rejecting the record. This keeps existing API-key/token
+// credentials working with no migration (envelope version stays 1).
+const OPTIONAL_CREDENTIAL_FIELDS: ("oauthClientId" | "tokenExpiresAt")[] = [
+  "oauthClientId",
+  "tokenExpiresAt",
+];
+
 /**
  * Parse and validate a JSON credential record from SecretStorage.
  * Returns the credential if valid, or undefined if malformed.
@@ -56,6 +65,14 @@ export function parseCredentialRecord(json: string): Credential | undefined {
           `Credential record is missing or has invalid field: ${field}`,
         );
         return undefined;
+      }
+    }
+
+    // Backfill string fields introduced after v1 so records written before they
+    // existed still load (and downstream code can treat them as always-present).
+    for (const field of OPTIONAL_CREDENTIAL_FIELDS) {
+      if (typeof cred[field] !== "string") {
+        cred[field] = "";
       }
     }
 

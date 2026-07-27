@@ -7,6 +7,7 @@ import type { CloudPublishStep } from "src/publish/connectCloudPublish";
 import type { EventStream } from "src/events";
 import type { EventStreamMessage, EventSubscriptionTarget } from "src/api";
 import type { ErrorCode } from "src/utils/errorTypes";
+import { logger } from "src/logging";
 
 // Union of all possible publish step types (standard Connect + Cloud)
 export type AnyPublishStep = PublishStep | CloudPublishStep;
@@ -95,6 +96,13 @@ export type DeployProgressOptions = {
   onComplete: () => void;
   /** Called when the user cancels the deployment (e.g. to send PUBLISH_CANCEL to webview). */
   onCancel?: () => void;
+  /**
+   * Called with the thrown error when the deployment fails (not on cancel).
+   * Lets the caller react to specific failures — e.g. prompt OAuth
+   * re-authentication on a {@link SessionExpiredError}. Any error it throws is
+   * swallowed so it can't disrupt progress teardown.
+   */
+  onError?: (err: unknown) => void | Promise<void>;
   stream: EventStream;
   serverUrl: string;
   title: string;
@@ -143,7 +151,8 @@ export function isServerLogStep(step: AnyPublishStep): boolean {
  * feeding events into the Publishing Log tree view via the EventStream.
  */
 export function runDeployWithProgress(options: DeployProgressOptions): void {
-  const { deploy, onComplete, onCancel, stream, serverUrl, title } = options;
+  const { deploy, onComplete, onCancel, onError, stream, serverUrl, title } =
+    options;
 
   window.withProgress(
     {
@@ -338,6 +347,22 @@ export function runDeployWithProgress(options: DeployProgressOptions): void {
         stream.injectMessage(
           makeMessage("publish/failure", failureData, lastErrCode),
         );
+
+        // Give the caller a chance to react to the failure (e.g. prompt OAuth
+        // re-authentication). Never let a handler error break teardown.
+        if (onError) {
+          try {
+            await onError(err);
+          } catch (handlerErr) {
+            logger.error(
+              `Deploy onError handler threw: ${
+                handlerErr instanceof Error
+                  ? handlerErr.message
+                  : String(handlerErr)
+              }`,
+            );
+          }
+        }
       } finally {
         onComplete();
       }

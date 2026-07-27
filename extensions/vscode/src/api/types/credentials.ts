@@ -5,8 +5,9 @@ import { GUID } from "@posit-dev/connect-api";
 import { AgentError } from "./error";
 import { ServerType } from "./contentRecords";
 
-// NOTE: If you add or remove fields here, also update
-// REQUIRED_CREDENTIAL_FIELDS in credentials/storage.ts.
+// NOTE: If you add or remove fields here, also update the field lists in
+// credentials/storage.ts (REQUIRED_CREDENTIAL_FIELDS and, for fields added after
+// v1 shipped, OPTIONAL_CREDENTIAL_FIELDS so older stored records still parse).
 export type Credential = {
   guid: GUID;
   name: string;
@@ -20,6 +21,10 @@ export type Credential = {
   cloudEnvironment: string;
   token: string;
   privateKey: string;
+  /** OAuth 2.0 dynamic-client-registration client id (Connect OAuth). "" when unused. */
+  oauthClientId: string;
+  /** ISO-8601 access-token expiry for Connect OAuth. "" when unused/unknown. */
+  tokenExpiresAt: string;
   serverType: ServerType;
 };
 

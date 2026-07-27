@@ -124,5 +124,7 @@ export const credentialFactory = Factory.define<Credential>(({ sequence }) => ({
   cloudEnvironment: "",
   token: "",
   privateKey: "",
+  oauthClientId: "",
+  tokenExpiresAt: "",
   serverType: ServerType.CONNECT,
 }));
