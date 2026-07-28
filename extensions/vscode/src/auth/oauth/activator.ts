@@ -24,7 +24,8 @@ export interface OAuthAuthResult extends OAuthTokens {
   userName: string;
 }
 
-const DEVICE_POLL_MS = 5_000;
+// Fallback device poll interval when the server omits `interval` (RFC 8628).
+const DEFAULT_DEVICE_POLL_MS = 5_000;
 const SLOW_DOWN_INCREMENT_MS = 5_000;
 
 /**
@@ -178,11 +179,19 @@ export class ConnectOAuthActivator {
       device.verification_uri_complete ?? device.verification_uri;
 
     // Surface the user code (verification_uri_complete usually pre-fills it, but
-    // show it in case it must be entered manually). Non-blocking — the poll below
-    // is what waits.
-    void window.showInformationMessage(
-      `Posit Connect sign-in: enter code ${device.user_code} in the browser tab that opened (${device.verification_uri}).`,
-    );
+    // show it in case it must be entered manually) with a one-click copy.
+    // Non-blocking — the poll below is what waits.
+    void window
+      .showInformationMessage(
+        `Posit Connect sign-in: enter code ${device.user_code} in the browser tab that opened (${device.verification_uri}).`,
+        "Copy Code",
+      )
+      .then((choice) => {
+        if (choice === "Copy Code") {
+          return env.clipboard.writeText(device.user_code);
+        }
+        return undefined;
+      });
 
     // Auto-open the verification page, mirroring
     // ConnectAuthTokenActivator.openTokenClaimUrl — the mechanism proven to work
@@ -201,7 +210,7 @@ export class ConnectOAuthActivator {
     clientId: string,
     device: DeviceAuthResponse,
   ): Promise<OAuthTokenResponse> {
-    let interval = (device.interval ?? 5) * 1000 || DEVICE_POLL_MS;
+    let interval = (device.interval ?? 5) * 1000 || DEFAULT_DEVICE_POLL_MS;
     const deadline = Date.now() + device.expires_in * 1000;
 
     while (Date.now() < deadline) {

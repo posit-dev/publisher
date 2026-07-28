@@ -45,6 +45,10 @@ import {
   OAuthMetadata,
 } from "src/auth/oauth";
 
+// Internal auth mechanisms. OAUTH and TOKEN are both surfaced to the user as a
+// single "sign in with a browser" choice — the user never sees a token, so the
+// distinction is an implementation detail resolved by whether the server
+// advertises OAuth.
 enum AuthMethod {
   API_KEY = "apiKey",
   TOKEN = "token",
@@ -53,20 +57,8 @@ enum AuthMethod {
 
 enum AuthMethodName {
   API_KEY = "API Key",
-  TOKEN = "Token Authentication (Legacy)",
-  OAUTH = "OAuth (Recommended)",
+  BROWSER = "Sign in with a browser",
 }
-
-const getAuthMethod = (authMethodName: AuthMethodName) => {
-  switch (authMethodName) {
-    case AuthMethodName.API_KEY:
-      return AuthMethod.API_KEY;
-    case AuthMethodName.TOKEN:
-      return AuthMethod.TOKEN;
-    case AuthMethodName.OAUTH:
-      return AuthMethod.OAUTH;
-  }
-};
 
 export async function newConnectCredential(
   viewId: string,
@@ -113,10 +105,6 @@ export async function newConnectCredential(
 
   const isApiKey = (authMethod: AuthMethod) => {
     return authMethod === AuthMethod.API_KEY;
-  };
-
-  const isOAuth = (authMethod: AuthMethod) => {
-    return authMethod === AuthMethod.OAUTH;
   };
 
   async function getSnowflakeToken(
@@ -359,20 +347,14 @@ export async function newConnectCredential(
   // Step: Select authentication method (Connect only)
   // ***************************************************************
   async function inputAuthMethod(input: MultiStepInput, state: MultiStepState) {
-    // Offer OAuth (recommended) only when the server advertised it during the
-    // URL step; otherwise present the token/API-key choices as before.
+    // Two choices, always: a browser sign-in (recommended) and a manual API
+    // key. The browser option is OAuth when the server advertises it, otherwise
+    // the token flow — both open the browser and never expose a token, so the
+    // user sees one consistent "sign in with a browser" option either way.
     const authMethods = [
-      ...(oauthMetadata
-        ? [
-            {
-              label: AuthMethodName.OAUTH,
-              description: "Sign in through your browser",
-            },
-          ]
-        : []),
       {
-        label: AuthMethodName.TOKEN,
-        description: "Generate a token in your browser",
+        label: AuthMethodName.BROWSER,
+        description: "Recommended — no API key to copy",
       },
       {
         label: AuthMethodName.API_KEY,
@@ -386,14 +368,12 @@ export async function newConnectCredential(
       totalSteps: 0,
       placeholder: "Select authentication method",
       items: authMethods,
-      // First item is the default: OAuth when available, else token auth.
+      // Browser sign-in is the default.
       activeItem: authMethods[0],
       buttons: [],
       shouldResume: () => Promise.resolve(false),
       ignoreFocusOut: true,
     });
-
-    authMethod = getAuthMethod(pick.label as AuthMethodName);
 
     // Clear auth fields from other methods so back-navigation can't leave a
     // credential with mixed material.
@@ -408,17 +388,8 @@ export async function newConnectCredential(
       state.data.privateKey = undefined;
     };
 
-    if (isOAuth(authMethod)) {
-      state.data.apiKey = undefined;
-      clearToken();
-      return {
-        name: step.INPUT_OAUTH,
-        step: (input: MultiStepInput) => steps[step.INPUT_OAUTH](input, state),
-        skipStepHistory: true,
-      };
-    }
-
-    if (isApiKey(authMethod)) {
+    if (pick.label === AuthMethodName.API_KEY) {
+      authMethod = AuthMethod.API_KEY;
       clearToken();
       clearOAuth();
       return {
@@ -428,8 +399,18 @@ export async function newConnectCredential(
       };
     }
 
-    // Token authentication.
+    // Browser sign-in: OAuth when supported, else the token flow.
     state.data.apiKey = undefined;
+    if (oauthMetadata) {
+      authMethod = AuthMethod.OAUTH;
+      clearToken();
+      return {
+        name: step.INPUT_OAUTH,
+        step: (input: MultiStepInput) => steps[step.INPUT_OAUTH](input, state),
+        skipStepHistory: true,
+      };
+    }
+    authMethod = AuthMethod.TOKEN;
     clearOAuth();
     return {
       name: step.INPUT_TOKEN,

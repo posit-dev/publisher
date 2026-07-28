@@ -8,7 +8,11 @@ import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 
 declare module "axios" {
   interface InternalAxiosRequestConfig {
-    /** Internal flag: this request was already retried after an OAuth refresh. */
+    /**
+     * Prevents infinite retry loops: set after the first 401-triggered OAuth
+     * refresh+retry so a still-401 retry surfaces SessionExpiredError instead of
+     * refreshing again.
+     */
     _oauthRetried?: boolean;
   }
 }

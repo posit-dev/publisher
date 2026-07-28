@@ -1445,6 +1445,40 @@ describe("CredentialsService OAuth", () => {
       expect(reloaded.tokenExpiresAt).toBe("2099-01-01T00:00:00.000Z");
     });
 
+    test("keeps the current refresh token when the server omits a new one", async () => {
+      const created = await service.create({
+        name: "OAuth Cred",
+        url: "https://connect.example.com",
+        serverType: ServerType.CONNECT,
+        oauthClientId: "client-abc",
+        accessToken: "at",
+        refreshToken: "rt",
+      });
+      oauthMocks.discoverOAuthMetadata.mockResolvedValue(metadata);
+      // No refresh_token in the response (server did not rotate it).
+      oauthMocks.refreshToken.mockResolvedValue({
+        access_token: "at2",
+        token_type: "Bearer",
+        expires_in: 3600,
+      });
+
+      const token = await service.refreshOAuthToken(
+        {
+          guid: created.guid,
+          url: created.url,
+          oauthClientId: created.oauthClientId,
+          refreshToken: created.refreshToken,
+        },
+        false,
+      );
+
+      expect(token).toBe("at2");
+      const reloaded = await service.get(created.guid);
+      expect(reloaded.accessToken).toBe("at2");
+      // The existing refresh token is preserved.
+      expect(reloaded.refreshToken).toBe("rt");
+    });
+
     test("re-registers the client on invalid_client and retries", async () => {
       const created = await service.create({
         name: "OAuth Cred",
