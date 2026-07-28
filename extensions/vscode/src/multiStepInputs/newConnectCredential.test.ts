@@ -12,6 +12,10 @@ const inputBoxResponses: Record<string, string> = {
   inputAPIKey: "mock-api-key-value",
 };
 
+// Which auth-method QuickPick option the mock selects. Defaults to "API Key"
+// so existing tests take the API-key path; OAuth tests override it.
+const stepControl = { quickPickLabel: "API Key" };
+
 // Mock the MultiStepInput module with a real step-through implementation
 vi.mock("./multiStepHelper", () => {
   class AbortError extends Error {}
@@ -36,7 +40,8 @@ vi.mock("./multiStepHelper", () => {
               showQuickPick: vi.fn(
                 ({ items }: { items: { label: string }[] }) => {
                   return Promise.resolve(
-                    items.find((i) => i.label === "API Key") || items[0],
+                    items.find((i) => i.label === stepControl.quickPickLabel) ||
+                      items[0],
                   );
                 },
               ),
@@ -232,6 +237,7 @@ vi.mock("src/utils/errors", () => ({
 describe("newConnectCredential cancellation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    stepControl.quickPickLabel = "API Key";
 
     // Default: server does not support OAuth, so the token/API-key flow runs.
     oauthStepperMocks.discoverOAuthMetadata.mockResolvedValue(null);
@@ -296,10 +302,11 @@ describe("newConnectCredential cancellation", () => {
 describe("newConnectCredential OAuth path", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    stepControl.quickPickLabel = "API Key";
     mockCredentialsServiceList.mockResolvedValue([]);
     mockCredentialsServiceCreate.mockResolvedValue({
       guid: "credential-oauth",
-      name: "publisher1",
+      name: "connect.example.com",
       url: "https://connect.example.com",
       serverType: ServerType.CONNECT,
     });
@@ -307,9 +314,12 @@ describe("newConnectCredential OAuth path", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    stepControl.quickPickLabel = "API Key";
   });
 
-  test("defaults to OAuth (no method prompt) and creates an OAuth credential", async () => {
+  test("offers OAuth as an option and creates an OAuth credential when selected", async () => {
+    // The auth-method QuickPick offers OAuth (Recommended); select it.
+    stepControl.quickPickLabel = "OAuth (Recommended)";
     oauthStepperMocks.discoverOAuthMetadata.mockResolvedValue({
       token_endpoint: "https://connect.example.com/oauth/v1/token",
       authorization_endpoint: "https://connect.example.com/oauth/v1/authorize",
@@ -323,7 +333,9 @@ describe("newConnectCredential OAuth path", () => {
     });
     const { inputCredentialNameStep } =
       await import("src/multiStepInputs/common");
-    vi.mocked(inputCredentialNameStep).mockResolvedValue("publisher1");
+    // Name defaults to the server hostname (like the token flow), not the
+    // OAuth username.
+    vi.mocked(inputCredentialNameStep).mockResolvedValue("connect.example.com");
 
     const result = await newConnectCredential(
       "test-view-id",
@@ -347,6 +359,32 @@ describe("newConnectCredential OAuth path", () => {
     );
     expect(result).toEqual(
       expect.objectContaining({ guid: "credential-oauth" }),
+    );
+  });
+
+  test("does not launch OAuth when the user picks API key on an OAuth-capable server", async () => {
+    stepControl.quickPickLabel = "API Key";
+    oauthStepperMocks.discoverOAuthMetadata.mockResolvedValue({
+      token_endpoint: "https://connect.example.com/oauth/v1/token",
+      authorization_endpoint: "https://connect.example.com/oauth/v1/authorize",
+    });
+    const { inputCredentialNameStep } =
+      await import("src/multiStepInputs/common");
+    vi.mocked(inputCredentialNameStep).mockResolvedValue("connect.example.com");
+
+    await newConnectCredential(
+      "test-view-id",
+      "Create a New Credential",
+      mockCredentialsService as unknown as import("src/credentials/service").CredentialsService,
+      "https://connect.example.com",
+    );
+
+    expect(oauthStepperMocks.authenticate).not.toHaveBeenCalled();
+    expect(mockCredentialsServiceCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        apiKey: "mock-api-key-value",
+        oauthClientId: undefined,
+      }),
     );
   });
 
