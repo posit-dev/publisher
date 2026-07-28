@@ -48,7 +48,11 @@ describe("Credentials Section", () => {
       "Select authentication method",
     );
 
-    cy.get(".quick-input-list .monaco-list-row").eq(1).click();
+    // Select API key by aria-label, not row index: OAuth-capable servers add an
+    // "OAuth (Recommended)" row at the top that would shift a positional match.
+    cy.get(
+      '.quick-input-list .monaco-list-row[aria-label="API Key, Manually enter an API key"]',
+    ).click();
 
     cy.get(".quick-input-message").should(
       "include.text",

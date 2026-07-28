@@ -189,13 +189,17 @@ Cypress.Commands.add("setAdminCredentials", () => {
     "http://connect-publisher-e2e:3939{enter}",
   );
 
-  // Select API key auth method (second row)
+  // Select API key auth method. Match by aria-label rather than row index:
+  // OAuth-capable servers add an "OAuth (Recommended)" row at the top, which
+  // would shift a positional selector.
   cy.get(".quick-input-and-message input").should(
     "have.attr",
     "placeholder",
     "Select authentication method",
   );
-  cy.get(".quick-input-list .monaco-list-row").eq(1).click();
+  cy.get(
+    '.quick-input-list .monaco-list-row[aria-label="API Key, Manually enter an API key"]',
+  ).click();
 
   // Enter API key
   cy.get(".quick-input-message").should(
