@@ -68,6 +68,12 @@
             "markdownDescription": "Controls whether Posit Connect Cloud is available as a publishing destination.",
             "type": "boolean",
             "default": true
+          },
+          "positPublisher.useDeviceCodeAuth": {
+            "markdownDescription": "Always use the OAuth **device-code** flow for browser sign-in, instead of the default loopback (`127.0.0.1` redirect) flow. Enable this if the loopback redirect can't complete in your environment — for example when the editor's browser can't reach the extension host over `localhost`.",
+            "type": "boolean",
+            "default": false,
+            "scope": "machine-overridable"
           }
         }
       }

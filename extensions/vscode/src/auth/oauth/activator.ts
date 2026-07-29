@@ -1,6 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { env, UIKind, window } from "vscode";
+import { env, UIKind, window, workspace } from "vscode";
 import { ConnectAPI } from "@posit-dev/connect-api";
 
 import { logger } from "src/logging";
@@ -111,6 +111,15 @@ export class ConnectOAuthActivator {
    * until timeout. Detect those environments up front and use the device flow.
    */
   private isLoopbackViable(): boolean {
+    // Explicit override: `positPublisher.useDeviceCodeAuth` forces the
+    // device-code flow regardless of environment (e.g. when the loopback
+    // redirect can't complete even on desktop).
+    const useDeviceCodeAuth = workspace
+      .getConfiguration("positPublisher")
+      .get<boolean>("useDeviceCodeAuth", false);
+    if (useDeviceCodeAuth) {
+      return false;
+    }
     return env.uiKind === UIKind.Desktop && !env.remoteName;
   }
 
@@ -178,20 +187,12 @@ export class ConnectOAuthActivator {
     const verificationUri =
       device.verification_uri_complete ?? device.verification_uri;
 
-    // Surface the user code (verification_uri_complete usually pre-fills it, but
-    // show it in case it must be entered manually) with a one-click copy.
-    // Non-blocking — the poll below is what waits.
-    void window
-      .showInformationMessage(
-        `Posit Connect sign-in: enter code ${device.user_code} in the browser tab that opened (${device.verification_uri}).`,
-        "Copy Code",
-      )
-      .then((choice) => {
-        if (choice === "Copy Code") {
-          return env.clipboard.writeText(device.user_code);
-        }
-        return undefined;
-      });
+    // Show the user code so it can be visually confirmed against the code on
+    // Connect's device page (verification_uri_complete pre-fills it — the user
+    // just checks it matches). Non-blocking — the poll below is what waits.
+    void window.showInformationMessage(
+      `Posit Connect sign-in: confirm the code ${device.user_code} matches the one shown in the browser tab that opened.`,
+    );
 
     // Auto-open the verification page, mirroring
     // ConnectAuthTokenActivator.openTokenClaimUrl — the mechanism proven to work

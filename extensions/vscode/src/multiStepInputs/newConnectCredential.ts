@@ -354,7 +354,7 @@ export async function newConnectCredential(
     const authMethods = [
       {
         label: AuthMethodName.BROWSER,
-        description: "Recommended — no API key to copy",
+        description: "Recommended",
       },
       {
         label: AuthMethodName.API_KEY,

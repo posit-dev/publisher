@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const h = vi.hoisted(() => ({
   uiKind: 1, // UIKind.Desktop
   remoteName: undefined as string | undefined,
+  forceDeviceCode: false,
   registerClient: vi.fn(),
   buildAuthorizeUrl: vi.fn(),
   exchangeAuthCode: vi.fn(),
@@ -28,6 +29,11 @@ vi.mock("vscode", () => ({
   UIKind: { Desktop: 1, Web: 2 },
   Uri: { parse: (s: string) => ({ toString: () => s }) },
   window: { showInformationMessage: vi.fn(() => Promise.resolve(undefined)) },
+  workspace: {
+    getConfiguration: () => ({
+      get: (_key: string, _def?: unknown) => h.forceDeviceCode,
+    }),
+  },
 }));
 
 vi.mock("src/logging", () => ({
@@ -95,6 +101,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   h.uiKind = 1;
   h.remoteName = undefined;
+  h.forceDeviceCode = false;
   h.registerClient.mockResolvedValue({ client_id: "client-abc" });
 });
 
@@ -188,6 +195,18 @@ describe("ConnectOAuthActivator redirect selection", () => {
   it("uses the device flow when attached to a remote host", async () => {
     h.uiKind = 1; // Desktop UI…
     h.remoteName = "ssh-remote"; // …but the extension host is remote
+    h.startDeviceAuth.mockRejectedValue(new Error("DEVICE_PATH"));
+
+    await expect(makeActivator().authenticate()).rejects.toThrow("DEVICE_PATH");
+
+    expect(h.startLoopbackServer).not.toHaveBeenCalled();
+    expect(h.startDeviceAuth).toHaveBeenCalledTimes(1);
+  });
+
+  it("uses the device flow on desktop when useDeviceCodeAuth is enabled", async () => {
+    h.uiKind = 1; // Desktop, local…
+    h.remoteName = undefined;
+    h.forceDeviceCode = true; // …but the override forces device code
     h.startDeviceAuth.mockRejectedValue(new Error("DEVICE_PATH"));
 
     await expect(makeActivator().authenticate()).rejects.toThrow("DEVICE_PATH");
