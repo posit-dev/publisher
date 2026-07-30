@@ -39,6 +39,34 @@ vi.mock("src/constants", () => ({
   CONNECT_CLOUD_ENV: "production",
 }));
 
+const oauthMocks = vi.hoisted(() => ({
+  discoverOAuthMetadata: vi.fn(),
+  refreshToken: vi.fn(),
+  registerClient: vi.fn(),
+}));
+
+vi.mock("src/auth/oauth", () => ({
+  discoverOAuthMetadata: oauthMocks.discoverOAuthMetadata,
+  OAuthClient: class {
+    refreshToken = oauthMocks.refreshToken;
+    registerClient = oauthMocks.registerClient;
+  },
+  OAuthError: class OAuthError extends Error {
+    constructor(
+      message: string,
+      public readonly code?: string,
+    ) {
+      super(message);
+      this.name = "OAuthError";
+    }
+  },
+  INVALID_CLIENT: "invalid_client",
+  tokenExpiresAt: () => "2099-01-01T00:00:00.000Z",
+  OAUTH_LOOPBACK_REDIRECT: "http://127.0.0.1/callback",
+}));
+
+import { OAuthError } from "src/auth/oauth";
+
 describe("CredentialsService", () => {
   let secrets: mockSecretStorage;
   let service: CredentialsService;
@@ -366,6 +394,10 @@ describe("connectAPIOptionsFromCredential", () => {
         privateKey: "",
         serverType: ServerType.CONNECT,
         snowflakeConnection: "",
+        guid: GUID("test-guid"),
+        refreshToken: "",
+        accessToken: "",
+        oauthClientId: "",
       });
 
       expect(result).toEqual({
@@ -384,6 +416,10 @@ describe("connectAPIOptionsFromCredential", () => {
         privateKey: "my-private-key",
         serverType: ServerType.CONNECT,
         snowflakeConnection: "",
+        guid: GUID("test-guid"),
+        refreshToken: "",
+        accessToken: "",
+        oauthClientId: "",
       });
 
       expect(result).toEqual({
@@ -401,6 +437,10 @@ describe("connectAPIOptionsFromCredential", () => {
         privateKey: "my-private-key",
         serverType: ServerType.CONNECT,
         snowflakeConnection: "",
+        guid: GUID("test-guid"),
+        refreshToken: "",
+        accessToken: "",
+        oauthClientId: "",
       });
 
       expect(result).toEqual({
@@ -420,6 +460,10 @@ describe("connectAPIOptionsFromCredential", () => {
         privateKey: "",
         serverType: ServerType.CONNECT,
         snowflakeConnection: "",
+        guid: GUID("test-guid"),
+        refreshToken: "",
+        accessToken: "",
+        oauthClientId: "",
       });
 
       expect(result).toEqual({
@@ -439,6 +483,10 @@ describe("connectAPIOptionsFromCredential", () => {
           privateKey: "",
           serverType: ServerType.CONNECT,
           snowflakeConnection: "",
+          guid: GUID("test-guid"),
+          refreshToken: "",
+          accessToken: "",
+          oauthClientId: "",
         },
         { rejectUnauthorized: false, timeout: 5000 },
       );
@@ -486,6 +534,10 @@ describe("connectAPIOptionsFromCredential", () => {
         privateKey: "",
         serverType: ServerType.SNOWFLAKE,
         snowflakeConnection: "default",
+        guid: GUID("test-guid"),
+        refreshToken: "",
+        accessToken: "",
+        oauthClientId: "",
       });
 
       expect(result).toMatchObject({
@@ -503,6 +555,10 @@ describe("connectAPIOptionsFromCredential", () => {
         privateKey: "connect-private-key",
         serverType: ServerType.SNOWFLAKE,
         snowflakeConnection: "default",
+        guid: GUID("test-guid"),
+        refreshToken: "",
+        accessToken: "",
+        oauthClientId: "",
       });
 
       expect(result).toMatchObject({
@@ -521,6 +577,10 @@ describe("connectAPIOptionsFromCredential", () => {
         privateKey: "",
         serverType: ServerType.SNOWFLAKE,
         snowflakeConnection: "default",
+        guid: GUID("test-guid"),
+        refreshToken: "",
+        accessToken: "",
+        oauthClientId: "",
       });
 
       expect(result).toMatchObject({
@@ -541,6 +601,10 @@ describe("connectAPIOptionsFromCredential", () => {
           privateKey: "",
           serverType: ServerType.SNOWFLAKE,
           snowflakeConnection: "default",
+          guid: GUID("test-guid"),
+          refreshToken: "",
+          accessToken: "",
+          oauthClientId: "",
         },
         { rejectUnauthorized: false },
       );
@@ -560,6 +624,10 @@ describe("connectAPIOptionsFromCredential", () => {
           privateKey: "",
           serverType: ServerType.SNOWFLAKE,
           snowflakeConnection: "nonexistent",
+          guid: GUID("test-guid"),
+          refreshToken: "",
+          accessToken: "",
+          oauthClientId: "",
         }),
       ).rejects.toThrow("nonexistent");
     });
@@ -573,6 +641,10 @@ describe("connectAPIOptionsFromCredential", () => {
           privateKey: "",
           serverType: ServerType.SNOWFLAKE,
           snowflakeConnection: "bad-authenticator",
+          guid: GUID("test-guid"),
+          refreshToken: "",
+          accessToken: "",
+          oauthClientId: "",
         }),
       ).rejects.toThrow("unsupported authenticator type");
     });
@@ -1198,6 +1270,263 @@ describe("CredentialsService.getSnowflakeToken", () => {
           ).rejects.toThrow(`${authenticator} auth failed`);
         });
       });
+    });
+  });
+});
+
+describe("CredentialsService OAuth", () => {
+  let secrets: mockSecretStorage;
+  let service: CredentialsService;
+
+  beforeEach(() => {
+    secrets = new mockSecretStorage();
+    service = new CredentialsService(secrets);
+    oauthMocks.discoverOAuthMetadata.mockReset();
+    oauthMocks.refreshToken.mockReset();
+    oauthMocks.registerClient.mockReset();
+  });
+
+  describe("create validation", () => {
+    test("creates an OAuth Connect credential", async () => {
+      const cred = await service.create({
+        name: "OAuth Cred",
+        url: "https://connect.example.com",
+        serverType: ServerType.CONNECT,
+        oauthClientId: "client-abc",
+        accessToken: "at",
+        refreshToken: "rt",
+        tokenExpiresAt: "2099-01-01T00:00:00.000Z",
+      });
+
+      expect(cred.oauthClientId).toBe("client-abc");
+      expect(cred.accessToken).toBe("at");
+      expect(cred.refreshToken).toBe("rt");
+      expect(cred.apiKey).toBe("");
+      expect(cred.token).toBe("");
+    });
+
+    test("rejects OAuth combined with an API key", async () => {
+      await expect(
+        service.create({
+          name: "Bad",
+          url: "https://connect.example.com",
+          serverType: ServerType.CONNECT,
+          oauthClientId: "client-abc",
+          accessToken: "at",
+          apiKey: "key",
+        }),
+      ).rejects.toThrow(IncompleteCredentialError);
+    });
+
+    test("rejects OAuth combined with token+privateKey", async () => {
+      await expect(
+        service.create({
+          name: "Bad",
+          url: "https://connect.example.com",
+          serverType: ServerType.CONNECT,
+          oauthClientId: "client-abc",
+          accessToken: "at",
+          token: "t",
+          privateKey: "pk",
+        }),
+      ).rejects.toThrow(IncompleteCredentialError);
+    });
+  });
+
+  describe("update", () => {
+    test("merges a patch and persists it, preserving guid", async () => {
+      const created = await service.create({
+        name: "OAuth Cred",
+        url: "https://connect.example.com",
+        serverType: ServerType.CONNECT,
+        oauthClientId: "client-abc",
+        accessToken: "at",
+        refreshToken: "rt",
+      });
+
+      const updated = await service.update(created.guid, {
+        accessToken: "at2",
+        refreshToken: "rt2",
+      });
+
+      expect(updated.guid).toBe(created.guid);
+      expect(updated.accessToken).toBe("at2");
+      expect(updated.refreshToken).toBe("rt2");
+      expect(updated.oauthClientId).toBe("client-abc");
+
+      const reloaded = await service.get(created.guid);
+      expect(reloaded.accessToken).toBe("at2");
+    });
+
+    test("throws when the credential does not exist", async () => {
+      await expect(
+        service.update(GUID("missing"), { accessToken: "x" }),
+      ).rejects.toThrow(CredentialNotFoundError);
+    });
+  });
+
+  describe("connectAPIOptionsFromCredential (OAuth)", () => {
+    test("returns bearer options with a working refresh callback", async () => {
+      const created = await service.create({
+        name: "OAuth Cred",
+        url: "https://connect.example.com",
+        serverType: ServerType.CONNECT,
+        oauthClientId: "client-abc",
+        accessToken: "at",
+        refreshToken: "rt",
+      });
+
+      const options = await connectAPIOptionsFromCredential(service, created);
+      expect(options).toMatchObject({
+        url: "https://connect.example.com",
+        accessToken: "at",
+      });
+      expect(typeof options.refreshAccessToken).toBe("function");
+
+      // Invoking the callback refreshes + persists the rotated tokens.
+      oauthMocks.discoverOAuthMetadata.mockResolvedValue({
+        token_endpoint: "https://connect.example.com/oauth/v1/token",
+        authorization_endpoint:
+          "https://connect.example.com/oauth/v1/authorize",
+      });
+      oauthMocks.refreshToken.mockResolvedValue({
+        access_token: "at2",
+        token_type: "Bearer",
+        refresh_token: "rt2",
+        expires_in: 3600,
+      });
+
+      const newToken = await options.refreshAccessToken!();
+      expect(newToken).toBe("at2");
+      const reloaded = await service.get(created.guid);
+      expect(reloaded.accessToken).toBe("at2");
+      expect(reloaded.refreshToken).toBe("rt2");
+    });
+  });
+
+  describe("refreshOAuthToken", () => {
+    const metadata = {
+      token_endpoint: "https://connect.example.com/oauth/v1/token",
+      authorization_endpoint: "https://connect.example.com/oauth/v1/authorize",
+      registration_endpoint: "https://connect.example.com/oauth/v1/register",
+    };
+
+    test("refreshes, persists rotated tokens, and returns the new access token", async () => {
+      const created = await service.create({
+        name: "OAuth Cred",
+        url: "https://connect.example.com",
+        serverType: ServerType.CONNECT,
+        oauthClientId: "client-abc",
+        accessToken: "at",
+        refreshToken: "rt",
+      });
+      oauthMocks.discoverOAuthMetadata.mockResolvedValue(metadata);
+      oauthMocks.refreshToken.mockResolvedValue({
+        access_token: "at2",
+        token_type: "Bearer",
+        refresh_token: "rt2",
+        expires_in: 3600,
+      });
+
+      const token = await service.refreshOAuthToken(
+        {
+          guid: created.guid,
+          url: created.url,
+          oauthClientId: created.oauthClientId,
+          refreshToken: created.refreshToken,
+        },
+        false,
+      );
+
+      expect(token).toBe("at2");
+      const reloaded = await service.get(created.guid);
+      expect(reloaded.accessToken).toBe("at2");
+      expect(reloaded.refreshToken).toBe("rt2");
+      expect(reloaded.tokenExpiresAt).toBe("2099-01-01T00:00:00.000Z");
+    });
+
+    test("keeps the current refresh token when the server omits a new one", async () => {
+      const created = await service.create({
+        name: "OAuth Cred",
+        url: "https://connect.example.com",
+        serverType: ServerType.CONNECT,
+        oauthClientId: "client-abc",
+        accessToken: "at",
+        refreshToken: "rt",
+      });
+      oauthMocks.discoverOAuthMetadata.mockResolvedValue(metadata);
+      // No refresh_token in the response (server did not rotate it).
+      oauthMocks.refreshToken.mockResolvedValue({
+        access_token: "at2",
+        token_type: "Bearer",
+        expires_in: 3600,
+      });
+
+      const token = await service.refreshOAuthToken(
+        {
+          guid: created.guid,
+          url: created.url,
+          oauthClientId: created.oauthClientId,
+          refreshToken: created.refreshToken,
+        },
+        false,
+      );
+
+      expect(token).toBe("at2");
+      const reloaded = await service.get(created.guid);
+      expect(reloaded.accessToken).toBe("at2");
+      // The existing refresh token is preserved.
+      expect(reloaded.refreshToken).toBe("rt");
+    });
+
+    test("re-registers the client on invalid_client and retries", async () => {
+      const created = await service.create({
+        name: "OAuth Cred",
+        url: "https://connect.example.com",
+        serverType: ServerType.CONNECT,
+        oauthClientId: "old-client",
+        accessToken: "at",
+        refreshToken: "rt",
+      });
+      oauthMocks.discoverOAuthMetadata.mockResolvedValue(metadata);
+      oauthMocks.refreshToken
+        .mockRejectedValueOnce(new OAuthError("invalid", "invalid_client"))
+        .mockResolvedValueOnce({
+          access_token: "at2",
+          token_type: "Bearer",
+          refresh_token: "rt2",
+        });
+      oauthMocks.registerClient.mockResolvedValue({ client_id: "new-client" });
+
+      const token = await service.refreshOAuthToken(
+        {
+          guid: created.guid,
+          url: created.url,
+          oauthClientId: created.oauthClientId,
+          refreshToken: created.refreshToken,
+        },
+        false,
+      );
+
+      expect(token).toBe("at2");
+      expect(oauthMocks.registerClient).toHaveBeenCalledTimes(1);
+      const reloaded = await service.get(created.guid);
+      expect(reloaded.oauthClientId).toBe("new-client");
+    });
+
+    test("throws when discovery fails", async () => {
+      oauthMocks.discoverOAuthMetadata.mockResolvedValue(null);
+      await expect(
+        service.refreshOAuthToken(
+          {
+            guid: GUID("g"),
+            url: "https://connect.example.com",
+            oauthClientId: "c",
+            refreshToken: "rt",
+          },
+          false,
+        ),
+      ).rejects.toThrow();
     });
   });
 });

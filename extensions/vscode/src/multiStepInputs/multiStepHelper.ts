@@ -31,6 +31,17 @@ class InputFlowAction {
   static resume = new InputFlowAction();
 }
 
+/**
+ * Whether a rejection means the user dismissed the stepper rather than something
+ * failing. Steps that catch their own errors need this: pressing Escape rejects
+ * with `AbortError` and hiding the input box rejects with the `InputFlowAction`
+ * navigation sentinels, none of which carry a message — so reporting one as an
+ * error produces a diagnostic that names no cause ("did not complete: .").
+ */
+export function isCancellation(err: unknown): boolean {
+  return err instanceof AbortError || err instanceof InputFlowAction;
+}
+
 export function isQuickPickItem(d: QuickPickItem | string): d is QuickPickItem {
   return typeof d !== "string";
 }

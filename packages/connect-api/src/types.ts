@@ -33,6 +33,8 @@ interface ApiKeyAuth extends ConnectAPIBaseOptions {
   token?: never;
   privateKey?: never;
   snowflakeToken?: never;
+  accessToken?: never;
+  refreshAccessToken?: never;
 }
 
 interface TokenAuth extends ConnectAPIBaseOptions {
@@ -42,6 +44,8 @@ interface TokenAuth extends ConnectAPIBaseOptions {
   /** Base64-encoded DER PKCS#1 RSA private key for token-based authentication. */
   privateKey: string;
   snowflakeToken?: never;
+  accessToken?: never;
+  refreshAccessToken?: never;
 }
 
 interface SnowflakeApiKeyAuth extends ConnectAPIBaseOptions {
@@ -51,6 +55,8 @@ interface SnowflakeApiKeyAuth extends ConnectAPIBaseOptions {
   apiKey: string;
   token?: never;
   privateKey?: never;
+  accessToken?: never;
+  refreshAccessToken?: never;
 }
 
 interface SnowflakeTokenAuth extends ConnectAPIBaseOptions {
@@ -61,12 +67,40 @@ interface SnowflakeTokenAuth extends ConnectAPIBaseOptions {
   token: string;
   /** Base64-encoded DER PKCS#1 RSA private key for Connect token-based authentication. */
   privateKey: string;
+  accessToken?: never;
+  refreshAccessToken?: never;
+}
+
+/**
+ * OAuth 2.0 bearer-token authentication for Connect (RFC 6749).
+ * The access token is sent as `Authorization: Bearer <accessToken>`.
+ *
+ * When {@link BearerAuth.refreshAccessToken} is supplied, the client will, on a
+ * single 401 response, call it to obtain a fresh access token and retry the
+ * request once. The callback owns discovery/refresh/persistence; the client only
+ * swaps in the returned token.
+ */
+interface BearerAuth extends ConnectAPIBaseOptions {
+  /** OAuth access token, sent via `Authorization: Bearer`. */
+  accessToken: string;
+  /**
+   * Called once when a request returns 401. Should return a freshly refreshed
+   * access token (or throw if refresh is impossible). The client retries the
+   * original request a single time with the returned token.
+   */
+  refreshAccessToken?: () => Promise<string>;
+  apiKey?: never;
+  token?: never;
+  privateKey?: never;
+  snowflakeToken?: never;
 }
 
 interface NoAuth extends ConnectAPIBaseOptions {
   apiKey?: never;
   token?: never;
   privateKey?: never;
+  accessToken?: never;
+  refreshAccessToken?: never;
   /** Optional Snowflake token for legacy credentials without Connect auth.
    *  These will not work, but still need to be loadable for users to transition
    *  to new credentials with Connect auth.
@@ -75,7 +109,12 @@ interface NoAuth extends ConnectAPIBaseOptions {
 }
 
 export type ConnectAPIOptions =
-  ApiKeyAuth | TokenAuth | SnowflakeApiKeyAuth | SnowflakeTokenAuth | NoAuth;
+  | ApiKeyAuth
+  | TokenAuth
+  | BearerAuth
+  | SnowflakeApiKeyAuth
+  | SnowflakeTokenAuth
+  | NoAuth;
 
 // ---------------------------------------------------------------------------
 // User types

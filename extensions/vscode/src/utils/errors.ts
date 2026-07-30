@@ -64,6 +64,42 @@ export const getMessageFromError = (error: unknown): string => {
   return "";
 };
 
+/**
+ * Like `getMessageFromError`, but never returns an empty string.
+ *
+ * `getMessageFromError` yields "" for anything it doesn't recognize — a non-Error
+ * throw, an Error with an empty message, a control-flow sentinel — which makes
+ * interpolated diagnostics name no cause at all ("sign-in did not complete: .").
+ * Use this wherever the message is the only thing a user or a log will see.
+ */
+export const describeError = (error: unknown): string => {
+  const message = getMessageFromError(error);
+  if (message) {
+    return message;
+  }
+  if (error instanceof Error) {
+    // `name` is only meaningful when a subclass sets it — `class Foo extends
+    // Error {}` inherits the literal "Error" — so prefer the constructor name
+    // once `name` turns out to be the generic default.
+    if (error.name && error.name !== "Error") {
+      return error.name;
+    }
+    const ctor = error.constructor?.name;
+    if (ctor && ctor !== "Object") {
+      return ctor;
+    }
+  }
+  try {
+    const text = typeof error === "string" ? error : JSON.stringify(error);
+    if (text && text !== "{}" && text !== '""') {
+      return text;
+    }
+  } catch {
+    // Not serializable (circular, or a throwing toJSON); use the generic text.
+  }
+  return "no error details were reported";
+};
+
 export const getAPIURLFromError = (error: unknown) => {
   if (axios.isAxiosError(error) && error.config) {
     return {

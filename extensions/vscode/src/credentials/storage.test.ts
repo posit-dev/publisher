@@ -75,6 +75,24 @@ describe("credentialSecretStorage", () => {
       const result = parseCredentialRecord("not json");
       expect(result).toBeUndefined();
     });
+
+    test("backfills OAuth fields added after v1 for older records", () => {
+      // Simulate a credential stored before oauthClientId/tokenExpiresAt existed.
+      const cred = credentialFactory.build();
+      const legacy: Record<string, unknown> = { ...cred };
+      delete legacy.oauthClientId;
+      delete legacy.tokenExpiresAt;
+
+      const json = JSON.stringify({ version: 1, credential: legacy });
+      const result = parseCredentialRecord(json);
+
+      expect(result).toBeDefined();
+      expect(result?.oauthClientId).toBe("");
+      expect(result?.tokenExpiresAt).toBe("");
+      // The rest of the record is preserved.
+      expect(result?.guid).toBe(cred.guid);
+      expect(result?.apiKey).toBe(cred.apiKey);
+    });
   });
 
   describe("storeCredential", () => {

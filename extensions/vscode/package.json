@@ -68,6 +68,12 @@
             "markdownDescription": "Controls whether Posit Connect Cloud is available as a publishing destination.",
             "type": "boolean",
             "default": true
+          },
+          "positPublisher.useDeviceCodeAuth": {
+            "markdownDescription": "Use the OAuth **device-code** flow for Posit Connect browser sign-in instead of redirecting back to the editor automatically. Publisher normally picks a redirect that works in your environment, and falls back to the device-code flow on its own when none does. Enable this as a backup if browser sign-in is having trouble completing — you'll confirm a short code in the browser instead. Requires Posit Connect 2026.06.0 or later.",
+            "type": "boolean",
+            "default": false,
+            "scope": "machine-overridable"
           }
         }
       }

@@ -3,7 +3,7 @@
 import crypto from "crypto";
 import { Readable } from "stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ConnectAPI } from "./client.js";
+import { ConnectAPI, SessionExpiredError } from "./client.js";
 import { ContentID, BundleID, TaskID } from "./types.js";
 import type { UserDTO, ContentDetailsDTO } from "./types.js";
 
@@ -21,12 +21,15 @@ vi.mock("axios", () => {
   type InterceptorFn = (
     value: Record<string, unknown>,
   ) => Record<string, unknown>;
+  type RejectedFn = (
+    error: unknown,
+  ) => Record<string, unknown> | Promise<Record<string, unknown>>;
 
   function createInterceptorManager() {
-    const handlers: InterceptorFn[] = [];
+    const handlers: { fulfilled?: InterceptorFn; rejected?: RejectedFn }[] = [];
     return {
-      use: (fn: InterceptorFn) => {
-        handlers.push(fn);
+      use: (fulfilled?: InterceptorFn, rejected?: RejectedFn) => {
+        handlers.push({ fulfilled, rejected });
       },
       _handlers: handlers,
     };
@@ -62,9 +65,11 @@ vi.mock("axios", () => {
             headers,
           };
 
-          // Apply request interceptors
+          // Apply request interceptors (fulfilled only — mirrors real usage)
           for (const handler of reqInterceptors._handlers) {
-            cfg = handler(cfg);
+            if (handler.fulfilled) {
+              cfg = handler.fulfilled(cfg);
+            }
           }
 
           // Merge headerStore into cfg so tests can inspect signed headers
@@ -72,23 +77,30 @@ vi.mock("axios", () => {
             cfg._signedHeaders = headerStore;
           }
 
-          let resp = await mockRequest(cfg);
-          const validate =
-            (cfg.validateStatus as ((s: number) => boolean) | undefined) ??
-            ((s: number) => s >= 200 && s < 300);
-          if (!validate(resp.status as number)) {
-            throw Object.assign(
-              new Error(`Request failed with status code ${resp.status}`),
-              { isAxiosError: true, response: resp },
-            );
-          }
+          // Dispatch, producing a promise that resolves on 2xx and rejects
+          // (with an axios-shaped error carrying `config`) otherwise. Response
+          // interceptors are then chained via .then(fulfilled, rejected) so
+          // rejected handlers (e.g. the OAuth 401 refresh/retry) run exactly as
+          // real axios chains them.
+          let promise: Promise<Record<string, unknown>> = (async () => {
+            const resp = await mockRequest(cfg);
+            const validate =
+              (cfg.validateStatus as ((s: number) => boolean) | undefined) ??
+              ((s: number) => s >= 200 && s < 300);
+            if (!validate(resp.status as number)) {
+              throw Object.assign(
+                new Error(`Request failed with status code ${resp.status}`),
+                { isAxiosError: true, response: resp, config: cfg },
+              );
+            }
+            return resp;
+          })();
 
-          // Apply response interceptors
           for (const handler of resInterceptors._handlers) {
-            resp = handler(resp);
+            promise = promise.then(handler.fulfilled, handler.rejected);
           }
 
-          return resp;
+          return promise;
         }
 
         return {
@@ -246,6 +258,110 @@ describe("Authorization header", () => {
         }),
       }),
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// OAuth bearer auth + refresh
+// ---------------------------------------------------------------------------
+
+describe("OAuth bearer auth", () => {
+  const ACCESS = "access-token-abc";
+
+  it("sends Authorization: Bearer <accessToken> on requests", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(validUserDTO()));
+
+    const client = new ConnectAPI({ url: BASE_URL, accessToken: ACCESS });
+    await client.getCurrentUser();
+
+    const cfg = mockRequest.mock.calls.at(-1)?.[0];
+    expect(cfg._signedHeaders?.Authorization).toBe(`Bearer ${ACCESS}`);
+  });
+
+  it("refreshes once on 401 and retries with the new token", async () => {
+    const refreshAccessToken = vi.fn().mockResolvedValue("access-token-new");
+    mockRequest
+      .mockResolvedValueOnce(jsonResponse({ error: "unauthorized" }, 401))
+      .mockResolvedValueOnce(jsonResponse(validUserDTO()));
+
+    const client = new ConnectAPI({
+      url: BASE_URL,
+      accessToken: ACCESS,
+      refreshAccessToken,
+    });
+    const user = await client.getCurrentUser();
+
+    expect(refreshAccessToken).toHaveBeenCalledTimes(1);
+    expect(mockRequest).toHaveBeenCalledTimes(2);
+    expect(user.username).toBe("publisher1");
+    // The retried request carries the refreshed bearer token.
+    const retryCfg = mockRequest.mock.calls[1]?.[0];
+    expect(retryCfg._signedHeaders?.Authorization).toBe(
+      "Bearer access-token-new",
+    );
+  });
+
+  it("throws SessionExpiredError when the refresh callback fails", async () => {
+    const refreshAccessToken = vi
+      .fn()
+      .mockRejectedValue(new Error("refresh boom"));
+    mockRequest.mockResolvedValue(jsonResponse({ error: "unauthorized" }, 401));
+
+    const client = new ConnectAPI({
+      url: BASE_URL,
+      accessToken: ACCESS,
+      refreshAccessToken,
+    });
+
+    await expect(client.getCurrentUser()).rejects.toBeInstanceOf(
+      SessionExpiredError,
+    );
+    expect(refreshAccessToken).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws SessionExpiredError without refreshing twice when the retry still 401s", async () => {
+    const refreshAccessToken = vi.fn().mockResolvedValue("access-token-new");
+    mockRequest.mockResolvedValue(jsonResponse({ error: "unauthorized" }, 401));
+
+    const client = new ConnectAPI({
+      url: BASE_URL,
+      accessToken: ACCESS,
+      refreshAccessToken,
+    });
+
+    await expect(client.getCurrentUser()).rejects.toBeInstanceOf(
+      SessionExpiredError,
+    );
+    expect(refreshAccessToken).toHaveBeenCalledTimes(1);
+    expect(mockRequest).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not replay a streamed body on 401 (surfaces SessionExpiredError, no refresh)", async () => {
+    const refreshAccessToken = vi.fn().mockResolvedValue("access-token-new");
+    mockRequest.mockResolvedValue(jsonResponse({ error: "unauthorized" }, 401));
+
+    const client = new ConnectAPI({
+      url: BASE_URL,
+      accessToken: ACCESS,
+      refreshAccessToken,
+    });
+    const body = Readable.from(Buffer.from("bundle-bytes"));
+
+    await expect(
+      client.uploadBundle(ContentID("c1"), body, 12, "checksum"),
+    ).rejects.toBeInstanceOf(SessionExpiredError);
+    // The consumed stream must not be replayed, so no refresh is attempted.
+    expect(refreshAccessToken).not.toHaveBeenCalled();
+  });
+
+  it("propagates the raw 401 (not SessionExpiredError) when no refresh callback is provided", async () => {
+    mockRequest.mockResolvedValue(jsonResponse({ error: "unauthorized" }, 401));
+
+    const client = new ConnectAPI({ url: BASE_URL, accessToken: ACCESS });
+    const err = await client.getCurrentUser().catch((e) => e);
+
+    expect(err).not.toBeInstanceOf(SessionExpiredError);
+    expect(err).toBeInstanceOf(Error);
   });
 });
 
