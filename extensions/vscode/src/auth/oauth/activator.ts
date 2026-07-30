@@ -3,7 +3,7 @@
 import { env, UIKind, window, workspace } from "vscode";
 import { ConnectAPI } from "@posit-dev/connect-api";
 
-import { logger, logSignInDiagnostic } from "src/logging";
+import { logger } from "src/logging";
 import { describeError, getMessageFromError } from "src/utils/errors";
 import { showProgress } from "src/utils/progress";
 import { OAuthClient, tokenExpiresAt } from "./client";
@@ -174,9 +174,7 @@ export class ConnectOAuthActivator {
 
   /** Announces the chosen transport and, in plain terms, why. */
   private logTransport(transport: string, why: string): void {
-    logSignInDiagnostic(
-      `OAuth sign-in will use the ${transport} flow — ${why}`,
-    );
+    logger.debug(`OAuth sign-in will use the ${transport} flow — ${why}`);
   }
 
   /**
@@ -185,7 +183,7 @@ export class ConnectOAuthActivator {
    * transport that was chosen and, if it didn't work out, why it was dropped.
    */
   private logFallback(transport: string, why: string): void {
-    logSignInDiagnostic(
+    logger.debug(
       `OAuth sign-in is falling back from the ${transport} flow to the ` +
         `device code flow — ${why}`,
     );
@@ -261,7 +259,7 @@ export class ConnectOAuthActivator {
         );
         return undefined;
       }
-      logSignInDiagnostic(
+      logger.debug(
         `OAuth sign-in through the Posit Workbench redirect relay failed and ` +
           `cannot fall back: ${describeError(err)}`,
       );

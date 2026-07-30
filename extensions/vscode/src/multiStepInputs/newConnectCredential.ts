@@ -46,7 +46,7 @@ import {
   OAuthAuthResult,
   OAuthMetadata,
 } from "src/auth/oauth";
-import { logSignInDiagnostic } from "src/logging";
+import { logger } from "src/logging";
 
 // Internal auth mechanisms. OAUTH and TOKEN are both surfaced to the user as a
 // single "sign in with a browser" choice — the user never sees a token, so the
@@ -552,12 +552,12 @@ export async function newConnectCredential(
       // an error popup — see isCancellation for why a dismissal must not take
       // this path.
       if (isCancellation(e)) {
-        logSignInDiagnostic("OAuth sign-in was dismissed before it completed.");
+        logger.debug("OAuth sign-in was dismissed before it completed.");
       } else {
         // describeError, not getMessageFromError: the latter returns "" for any
         // throw it doesn't recognize.
         const reason = describeError(e);
-        logSignInDiagnostic(`OAuth sign-in failed: ${reason}`);
+        logger.debug(`OAuth sign-in failed: ${reason}`);
         window.showErrorMessage(
           `OAuth sign-in did not complete: ${reason}. You can use an API key instead.`,
         );

@@ -17,11 +17,11 @@ const h = vi.hoisted(() => ({
   pollWorkbenchAuthCode: vi.fn(),
   getCurrentUser: vi.fn(),
   openExternal: vi.fn((..._args: unknown[]) => Promise.resolve(true)),
-  logSignInDiagnostic: vi.fn((..._args: unknown[]) => undefined),
+  loggerDebug: vi.fn((..._args: unknown[]) => undefined),
 }));
 
 /** Every sign-in diagnostic emitted during the current test, joined. */
-const signInLog = () => h.logSignInDiagnostic.mock.calls.flat().join("\n");
+const signInLog = () => h.loggerDebug.mock.calls.flat().join("\n");
 
 vi.mock("vscode", () => ({
   env: {
@@ -44,8 +44,12 @@ vi.mock("vscode", () => ({
 }));
 
 vi.mock("src/logging", () => ({
-  logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
-  logSignInDiagnostic: (...args: unknown[]) => h.logSignInDiagnostic(...args),
+  logger: {
+    debug: (...args: unknown[]) => h.loggerDebug(...args),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
 }));
 
 vi.mock("src/utils/progress", () => ({
