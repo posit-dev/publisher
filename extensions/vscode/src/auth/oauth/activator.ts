@@ -129,7 +129,6 @@ export class ConnectOAuthActivator {
    */
   private async authorize(): Promise<AuthorizeResult> {
     const workbench = detectWorkbench();
-    this.logEnvironment(workbench);
 
     if (this.deviceCodeForced()) {
       this.logTransport(
@@ -171,31 +170,6 @@ export class ConnectOAuthActivator {
       return result;
     }
     return this.deviceCodeFlow();
-  }
-
-  /**
-   * Records every input to the transport decision before it is made, so a single
-   * log excerpt explains any outcome without needing to reproduce it. Written at
-   * info level because it is the first thing to ask for when someone reports
-   * "browser sign-in didn't work here".
-   */
-  private logEnvironment(workbench: WorkbenchEnvironment | undefined): void {
-    const env_ = process.env;
-    logSignInDiagnostic(
-      "Posit Connect OAuth sign-in environment: " +
-        [
-          `uiKind=${env.uiKind === UIKind.Web ? "web" : "desktop"}`,
-          `remote=${env.remoteName ?? "none"}`,
-          `useDeviceCodeAuth=${this.deviceCodeForced()}`,
-          `workbench=${workbench ? "yes" : "no"}`,
-          // The raw env vars, so a Workbench session that wasn't detected can be
-          // told apart from one where the vars are missing or malformed. Neither
-          // is a secret — they are server URLs.
-          `RS_SERVER_URL=${env_.RS_SERVER_URL ?? "unset"}`,
-          `RS_SERVER_ADDRESS=${env_.RS_SERVER_ADDRESS ?? "unset"}`,
-          `deviceFlowAdvertised=${this.metadata.device_authorization_endpoint ? "yes" : "no"}`,
-        ].join(", "),
-    );
   }
 
   /** Announces the chosen transport and, in plain terms, why. */

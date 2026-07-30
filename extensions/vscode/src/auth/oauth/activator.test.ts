@@ -319,48 +319,8 @@ describe("ConnectOAuthActivator Posit Workbench flow", () => {
 
 describe("ConnectOAuthActivator sign-in diagnostics", () => {
   // These lines are the artifact a user is asked to paste back when browser
-  // sign-in behaves unexpectedly, so the facts that determine the transport and
-  // the reason for any fallback must all be present.
-  it("records the full environment before choosing a transport", async () => {
-    h.uiKind = 2;
-    h.remoteName = "ssh-remote";
-    h.detectWorkbench.mockReturnValue(WORKBENCH);
-    h.isWorkbenchRelayReachable.mockResolvedValue(true);
-    h.pollWorkbenchAuthCode.mockResolvedValue("auth-code");
-    process.env.RS_SERVER_URL = "https://workbench.example.com/?token=abc";
-    process.env.RS_SERVER_ADDRESS = "http://localhost:8787";
-
-    try {
-      await makeActivator().authenticate();
-    } finally {
-      delete process.env.RS_SERVER_URL;
-      delete process.env.RS_SERVER_ADDRESS;
-    }
-
-    const log = signInLog();
-    expect(log).toContain("uiKind=web");
-    expect(log).toContain("remote=ssh-remote");
-    expect(log).toContain("useDeviceCodeAuth=false");
-    expect(log).toContain("workbench=yes");
-    expect(log).toContain(
-      "RS_SERVER_URL=https://workbench.example.com/?token=abc",
-    );
-    expect(log).toContain("RS_SERVER_ADDRESS=http://localhost:8787");
-    expect(log).toContain("deviceFlowAdvertised=yes");
-  });
-
-  it("distinguishes an undetected Workbench session from absent env vars", async () => {
-    h.uiKind = 2;
-    h.detectWorkbench.mockReturnValue(undefined);
-    h.startDeviceAuth.mockRejectedValue(new Error("DEVICE_PATH"));
-
-    await expect(makeActivator().authenticate()).rejects.toThrow("DEVICE_PATH");
-
-    const log = signInLog();
-    expect(log).toContain("workbench=no");
-    expect(log).toContain("RS_SERVER_URL=unset");
-  });
-
+  // sign-in behaves unexpectedly, so the transport chosen and the reason for
+  // any fallback must both be present.
   it("names the setting when the device-code override forces the flow", async () => {
     h.forceDeviceCode = true;
     h.startDeviceAuth.mockRejectedValue(new Error("DEVICE_PATH"));
@@ -368,7 +328,6 @@ describe("ConnectOAuthActivator sign-in diagnostics", () => {
     await expect(makeActivator().authenticate()).rejects.toThrow("DEVICE_PATH");
 
     const log = signInLog();
-    expect(log).toContain("useDeviceCodeAuth=true");
     expect(log).toContain("positPublisher.useDeviceCodeAuth");
     expect(log).toContain("will use the device code flow");
   });
