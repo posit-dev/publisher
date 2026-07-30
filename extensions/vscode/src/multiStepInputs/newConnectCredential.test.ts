@@ -237,6 +237,7 @@ vi.mock("src/auth/oauth", () => ({
 
 vi.mock("src/utils/errors", () => ({
   getMessageFromError: vi.fn((e: unknown) => String(e)),
+  describeError: vi.fn((e: unknown) => String(e)),
   getSummaryStringFromError: vi.fn((loc: string, e: unknown) => `${loc}: ${e}`),
 }));
 

@@ -17,7 +17,11 @@ const h = vi.hoisted(() => ({
   pollWorkbenchAuthCode: vi.fn(),
   getCurrentUser: vi.fn(),
   openExternal: vi.fn((..._args: unknown[]) => Promise.resolve(true)),
+  logSignInDiagnostic: vi.fn((..._args: unknown[]) => undefined),
 }));
+
+/** Every sign-in diagnostic emitted during the current test, joined. */
+const signInLog = () => h.logSignInDiagnostic.mock.calls.flat().join("\n");
 
 vi.mock("vscode", () => ({
   env: {
@@ -41,6 +45,7 @@ vi.mock("vscode", () => ({
 
 vi.mock("src/logging", () => ({
   logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+  logSignInDiagnostic: (...args: unknown[]) => h.logSignInDiagnostic(...args),
 }));
 
 vi.mock("src/utils/progress", () => ({
@@ -49,6 +54,7 @@ vi.mock("src/utils/progress", () => ({
 
 vi.mock("src/utils/errors", () => ({
   getMessageFromError: (e: unknown) => String(e),
+  describeError: (e: unknown) => String(e),
 }));
 
 vi.mock("@posit-dev/connect-api", () => ({
@@ -308,6 +314,144 @@ describe("ConnectOAuthActivator Posit Workbench flow", () => {
       "Authorization was denied.",
     );
     expect(h.startDeviceAuth).not.toHaveBeenCalled();
+  });
+});
+
+describe("ConnectOAuthActivator sign-in diagnostics", () => {
+  // These lines are the artifact a user is asked to paste back when browser
+  // sign-in behaves unexpectedly, so the facts that determine the transport and
+  // the reason for any fallback must all be present.
+  it("records the full environment before choosing a transport", async () => {
+    h.uiKind = 2;
+    h.remoteName = "ssh-remote";
+    h.detectWorkbench.mockReturnValue(WORKBENCH);
+    h.isWorkbenchRelayReachable.mockResolvedValue(true);
+    h.pollWorkbenchAuthCode.mockResolvedValue("auth-code");
+    process.env.RS_SERVER_URL = "https://workbench.example.com/?token=abc";
+    process.env.RS_SERVER_ADDRESS = "http://localhost:8787";
+
+    try {
+      await makeActivator().authenticate();
+    } finally {
+      delete process.env.RS_SERVER_URL;
+      delete process.env.RS_SERVER_ADDRESS;
+    }
+
+    const log = signInLog();
+    expect(log).toContain("uiKind=web");
+    expect(log).toContain("remote=ssh-remote");
+    expect(log).toContain("useDeviceCodeAuth=false");
+    expect(log).toContain("workbench=yes");
+    expect(log).toContain(
+      "RS_SERVER_URL=https://workbench.example.com/?token=abc",
+    );
+    expect(log).toContain("RS_SERVER_ADDRESS=http://localhost:8787");
+    expect(log).toContain("deviceFlowAdvertised=yes");
+  });
+
+  it("distinguishes an undetected Workbench session from absent env vars", async () => {
+    h.uiKind = 2;
+    h.detectWorkbench.mockReturnValue(undefined);
+    h.startDeviceAuth.mockRejectedValue(new Error("DEVICE_PATH"));
+
+    await expect(makeActivator().authenticate()).rejects.toThrow("DEVICE_PATH");
+
+    const log = signInLog();
+    expect(log).toContain("workbench=no");
+    expect(log).toContain("RS_SERVER_URL=unset");
+  });
+
+  it("names the setting when the device-code override forces the flow", async () => {
+    h.forceDeviceCode = true;
+    h.startDeviceAuth.mockRejectedValue(new Error("DEVICE_PATH"));
+
+    await expect(makeActivator().authenticate()).rejects.toThrow("DEVICE_PATH");
+
+    const log = signInLog();
+    expect(log).toContain("useDeviceCodeAuth=true");
+    expect(log).toContain("positPublisher.useDeviceCodeAuth");
+    expect(log).toContain("will use the device code flow");
+  });
+
+  it("reports the chosen transport on the happy path", async () => {
+    stubLoopbackSuccess();
+
+    await makeActivator().authenticate();
+
+    expect(signInLog()).toContain("will use the loopback flow");
+  });
+
+  it("explains an unreachable Workbench relay, naming the address probed", async () => {
+    h.uiKind = 2;
+    h.detectWorkbench.mockReturnValue(WORKBENCH);
+    h.isWorkbenchRelayReachable.mockResolvedValue(false);
+    h.startDeviceAuth.mockRejectedValue(new Error("DEVICE_PATH"));
+
+    await expect(makeActivator().authenticate()).rejects.toThrow("DEVICE_PATH");
+
+    const log = signInLog();
+    expect(log).toContain(
+      "falling back from the Posit Workbench redirect relay flow to the device code flow",
+    );
+    expect(log).toContain("http://localhost:8787/oauth_code");
+  });
+
+  it("explains a rejected redirect URI, naming the URI to allowlist", async () => {
+    h.uiKind = 2;
+    h.detectWorkbench.mockReturnValue(WORKBENCH);
+    h.isWorkbenchRelayReachable.mockResolvedValue(true);
+    h.registerClient.mockRejectedValueOnce(new Error("invalid redirect_uri"));
+    h.startDeviceAuth.mockRejectedValue(new Error("DEVICE_PATH"));
+
+    await expect(makeActivator().authenticate()).rejects.toThrow("DEVICE_PATH");
+
+    const log = signInLog();
+    expect(log).toContain(
+      "https://workbench.example.com/oauth_redirect_callback",
+    );
+    expect(log).toContain("allowed redirect URIs");
+  });
+
+  it("explains a loopback bind failure", async () => {
+    h.startLoopbackServer.mockRejectedValue(new Error("EADDRINUSE"));
+    h.startDeviceAuth.mockRejectedValue(new Error("DEVICE_PATH"));
+
+    await expect(makeActivator().authenticate()).rejects.toThrow("DEVICE_PATH");
+
+    const log = signInLog();
+    expect(log).toContain(
+      "falling back from the loopback flow to the device code flow",
+    );
+    expect(log).toContain("EADDRINUSE");
+  });
+
+  it("never logs the authorization code, PKCE verifier, or tokens", async () => {
+    h.uiKind = 2;
+    h.detectWorkbench.mockReturnValue(WORKBENCH);
+    h.isWorkbenchRelayReachable.mockResolvedValue(true);
+    // Distinctive values so a match cannot be an incidental substring.
+    h.pollWorkbenchAuthCode.mockResolvedValue("SECRET-AUTH-CODE");
+    h.exchangeAuthCode.mockResolvedValue({
+      access_token: "SECRET-ACCESS-TOKEN",
+      token_type: "Bearer",
+      refresh_token: "SECRET-REFRESH-TOKEN",
+      expires_in: 3600,
+    });
+
+    const result = await makeActivator().authenticate();
+    // Guard against the flow short-circuiting and vacuously logging nothing.
+    expect(result.accessToken).toBe("SECRET-ACCESS-TOKEN");
+    expect(signInLog()).not.toBe("");
+
+    for (const secret of [
+      "SECRET-AUTH-CODE",
+      "SECRET-ACCESS-TOKEN",
+      "SECRET-REFRESH-TOKEN",
+      "verifier", // the PKCE verifier stubbed by the pkce mock
+      "challenge",
+    ]) {
+      expect(signInLog()).not.toContain(secret);
+    }
   });
 });
 

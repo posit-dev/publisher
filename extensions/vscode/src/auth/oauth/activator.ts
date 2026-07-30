@@ -3,8 +3,8 @@
 import { env, UIKind, window, workspace } from "vscode";
 import { ConnectAPI } from "@posit-dev/connect-api";
 
-import { logger } from "src/logging";
-import { getMessageFromError } from "src/utils/errors";
+import { logger, logSignInDiagnostic } from "src/logging";
+import { describeError, getMessageFromError } from "src/utils/errors";
 import { showProgress } from "src/utils/progress";
 import { OAuthClient, tokenExpiresAt } from "./client";
 import { discoverOAuthMetadata } from "./discovery";
@@ -128,18 +128,23 @@ export class ConnectOAuthActivator {
    * 4. **Device flow** — the universal fallback.
    */
   private async authorize(): Promise<AuthorizeResult> {
+    const workbench = detectWorkbench();
+    this.logEnvironment(workbench);
+
     if (this.deviceCodeForced()) {
-      logger.info(
-        "positPublisher.useDeviceCodeAuth is enabled; using the OAuth device flow.",
+      this.logTransport(
+        "device code",
+        "the positPublisher.useDeviceCodeAuth setting is enabled, which " +
+          "overrides automatic selection. Turn it off to let Publisher " +
+          "redirect back to the editor.",
       );
       return this.deviceCodeFlow();
     }
 
-    const workbench = detectWorkbench();
     if (workbench) {
-      logger.info(
-        "Detected a Posit Workbench session; using its OAuth redirect relay " +
-          `at ${workbench.externalServerUrl}.`,
+      this.logTransport(
+        "Posit Workbench redirect relay",
+        `redirecting through ${workbenchRedirectUri(workbench)}.`,
       );
       const result = await this.tryWorkbenchFlow(workbench);
       if (result) {
@@ -149,19 +154,67 @@ export class ConnectOAuthActivator {
     }
 
     if (env.uiKind !== UIKind.Desktop || env.remoteName) {
-      logger.info(
-        "A loopback redirect is unreachable from the browser in this " +
-          `environment (uiKind=${env.uiKind === UIKind.Web ? "web" : "desktop"}, ` +
-          `remote=${env.remoteName ?? "none"}); using the OAuth device flow.`,
+      this.logTransport(
+        "device code",
+        "a loopback redirect is unreachable from the browser in this " +
+          "environment, and no Posit Workbench session was detected.",
       );
       return this.deviceCodeFlow();
     }
 
+    this.logTransport(
+      "loopback",
+      "the editor and browser are on the same machine.",
+    );
     const result = await this.tryLoopbackFlow();
     if (result) {
       return result;
     }
     return this.deviceCodeFlow();
+  }
+
+  /**
+   * Records every input to the transport decision before it is made, so a single
+   * log excerpt explains any outcome without needing to reproduce it. Written at
+   * info level because it is the first thing to ask for when someone reports
+   * "browser sign-in didn't work here".
+   */
+  private logEnvironment(workbench: WorkbenchEnvironment | undefined): void {
+    const env_ = process.env;
+    logSignInDiagnostic(
+      "Posit Connect OAuth sign-in environment: " +
+        [
+          `uiKind=${env.uiKind === UIKind.Web ? "web" : "desktop"}`,
+          `remote=${env.remoteName ?? "none"}`,
+          `useDeviceCodeAuth=${this.deviceCodeForced()}`,
+          `workbench=${workbench ? "yes" : "no"}`,
+          // The raw env vars, so a Workbench session that wasn't detected can be
+          // told apart from one where the vars are missing or malformed. Neither
+          // is a secret — they are server URLs.
+          `RS_SERVER_URL=${env_.RS_SERVER_URL ?? "unset"}`,
+          `RS_SERVER_ADDRESS=${env_.RS_SERVER_ADDRESS ?? "unset"}`,
+          `deviceFlowAdvertised=${this.metadata.device_authorization_endpoint ? "yes" : "no"}`,
+        ].join(", "),
+    );
+  }
+
+  /** Announces the chosen transport and, in plain terms, why. */
+  private logTransport(transport: string, why: string): void {
+    logSignInDiagnostic(
+      `OAuth sign-in will use the ${transport} flow — ${why}`,
+    );
+  }
+
+  /**
+   * Announces that a transport was abandoned and the device flow will be tried
+   * instead. Paired with {@link logTransport} so the log always shows both the
+   * transport that was chosen and, if it didn't work out, why it was dropped.
+   */
+  private logFallback(transport: string, why: string): void {
+    logSignInDiagnostic(
+      `OAuth sign-in is falling back from the ${transport} flow to the ` +
+        `device code flow — ${why}`,
+    );
   }
 
   /** Whether the user has forced the device-code flow via settings. */
@@ -184,9 +237,10 @@ export class ConnectOAuthActivator {
     const redirectUri = workbenchRedirectUri(workbench);
 
     if (!(await isWorkbenchRelayReachable(workbench, this.insecure))) {
-      logger.info(
-        "The Posit Workbench OAuth redirect relay did not respond; falling " +
-          "back to the OAuth device flow.",
+      this.logFallback(
+        "Posit Workbench redirect relay",
+        `the relay did not respond at ${workbench.serverAddress}/oauth_code. ` +
+          "Check that RS_SERVER_ADDRESS is reachable from the extension host.",
       );
       return undefined;
     }
@@ -198,11 +252,11 @@ export class ConnectOAuthActivator {
       // Connect rejects a non-loopback redirect URI unless an administrator has
       // added it to the allowed redirect URIs, so this is the expected outcome
       // on a Workbench deployment Connect doesn't know about.
-      logger.info(
-        `Posit Connect did not accept the Posit Workbench redirect URI ` +
-          `${redirectUri} (${getMessageFromError(err)}); falling back to the ` +
-          "OAuth device flow. An administrator can allow this URI on Connect " +
-          "to enable browser sign-in here.",
+      this.logFallback(
+        "Posit Workbench redirect relay",
+        `Posit Connect did not accept the redirect URI ${redirectUri} ` +
+          `(${describeError(err)}). A Connect administrator can add this exact ` +
+          "URI to the allowed redirect URIs to enable browser sign-in here.",
       );
       return undefined;
     }
@@ -227,12 +281,16 @@ export class ConnectOAuthActivator {
       );
     } catch (err) {
       if (err instanceof WorkbenchRelayError && !err.terminal) {
-        logger.info(
-          `The Posit Workbench OAuth relay failed (${err.message}); falling ` +
-            "back to the OAuth device flow.",
+        this.logFallback(
+          "Posit Workbench redirect relay",
+          `the relay failed while waiting for the redirect (${err.message}).`,
         );
         return undefined;
       }
+      logSignInDiagnostic(
+        `OAuth sign-in through the Posit Workbench redirect relay failed and ` +
+          `cannot fall back: ${describeError(err)}`,
+      );
       throw err;
     }
 
@@ -259,9 +317,9 @@ export class ConnectOAuthActivator {
     try {
       loopback = await startLoopbackServer(state);
     } catch (err) {
-      logger.info(
-        `Loopback listener unavailable (${getMessageFromError(err)}); ` +
-          "falling back to OAuth device flow.",
+      this.logFallback(
+        "loopback",
+        `a listener could not be bound on 127.0.0.1 (${describeError(err)}).`,
       );
       return undefined;
     }

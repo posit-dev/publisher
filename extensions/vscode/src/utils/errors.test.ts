@@ -3,6 +3,7 @@
 import { describe, expect, test } from "vitest";
 import { AxiosError, AxiosHeaders } from "axios";
 import {
+  describeError,
   getSummaryStringFromError,
   getMessageFromError,
   isConnectionRefusedError,
@@ -179,5 +180,53 @@ describe("getMessageFromError", () => {
       const error = new AxiosError("Network Error", "ERR_NETWORK");
       expect(getMessageFromError(error)).toBe("Network Error");
     });
+  });
+});
+
+describe("describeError", () => {
+  test("passes through a message getMessageFromError can extract", () => {
+    expect(describeError(new Error("boom"))).toBe("boom");
+    expect(describeError(new AxiosError("Network Error", "ERR_NETWORK"))).toBe(
+      "Network Error",
+    );
+  });
+
+  test("falls back to the error class name when the message is empty", () => {
+    // The case that rendered as "sign-in did not complete: ." — a thrown Error
+    // carrying no message at all.
+    expect(describeError(new Error())).toBe("Error");
+
+    class AbortError extends Error {}
+    expect(describeError(new AbortError())).toBe("AbortError");
+  });
+
+  test("describes non-Error throws", () => {
+    expect(describeError("plain string")).toBe("plain string");
+    expect(describeError({ status: 500 })).toBe('{"status":500}');
+  });
+
+  test("never returns an empty string", () => {
+    // Sentinels like InputFlowAction are bare class instances: no message, no
+    // useful name, and they serialize to "{}".
+    class InputFlowAction {}
+    for (const value of [
+      undefined,
+      null,
+      "",
+      {},
+      new InputFlowAction(),
+      Object.assign(new Error(), { name: "" }),
+    ]) {
+      expect(describeError(value)).not.toBe("");
+    }
+    expect(describeError(new InputFlowAction())).toBe(
+      "no error details were reported",
+    );
+  });
+
+  test("survives an error that cannot be serialized", () => {
+    const circular: Record<string, unknown> = {};
+    circular.self = circular;
+    expect(describeError(circular)).toBe("no error details were reported");
   });
 });

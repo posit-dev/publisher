@@ -7,6 +7,7 @@ import {
   MultiStepInput,
   MultiStepState,
   QuickPickItemWithIndex,
+  isCancellation,
   isQuickPickItemWithIndex,
   isString,
 } from "./multiStepHelper";
@@ -16,6 +17,7 @@ import { InputBoxValidationSeverity, window } from "vscode";
 import { Credential, ServerType, ProductName } from "src/api";
 import type { SnowflakeConnection } from "src/snowflake/types";
 import {
+  describeError,
   getMessageFromError,
   getSummaryStringFromError,
 } from "src/utils/errors";
@@ -44,6 +46,7 @@ import {
   OAuthAuthResult,
   OAuthMetadata,
 } from "src/auth/oauth";
+import { logSignInDiagnostic } from "src/logging";
 
 // Internal auth mechanisms. OAUTH and TOKEN are both surfaced to the user as a
 // single "sign in with a browser" choice — the user never sees a token, so the
@@ -544,11 +547,19 @@ export async function newConnectCredential(
       // Leave the credential name for inputCredentialName to default to the
       // server hostname, matching the token-based flow (the user can edit it).
     } catch (e) {
-      // Escape (AbortError) or an OAuth failure both divert to the manual
-      // auth-method chooser so an API key is always reachable.
-      if (!(e instanceof AbortError)) {
+      // A dismissal or an OAuth failure both divert to the manual auth-method
+      // chooser so an API key is always reachable. Only a real failure warrants
+      // an error popup — see isCancellation for why a dismissal must not take
+      // this path.
+      if (isCancellation(e)) {
+        logSignInDiagnostic("OAuth sign-in was dismissed before it completed.");
+      } else {
+        // describeError, not getMessageFromError: the latter returns "" for any
+        // throw it doesn't recognize.
+        const reason = describeError(e);
+        logSignInDiagnostic(`OAuth sign-in failed: ${reason}`);
         window.showErrorMessage(
-          `OAuth sign-in did not complete: ${getMessageFromError(e)}. You can use an API key instead.`,
+          `OAuth sign-in did not complete: ${reason}. You can use an API key instead.`,
         );
       }
       return {
