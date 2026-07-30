@@ -74,6 +74,8 @@ describe("redactCredential", () => {
       accountId: "",
       accountName: "",
       cloudEnvironment: "",
+      oauthClientId: "",
+      tokenExpiresAt: "",
       serverType: ServerType.CONNECT,
     });
     expect(out).toEqual({
