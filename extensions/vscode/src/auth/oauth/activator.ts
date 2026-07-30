@@ -17,11 +17,25 @@ import {
   OAuthTokens,
   OAUTH_LOOPBACK_REDIRECT,
 } from "./types";
+import {
+  detectWorkbench,
+  isWorkbenchRelayReachable,
+  pollWorkbenchAuthCode,
+  workbenchRedirectUri,
+  WorkbenchEnvironment,
+  WorkbenchRelayError,
+} from "./workbench";
 
 /** Result of a successful interactive OAuth sign-in. */
 export interface OAuthAuthResult extends OAuthTokens {
   /** The authenticated user's username, if it could be retrieved. */
   userName: string;
+}
+
+/** Tokens plus the `client_id` the flow that obtained them registered under. */
+interface AuthorizeResult {
+  clientId: string;
+  tokenResponse: OAuthTokenResponse;
 }
 
 // Fallback device poll interval when the server omits `interval` (RFC 8628).
@@ -33,10 +47,10 @@ const SLOW_DOWN_INCREMENT_MS = 5_000;
  * `Uri.parse(url)`. VS Code's `env.openExternal(Uri.parse(...))` mis-encodes
  * nested/redirect query params (e.g. the percent-encoded `redirect_uri` in an
  * OAuth authorize URL) — the same hazard the Connect Cloud flow documents in
- * multiStepHelper. Passing the string preserves the exact encoding. This routes
- * to the user's browser in desktop, remote, and web hosts alike, which is why
- * the device flow (browser Positron on Workbench) can rely on it — mirroring
- * ConnectAuthTokenActivator.openTokenClaimUrl, the flow proven to work there.
+ * multiStepHelper, and the same reason Workbench's own VS Code extension passes a
+ * string (`rstudio-workbench-vscode-ext` `src/utils/oauthClient.ts`). Passing the
+ * string preserves the exact encoding. This routes to the user's browser in
+ * desktop, remote, and web hosts alike.
  */
 async function openExternalUrl(url: string): Promise<void> {
   // @ts-expect-error env.openExternal is typed for Uri, but the string overload
@@ -47,9 +61,9 @@ async function openExternalUrl(url: string): Promise<void> {
 /**
  * Drives the interactive Connect OAuth sign-in from the credential stepper,
  * mirroring rsconnect-python's login command: discover metadata (if not already
- * provided), register a public client, run the Authorization Code + PKCE flow
- * over a loopback listener, and fall back to the device flow when a loopback
- * port can't be bound. Analogous to {@link ConnectAuthTokenActivator}.
+ * provided), register a public client, and run the Authorization Code + PKCE
+ * flow, choosing a redirect transport that works in the current environment
+ * (see {@link authorize}). Analogous to {@link ConnectAuthTokenActivator}.
  */
 export class ConnectOAuthActivator {
   private readonly client: OAuthClient;
@@ -81,15 +95,7 @@ export class ConnectOAuthActivator {
 
   /** Runs the full sign-in flow and returns tokens for a new OAuth credential. */
   async authenticate(): Promise<OAuthAuthResult> {
-    const registration = await showProgress(
-      "Registering with Posit Connect",
-      this.viewId,
-      () =>
-        this.client.registerClient(this.metadata, [OAUTH_LOOPBACK_REDIRECT]),
-    );
-    const clientId = registration.client_id;
-
-    const tokenResponse = await this.authorize(clientId);
+    const { clientId, tokenResponse } = await this.authorize();
 
     const tokens: OAuthTokens = {
       oauthClientId: clientId,
@@ -103,41 +109,149 @@ export class ConnectOAuthActivator {
   }
 
   /**
-   * A loopback redirect only works when the extension host and the user's
-   * browser are on the same machine. In a web UI (e.g. Positron served by Posit
-   * Workbench in a browser) or a remote setup (Remote-SSH, Codespaces, WSL), the
-   * browser cannot reach `127.0.0.1` on the extension host — the loopback socket
-   * binds fine on the server but the redirect never arrives, so it would hang
-   * until timeout. Detect those environments up front and use the device flow.
+   * Chooses a redirect transport for the Authorization Code + PKCE flow and runs
+   * it, falling back to the device flow when the browser can't deliver the
+   * redirect back to the extension host. In order:
+   *
+   * 1. `positPublisher.useDeviceCodeAuth` — an explicit user override, honored
+   *    first so it always wins.
+   * 2. **Posit Workbench** (`RS_SERVER_URL` + `RS_SERVER_ADDRESS` set) — browser
+   *    VS Code/Positron. Loopback is unreachable from the user's browser here,
+   *    but Workbench relays the code through `/oauth_redirect_callback` +
+   *    `/oauth_code?state=`. Requires the Workbench URL to be allowlisted in
+   *    Connect's redirect URIs, so registration can fail — fall back to device.
+   * 3. **Loopback** (`http://127.0.0.1:<port>/callback`) — only when the
+   *    extension host and browser share a machine: a desktop UI with no
+   *    `remoteName`. In any web UI or remote setup (Remote-SSH, Codespaces, WSL)
+   *    the socket binds fine on the host but the redirect never arrives, so it
+   *    would hang until timeout.
+   * 4. **Device flow** — the universal fallback.
    */
-  private isLoopbackViable(): boolean {
-    // Explicit override: `positPublisher.useDeviceCodeAuth` forces the
-    // device-code flow regardless of environment (e.g. when the loopback
-    // redirect can't complete even on desktop).
-    const useDeviceCodeAuth = workspace
+  private async authorize(): Promise<AuthorizeResult> {
+    if (this.deviceCodeForced()) {
+      logger.info(
+        "positPublisher.useDeviceCodeAuth is enabled; using the OAuth device flow.",
+      );
+      return this.deviceCodeFlow();
+    }
+
+    const workbench = detectWorkbench();
+    if (workbench) {
+      logger.info(
+        "Detected a Posit Workbench session; using its OAuth redirect relay " +
+          `at ${workbench.externalServerUrl}.`,
+      );
+      const result = await this.tryWorkbenchFlow(workbench);
+      if (result) {
+        return result;
+      }
+      return this.deviceCodeFlow();
+    }
+
+    if (env.uiKind !== UIKind.Desktop || env.remoteName) {
+      logger.info(
+        "A loopback redirect is unreachable from the browser in this " +
+          `environment (uiKind=${env.uiKind === UIKind.Web ? "web" : "desktop"}, ` +
+          `remote=${env.remoteName ?? "none"}); using the OAuth device flow.`,
+      );
+      return this.deviceCodeFlow();
+    }
+
+    const result = await this.tryLoopbackFlow();
+    if (result) {
+      return result;
+    }
+    return this.deviceCodeFlow();
+  }
+
+  /** Whether the user has forced the device-code flow via settings. */
+  private deviceCodeForced(): boolean {
+    return workspace
       .getConfiguration("positPublisher")
       .get<boolean>("useDeviceCodeAuth", false);
-    if (useDeviceCodeAuth) {
-      return false;
-    }
-    return env.uiKind === UIKind.Desktop && !env.remoteName;
   }
 
   /**
-   * Runs the Authorization Code + PKCE flow over loopback, falling back to the
-   * device flow in web/remote environments (where loopback is unreachable) or
-   * when the loopback listener can't start.
+   * Authorization Code + PKCE through Posit Workbench's OAuth redirect relay,
+   * the mechanism Workbench's own VS Code extension uses. Returns `undefined`
+   * when the relay can't be used in this deployment (unreachable, or Connect
+   * hasn't allowlisted the Workbench redirect URI) so the caller can fall back;
+   * rethrows when the user's authorization attempt itself failed.
    */
-  private async authorize(clientId: string): Promise<OAuthTokenResponse> {
-    if (!this.isLoopbackViable()) {
+  private async tryWorkbenchFlow(
+    workbench: WorkbenchEnvironment,
+  ): Promise<AuthorizeResult | undefined> {
+    const redirectUri = workbenchRedirectUri(workbench);
+
+    if (!(await isWorkbenchRelayReachable(workbench, this.insecure))) {
       logger.info(
-        "Loopback redirect is not usable in this environment " +
-          `(uiKind=${env.uiKind === UIKind.Web ? "web" : "desktop"}, ` +
-          `remote=${env.remoteName ?? "none"}); using the OAuth device flow.`,
+        "The Posit Workbench OAuth redirect relay did not respond; falling " +
+          "back to the OAuth device flow.",
       );
-      return this.authorizeWithDeviceCode(clientId);
+      return undefined;
     }
 
+    let clientId: string;
+    try {
+      clientId = await this.register(redirectUri);
+    } catch (err) {
+      // Connect rejects a non-loopback redirect URI unless an administrator has
+      // added it to the allowed redirect URIs, so this is the expected outcome
+      // on a Workbench deployment Connect doesn't know about.
+      logger.info(
+        `Posit Connect did not accept the Posit Workbench redirect URI ` +
+          `${redirectUri} (${getMessageFromError(err)}); falling back to the ` +
+          "OAuth device flow. An administrator can allow this URI on Connect " +
+          "to enable browser sign-in here.",
+      );
+      return undefined;
+    }
+
+    const { verifier, challenge } = generatePkcePair();
+    const state = generateState();
+
+    const authorizeUrl = this.client.buildAuthorizeUrl(this.metadata, {
+      clientId,
+      redirectUri,
+      codeChallenge: challenge,
+      state,
+    });
+    await openExternalUrl(authorizeUrl);
+
+    let code: string;
+    try {
+      code = await showProgress(
+        "Waiting for authorization in your browser…",
+        this.viewId,
+        () => pollWorkbenchAuthCode(workbench, state, this.insecure),
+      );
+    } catch (err) {
+      if (err instanceof WorkbenchRelayError && !err.terminal) {
+        logger.info(
+          `The Posit Workbench OAuth relay failed (${err.message}); falling ` +
+            "back to the OAuth device flow.",
+        );
+        return undefined;
+      }
+      throw err;
+    }
+
+    const tokenResponse = await this.client.exchangeAuthCode(this.metadata, {
+      code,
+      codeVerifier: verifier,
+      redirectUri,
+      clientId,
+    });
+    return { clientId, tokenResponse };
+  }
+
+  /**
+   * Authorization Code + PKCE over a loopback listener on the extension host.
+   * Returns `undefined` when a loopback port can't be bound so the caller can
+   * fall back to the device flow.
+   */
+  private async tryLoopbackFlow(): Promise<AuthorizeResult | undefined> {
+    const clientId = await this.register(OAUTH_LOOPBACK_REDIRECT);
     const { verifier, challenge } = generatePkcePair();
     const state = generateState();
 
@@ -149,7 +263,7 @@ export class ConnectOAuthActivator {
         `Loopback listener unavailable (${getMessageFromError(err)}); ` +
           "falling back to OAuth device flow.",
       );
-      return this.authorizeWithDeviceCode(clientId);
+      return undefined;
     }
 
     try {
@@ -167,21 +281,33 @@ export class ConnectOAuthActivator {
         () => loopback.waitForCode(),
       );
 
-      return await this.client.exchangeAuthCode(this.metadata, {
+      const tokenResponse = await this.client.exchangeAuthCode(this.metadata, {
         code,
         codeVerifier: verifier,
         redirectUri: loopback.redirectUri,
         clientId,
       });
+      return { clientId, tokenResponse };
     } finally {
       loopback.close();
     }
   }
 
+  /** Registers a public client for a single redirect URI (RFC 7591). */
+  private register(redirectUri: string): Promise<string> {
+    return showProgress("Registering with Posit Connect", this.viewId, () =>
+      this.client
+        .registerClient(this.metadata, [redirectUri])
+        .then((registration) => registration.client_id),
+    );
+  }
+
   /** RFC 8628 device flow: show the user code, then poll until authorized. */
-  private async authorizeWithDeviceCode(
-    clientId: string,
-  ): Promise<OAuthTokenResponse> {
+  private async deviceCodeFlow(): Promise<AuthorizeResult> {
+    // The device flow has no redirect, but Connect's dynamic client registration
+    // still requires at least one redirect URI. Register the loopback URI, which
+    // Connect always accepts.
+    const clientId = await this.register(OAUTH_LOOPBACK_REDIRECT);
     const device = await this.client.startDeviceAuth(this.metadata, clientId);
 
     const verificationUri =
@@ -200,11 +326,12 @@ export class ConnectOAuthActivator {
     // the browser is up first, matching the token-claim flow's ordering.
     await openExternalUrl(verificationUri);
 
-    return showProgress(
+    const tokenResponse = await showProgress(
       `Waiting for device authorization (code ${device.user_code})…`,
       this.viewId,
       () => this.pollDeviceToken(clientId, device),
     );
+    return { clientId, tokenResponse };
   }
 
   private async pollDeviceToken(

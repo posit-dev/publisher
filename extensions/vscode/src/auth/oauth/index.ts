@@ -17,4 +17,12 @@ export type { OAuthAuthResult } from "./activator";
 export { generatePkcePair, generateState } from "./pkce";
 export { startLoopbackServer } from "./loopback";
 export type { LoopbackHandle } from "./loopback";
+export {
+  detectWorkbench,
+  isWorkbenchRelayReachable,
+  pollWorkbenchAuthCode,
+  workbenchRedirectUri,
+  WorkbenchRelayError,
+} from "./workbench";
+export type { WorkbenchEnvironment } from "./workbench";
 export * from "./types";
