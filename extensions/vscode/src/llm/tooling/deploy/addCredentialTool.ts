@@ -10,19 +10,27 @@ import {
 } from "vscode";
 import { Commands } from "src/constants";
 
+export interface AddCredentialInput {
+  /**
+   * Optional Posit Connect server URL to pre-fill in the New Credential UI.
+   * The user can still edit it. Never pass a Connect Cloud URL — Connect Cloud
+   * uses a separate OAuth flow.
+   */
+  serverUrl?: string;
+}
+
 /**
  * Initiate-only tool: open the interactive credential-creation flow so the
  * user enters the API key / completes OAuth in the UI. The secret never enters
- * the model context or this tool's arguments.
+ * the model context or this tool's arguments. An optional `serverUrl` is only
+ * pre-filled into the URL field — it is not a secret.
  */
-export class AddCredentialTool implements LanguageModelTool<
-  Record<string, never>
-> {
+export class AddCredentialTool implements LanguageModelTool<AddCredentialInput> {
   async invoke(
-    _options: LanguageModelToolInvocationOptions<Record<string, never>>,
+    options: LanguageModelToolInvocationOptions<AddCredentialInput>,
     _token: CancellationToken,
   ): Promise<LanguageModelToolResult> {
-    const payload = await this.run();
+    const payload = await this.run(options.input ?? {});
     return new LanguageModelToolResult([
       new LanguageModelTextPart(JSON.stringify(payload)),
     ]);
@@ -33,8 +41,13 @@ export class AddCredentialTool implements LanguageModelTool<
    * Returns the plain payload object (never wrapped) so both call paths reuse
    * the same implementation.
    */
-  async run(): Promise<unknown> {
-    await commands.executeCommand(Commands.HomeView.AddCredential);
+  async run(input: AddCredentialInput = {}): Promise<unknown> {
+    // The command forwards this to newCredential's `startingServerUrl`, which
+    // pre-fills the URL field. Passing undefined keeps the existing behavior.
+    await commands.executeCommand(
+      Commands.HomeView.AddCredential,
+      input.serverUrl,
+    );
     return {
       status: "initiated",
       message:

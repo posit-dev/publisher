@@ -72,8 +72,9 @@ export function registerLLMTooling(
           configurationName,
         }),
     ),
-    commands.registerCommand(Commands.Agent.AddCredential, () =>
-      addCredentialTool.run(),
+    commands.registerCommand(
+      Commands.Agent.AddCredential,
+      (serverUrl?: string) => addCredentialTool.run({ serverUrl }),
     ),
   );
 }

@@ -170,8 +170,17 @@
         "title": "Add a Connect Credential",
         "category": "Posit Publisher",
         "agent": {
-          "description": "Open the Publisher UI for creating a new Posit Connect or Connect Cloud credential. Use this when a deployment needs a credential that does not yet exist. The user enters the API key or completes OAuth in the UI — do not ask the user for their API key directly and never pass secrets to any tool or command.",
-          "args": [],
+          "description": "Open the Publisher UI for creating a new Posit Connect or Connect Cloud credential. Use this when a deployment needs a credential that does not yet exist. Optionally pass a Posit Connect server URL to pre-fill the URL field (not a secret; the user can still edit it). The user enters the API key or completes OAuth in the UI — do not ask the user for their API key directly and never pass secrets to any tool or command.",
+          "args": [
+            {
+              "name": "serverUrl",
+              "description": "Posit Connect server URL to pre-fill in the New Credential UI. Optional. Do not pass a Connect Cloud URL.",
+              "required": false,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
           "returns": "A JSON object with status 'initiated' confirming the New Credential UI was opened."
         }
       },
@@ -837,12 +846,17 @@
         ],
         "toolReferenceName": "addCredential",
         "displayName": "Add a Connect Credential",
-        "modelDescription": "Open the Publisher UI for creating a new Posit Connect or Connect Cloud credential. Use this when a deployment needs a credential that does not yet exist. The user enters the API key or completes OAuth in the UI — do not ask the user for their API key directly and never pass secrets to any tool.",
+        "modelDescription": "Open the Publisher UI for creating a new Posit Connect or Connect Cloud credential. Use this when a deployment needs a credential that does not yet exist. Optionally pass a Posit Connect server URL to pre-fill the URL field (not a secret; the user can still edit it). The user enters the API key or completes OAuth in the UI — do not ask the user for their API key directly and never pass secrets to any tool.",
         "canBeReferencedInPrompt": true,
         "icon": "$(key)",
         "inputSchema": {
           "type": "object",
-          "properties": {}
+          "properties": {
+            "serverUrl": {
+              "type": "string",
+              "description": "Posit Connect server URL to pre-fill in the New Credential UI. Optional. Do not pass a Connect Cloud URL."
+            }
+          }
         }
       }
     ]

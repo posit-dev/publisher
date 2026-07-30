@@ -26,15 +26,30 @@ describe("AddCredentialTool", () => {
   test("invokes the credential-creation command and reports initiated", async () => {
     const tool = new AddCredentialTool();
     const res = await tool.invoke(
-      { input: {} } as LanguageModelToolInvocationOptions<
-        Record<string, never>
-      >,
+      { input: {} } as LanguageModelToolInvocationOptions<{
+        serverUrl?: string;
+      }>,
       {} as CancellationToken,
     );
     expect(executeCommand).toHaveBeenCalledWith(
       "posit.publisher.homeView.addCredential",
+      undefined,
     );
     const r = res as unknown as { content: Array<{ value: string }> };
     expect(JSON.parse(r.content[0]?.value ?? "{}").status).toBe("initiated");
+  });
+
+  test("forwards serverUrl to pre-fill the New Credential UI", async () => {
+    const tool = new AddCredentialTool();
+    await tool.invoke(
+      {
+        input: { serverUrl: "https://connect.example.com" },
+      } as LanguageModelToolInvocationOptions<{ serverUrl?: string }>,
+      {} as CancellationToken,
+    );
+    expect(executeCommand).toHaveBeenCalledWith(
+      "posit.publisher.homeView.addCredential",
+      "https://connect.example.com",
+    );
   });
 });
