@@ -52,6 +52,7 @@ vi.mock("src/api", () => ({
 import { GUID } from "@posit-dev/connect-api";
 import { PlanDeploymentTool } from "./planDeploymentTool";
 import { redactCredential } from "./redactCredential";
+import { Credential } from "src/api/types/credentials";
 import { ServerType } from "src/api/types/contentRecords";
 
 function parse(res: unknown) {
@@ -59,25 +60,33 @@ function parse(res: unknown) {
   return JSON.parse(r.content[0]?.value ?? "{}");
 }
 
+// Full Credential fixture with all secret fields set to "SECRET" so tests can
+// assert redaction actually strips them. Override fields (e.g. name/url) as
+// needed per test.
+function makeCredential(overrides: Partial<Credential> = {}): Credential {
+  return {
+    guid: GUID("g"),
+    name: "prod",
+    url: "https://connect.example.com",
+    apiKey: "SECRET",
+    token: "SECRET",
+    privateKey: "SECRET",
+    refreshToken: "SECRET",
+    accessToken: "SECRET",
+    snowflakeConnection: "",
+    accountId: "",
+    accountName: "",
+    cloudEnvironment: "",
+    oauthClientId: "",
+    tokenExpiresAt: "",
+    serverType: ServerType.CONNECT,
+    ...overrides,
+  };
+}
+
 describe("redactCredential", () => {
   test("keeps only name, url, serverType", () => {
-    const out = redactCredential({
-      guid: GUID("g"),
-      name: "prod",
-      url: "https://connect.example.com",
-      apiKey: "SECRET",
-      token: "SECRET",
-      privateKey: "SECRET",
-      refreshToken: "SECRET",
-      accessToken: "SECRET",
-      snowflakeConnection: "",
-      accountId: "",
-      accountName: "",
-      cloudEnvironment: "",
-      oauthClientId: "",
-      tokenExpiresAt: "",
-      serverType: ServerType.CONNECT,
-    });
+    const out = redactCredential(makeCredential());
     expect(out).toEqual({
       name: "prod",
       url: "https://connect.example.com",
@@ -90,23 +99,7 @@ describe("redactCredential", () => {
 describe("PlanDeploymentTool", () => {
   const state = {
     credentialsService: {
-      list: vi.fn(() => [
-        {
-          guid: GUID("g"),
-          name: "prod",
-          url: "https://c",
-          apiKey: "SECRET",
-          token: "",
-          privateKey: "",
-          refreshToken: "",
-          accessToken: "",
-          snowflakeConnection: "",
-          accountId: "",
-          accountName: "",
-          cloudEnvironment: "",
-          serverType: ServerType.CONNECT,
-        },
-      ]),
+      list: vi.fn(() => [makeCredential({ url: "https://c" })]),
     },
   };
 

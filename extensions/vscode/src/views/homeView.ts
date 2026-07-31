@@ -604,6 +604,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     deploymentName: string,
     projectDir: string,
   ): Promise<void> {
+    // Both caches need refreshing: the deploy tool may have just written a
+    // new deployment record AND a new configuration to disk, and the
+    // webview needs the configuration in cache to render the selection
+    // (not just the content record used to find it below).
     await Promise.all([
       this.state.refreshContentRecords(),
       this.state.refreshConfigurations(),
