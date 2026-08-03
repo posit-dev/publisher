@@ -103,7 +103,7 @@
         "title": "Deploy Content to Connect",
         "category": "Posit Publisher",
         "agent": {
-          "description": "Deploy a project directory to Posit Connect or Connect Cloud. Creates a deployment configuration and record if they do not exist, then publishes and returns the deployed content URLs. Requires the name of an existing stored credential (never an API key). If no suitable credential exists it returns status 'needs-credential' — call the addCredential command first. Always confirm the deployment plan (from planDeployment) with the user before calling this command.",
+          "description": "Deploy a project directory to Posit Connect or Connect Cloud. Creates a deployment configuration and record if they do not exist, then publishes and returns the deployed content URLs. Requires the name of an existing stored credential, never a secret directly. If no suitable credential exists it returns status 'needs-credential' — call the addCredential command (passing target/serverUrl if known) and wait for its result, then call this command again if a credential was added. Always confirm the deployment plan (from planDeployment) with the user before calling this command.",
           "args": [
             {
               "name": "directory",
@@ -170,18 +170,42 @@
         "title": "Add a Connect Credential",
         "category": "Posit Publisher",
         "agent": {
-          "description": "Open the Publisher UI for creating a new Posit Connect or Connect Cloud credential. Use this when a deployment needs a credential that does not yet exist. Optionally pass a Posit Connect server URL to pre-fill the URL field (not a secret; the user can still edit it). The user enters the API key or completes OAuth in the UI — do not ask the user for their API key directly and never pass secrets to any tool or command.",
+          "description": "Open the Publisher UI for creating a new Posit Connect or Connect Cloud credential, and wait for the user to finish or cancel. Use this when a deployment needs a credential that does not yet exist. The user completes authentication in the UI — never ask the user for a secret directly, and never pass one to any tool or command.",
           "args": [
             {
               "name": "serverUrl",
-              "description": "Posit Connect server URL to pre-fill in the New Credential UI. Optional. Do not pass a Connect Cloud URL.",
+              "description": "Posit Connect server URL to pre-fill in the New Credential UI. Optional, not a secret. Only applies when targeting a Connect server, not Connect Cloud.",
               "required": false,
               "schema": {
                 "type": "string"
               }
+            },
+            {
+              "name": "target",
+              "description": "Which product the deployment targets, if known: 'connect' for a Posit Connect server, 'connect-cloud' for Connect Cloud. Only set this when the user's intent is clear from context; leave it unset to let the user choose.",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "connect",
+                  "connect-cloud"
+                ]
+              }
+            },
+            {
+              "name": "authMethod",
+              "description": "Only used when target is 'connect' and serverUrl is set: 'browser' (the default) signs the user in automatically; 'apiKey' lets the user paste one in instead. Set 'apiKey' only when the user explicitly asked to enter one manually.",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "browser",
+                  "apiKey"
+                ]
+              }
             }
           ],
-          "returns": "A JSON object with status 'initiated' confirming the New Credential UI was opened."
+          "returns": "A JSON object with status 'added' (with credentialName) once the user finishes, or 'canceled' if they dismiss the UI. If 'added', continue any pending deployment automatically."
         }
       },
       {
@@ -795,7 +819,7 @@
         ],
         "toolReferenceName": "deployContent",
         "displayName": "Deploy Content to Connect",
-        "modelDescription": "Deploy a project directory to Posit Connect or Connect Cloud. Creates a deployment configuration and record if they do not exist, then publishes and returns the deployed content URLs. Requires the name of an existing stored credential (never an API key). If no suitable credential exists it returns status 'needs-credential' — call addCredential first. Always confirm the deployment plan (from planDeployment) with the user before calling this tool.",
+        "modelDescription": "Deploy a project directory to Posit Connect or Connect Cloud. Creates a deployment configuration and record if they do not exist, then publishes and returns the deployed content URLs. Requires the name of an existing stored credential, never a secret directly. If no suitable credential exists it returns status 'needs-credential' — call addCredential (passing target/serverUrl if known) and wait for its result, then call this tool again if a credential was added. Always confirm the deployment plan (from planDeployment) with the user before calling this tool.",
         "canBeReferencedInPrompt": true,
         "icon": "$(cloud-upload)",
         "inputSchema": {
@@ -846,7 +870,7 @@
         ],
         "toolReferenceName": "addCredential",
         "displayName": "Add a Connect Credential",
-        "modelDescription": "Open the Publisher UI for creating a new Posit Connect or Connect Cloud credential. Use this when a deployment needs a credential that does not yet exist. Optionally pass a Posit Connect server URL to pre-fill the URL field (not a secret; the user can still edit it). The user enters the API key or completes OAuth in the UI — do not ask the user for their API key directly and never pass secrets to any tool.",
+        "modelDescription": "Open the Publisher UI for creating a new Posit Connect or Connect Cloud credential, and wait for the user to finish or cancel. Use this when a deployment needs a credential that does not yet exist. The user completes authentication in the UI — never ask the user for a secret directly, and never pass one to any tool.",
         "canBeReferencedInPrompt": true,
         "icon": "$(key)",
         "inputSchema": {
@@ -854,7 +878,23 @@
           "properties": {
             "serverUrl": {
               "type": "string",
-              "description": "Posit Connect server URL to pre-fill in the New Credential UI. Optional. Do not pass a Connect Cloud URL."
+              "description": "Posit Connect server URL to pre-fill in the New Credential UI. Optional, not a secret. Only applies when targeting a Connect server, not Connect Cloud."
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "connect",
+                "connect-cloud"
+              ],
+              "description": "Which product the deployment targets, if known: 'connect' for a Posit Connect server, 'connect-cloud' for Connect Cloud. Only set this when the user's intent is clear from context; leave it unset to let the user choose."
+            },
+            "authMethod": {
+              "type": "string",
+              "enum": [
+                "browser",
+                "apiKey"
+              ],
+              "description": "Only used when target is 'connect' and serverUrl is set: 'browser' (the default) signs the user in automatically; 'apiKey' lets the user paste one in instead. Set 'apiKey' only when the user explicitly asked to enter one manually."
             }
           }
         }

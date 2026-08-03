@@ -156,6 +156,9 @@ enum HomeViewInitialized {
   uninitialized = "uninitialized",
 }
 
+export type AddCredentialOutcome =
+  { status: "added"; credentialName: string } | { status: "canceled" };
+
 export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private disposables: Disposable[] = [];
 
@@ -1918,20 +1921,33 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
    * Prompt the user for credential information. Then create or update the credential. Afterwards, refresh the provider.
    *
    * Once the server url is provided, the user is prompted with the url hostname as the default server name.
+   *
+   * Returns the outcome (added or canceled) so agent tooling can wait for the
+   * user to finish before deciding whether to continue a pending deployment.
    */
-  public addCredential = async (startingServerUrl?: string) => {
+  public addCredential = async (
+    startingServerUrl?: string,
+    startingServerType?: ServerType,
+    authMethodHint?: "browser" | "apiKey",
+  ): Promise<AddCredentialOutcome> => {
     try {
       const credential = await newCredential(
         Views.HomeView,
         createNewCredentialLabel,
         this.state.credentialsService,
         startingServerUrl,
+        undefined,
+        startingServerType,
+        authMethodHint,
       );
-      if (credential) {
-        this.refreshCredentials();
+      if (!credential) {
+        return { status: "canceled" };
       }
+      this.refreshCredentials();
+      return { status: "added", credentialName: credential.name };
     } catch {
       /* the user dismissed this flow, do nothing more */
+      return { status: "canceled" };
     }
   };
 

@@ -74,7 +74,11 @@ export function registerLLMTooling(
     ),
     commands.registerCommand(
       Commands.Agent.AddCredential,
-      (serverUrl?: string) => addCredentialTool.run({ serverUrl }),
+      (
+        serverUrl?: string,
+        target?: "connect" | "connect-cloud",
+        authMethod?: "browser" | "apiKey",
+      ) => addCredentialTool.run({ serverUrl, target, authMethod }),
     ),
   );
 }

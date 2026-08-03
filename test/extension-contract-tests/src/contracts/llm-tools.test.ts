@@ -137,15 +137,19 @@ describe("llm-tools contract", () => {
     });
   });
 
-  it("addCredential command forwards its positional serverUrl into run()", () => {
+  it("addCredential command forwards its positional args into run()", () => {
     register();
 
     handlerFor("posit.publisher.agent.addCredential")(
       "https://connect.example.com",
+      "connect",
+      "apiKey",
     );
 
     expect(addCredentialRun).toHaveBeenCalledWith({
       serverUrl: "https://connect.example.com",
+      target: "connect",
+      authMethod: "apiKey",
     });
   });
 });

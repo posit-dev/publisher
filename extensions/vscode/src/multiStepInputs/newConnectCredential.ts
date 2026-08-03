@@ -69,6 +69,10 @@ export async function newConnectCredential(
   credentialsService: CredentialsService,
   startingServerUrl?: string,
   previousSteps?: InputStep[],
+  // When set, skips the auth-method picker and goes straight to that method
+  // (e.g. the addCredential agent tool inferred "browser sign-in" from a
+  // supplied server URL, or the caller explicitly asked for an API key).
+  authMethodHint?: "browser" | "apiKey",
 ): Promise<Credential | undefined> {
   let credentials: Credential[] = [];
 
@@ -339,10 +343,66 @@ export async function newConnectCredential(
         ),
     );
 
+    // Skip the picker when the caller already knows what to do.
+    if (authMethodHint) {
+      return dispatchAuthMethod(authMethodHint, state);
+    }
+
     return {
       name: step.INPUT_AUTH_METHOD,
       step: (input: MultiStepInput) =>
         steps[step.INPUT_AUTH_METHOD](input, state),
+    };
+  }
+
+  // ***************************************************************
+  // Resolve a chosen auth method (from the picker, or a caller-supplied
+  // hint) into the next step. Also clears fields from other methods so
+  // back-navigation can't leave a credential with mixed material.
+  // ***************************************************************
+  function dispatchAuthMethod(
+    choice: "browser" | "apiKey",
+    state: MultiStepState,
+  ): InputStep {
+    const clearOAuth = () => {
+      state.data.oauthClientId = undefined;
+      state.data.accessToken = undefined;
+      state.data.refreshToken = undefined;
+      state.data.tokenExpiresAt = undefined;
+    };
+    const clearToken = () => {
+      state.data.token = undefined;
+      state.data.privateKey = undefined;
+    };
+
+    if (choice === "apiKey") {
+      authMethod = AuthMethod.API_KEY;
+      clearToken();
+      clearOAuth();
+      return {
+        name: step.INPUT_API_KEY,
+        step: (input: MultiStepInput) =>
+          steps[step.INPUT_API_KEY](input, state),
+      };
+    }
+
+    // Browser sign-in: OAuth when supported, else the token flow.
+    state.data.apiKey = undefined;
+    if (oauthMetadata) {
+      authMethod = AuthMethod.OAUTH;
+      clearToken();
+      return {
+        name: step.INPUT_OAUTH,
+        step: (input: MultiStepInput) => steps[step.INPUT_OAUTH](input, state),
+        skipStepHistory: true,
+      };
+    }
+    authMethod = AuthMethod.TOKEN;
+    clearOAuth();
+    return {
+      name: step.INPUT_TOKEN,
+      step: (input: MultiStepInput) => steps[step.INPUT_TOKEN](input, state),
+      skipStepHistory: true,
     };
   }
 
@@ -378,48 +438,10 @@ export async function newConnectCredential(
       ignoreFocusOut: true,
     });
 
-    // Clear auth fields from other methods so back-navigation can't leave a
-    // credential with mixed material.
-    const clearOAuth = () => {
-      state.data.oauthClientId = undefined;
-      state.data.accessToken = undefined;
-      state.data.refreshToken = undefined;
-      state.data.tokenExpiresAt = undefined;
-    };
-    const clearToken = () => {
-      state.data.token = undefined;
-      state.data.privateKey = undefined;
-    };
-
-    if (pick.label === AuthMethodName.API_KEY) {
-      authMethod = AuthMethod.API_KEY;
-      clearToken();
-      clearOAuth();
-      return {
-        name: step.INPUT_API_KEY,
-        step: (input: MultiStepInput) =>
-          steps[step.INPUT_API_KEY](input, state),
-      };
-    }
-
-    // Browser sign-in: OAuth when supported, else the token flow.
-    state.data.apiKey = undefined;
-    if (oauthMetadata) {
-      authMethod = AuthMethod.OAUTH;
-      clearToken();
-      return {
-        name: step.INPUT_OAUTH,
-        step: (input: MultiStepInput) => steps[step.INPUT_OAUTH](input, state),
-        skipStepHistory: true,
-      };
-    }
-    authMethod = AuthMethod.TOKEN;
-    clearOAuth();
-    return {
-      name: step.INPUT_TOKEN,
-      step: (input: MultiStepInput) => steps[step.INPUT_TOKEN](input, state),
-      skipStepHistory: true,
-    };
+    return dispatchAuthMethod(
+      pick.label === AuthMethodName.API_KEY ? "apiKey" : "browser",
+      state,
+    );
   }
 
   // ***************************************************************

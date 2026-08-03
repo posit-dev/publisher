@@ -1,12 +1,14 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { describe, expect, test, vi, beforeEach } from "vitest";
-import { CancellationToken, LanguageModelToolInvocationOptions } from "vscode";
 
 // vi.mock is hoisted above module scope, so the mocked fn must be created via
 // vi.hoisted to be available inside the factory.
 const { executeCommand } = vi.hoisted(() => ({
-  executeCommand: vi.fn(() => undefined),
+  executeCommand: vi.fn(
+    (): Promise<{ status: string; credentialName?: string }> =>
+      Promise.resolve({ status: "canceled" }),
+  ),
 }));
 vi.mock("vscode", () => ({
   commands: { executeCommand },
@@ -18,38 +20,89 @@ vi.mock("vscode", () => ({
   },
 }));
 
-import { AddCredentialTool } from "./addCredentialTool";
+import { AddCredentialTool, AddCredentialInput } from "./addCredentialTool";
+
+function run(tool: AddCredentialTool, input: AddCredentialInput) {
+  return tool.run(input);
+}
 
 beforeEach(() => vi.clearAllMocks());
 
 describe("AddCredentialTool", () => {
-  test("invokes the credential-creation command and reports initiated", async () => {
+  test("with no context, opens the UI fully manual and reports the outcome", async () => {
     const tool = new AddCredentialTool();
-    const res = await tool.invoke(
-      { input: {} } as LanguageModelToolInvocationOptions<{
-        serverUrl?: string;
-      }>,
-      {} as CancellationToken,
-    );
+    const res = await run(tool, {});
     expect(executeCommand).toHaveBeenCalledWith(
       "posit.publisher.homeView.addCredential",
       undefined,
+      undefined,
+      undefined,
     );
-    const r = res as unknown as { content: Array<{ value: string }> };
-    expect(JSON.parse(r.content[0]?.value ?? "{}").status).toBe("initiated");
+    expect(res).toEqual({
+      status: "canceled",
+      message:
+        "The user canceled credential creation. Ask them how they'd like to proceed.",
+    });
   });
 
-  test("forwards serverUrl to pre-fill the New Credential UI", async () => {
+  test("a serverUrl alone is a hint to target Connect and sign in via browser", async () => {
     const tool = new AddCredentialTool();
-    await tool.invoke(
-      {
-        input: { serverUrl: "https://connect.example.com" },
-      } as LanguageModelToolInvocationOptions<{ serverUrl?: string }>,
-      {} as CancellationToken,
-    );
+    await run(tool, { serverUrl: "https://connect.example.com" });
     expect(executeCommand).toHaveBeenCalledWith(
       "posit.publisher.homeView.addCredential",
       "https://connect.example.com",
+      "connect",
+      "browser",
     );
+  });
+
+  test("an explicit apiKey request keeps auth manual", async () => {
+    const tool = new AddCredentialTool();
+    await run(tool, {
+      serverUrl: "https://connect.example.com",
+      authMethod: "apiKey",
+    });
+    expect(executeCommand).toHaveBeenCalledWith(
+      "posit.publisher.homeView.addCredential",
+      "https://connect.example.com",
+      "connect",
+      "apiKey",
+    );
+  });
+
+  test("target connect without a serverUrl preselects the platform but does not auto sign in", async () => {
+    const tool = new AddCredentialTool();
+    await run(tool, { target: "connect" });
+    expect(executeCommand).toHaveBeenCalledWith(
+      "posit.publisher.homeView.addCredential",
+      undefined,
+      "connect",
+      undefined,
+    );
+  });
+
+  test("target connect-cloud preselects the platform and ignores auth method hints", async () => {
+    const tool = new AddCredentialTool();
+    await run(tool, { target: "connect-cloud", authMethod: "apiKey" });
+    expect(executeCommand).toHaveBeenCalledWith(
+      "posit.publisher.homeView.addCredential",
+      undefined,
+      "connect_cloud",
+      undefined,
+    );
+  });
+
+  test("reports the added credential name so the caller can continue automatically", async () => {
+    executeCommand.mockResolvedValueOnce({
+      status: "added",
+      credentialName: "prod",
+    });
+    const tool = new AddCredentialTool();
+    const res = await run(tool, {});
+    expect(res).toEqual({
+      status: "added",
+      credentialName: "prod",
+      message: 'Credential "prod" was added. Continue the deployment now.',
+    });
   });
 });

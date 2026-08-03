@@ -19,10 +19,15 @@ export async function newCredential(
   credentialsService: CredentialsService,
   startingServerUrl?: string,
   previousSteps?: InputStep[],
+  // When set, skips the platform picker and goes straight to that platform
+  // (e.g. the addCredential agent tool inferred it from context).
+  startingServerType?: ServerType,
+  // Forwarded to the Connect flow; see newConnectCredential for its meaning.
+  authMethodHint?: "browser" | "apiKey",
 ): Promise<Credential | undefined> {
   // the serverType will be overwritten in the very first step
   // when the platform is selected
-  let serverType: ServerType = ServerType.CONNECT;
+  let serverType: ServerType = startingServerType ?? ServerType.CONNECT;
   let credential: Credential | undefined = undefined;
 
   // local step history that gets passed down to any sub-flows
@@ -98,19 +103,31 @@ export async function newCredential(
 
     const platformList = getPlatformList();
 
-    // If only one platform is available (Connect Cloud disabled), skip the picker
-    // and go directly to Connect credential flow
-    if (platformList.length === 1) {
-      serverType = ServerType.CONNECT;
+    // Skip the picker when there's only one platform available (Connect
+    // Cloud disabled), or the caller already knows the target.
+    const resolvedServerType =
+      startingServerType ??
+      (platformList.length === 1 ? ServerType.CONNECT : undefined);
+
+    if (resolvedServerType !== undefined) {
+      serverType = resolvedServerType;
       const prevSteps = [...(previousSteps || []), ...stepHistory];
       try {
-        credential = await newConnectCredential(
-          viewId,
-          state.title,
-          credentialsService,
-          startingServerUrl,
-          prevSteps,
-        );
+        credential = isConnectCloud(serverType)
+          ? await newConnectCloudCredential(
+              viewId,
+              state.title,
+              credentialsService,
+              prevSteps,
+            )
+          : await newConnectCredential(
+              viewId,
+              state.title,
+              credentialsService,
+              startingServerUrl,
+              prevSteps,
+              authMethodHint,
+            );
       } catch {
         /* the user dismissed this flow, do nothing more */
       }

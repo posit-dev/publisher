@@ -105,7 +105,7 @@ export class DeployContentTool implements LanguageModelTool<DeployContentInput> 
       const all = await this.state.credentialsService.list();
       return {
         status: "needs-credential",
-        message: `No stored credential named "${input.credentialName}". Ask the user to add one with the addCredential tool, or pick from the available list.`,
+        message: `No stored credential named "${input.credentialName}". Call addCredential (with target/serverUrl if known from context) and wait for its result — if it reports "added", call deployContent again with the same arguments to continue automatically. If it reports "canceled", ask the user how they'd like to proceed, or offer to pick from the available list.`,
         availableCredentials: all.map((c) => c.name),
       };
     }
