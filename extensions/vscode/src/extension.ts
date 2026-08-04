@@ -212,6 +212,13 @@ export const extensionSettings = {
       configuration.get<boolean>("verifyCertificates");
     return value !== undefined ? value : true;
   },
+  positEnvironments(): boolean {
+    // get value from extension configuration - defaults to true
+    const configuration = workspace.getConfiguration("positPublisher");
+    const value: boolean | undefined =
+      configuration.get<boolean>("positEnvironments");
+    return value !== undefined ? value : true;
+  },
   async defaultConnectServer(): Promise<string> {
     const configuration = workspace.getConfiguration("positPublisher");
     let value: string | undefined = configuration.get<string>(

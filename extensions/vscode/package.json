@@ -74,6 +74,11 @@
             "type": "boolean",
             "default": false,
             "scope": "machine-overridable"
+          },
+          "positPublisher.positEnvironments": {
+            "markdownDescription": "When the session runs on a posit-env environment (Workbench launcher plugin), publish Connect content with that environment's identity (`posit-env.json` in the bundle, Connect environment management off) instead of dependency files. Disable to publish with the standard requirements.txt / renv.lock flow.",
+            "type": "boolean",
+            "default": true
           }
         }
       }

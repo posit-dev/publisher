@@ -229,6 +229,32 @@
         }
       }
     },
+    "posit_env": {
+      "type": "object",
+      "description": "posit-env environment the content was published with; Connect materializes it to run the content.",
+      "additionalProperties": false,
+      "required": ["ref", "digest"],
+      "properties": {
+        "ref": {
+          "type": "string",
+          "description": "Environment reference (namespace/name:tag).",
+          "examples": ["demo/dashboard-py:prod"]
+        },
+        "digest": {
+          "type": "string",
+          "description": "Immutable lock digest (sha256:...) the deploy is pinned to."
+        },
+        "platform": {
+          "type": "string",
+          "description": "Realization platform.",
+          "examples": ["linux-amd64"]
+        },
+        "server": {
+          "type": "string",
+          "description": "posit-env registry URL."
+        }
+      }
+    },
     "files": {
       "type": "array",
       "items": {

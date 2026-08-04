@@ -28,6 +28,7 @@ import type { RenvLockfile } from "./rPackageDescriptions";
 import type { ConfigurationDetails } from "../api/types/configurations";
 import type { ServerType } from "../api/types/contentRecords";
 import type { PositronRSettings } from "../api/types/positron";
+import type { PositEnvironment } from "../positEnv";
 
 import { fileExistsAt } from "../utils/fsUtils";
 import { convertKeysToSnakeCase } from "../toml/convertKeys";
@@ -112,6 +113,12 @@ export type PublishRecord = {
   files?: string[];
   requirements?: string[];
   renv?: Record<string, unknown>;
+  positEnv?: {
+    ref: string;
+    digest: string;
+    platform?: string;
+    server?: string;
+  };
   deployedAt?: string;
   dismissedAt?: string;
   deploymentError?: { code: string; message: string; operation: string };
@@ -184,6 +191,7 @@ export function recordToTomlObject(
     files: record.files || undefined,
     requirements: record.requirements || undefined,
     renv: record.renv || undefined,
+    posit_env: record.positEnv || undefined,
     dismissed_at: record.dismissedAt || undefined,
     deployment_error: record.deploymentError || undefined,
   };
@@ -221,10 +229,42 @@ export async function buildManifest(
   rPath: string | undefined,
   positronR: PositronRSettings | undefined,
   onProgress: (event: PublishEvent) => void,
+  positEnv?: PositEnvironment,
 ): Promise<ManifestResult> {
   const manifest = manifestFromConfig(config);
   let lockfilePath: string | undefined;
   let lockfile: RenvLockfile | undefined;
+
+  if (positEnv) {
+    // The posit-env supervisor on the Connect server materializes the
+    // published environment; Connect's own restore is switched off and
+    // package enumeration (requirements.txt, renv.lock, library scans)
+    // is unnecessary.
+    manifest.environment = {
+      image: "",
+      prebuilt: false,
+      ...manifest.environment,
+      environment_management: {
+        ...(config.python && { python: false }),
+        ...(config.r && { r: false }),
+      },
+    };
+    if (manifest.python?.package_manager) {
+      manifest.python.package_manager = {
+        ...manifest.python.package_manager,
+        name: "none",
+      };
+    }
+    if (config.r) {
+      onProgress({
+        step: "createManifest",
+        status: "log",
+        message:
+          "Skipping R package scan — content runs on the posit-env environment",
+      });
+    }
+    return { manifest, lockfilePath, lockfile };
+  }
 
   if (config.r) {
     const packageFile = config.r.packageFile || "renv.lock";

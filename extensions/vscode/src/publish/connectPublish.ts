@@ -45,6 +45,11 @@ import {
 } from "./publishShared";
 
 import { forceProductTypeCompliance } from "../toml/configCompliance";
+import {
+  POSIT_ENV_MARKER_FILE,
+  positEnvMarker,
+  type PositEnvironment,
+} from "../positEnv";
 import { DEFAULT_PYTHON_PACKAGE_FILE } from "../constants";
 import { fileExistsAt } from "../utils/fsUtils";
 import { generateRequirements } from "../interpreters/pythonDependencySources";
@@ -81,6 +86,13 @@ export type ConnectPublishOptions = {
   rPath?: string;
   /** Positron IDE R settings (for repo URL computation). */
   positronR?: PositronRSettings;
+  /**
+   * The session's posit-env environment, when publishing from one. The
+   * bundle then carries a posit-env.json marker and the manifest turns
+   * Connect's environment management off — the Connect server's
+   * posit-env supervisor runs the content on this exact environment.
+   */
+  positEnv?: PositEnvironment;
   /** Publisher version string. */
   clientVersion: string;
   /** Progress callback invoked at each step boundary. */
@@ -106,6 +118,7 @@ export async function connectPublish({
   secrets,
   rPath,
   positronR,
+  positEnv,
   clientVersion,
   onProgress,
   signal,
@@ -132,6 +145,14 @@ export async function connectPublish({
     type: config.type,
     configName,
     config,
+    ...(positEnv && {
+      positEnv: {
+        ref: positEnv.ref,
+        digest: positEnv.digest,
+        platform: positEnv.platform,
+        server: positEnv.server,
+      },
+    }),
   };
 
   let contentId = existingContentId;
@@ -185,12 +206,20 @@ export async function connectPublish({
       status: "log",
       message: "Collecting package descriptions",
     });
+    if (positEnv) {
+      onProgress({
+        step: "createManifest",
+        status: "log",
+        message: `Detected posit-env environment ${positEnv.ref} (${positEnv.digest}) — Connect will run this content on it`,
+      });
+    }
     const { manifest, lockfilePath, lockfile } = await buildManifest(
       projectDir,
       config,
       rPath,
       positronR,
       onProgress,
+      positEnv,
     );
 
     onProgress({
@@ -258,7 +287,9 @@ export async function connectPublish({
 
     let generatedRequirements: string[] | undefined;
 
-    if (config.python) {
+    // With a posit-env environment, Connect never restores packages —
+    // no dependency file is required in the bundle.
+    if (config.python && !positEnv) {
       const packageFile =
         config.python.packageFile || DEFAULT_PYTHON_PACKAGE_FILE;
       const packageFilePath = path.join(projectDir, packageFile);
@@ -510,6 +541,17 @@ export async function connectPublish({
         Buffer.from(generatedRequirements.join("\n") + "\n"),
       );
     }
+    if (positEnv) {
+      // The marker the Connect server's posit-env supervisor reads from
+      // the content working directory to materialize the environment.
+      syntheticFiles ??= new Map<string, Buffer>();
+      syntheticFiles.set(POSIT_ENV_MARKER_FILE, positEnvMarker(positEnv));
+      onProgress({
+        step: "createBundle",
+        status: "log",
+        message: `Including ${POSIT_ENV_MARKER_FILE} (${positEnv.ref} pinned at ${positEnv.digest})`,
+      });
+    }
 
     const {
       bundlePath,
@@ -559,8 +601,11 @@ export async function connectPublish({
     bundleTmpDir = path.dirname(bundlePath);
     record.files = getFilenames(finalManifest);
 
-    // Record dependencies in the deployment record
-    if (generatedRequirements) {
+    // Record dependencies in the deployment record. With a posit-env
+    // environment there are none — the record carries [posit_env] instead.
+    if (positEnv) {
+      // nothing to read: no dependency file was required or shipped
+    } else if (generatedRequirements) {
       record.requirements = generatedRequirements;
     } else {
       const pythonReqs = await readPythonRequirements(

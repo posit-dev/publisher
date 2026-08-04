@@ -133,6 +133,7 @@ import { PublisherState } from "src/state";
 import { throttleWithLastPending } from "src/utils/throttle";
 import { showAssociateGUID } from "src/actions/showAssociateGUID";
 import { extensionSettings } from "src/extension";
+import { detectPositEnvironment } from "src/positEnv";
 import { logger } from "src/logging";
 import { openFileInEditor } from "src/commands";
 import {
@@ -445,6 +446,18 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const clientVersion =
         this.context.extension.packageJSON.version || "unknown";
 
+      // A posit-env session environment (Workbench launcher plugin)
+      // makes the Connect deploy carry the environment identity instead
+      // of dependency files. Connect-only; ignored for Connect Cloud.
+      const positEnv = extensionSettings.positEnvironments()
+        ? await detectPositEnvironment()
+        : undefined;
+      if (positEnv) {
+        logger.info(
+          `posit-env environment detected: ${positEnv.ref} (${positEnv.digest})`,
+        );
+      }
+
       const progressOptions = {
         onComplete: () => this.refreshContentRecords(),
         onCancel: () => {
@@ -529,6 +542,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
               secrets,
               rPath: r?.rPath,
               positronR: positron.r,
+              positEnv,
               clientVersion,
               onProgress,
               signal,

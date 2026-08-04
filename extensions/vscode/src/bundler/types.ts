@@ -56,6 +56,14 @@ export type ManifestEnvironment = {
   prebuilt: boolean;
   python?: { requires: string };
   r?: { requires: string };
+  /**
+   * Per-ecosystem opt-out of Connect's environment management
+   * (requirements.txt / packrat restore). Honored by Connect when
+   * `Applications.ManifestEnvironmentManagementSelection` is enabled
+   * (its default). Set to false when an external environment manager
+   * (posit-env) provides the runtime environment.
+   */
+  environment_management?: { python?: boolean; r?: boolean };
 };
 
 export type ManifestPackage = {
