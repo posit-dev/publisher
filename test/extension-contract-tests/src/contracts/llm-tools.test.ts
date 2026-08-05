@@ -2,8 +2,10 @@
 
 // Contract: llm/index.ts → lm.registerTool (path 1) and commands.registerCommand
 // (path 2, the Positron positron.ai agent allow-list). Both paths back the same
-// tool instances, so this contract also pins the positional-arg → run() mapping
-// of the path-2 command handlers.
+// tool instances, so this contract also pins that the path-2 command handlers
+// forward their single object argument straight into run() — Positron invokes
+// these commands with one object keyed by the `agent.args` names, not spread
+// positionally.
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { lm, commands } from "vscode";
@@ -24,7 +26,7 @@ vi.mock("src/llm/tooling/troubleshoot/configurationTroubleshootTool", () => ({
 }));
 
 // Shared run() spies for the three deploy tools so we can assert the path-2
-// command handlers forward their positional args into run({...}).
+// command handlers forward their single object argument into run().
 const { planRun, deployRun, addCredentialRun } = vi.hoisted(() => ({
   planRun: vi.fn(),
   deployRun: vi.fn(),
@@ -105,28 +107,28 @@ describe("llm-tools contract", () => {
     );
   });
 
-  it("planDeployment command forwards its positional directory into run()", () => {
+  it("planDeployment command forwards its input object into run()", () => {
     register();
 
-    handlerFor("posit.publisher.agent.planDeployment")("sub dir");
+    handlerFor("posit.publisher.agent.planDeployment")({
+      directory: "sub dir",
+    });
 
     expect(planRun).toHaveBeenCalledWith({ directory: "sub dir" });
   });
 
-  it("deployContent command maps its positional args into a run() input object", () => {
+  it("planDeployment command defaults to an empty object when Positron omits args", () => {
     register();
 
-    handlerFor("posit.publisher.agent.deployContent")(
-      "project dir",
-      "app.py",
-      "my-cred",
-      "My Title",
-      "python-shiny",
-      "deployment-1",
-      "config-1",
-    );
+    handlerFor("posit.publisher.agent.planDeployment")();
 
-    expect(deployRun).toHaveBeenCalledWith({
+    expect(planRun).toHaveBeenCalledWith({});
+  });
+
+  it("deployContent command forwards its input object into run()", () => {
+    register();
+
+    const input = {
       directory: "project dir",
       entrypoint: "app.py",
       credentialName: "my-cred",
@@ -134,22 +136,32 @@ describe("llm-tools contract", () => {
       contentType: "python-shiny",
       deploymentName: "deployment-1",
       configurationName: "config-1",
-    });
+    };
+
+    handlerFor("posit.publisher.agent.deployContent")(input);
+
+    expect(deployRun).toHaveBeenCalledWith(input);
   });
 
-  it("addCredential command forwards its positional args into run()", () => {
+  it("addCredential command forwards its input object into run()", () => {
     register();
 
-    handlerFor("posit.publisher.agent.addCredential")(
-      "https://connect.example.com",
-      "connect",
-      "apiKey",
-    );
-
-    expect(addCredentialRun).toHaveBeenCalledWith({
+    const input = {
       serverUrl: "https://connect.example.com",
       target: "connect",
       authMethod: "apiKey",
-    });
+    };
+
+    handlerFor("posit.publisher.agent.addCredential")(input);
+
+    expect(addCredentialRun).toHaveBeenCalledWith(input);
+  });
+
+  it("addCredential command defaults to an empty object when Positron omits args", () => {
+    register();
+
+    handlerFor("posit.publisher.agent.addCredential")();
+
+    expect(addCredentialRun).toHaveBeenCalledWith({});
   });
 });

@@ -6,9 +6,18 @@ import { HomeViewProvider } from "src/views/homeView";
 import { Commands } from "src/constants";
 import { PublishFailureTroubleshootTool } from "./tooling/troubleshoot/publishFailureTroubleshootTool";
 import { ConfigurationTroubleshootTool } from "./tooling/troubleshoot/configurationTroubleshootTool";
-import { PlanDeploymentTool } from "./tooling/deploy/planDeploymentTool";
-import { DeployContentTool } from "./tooling/deploy/deployContentTool";
-import { AddCredentialTool } from "./tooling/deploy/addCredentialTool";
+import {
+  PlanDeploymentTool,
+  PlanDeploymentInput,
+} from "./tooling/deploy/planDeploymentTool";
+import {
+  DeployContentTool,
+  DeployContentInput,
+} from "./tooling/deploy/deployContentTool";
+import {
+  AddCredentialTool,
+  AddCredentialInput,
+} from "./tooling/deploy/addCredentialTool";
 
 export function registerLLMTooling(
   context: ExtensionContext,
@@ -45,40 +54,21 @@ export function registerLLMTooling(
     lm.registerTool("publish-content_addCredential", addCredentialTool),
 
     // Path 2 — agent-compatible commands for Positron's positron.ai allow-list.
-    // Args are positional, matching the `agent.args` order declared in
-    // package.json's contributes.commands entries.
+    // Positron invokes these with a single object argument keyed by the
+    // `agent.args` names declared in package.json's contributes.commands
+    // entries — NOT spread positionally — so each handler takes one input
+    // object, matching the shape `run()` already expects.
     commands.registerCommand(
       Commands.Agent.PlanDeployment,
-      (directory?: string) => planTool.run({ directory }),
+      (input: PlanDeploymentInput = {}) => planTool.run(input),
     ),
     commands.registerCommand(
       Commands.Agent.DeployContent,
-      (
-        directory: string,
-        entrypoint: string,
-        credentialName: string,
-        title?: string,
-        contentType?: string,
-        deploymentName?: string,
-        configurationName?: string,
-      ) =>
-        deployTool.run({
-          directory,
-          entrypoint,
-          credentialName,
-          title,
-          contentType,
-          deploymentName,
-          configurationName,
-        }),
+      (input: DeployContentInput) => deployTool.run(input),
     ),
     commands.registerCommand(
       Commands.Agent.AddCredential,
-      (
-        serverUrl?: string,
-        target?: "connect" | "connect-cloud",
-        authMethod?: "browser" | "apiKey",
-      ) => addCredentialTool.run({ serverUrl, target, authMethod }),
+      (input: AddCredentialInput = {}) => addCredentialTool.run(input),
     ),
   );
 }
