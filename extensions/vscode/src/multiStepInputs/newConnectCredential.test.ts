@@ -16,6 +16,10 @@ const inputBoxResponses: Record<string, string> = {
 // so existing tests take the API-key path; OAuth tests override it.
 const stepControl = { quickPickLabel: "API Key" };
 
+// Records which steps actually showed an input box, so tests can assert the
+// auto-proceed fast path skipped (or fell back to) the interactive prompt.
+const shownInputBoxSteps: string[] = [];
+
 // Mock the MultiStepInput module with a real step-through implementation
 vi.mock("./multiStepHelper", () => {
   class AbortError extends Error {}
@@ -34,6 +38,7 @@ vi.mock("./multiStepHelper", () => {
             const stepName = currentStep.name || "";
             const mockInput = {
               showInputBox: vi.fn(() => {
+                shownInputBoxSteps.push(stepName);
                 const value = inputBoxResponses[stepName] || "mocked-value";
                 return Promise.resolve(value);
               }),
@@ -239,6 +244,16 @@ vi.mock("src/utils/errors", () => ({
   getMessageFromError: vi.fn((e: unknown) => String(e)),
   describeError: vi.fn((e: unknown) => String(e)),
   getSummaryStringFromError: vi.fn((loc: string, e: unknown) => `${loc}: ${e}`),
+}));
+
+vi.mock("src/logging", () => ({
+  logger: {
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
 }));
 
 describe("newConnectCredential cancellation", () => {
@@ -533,5 +548,103 @@ describe("newConnectCredential authMethodHint", () => {
         oauthClientId: undefined,
       }),
     );
+  });
+});
+
+describe("newConnectCredential auto-proceed with a supplied server URL", () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    shownInputBoxSteps.length = 0;
+    stepControl.quickPickLabel = "API Key";
+    mockCredentialsServiceList.mockResolvedValue([]);
+    mockCredentialsServiceCreate.mockResolvedValue({
+      guid: "credential-auto",
+      name: "connect.example.com",
+      url: "https://connect.example.com",
+      serverType: ServerType.CONNECT,
+    });
+    const { inputCredentialNameStep } =
+      await import("src/multiStepInputs/common");
+    vi.mocked(inputCredentialNameStep).mockResolvedValue("connect.example.com");
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+    shownInputBoxSteps.length = 0;
+    stepControl.quickPickLabel = "API Key";
+  });
+
+  test("skips the URL prompt entirely when the supplied URL validates", async () => {
+    const { testServerURL } = await import("src/utils/testCredentials");
+    vi.mocked(testServerURL).mockResolvedValue({
+      user: null,
+      url: "https://connect.example.com",
+      serverType: ServerType.CONNECT,
+      error: null,
+    });
+
+    await newConnectCredential(
+      "test-view-id",
+      "Create a New Credential",
+      mockCredentialsService as unknown as import("src/credentials/service").CredentialsService,
+      "https://connect.example.com",
+    );
+
+    expect(testServerURL).toHaveBeenCalledWith(
+      expect.objectContaining({ url: "https://connect.example.com" }),
+    );
+    expect(shownInputBoxSteps).not.toContain("inputServerUrl");
+    expect(mockCredentialsServiceCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ url: "https://connect.example.com" }),
+    );
+  });
+
+  test("falls back to the (pre-filled) prompt when the supplied URL fails validation", async () => {
+    const { testServerURL } = await import("src/utils/testCredentials");
+    vi.mocked(testServerURL).mockResolvedValue({
+      user: null,
+      url: null,
+      serverType: null,
+      error: { code: "unknown", msg: "unreachable", operation: "test" },
+    });
+
+    await newConnectCredential(
+      "test-view-id",
+      "Create a New Credential",
+      mockCredentialsService as unknown as import("src/credentials/service").CredentialsService,
+      "https://connect.example.com",
+    );
+
+    expect(shownInputBoxSteps).toContain("inputServerUrl");
+  });
+
+  test("still routes to the Snowflake step when the supplied URL is Snowflake", async () => {
+    const { testServerURL } = await import("src/utils/testCredentials");
+    vi.mocked(testServerURL).mockResolvedValue({
+      user: null,
+      url: "https://connect.snowflakecomputing.app",
+      serverType: ServerType.SNOWFLAKE,
+      error: null,
+    });
+    const { isSnowflake } = await import("src/utils/multiStepHelpers");
+    vi.mocked(isSnowflake).mockReturnValue(true);
+
+    // The mocked Snowflake-connections list is empty (see the top-level
+    // src/multiStepInputs/common mock), so the flow can't fully complete —
+    // this test only cares that it *routed* to the Snowflake step instead of
+    // the auth-method picker, not that the whole credential got created.
+    try {
+      await newConnectCredential(
+        "test-view-id",
+        "Create a New Credential",
+        mockCredentialsService as unknown as import("src/credentials/service").CredentialsService,
+        "https://connect.snowflakecomputing.app",
+      );
+    } catch {
+      /* expected: incomplete Snowflake connection selection aborts the flow */
+    }
+
+    expect(shownInputBoxSteps).not.toContain("inputServerUrl");
+    expect(oauthStepperMocks.authenticate).not.toHaveBeenCalled();
   });
 });
