@@ -4,6 +4,7 @@ import { commands, ExtensionContext, lm } from "vscode";
 import { PublisherState } from "../state";
 import { HomeViewProvider } from "src/views/homeView";
 import { Commands } from "src/constants";
+import { normalizeAgentCommandArgs } from "./agentCommandArgs";
 import { PublishFailureTroubleshootTool } from "./tooling/troubleshoot/publishFailureTroubleshootTool";
 import { ConfigurationTroubleshootTool } from "./tooling/troubleshoot/configurationTroubleshootTool";
 import {
@@ -54,21 +55,43 @@ export function registerLLMTooling(
     lm.registerTool("publish-content_addCredential", addCredentialTool),
 
     // Path 2 — agent-compatible commands for Positron's positron.ai allow-list.
-    // Positron invokes these with a single object argument keyed by the
-    // `agent.args` names declared in package.json's contributes.commands
-    // entries — NOT spread positionally — so each handler takes one input
-    // object, matching the shape `run()` already expects.
+    // Positron's dispatch doesn't consistently use one calling convention —
+    // sometimes a single object argument keyed by the `agent.args` names
+    // declared in package.json's contributes.commands entries, sometimes the
+    // same values spread positionally in that order. normalizeAgentCommandArgs
+    // detects which shape arrived and produces the object `run()` expects.
     commands.registerCommand(
       Commands.Agent.PlanDeployment,
-      (input: PlanDeploymentInput = {}) => planTool.run(input),
+      (...raw: unknown[]) =>
+        planTool.run(
+          normalizeAgentCommandArgs<PlanDeploymentInput>(raw, ["directory"]),
+        ),
     ),
     commands.registerCommand(
       Commands.Agent.DeployContent,
-      (input: DeployContentInput) => deployTool.run(input),
+      (...raw: unknown[]) =>
+        deployTool.run(
+          normalizeAgentCommandArgs<DeployContentInput>(raw, [
+            "directory",
+            "entrypoint",
+            "credentialName",
+            "title",
+            "contentType",
+            "deploymentName",
+            "configurationName",
+          ]) as DeployContentInput,
+        ),
     ),
     commands.registerCommand(
       Commands.Agent.AddCredential,
-      (input: AddCredentialInput = {}) => addCredentialTool.run(input),
+      (...raw: unknown[]) =>
+        addCredentialTool.run(
+          normalizeAgentCommandArgs<AddCredentialInput>(raw, [
+            "serverUrl",
+            "target",
+            "authMethod",
+          ]),
+        ),
     ),
   );
 }

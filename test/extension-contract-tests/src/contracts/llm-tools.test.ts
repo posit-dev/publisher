@@ -3,9 +3,10 @@
 // Contract: llm/index.ts → lm.registerTool (path 1) and commands.registerCommand
 // (path 2, the Positron positron.ai agent allow-list). Both paths back the same
 // tool instances, so this contract also pins that the path-2 command handlers
-// forward their single object argument straight into run() — Positron invokes
-// these commands with one object keyed by the `agent.args` names, not spread
-// positionally.
+// normalize into run() regardless of which calling convention Positron used —
+// a single object keyed by the `agent.args` names, or the same values spread
+// positionally in that order. Positron doesn't consistently pick one; the same
+// command has been observed invoked both ways within a single session.
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { lm, commands } from "vscode";
@@ -117,6 +118,14 @@ describe("llm-tools contract", () => {
     expect(planRun).toHaveBeenCalledWith({ directory: "sub dir" });
   });
 
+  it("planDeployment command maps a positional directory into run()", () => {
+    register();
+
+    handlerFor("posit.publisher.agent.planDeployment")("sub dir");
+
+    expect(planRun).toHaveBeenCalledWith({ directory: "sub dir" });
+  });
+
   it("planDeployment command defaults to an empty object when Positron omits args", () => {
     register();
 
@@ -143,6 +152,26 @@ describe("llm-tools contract", () => {
     expect(deployRun).toHaveBeenCalledWith(input);
   });
 
+  it("deployContent command maps positional args into run() in agent.args order", () => {
+    register();
+
+    handlerFor("posit.publisher.agent.deployContent")(
+      "project dir",
+      "app.py",
+      "my-cred",
+      "My Title",
+      "python-shiny",
+    );
+
+    expect(deployRun).toHaveBeenCalledWith({
+      directory: "project dir",
+      entrypoint: "app.py",
+      credentialName: "my-cred",
+      title: "My Title",
+      contentType: "python-shiny",
+    });
+  });
+
   it("addCredential command forwards its input object into run()", () => {
     register();
 
@@ -155,6 +184,20 @@ describe("llm-tools contract", () => {
     handlerFor("posit.publisher.agent.addCredential")(input);
 
     expect(addCredentialRun).toHaveBeenCalledWith(input);
+  });
+
+  it("addCredential command maps positional args into run() in agent.args order", () => {
+    register();
+
+    handlerFor("posit.publisher.agent.addCredential")(
+      "https://connect.example.com",
+      "connect",
+    );
+
+    expect(addCredentialRun).toHaveBeenCalledWith({
+      serverUrl: "https://connect.example.com",
+      target: "connect",
+    });
   });
 
   it("addCredential command defaults to an empty object when Positron omits args", () => {
