@@ -73,6 +73,11 @@ export async function newConnectCredential(
   // (e.g. the addCredential agent tool inferred "browser sign-in" from a
   // supplied server URL, or the caller explicitly asked for an API key).
   authMethodHint?: "browser" | "apiKey",
+  // Only true for the addCredential agent tool, which already confirmed the
+  // URL with the user before calling in. Human entry points (the "+" button,
+  // "Add credential for this deployment") pass startingServerUrl only as a
+  // pre-fill hint and must still see the editable prompt.
+  trustServerUrl = false,
 ): Promise<Credential | undefined> {
   let credentials: Credential[] = [];
 
@@ -352,7 +357,11 @@ export async function newConnectCredential(
     // background and skip the prompt entirely on success. Fall through to
     // the normal prompt (still pre-filled) if validation fails, so the user
     // sees the problem and can fix it.
-    if (startingServerUrl && currentURL === startingServerUrl) {
+    if (
+      trustServerUrl &&
+      startingServerUrl &&
+      currentURL === startingServerUrl
+    ) {
       const result = await showProgress("Checking server URL", viewId, () =>
         validateServerUrl(currentURL),
       );

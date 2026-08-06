@@ -168,6 +168,9 @@ describe("HomeViewProvider.deployProject", () => {
       "cred",
       "cfg",
       "sub",
+      undefined,
+      false,
+      undefined,
     );
     // Selection happens before the deploy starts.
     expect(selectSpy.mock.invocationCallOrder[0]).toBeLessThan(

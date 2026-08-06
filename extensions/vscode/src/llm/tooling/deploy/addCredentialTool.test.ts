@@ -6,8 +6,11 @@ import { describe, expect, test, vi, beforeEach } from "vitest";
 // vi.hoisted to be available inside the factory.
 const { executeCommand } = vi.hoisted(() => ({
   executeCommand: vi.fn(
-    (): Promise<{ status: string; credentialName?: string }> =>
-      Promise.resolve({ status: "canceled" }),
+    (): Promise<{
+      status: string;
+      credentialName?: string;
+      reason?: string;
+    }> => Promise.resolve({ status: "canceled" }),
   ),
 }));
 vi.mock("vscode", () => ({
@@ -37,6 +40,7 @@ describe("AddCredentialTool", () => {
       undefined,
       undefined,
       undefined,
+      true,
     );
     expect(res).toEqual({
       status: "canceled",
@@ -53,6 +57,7 @@ describe("AddCredentialTool", () => {
       "https://connect.example.com",
       "connect",
       "browser",
+      true,
     );
   });
 
@@ -67,6 +72,7 @@ describe("AddCredentialTool", () => {
       "https://connect.example.com",
       "connect",
       "apiKey",
+      true,
     );
   });
 
@@ -78,6 +84,7 @@ describe("AddCredentialTool", () => {
       undefined,
       "connect",
       undefined,
+      true,
     );
   });
 
@@ -89,7 +96,23 @@ describe("AddCredentialTool", () => {
       undefined,
       "connect_cloud",
       undefined,
+      true,
     );
+  });
+
+  test("reports when the requested platform is unavailable (e.g. Connect Cloud disabled)", async () => {
+    executeCommand.mockResolvedValueOnce({
+      status: "unavailable",
+      reason:
+        "Posit Connect Cloud is not available. It may be disabled in settings.",
+    });
+    const tool = new AddCredentialTool();
+    const res = await run(tool, { target: "connect-cloud" });
+    expect(res).toEqual({
+      status: "unavailable",
+      message:
+        "Posit Connect Cloud is not available. It may be disabled in settings.",
+    });
   });
 
   test("reports the added credential name so the caller can continue automatically", async () => {

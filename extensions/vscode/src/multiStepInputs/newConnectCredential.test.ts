@@ -588,6 +588,9 @@ describe("newConnectCredential auto-proceed with a supplied server URL", () => {
       "Create a New Credential",
       mockCredentialsService as unknown as import("src/credentials/service").CredentialsService,
       "https://connect.example.com",
+      undefined,
+      undefined,
+      true,
     );
 
     expect(testServerURL).toHaveBeenCalledWith(
@@ -597,6 +600,29 @@ describe("newConnectCredential auto-proceed with a supplied server URL", () => {
     expect(mockCredentialsServiceCreate).toHaveBeenCalledWith(
       expect.objectContaining({ url: "https://connect.example.com" }),
     );
+  });
+
+  test("shows the (pre-filled) prompt when the URL is supplied but not trusted", async () => {
+    // This is the human entry points' path (the "+" button, "Add credential
+    // for this deployment") — startingServerUrl is only a pre-fill hint
+    // there, not a caller-confirmed value, so the prompt must still show
+    // even though the URL would otherwise validate successfully.
+    const { testServerURL } = await import("src/utils/testCredentials");
+    vi.mocked(testServerURL).mockResolvedValue({
+      user: null,
+      url: "https://connect.example.com",
+      serverType: ServerType.CONNECT,
+      error: null,
+    });
+
+    await newConnectCredential(
+      "test-view-id",
+      "Create a New Credential",
+      mockCredentialsService as unknown as import("src/credentials/service").CredentialsService,
+      "https://connect.example.com",
+    );
+
+    expect(shownInputBoxSteps).toContain("inputServerUrl");
   });
 
   test("falls back to the (pre-filled) prompt when the supplied URL fails validation", async () => {
@@ -613,6 +639,9 @@ describe("newConnectCredential auto-proceed with a supplied server URL", () => {
       "Create a New Credential",
       mockCredentialsService as unknown as import("src/credentials/service").CredentialsService,
       "https://connect.example.com",
+      undefined,
+      undefined,
+      true,
     );
 
     expect(shownInputBoxSteps).toContain("inputServerUrl");
@@ -639,6 +668,9 @@ describe("newConnectCredential auto-proceed with a supplied server URL", () => {
         "Create a New Credential",
         mockCredentialsService as unknown as import("src/credentials/service").CredentialsService,
         "https://connect.snowflakecomputing.app",
+        undefined,
+        undefined,
+        true,
       );
     } catch {
       /* expected: incomplete Snowflake connection selection aborts the flow */

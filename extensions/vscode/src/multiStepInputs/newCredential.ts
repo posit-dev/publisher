@@ -8,10 +8,26 @@ import {
 } from "./multiStepHelper";
 import { Credential, ServerType, ProductName } from "src/api";
 import { getPlatformList } from "src/multiStepInputs/common";
-import { getServerType, isConnectCloud } from "../utils/multiStepHelpers";
+import {
+  getProductName,
+  getProductType,
+  getServerType,
+  isConnectCloud,
+} from "../utils/multiStepHelpers";
 import { newConnectCredential } from "./newConnectCredential";
 import { newConnectCloudCredential } from "./newConnectCloudCredential";
 import { CredentialsService } from "src/credentials/service";
+
+// Thrown when a caller (e.g. the addCredential agent tool) requests a
+// serverType that getPlatformList() doesn't offer, such as Connect Cloud
+// while positPublisher.enableConnectCloud is off.
+export class UnavailablePlatformError extends Error {
+  constructor(public readonly serverType: ServerType) {
+    super(
+      `${getProductName(getProductType(serverType))} is not available. It may be disabled in settings.`,
+    );
+  }
+}
 
 export async function newCredential(
   viewId: string,
@@ -24,7 +40,26 @@ export async function newCredential(
   startingServerType?: ServerType,
   // Forwarded to the Connect flow; see newConnectCredential for its meaning.
   authMethodHint?: "browser" | "apiKey",
+  // Forwarded to the Connect flow; see newConnectCredential for its meaning.
+  trustServerUrl = false,
 ): Promise<Credential | undefined> {
+  // A caller-supplied serverType (e.g. from the addCredential agent tool)
+  // must still respect the platforms actually offered by settings. Checked
+  // here, before the multi-step flow starts, rather than inside a step
+  // function: MultiStepInput.stepThrough() catches everything a step throws
+  // and treats it as a generic internal error (then silently ends the flow),
+  // so this would otherwise surface as an indistinguishable "canceled".
+  if (startingServerType !== undefined) {
+    const platformList = getPlatformList();
+    const isAvailable = platformList.some(
+      (item) =>
+        item.label === getProductName(getProductType(startingServerType)),
+    );
+    if (!isAvailable) {
+      throw new UnavailablePlatformError(startingServerType);
+    }
+  }
+
   // the serverType will be overwritten in the very first step
   // when the platform is selected
   let serverType: ServerType = startingServerType ?? ServerType.CONNECT;
@@ -127,6 +162,7 @@ export async function newCredential(
               startingServerUrl,
               prevSteps,
               authMethodHint,
+              trustServerUrl,
             );
       } catch {
         /* the user dismissed this flow, do nothing more */
@@ -170,6 +206,8 @@ export async function newCredential(
         credentialsService,
         startingServerUrl,
         prevSteps,
+        undefined,
+        trustServerUrl,
       );
     } catch {
       /* the user dismissed this flow, do nothing more */

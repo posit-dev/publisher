@@ -5,6 +5,7 @@ import path from "path";
 import debounce from "debounce";
 
 import {
+  CancellationToken,
   Disposable,
   ExtensionContext,
   QuickPickItem,
@@ -128,7 +129,10 @@ import {
   Views,
 } from "src/constants";
 import { showProgress } from "src/utils/progress";
-import { newCredential } from "src/multiStepInputs/newCredential";
+import {
+  newCredential,
+  UnavailablePlatformError,
+} from "src/multiStepInputs/newCredential";
 import { PublisherState } from "src/state";
 import { throttleWithLastPending } from "src/utils/throttle";
 import { showAssociateGUID } from "src/actions/showAssociateGUID";
@@ -157,7 +161,9 @@ enum HomeViewInitialized {
 }
 
 export type AddCredentialOutcome =
-  { status: "added"; credentialName: string } | { status: "canceled" };
+  | { status: "added"; credentialName: string }
+  | { status: "canceled" }
+  | { status: "unavailable"; reason: string };
 
 export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private disposables: Disposable[] = [];
@@ -388,6 +394,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     // Guards the OAuth re-auth retry so a persistently-failing session can't
     // loop: a re-authenticated deploy runs with isRetry=true and won't re-prompt.
     isRetry = false,
+    // Set for agent-tool-initiated deploys so canceling the chat request
+    // aborts the deploy instead of leaving it running unobserved.
+    cancellationToken?: CancellationToken,
   ): Promise<DeployOutcome> {
     try {
       const credential = this.state.findCredential(credentialName);
@@ -405,22 +414,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         window.showErrorMessage("No workspace folder open.");
         return { status: "failed", message: "No workspace folder open." };
       }
-      const absProjectDir = path.resolve(root, projectDir);
-      const rel = path.relative(root, absProjectDir);
-      // Check that the resolved path stays within the workspace.
-      // We can't just use rel.startsWith("..") because a directory
-      // literally named ".." would be a false positive.
-      if (
-        rel === ".." ||
-        rel.startsWith(".." + path.sep) ||
-        path.isAbsolute(rel)
-      ) {
-        window.showErrorMessage("Project directory is outside the workspace.");
-        return {
-          status: "failed",
-          message: "Project directory is outside the workspace.",
-        };
+      const resolved = workspaces.resolveWithinWorkspace(root, projectDir);
+      if (!resolved.ok) {
+        window.showErrorMessage(resolved.error);
+        return { status: "failed", message: resolved.error };
       }
+      const absProjectDir = resolved.absPath;
 
       const python = await getPythonInterpreterPath();
       const r = await getRInterpreterPath();
@@ -464,6 +463,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             kind: HostToWebviewMessageType.PUBLISH_CANCEL,
           });
         },
+        cancellationToken,
         stream: this.stream,
         serverUrl: credential.url,
         title: deploymentName,
@@ -547,13 +547,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             }),
           ...progressOptions,
           onError: (err) =>
-            this.handleDeployError(err, credential, isRetry, {
-              deploymentName,
-              credentialName,
-              configurationName,
-              projectDir,
-              secrets,
-            }),
+            this.handleDeployError(
+              err,
+              credential,
+              isRetry,
+              {
+                deploymentName,
+                credentialName,
+                configurationName,
+                projectDir,
+                secrets,
+              },
+              cancellationToken,
+            ),
         });
       }
     } catch (error: unknown) {
@@ -581,6 +587,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     credentialName: string,
     configurationName: string,
     projectDir: string,
+    // Forwarded from the agent tool's invocation so canceling the chat
+    // request aborts the deploy instead of leaving it running unobserved.
+    cancellationToken?: CancellationToken,
   ): Promise<DeployOutcome> {
     // Focus the sidebar on the deployment we are about to deploy (the tool has
     // already written its config + record to disk) so the user watches progress
@@ -593,6 +602,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       credentialName,
       configurationName,
       projectDir,
+      undefined,
+      false,
+      cancellationToken,
     );
   }
 
@@ -645,6 +657,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
    * (SessionExpiredError), prompts the user to sign in again, persists the new
    * tokens, and retries the deployment once. Other failures are already surfaced
    * by runDeployWithProgress, so this is a no-op for them.
+   *
+   * The initial failure is always recorded via the publish/failure event
+   * injected by runDeployWithProgress before this is called, so it's visible
+   * in the logs regardless of what happens here. When a retry is attempted,
+   * its DeployOutcome is returned so the caller sees the final result (e.g.
+   * a successful retry) instead of the initial failure.
    */
   private async handleDeployError(
     err: unknown,
@@ -657,7 +675,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       projectDir: string;
       secrets?: Record<string, string>;
     },
-  ): Promise<void> {
+    cancellationToken?: CancellationToken,
+  ): Promise<DeployOutcome | void> {
     if (
       isRetry ||
       !(err instanceof SessionExpiredError) ||
@@ -704,13 +723,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     // Retry the deployment once with the refreshed credential.
-    await this.initiateDeployment(
+    return this.initiateDeployment(
       deployArgs.deploymentName,
       deployArgs.credentialName,
       deployArgs.configurationName,
       deployArgs.projectDir,
       deployArgs.secrets,
       true,
+      cancellationToken,
     );
   }
 
@@ -1929,6 +1949,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     startingServerUrl?: string,
     startingServerType?: ServerType,
     authMethodHint?: "browser" | "apiKey",
+    // Only true for the addCredential agent tool, which already confirmed
+    // the URL with the user before calling in. Human entry points (the "+"
+    // button, "Add credential for this deployment") must still see the
+    // editable URL prompt even when they pass a pre-fill hint.
+    trustServerUrl = false,
   ): Promise<AddCredentialOutcome> => {
     try {
       const credential = await newCredential(
@@ -1939,13 +1964,17 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         undefined,
         startingServerType,
         authMethodHint,
+        trustServerUrl,
       );
       if (!credential) {
         return { status: "canceled" };
       }
-      this.refreshCredentials();
+      await this.refreshCredentials();
       return { status: "added", credentialName: credential.name };
-    } catch {
+    } catch (error) {
+      if (error instanceof UnavailablePlatformError) {
+        return { status: "unavailable", reason: error.message };
+      }
       /* the user dismissed this flow, do nothing more */
       return { status: "canceled" };
     }

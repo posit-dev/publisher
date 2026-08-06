@@ -1,6 +1,5 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import path from "path";
 import {
   CancellationToken,
   LanguageModelTool,
@@ -17,6 +16,7 @@ import {
   createDeploymentRecord,
   loadAllConfigurations,
   loadAllDeployments,
+  loadConfiguration,
 } from "src/toml";
 import { isConfigurationError, isContentRecordError } from "src/api";
 import {
@@ -30,6 +30,8 @@ import {
   ServerType,
 } from "src/api/types/contentRecords";
 import { newConfigFileNameFromTitle, newDeploymentName } from "src/utils/names";
+import { getProductName, getProductType } from "src/utils/multiStepHelpers";
+import { extensionSettings } from "src/extension";
 
 export interface DeployContentInput {
   directory: string;
@@ -79,9 +81,9 @@ export class DeployContentTool implements LanguageModelTool<DeployContentInput> 
 
   async invoke(
     options: LanguageModelToolInvocationOptions<DeployContentInput>,
-    _token: CancellationToken,
+    token: CancellationToken,
   ): Promise<LanguageModelToolResult> {
-    const result = await this.run(options.input);
+    const result = await this.run(options.input, token);
     return new LanguageModelToolResult([
       new LanguageModelTextPart(JSON.stringify(result, null, 2)),
     ]);
@@ -90,15 +92,25 @@ export class DeployContentTool implements LanguageModelTool<DeployContentInput> 
   /**
    * Core logic shared by the `vscode.lm` tool and the Positron agent command.
    * Returns the structured result object (never wrapped) so both call paths
-   * reuse the same implementation.
+   * reuse the same implementation. `token` is only available on the
+   * `vscode.lm` path — the Positron agent command path has no equivalent, so
+   * canceling the deploy there relies on the progress notification's own
+   * cancel button.
    */
-  async run(input: DeployContentInput): Promise<DeployToolResult> {
+  async run(
+    input: DeployContentInput,
+    token?: CancellationToken,
+  ): Promise<DeployToolResult> {
     const root = workspaces.path();
     if (!root) {
       return { status: "failed", error: "No workspace folder is open." };
     }
     const relDir = input.directory || ".";
-    const absDir = path.resolve(root, relDir);
+    const resolvedDir = workspaces.resolveWithinWorkspace(root, relDir);
+    if (!resolvedDir.ok) {
+      return { status: "failed", error: resolvedDir.error };
+    }
+    const absDir = resolvedDir.absPath;
 
     const credential = this.state.findCredential(input.credentialName);
     if (!credential) {
@@ -110,8 +122,29 @@ export class DeployContentTool implements LanguageModelTool<DeployContentInput> 
       };
     }
 
+    if (
+      credential.serverType === ServerType.CONNECT_CLOUD &&
+      !extensionSettings.enableConnectCloud()
+    ) {
+      return {
+        status: "failed",
+        error: `Credential "${credential.name}" targets Connect Cloud, which is disabled (positPublisher.enableConnectCloud). Ask the user to re-enable it, or deploy with a Connect credential instead.`,
+      };
+    }
+
+    const expectedProductType = getProductType(credential.serverType);
+
     // Resolve the configuration: reuse an existing one, or create a new one.
     let configName = input.configurationName;
+    if (configName) {
+      const existingConfig = await loadConfiguration(configName, relDir, root);
+      if (existingConfig.configuration.productType !== expectedProductType) {
+        return {
+          status: "failed",
+          error: `Configuration "${configName}" targets ${getProductName(existingConfig.configuration.productType) ?? "an unrecognized product"}, but credential "${credential.name}" targets ${getProductName(expectedProductType)}. Pick a matching configuration, or omit configurationName to create a new one.`,
+        };
+      }
+    }
     if (!configName) {
       const inspections = await inspectProject({
         projectDir: absDir,
@@ -152,6 +185,7 @@ export class DeployContentTool implements LanguageModelTool<DeployContentInput> 
         ...match.configuration,
         type: chosenType,
         title: input.title ?? match.configuration.title,
+        productType: expectedProductType,
       };
 
       const existingConfigs = await loadAllConfigurations(relDir, root);
@@ -201,6 +235,7 @@ export class DeployContentTool implements LanguageModelTool<DeployContentInput> 
       input.credentialName,
       configName,
       relDir,
+      token,
     );
 
     if (outcome.status === "success") {

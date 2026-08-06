@@ -73,7 +73,7 @@ describe("runDeployWithProgress", () => {
   ) {
     const onComplete = vi.fn();
     const stream = makeMockStream();
-    runDeployWithProgress({
+    const outcome = runDeployWithProgress({
       deploy,
       onComplete,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -82,7 +82,7 @@ describe("runDeployWithProgress", () => {
       title: "my-app",
       ...overrides,
     });
-    return { onComplete, stream };
+    return { onComplete, stream, outcome };
   }
 
   it("calls onComplete on success", async () => {
@@ -152,6 +152,42 @@ describe("runDeployWithProgress", () => {
     expect(failMsg).toBeDefined();
     expect(failMsg!.data.message).toBe("upload failed");
     expect(failMsg!.data.productType).toBe("connect");
+  });
+
+  it("still injects publish/failure for the initial error when onError retries", async () => {
+    const { onComplete, stream, outcome } = run(
+      () => Promise.reject(new Error("session expired")),
+      {
+        onError: () =>
+          Promise.resolve({
+            status: "success",
+            result: successResult,
+          } as const),
+      },
+    );
+
+    await vi.waitFor(() => {
+      expect(onComplete).toHaveBeenCalled();
+    });
+
+    const failMsg = stream.injected.find((m) => m.type === "publish/failure");
+    expect(failMsg).toBeDefined();
+    expect(failMsg!.data.message).toBe("session expired");
+
+    await expect(outcome).resolves.toEqual({
+      status: "success",
+      result: successResult,
+    });
+  });
+
+  it("falls back to the initial failure outcome when onError doesn't retry", async () => {
+    const { outcome } = run(() => Promise.reject(new Error("upload failed")), {
+      onError: () => undefined,
+    });
+
+    await expect(outcome).resolves.toEqual(
+      expect.objectContaining({ status: "failed", message: "upload failed" }),
+    );
   });
 
   it("offers View button on success", async () => {
@@ -737,6 +773,42 @@ describe("runDeployWithProgress", () => {
       await vi.waitFor(() => {
         expect(onCancel).toHaveBeenCalledOnce();
       });
+    });
+
+    it("aborts the deploy when the external cancellationToken fires", async () => {
+      let deployResolve: (r: PublishResult) => void;
+      const deployPromise = new Promise<PublishResult>((resolve) => {
+        deployResolve = resolve;
+      });
+      let externalCancelHandler: (() => void) | undefined;
+      const dispose = vi.fn();
+      const cancellationToken = {
+        onCancellationRequested: (cb: () => void) => {
+          externalCancelHandler = cb;
+          return { dispose };
+        },
+      };
+
+      const onCancel = vi.fn();
+      const { stream } = run(() => deployPromise, {
+        onCancel,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        cancellationToken: cancellationToken as any,
+      });
+
+      externalCancelHandler?.();
+      deployResolve!(successResult);
+
+      await vi.waitFor(() => {
+        const failMsg = stream.injected.find(
+          (m) => m.type === "publish/failure",
+        );
+        expect(failMsg).toBeDefined();
+        expect(failMsg!.data.canceled).toBe("true");
+        expect(failMsg!.data.message).toBe("Deployment was canceled.");
+        expect(onCancel).toHaveBeenCalledOnce();
+      });
+      expect(dispose).toHaveBeenCalled();
     });
 
     it("does not inject publish/failure twice on CanceledError", async () => {

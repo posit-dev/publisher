@@ -63,9 +63,9 @@ function makeContext() {
 
 // Return the handler registered for a given command id.
 function handlerFor(id: string): (...args: any[]) => any {
-  const call = (
-    commands.registerCommand as unknown as { mock: { calls: any[][] } }
-  ).mock.calls.find((c) => c[0] === id);
+  const call = vi
+    .mocked(commands.registerCommand)
+    .mock.calls.find((c) => c[0] === id);
   if (!call) {
     throw new Error(`No command registered with id "${id}"`);
   }

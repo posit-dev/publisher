@@ -14,7 +14,10 @@ vi.mock("vscode", () => ({
 }));
 // Stub every heavy module the tool imports so the real (ajv-importing) graph
 // never loads during the unit test.
-vi.mock("src/workspaces", () => ({ path: () => "/root" }));
+vi.mock("src/workspaces", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("src/workspaces")>();
+  return { ...actual, path: () => "/root" };
+});
 vi.mock("src/state", () => ({ PublisherState: class {} }));
 vi.mock("src/inspect", () => ({
   inspectProject: vi.fn(() => [
@@ -47,6 +50,12 @@ vi.mock("src/toml", () => ({
 vi.mock("src/api", () => ({
   isConfigurationError: () => false,
   isContentRecordError: () => false,
+}));
+const { enableConnectCloud } = vi.hoisted(() => ({
+  enableConnectCloud: vi.fn(() => true),
+}));
+vi.mock("src/extension", () => ({
+  extensionSettings: { enableConnectCloud },
 }));
 
 import { GUID } from "@posit-dev/connect-api";
@@ -120,5 +129,51 @@ describe("PlanDeploymentTool", () => {
       { name: "prod", url: "https://c", serverType: ServerType.CONNECT },
     ]);
     expect(JSON.stringify(data)).not.toContain("SECRET");
+  });
+
+  test("excludes Connect Cloud credentials while the setting is disabled", async () => {
+    enableConnectCloud.mockReturnValueOnce(false);
+    const cloudState = {
+      credentialsService: {
+        list: vi.fn(() => [
+          makeCredential({ name: "prod", url: "https://c" }),
+          makeCredential({
+            name: "cloud",
+            url: "",
+            serverType: ServerType.CONNECT_CLOUD,
+          }),
+        ]),
+      },
+    };
+    // @ts-expect-error minimal PublisherState mock for the unit test
+    const tool = new PlanDeploymentTool(cloudState);
+    const res = await tool.invoke(
+      { input: { directory: "." } } as LanguageModelToolInvocationOptions<{
+        directory?: string;
+      }>,
+      {} as CancellationToken,
+    );
+    const data = parse(res);
+    expect(data.credentials).toEqual([
+      { name: "prod", url: "https://c", serverType: ServerType.CONNECT },
+    ]);
+  });
+
+  test("rejects a directory that escapes the workspace before touching disk", async () => {
+    const { inspectProject } = await import("src/inspect");
+    // @ts-expect-error minimal PublisherState mock for the unit test
+    const tool = new PlanDeploymentTool(state);
+    const res = await tool.invoke(
+      {
+        input: { directory: "../../etc" },
+      } as LanguageModelToolInvocationOptions<{
+        directory?: string;
+      }>,
+      {} as CancellationToken,
+    );
+    expect(parse(res)).toEqual({
+      error: "Project directory is outside the workspace.",
+    });
+    expect(inspectProject).not.toHaveBeenCalled();
   });
 });

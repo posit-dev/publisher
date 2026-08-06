@@ -205,7 +205,7 @@
               }
             }
           ],
-          "returns": "A JSON object with status 'added' (with credentialName) once the user finishes, or 'canceled' if they dismiss the UI. If 'added', continue any pending deployment automatically."
+          "returns": "A JSON object with status 'added' (with credentialName) once the user finishes, 'canceled' if they dismiss the UI, or 'unavailable' (with a reason) if the requested target is disabled, e.g. Connect Cloud when positPublisher.enableConnectCloud is off — ask the user how they'd like to proceed instead of retrying. If 'added', continue any pending deployment automatically."
         }
       },
       {
@@ -870,7 +870,7 @@
         ],
         "toolReferenceName": "addCredential",
         "displayName": "Add a Connect Credential",
-        "modelDescription": "Open the Publisher UI for creating a new Posit Connect or Connect Cloud credential, and wait for the user to finish or cancel. Use this when a deployment needs a credential that does not yet exist. The user completes authentication in the UI — never ask the user for a secret directly, and never pass one to any tool. Returns a JSON object with status 'added' (with credentialName — if this was requested to unblock a deployment, continue that deployment automatically without asking the user again) or 'canceled' if the user dismisses the UI.",
+        "modelDescription": "Open the Publisher UI for creating a new Posit Connect or Connect Cloud credential, and wait for the user to finish or cancel. Use this when a deployment needs a credential that does not yet exist. The user completes authentication in the UI — never ask the user for a secret directly, and never pass one to any tool. Returns a JSON object with status 'added' (with credentialName — if this was requested to unblock a deployment, continue that deployment automatically without asking the user again), 'canceled' if the user dismisses the UI, or 'unavailable' (with a reason) if the requested target is disabled, e.g. Connect Cloud when positPublisher.enableConnectCloud is off — ask the user how they'd like to proceed instead of retrying.",
         "canBeReferencedInPrompt": true,
         "icon": "$(key)",
         "inputSchema": {

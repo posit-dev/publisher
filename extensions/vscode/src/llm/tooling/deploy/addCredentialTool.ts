@@ -42,6 +42,10 @@ export type AddCredentialResult =
   | {
       status: "canceled";
       message: string;
+    }
+  | {
+      status: "unavailable";
+      message: string;
     };
 
 /**
@@ -92,6 +96,10 @@ export class AddCredentialTool implements LanguageModelTool<AddCredentialInput> 
       input.serverUrl,
       serverType,
       authMethodHint,
+      // This tool already confirmed the URL with the user before calling
+      // in, so the editable URL prompt can be skipped on successful
+      // validation. See newConnectCredential's trustServerUrl parameter.
+      true,
     );
 
     if (outcome?.status === "added") {
@@ -99,6 +107,12 @@ export class AddCredentialTool implements LanguageModelTool<AddCredentialInput> 
         status: "added",
         credentialName: outcome.credentialName,
         message: `Credential "${outcome.credentialName}" was added. Continue the deployment now.`,
+      };
+    }
+    if (outcome?.status === "unavailable") {
+      return {
+        status: "unavailable",
+        message: outcome.reason,
       };
     }
     return {

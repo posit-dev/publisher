@@ -1,6 +1,5 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import path from "path";
 import {
   CancellationToken,
   LanguageModelTool,
@@ -21,7 +20,9 @@ import {
 import {
   AllContentRecordTypes,
   ContentRecordError,
+  ServerType,
 } from "src/api/types/contentRecords";
+import { extensionSettings } from "src/extension";
 import { redactCredential } from "./redactCredential";
 
 export interface PlanDeploymentInput {
@@ -57,7 +58,11 @@ export class PlanDeploymentTool implements LanguageModelTool<PlanDeploymentInput
     }
 
     const relDir = input?.directory ?? ".";
-    const absDir = path.resolve(root, relDir);
+    const resolvedDir = workspaces.resolveWithinWorkspace(root, relDir);
+    if (!resolvedDir.ok) {
+      return { error: resolvedDir.error };
+    }
+    const absDir = resolvedDir.absPath;
 
     const [inspections, interpreters, configs, deployments, credentials] =
       await Promise.all([
@@ -94,6 +99,12 @@ export class PlanDeploymentTool implements LanguageModelTool<PlanDeploymentInput
       )
       .map((d) => ({ name: d.deploymentName }));
 
+    // Exclude Connect Cloud credentials while the setting is off so the
+    // agent never plans a deployment against a disabled target.
+    const availableCredentials = extensionSettings.enableConnectCloud()
+      ? credentials
+      : credentials.filter((c) => c.serverType !== ServerType.CONNECT_CLOUD);
+
     return {
       projectDir: relDir,
       interpreters: {
@@ -103,7 +114,7 @@ export class PlanDeploymentTool implements LanguageModelTool<PlanDeploymentInput
       candidates,
       existingConfigurations,
       existingDeployments,
-      credentials: credentials.map(redactCredential),
+      credentials: availableCredentials.map(redactCredential),
     };
   }
 

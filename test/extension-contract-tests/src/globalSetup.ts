@@ -15,7 +15,10 @@ async function removeSnowflakeLog() {
   await rm(snowflakeLog, { force: true });
 }
 
-export default async function setup() {
+export async function setup() {
   await removeSnowflakeLog();
-  return removeSnowflakeLog;
+}
+
+export async function teardown() {
+  await removeSnowflakeLog();
 }
