@@ -118,6 +118,8 @@ export type PublishRecord = {
     digest: string;
     platform?: string;
     server?: string;
+    /** Content image the manifest pinned (environment.image), if any. */
+    image?: string;
   };
   deployedAt?: string;
   dismissedAt?: string;
@@ -244,6 +246,13 @@ export async function buildManifest(
       image: "",
       prebuilt: false,
       ...manifest.environment,
+      // The launch-time lock as a content image (set by the Kubernetes
+      // launcher plugin via POSIT_ENV_CONTENT_IMAGE). An off-host
+      // Connect with Applications.ManifestEnvironmentSelectionEnabled
+      // pins the content pod to it; other Connects ignore it and the
+      // supervisor path (posit-env.json) applies — one bundle, both
+      // deployment shapes.
+      ...(positEnv.contentImage && { image: positEnv.contentImage }),
       environment_management: {
         ...(config.python && { python: false }),
         ...(config.r && { r: false }),

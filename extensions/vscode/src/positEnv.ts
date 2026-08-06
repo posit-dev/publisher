@@ -28,6 +28,17 @@ export interface PositEnvironment {
   platform?: string;
   /** posit-env registry URL, as reachable from the session. */
   server?: string;
+  /**
+   * OCI image carrying this exact lock for Connect content
+   * (…/connect-content:lock-<digest12>), when the session was launched
+   * by the Kubernetes launcher plugin. Pinned into the manifest as
+   * `environment.image`: a Connect running off-host with manifest
+   * environment selection enabled runs the content pod on this image —
+   * no supervisor, no package restore. Single-node Connect ignores it
+   * and uses the posit-env.json marker instead; the same bundle serves
+   * both.
+   */
+  contentImage?: string;
 }
 
 /** Bundle-relative marker file the Connect supervisor looks for. */
@@ -52,6 +63,7 @@ export async function detectPositEnvironment(
     digest,
     envPath,
     server: env.POSIT_ENV_SERVER || undefined,
+    contentImage: env.POSIT_ENV_CONTENT_IMAGE || undefined,
   };
 
   // Platform from the realization's receipt; the store layout

@@ -72,6 +72,21 @@ describe("detectPositEnvironment", () => {
     });
     expect(detected?.platform).toBe("linux-amd64");
     expect(detected?.server).toBeUndefined();
+    expect(detected?.contentImage).toBeUndefined();
+  });
+
+  it("carries the content image from Kubernetes launcher sessions", async () => {
+    const envPath = await makeEnvPath();
+    const detected = await detectPositEnvironment({
+      POSIT_ENV_NAME: "demo/app:prod",
+      POSIT_ENV_DIGEST: "sha256:abc123",
+      POSIT_ENV_PATH: envPath,
+      POSIT_ENV_CONTENT_IMAGE:
+        "registry.localtest.me:5000/demo/app/connect-content:lock-abc123abc123",
+    });
+    expect(detected?.contentImage).toBe(
+      "registry.localtest.me:5000/demo/app/connect-content:lock-abc123abc123",
+    );
   });
 });
 

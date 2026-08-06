@@ -252,6 +252,13 @@
         "server": {
           "type": "string",
           "description": "posit-env registry URL."
+        },
+        "image": {
+          "type": "string",
+          "description": "OCI content image carrying this exact lock (…/connect-content:lock-<digest12>), pinned into the manifest as environment.image for off-host Connect.",
+          "examples": [
+            "registry.localtest.me:5000/demo/dashboard-py/connect-content:lock-b07333f7043b"
+          ]
         }
       }
     },

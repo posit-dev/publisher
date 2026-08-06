@@ -151,6 +151,7 @@ export async function connectPublish({
         digest: positEnv.digest,
         platform: positEnv.platform,
         server: positEnv.server,
+        image: positEnv.contentImage,
       },
     }),
   };
