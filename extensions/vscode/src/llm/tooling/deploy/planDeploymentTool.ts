@@ -8,7 +8,6 @@ import {
   LanguageModelTextPart,
 } from "vscode";
 import * as workspaces from "src/workspaces";
-import { PublisherState } from "src/state";
 import { inspectProject } from "src/inspect";
 import { getInterpreterDefaults } from "src/interpreters";
 import { loadAllConfigurations, loadAllDeployments } from "src/toml";
@@ -24,6 +23,7 @@ import {
 } from "src/api/types/contentRecords";
 import { extensionSettings } from "src/extension";
 import { redactCredential } from "./redactCredential";
+import type { LLMToolingState } from "src/llm/types";
 
 export interface PlanDeploymentInput {
   directory?: string;
@@ -36,7 +36,7 @@ export interface PlanDeploymentInput {
  * (names and URLs only — never secrets).
  */
 export class PlanDeploymentTool implements LanguageModelTool<PlanDeploymentInput> {
-  constructor(private readonly state: PublisherState) {}
+  constructor(private readonly state: LLMToolingState) {}
 
   async invoke(
     options: LanguageModelToolInvocationOptions<PlanDeploymentInput>,

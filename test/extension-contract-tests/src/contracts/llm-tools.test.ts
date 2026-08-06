@@ -10,6 +10,11 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { lm, commands } from "vscode";
+import type {
+  LLMToolingContext,
+  LLMToolingHomeView,
+  LLMToolingState,
+} from "src/llm/types";
 
 // Mock internal dependencies. The tool modules transitively pull in the heavy
 // src/toml + src/api + src/state graph, so we stub them to keep this contract
@@ -54,12 +59,24 @@ vi.mock("src/llm/tooling/deploy/addCredentialTool", () => ({
 
 const { registerLLMTooling } = await import("src/llm/index");
 
-function makeContext() {
+function makeContext(): LLMToolingContext {
   return {
-    subscriptions: [] as any[],
+    subscriptions: [],
     extension: { packageJSON: { version: "1.2.3" } },
   };
 }
+
+const state: LLMToolingState = {
+  credentialsService: {
+    list: async () => [],
+  },
+  findCredential: () => undefined,
+  getSelectedConfiguration: async () => undefined,
+};
+
+const homeViewProvider: LLMToolingHomeView = {
+  deployProject: async () => ({ status: "canceled" }),
+};
 
 // Return the handler registered for a given command id.
 function handlerFor(id: string): (...args: any[]) => any {
@@ -73,7 +90,7 @@ function handlerFor(id: string): (...args: any[]) => any {
 }
 
 function register() {
-  registerLLMTooling(makeContext() as any, {} as any, {} as any);
+  registerLLMTooling(makeContext(), state, homeViewProvider);
 }
 
 describe("llm-tools contract", () => {

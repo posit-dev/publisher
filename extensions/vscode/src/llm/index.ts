@@ -1,10 +1,13 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import { commands, ExtensionContext, lm } from "vscode";
-import { PublisherState } from "../state";
-import { HomeViewProvider } from "src/views/homeView";
+import { commands, lm } from "vscode";
 import { Commands } from "src/constants";
 import { normalizeAgentCommandArgs } from "./agentCommandArgs";
+import type {
+  LLMToolingContext,
+  LLMToolingHomeView,
+  LLMToolingState,
+} from "./types";
 import { PublishFailureTroubleshootTool } from "./tooling/troubleshoot/publishFailureTroubleshootTool";
 import { ConfigurationTroubleshootTool } from "./tooling/troubleshoot/configurationTroubleshootTool";
 import {
@@ -21,9 +24,9 @@ import {
 } from "./tooling/deploy/addCredentialTool";
 
 export function registerLLMTooling(
-  context: ExtensionContext,
-  state: PublisherState,
-  homeViewProvider: HomeViewProvider,
+  context: LLMToolingContext,
+  state: LLMToolingState,
+  homeViewProvider: LLMToolingHomeView,
 ) {
   const clientVersion = context.extension.packageJSON.version || "unknown";
 

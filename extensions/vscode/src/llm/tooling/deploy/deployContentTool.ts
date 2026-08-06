@@ -8,8 +8,6 @@ import {
   LanguageModelTextPart,
 } from "vscode";
 import * as workspaces from "src/workspaces";
-import { PublisherState } from "src/state";
-import { HomeViewProvider } from "src/views/homeView";
 import { inspectProject } from "src/inspect";
 import {
   writeConfigToFile,
@@ -32,6 +30,7 @@ import {
 import { newConfigFileNameFromTitle, newDeploymentName } from "src/utils/names";
 import { getProductName, getProductType } from "src/utils/multiStepHelpers";
 import { extensionSettings } from "src/extension";
+import type { LLMToolingHomeView, LLMToolingState } from "src/llm/types";
 
 export interface DeployContentInput {
   directory: string;
@@ -74,8 +73,8 @@ function isValidContentType(value: string): value is ContentType {
  */
 export class DeployContentTool implements LanguageModelTool<DeployContentInput> {
   constructor(
-    private readonly state: PublisherState,
-    private readonly homeViewProvider: HomeViewProvider,
+    private readonly state: LLMToolingState,
+    private readonly homeViewProvider: LLMToolingHomeView,
     private readonly clientVersion: string,
   ) {}
 
