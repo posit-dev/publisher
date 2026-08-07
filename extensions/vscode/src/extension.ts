@@ -157,7 +157,7 @@ function initializeExtension(context: ExtensionContext) {
   );
 
   // Register LLM Tools under /llm
-  registerLLMTooling(context, state);
+  registerLLMTooling(context, state, homeViewProvider);
 }
 
 // This method is called when your extension is activated

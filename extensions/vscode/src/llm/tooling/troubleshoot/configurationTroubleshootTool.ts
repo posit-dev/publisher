@@ -12,17 +12,17 @@ import {
   ConfigurationError,
   isConfigurationError,
 } from "../../../api";
-import { PublisherState } from "../../../state";
 import {
   ContentType,
   allValidContentTypes,
   contentTypeStrings,
 } from "../../../api/types/configurations";
+import type { LLMToolingState } from "src/llm/types";
 
 export class ConfigurationTroubleshootTool implements LanguageModelTool<never> {
-  state: PublisherState;
+  state: Pick<LLMToolingState, "getSelectedConfiguration">;
 
-  constructor(state: PublisherState) {
+  constructor(state: Pick<LLMToolingState, "getSelectedConfiguration">) {
     this.state = state;
   }
 

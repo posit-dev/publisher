@@ -1,6 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { ProgressLocation, Uri, env, window } from "vscode";
+import type { CancellationToken } from "vscode";
 import type { PublishResult, PublishStep } from "src/publish/publishShared";
 import { CanceledError } from "src/publish/publishShared";
 import type { CloudPublishStep } from "src/publish/connectCloudPublish";
@@ -11,6 +12,17 @@ import { logger } from "src/logging";
 
 // Union of all possible publish step types (standard Connect + Cloud)
 export type AnyPublishStep = PublishStep | CloudPublishStep;
+
+export type DeployOutcome =
+  | { status: "success"; result: PublishResult }
+  | {
+      status: "failed";
+      message: string;
+      errCode?: ErrorCode;
+      logsUrl?: string;
+      dashboardUrl?: string;
+    }
+  | { status: "canceled" };
 
 type AnyPublishEvent = {
   step: AnyPublishStep;
@@ -99,10 +111,22 @@ export type DeployProgressOptions = {
   /**
    * Called with the thrown error when the deployment fails (not on cancel).
    * Lets the caller react to specific failures — e.g. prompt OAuth
-   * re-authentication on a {@link SessionExpiredError}. Any error it throws is
-   * swallowed so it can't disrupt progress teardown.
+   * re-authentication and retry on a {@link SessionExpiredError}. Any error
+   * it throws is swallowed so it can't disrupt progress teardown. If it
+   * performs its own retry, it should return that retry's DeployOutcome so
+   * the caller sees the final result instead of this initial failure.
    */
-  onError?: (err: unknown) => void | Promise<void>;
+  onError?: (
+    err: unknown,
+  ) => DeployOutcome | void | Promise<DeployOutcome | void>;
+  /**
+   * An external cancellation source (e.g. a `vscode.LanguageModelTool`
+   * invocation's token) that should abort the deploy the same way dismissing
+   * the progress notification does — otherwise canceling the agent chat
+   * request leaves the deployment running with nothing left listening for
+   * its result.
+   */
+  cancellationToken?: CancellationToken;
   stream: EventStream;
   serverUrl: string;
   title: string;
@@ -150,34 +174,61 @@ export function isServerLogStep(step: AnyPublishStep): boolean {
  * Run a deployment inside a VSCode progress notification,
  * feeding events into the Publishing Log tree view via the EventStream.
  */
-export function runDeployWithProgress(options: DeployProgressOptions): void {
-  const { deploy, onComplete, onCancel, onError, stream, serverUrl, title } =
-    options;
+export async function runDeployWithProgress(
+  options: DeployProgressOptions,
+): Promise<DeployOutcome> {
+  const {
+    deploy,
+    onComplete,
+    onCancel,
+    onError,
+    cancellationToken,
+    stream,
+    serverUrl,
+    title,
+  } = options;
 
-  window.withProgress(
+  return await window.withProgress(
     {
       location: ProgressLocation.Notification,
       title: "Deploying your project",
       cancellable: true,
     },
-    async (progress, token) => {
+    async (progress, token): Promise<DeployOutcome> => {
       const controller = new AbortController();
+      let canceled = false;
 
-      token.onCancellationRequested(() => {
+      const cancelDeploy = (message: string) => {
+        if (canceled) {
+          return;
+        }
+        canceled = true;
         controller.abort();
 
         // Inject publish/failure with canceled flag.
         stream.injectMessage(
           makeMessage("publish/failure", {
             canceled: "true",
-            message:
-              "Deployment has been dismissed, but may continue to be processed on the Connect Server.",
+            message,
             productType: "connect",
           }),
         );
 
         onCancel?.();
-      });
+      };
+
+      token.onCancellationRequested(() =>
+        cancelDeploy(
+          "Deployment has been dismissed, but may continue to be processed on the Connect Server.",
+        ),
+      );
+
+      // An external cancellation source (e.g. the agent chat request being
+      // canceled) aborts the deploy the same way dismissing the progress
+      // notification does.
+      const externalCancelListener = cancellationToken?.onCancellationRequested(
+        () => cancelDeploy("Deployment was canceled."),
+      );
 
       // Inject publish/start — resets the logs tree and triggers
       // HomeView's onPublishStart() via the stream handler.
@@ -298,7 +349,7 @@ export function runDeployWithProgress(options: DeployProgressOptions): void {
         // deploy was completing, the cancel handler already injected
         // publish/failure — don't also inject publish/success.
         if (controller.signal.aborted) {
-          return;
+          return { status: "canceled" } as const;
         }
 
         // Inject publish/success — triggers HomeView's onPublishSuccess()
@@ -317,13 +368,15 @@ export function runDeployWithProgress(options: DeployProgressOptions): void {
         // Show the "View" prompt without awaiting — let the progress
         // notification close immediately.
         showSuccessNotification(result.dashboardUrl);
+
+        return { status: "success", result } as const;
       } catch (err) {
         // CanceledError is not a real failure — the cancellation handler
         // already injected publish/failure with canceled: "true".
         // Also check signal.aborted to catch in-flight abort errors
         // (axios CanceledError) that connectPublish may have normalized.
         if (err instanceof CanceledError || controller.signal.aborted) {
-          return;
+          return { status: "canceled" } as const;
         }
 
         // Use the classified message from the step failure event if
@@ -349,10 +402,17 @@ export function runDeployWithProgress(options: DeployProgressOptions): void {
         );
 
         // Give the caller a chance to react to the failure (e.g. prompt OAuth
-        // re-authentication). Never let a handler error break teardown.
+        // re-authentication and retry). Never let a handler error break
+        // teardown. If the handler retried and produced its own outcome, that
+        // becomes the result of this call instead of this initial failure —
+        // the failure itself is still preserved in the injected publish/failure
+        // event above for the logs tree view and event stream.
         if (onError) {
           try {
-            await onError(err);
+            const retryOutcome = await onError(err);
+            if (retryOutcome) {
+              return retryOutcome;
+            }
           } catch (handlerErr) {
             logger.error(
               `Deploy onError handler threw: ${
@@ -363,7 +423,16 @@ export function runDeployWithProgress(options: DeployProgressOptions): void {
             );
           }
         }
+
+        return {
+          status: "failed",
+          message,
+          errCode: lastErrCode,
+          logsUrl: lastLogsUrl,
+          dashboardUrl: lastDashboardUrl,
+        } as const;
       } finally {
+        externalCancelListener?.dispose();
         onComplete();
       }
     },

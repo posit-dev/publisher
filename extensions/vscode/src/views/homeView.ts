@@ -5,6 +5,7 @@ import path from "path";
 import debounce from "debounce";
 
 import {
+  CancellationToken,
   Disposable,
   ExtensionContext,
   QuickPickItem,
@@ -83,7 +84,7 @@ import {
 import type { Credential } from "src/api/types/credentials";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
-import { runDeployWithProgress } from "src/views/deployProgress";
+import { runDeployWithProgress, DeployOutcome } from "src/views/deployProgress";
 import { connectPublish } from "src/publish/connectPublish";
 import { connectCloudPublish } from "src/publish/connectCloudPublish";
 import { renderQuartoContent } from "src/views/renders";
@@ -128,7 +129,10 @@ import {
   Views,
 } from "src/constants";
 import { showProgress } from "src/utils/progress";
-import { newCredential } from "src/multiStepInputs/newCredential";
+import {
+  newCredential,
+  UnavailablePlatformError,
+} from "src/multiStepInputs/newCredential";
 import { PublisherState } from "src/state";
 import { throttleWithLastPending } from "src/utils/throttle";
 import { showAssociateGUID } from "src/actions/showAssociateGUID";
@@ -155,6 +159,11 @@ enum HomeViewInitialized {
   initialized = "initialized",
   uninitialized = "uninitialized",
 }
+
+export type AddCredentialOutcome =
+  | { status: "added"; credentialName: string }
+  | { status: "canceled" }
+  | { status: "unavailable"; reason: string };
 
 export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private disposables: Disposable[] = [];
@@ -385,33 +394,32 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     // Guards the OAuth re-auth retry so a persistently-failing session can't
     // loop: a re-authenticated deploy runs with isRetry=true and won't re-prompt.
     isRetry = false,
-  ) {
+    // Set for agent-tool-initiated deploys so canceling the chat request
+    // aborts the deploy instead of leaving it running unobserved.
+    cancellationToken?: CancellationToken,
+  ): Promise<DeployOutcome> {
     try {
       const credential = this.state.findCredential(credentialName);
 
       if (!credential) {
         window.showErrorMessage(`Credential not found: ${credentialName}`);
-        return;
+        return {
+          status: "failed",
+          message: `Credential not found: ${credentialName}`,
+        };
       }
 
       const root = this.root?.uri.fsPath;
       if (!root) {
         window.showErrorMessage("No workspace folder open.");
-        return;
+        return { status: "failed", message: "No workspace folder open." };
       }
-      const absProjectDir = path.resolve(root, projectDir);
-      const rel = path.relative(root, absProjectDir);
-      // Check that the resolved path stays within the workspace.
-      // We can't just use rel.startsWith("..") because a directory
-      // literally named ".." would be a false positive.
-      if (
-        rel === ".." ||
-        rel.startsWith(".." + path.sep) ||
-        path.isAbsolute(rel)
-      ) {
-        window.showErrorMessage("Project directory is outside the workspace.");
-        return;
+      const resolved = workspaces.resolveWithinWorkspace(root, projectDir);
+      if (!resolved.ok) {
+        window.showErrorMessage(resolved.error);
+        return { status: "failed", message: resolved.error };
       }
+      const absProjectDir = resolved.absPath;
 
       const python = await getPythonInterpreterPath();
       const r = await getRInterpreterPath();
@@ -431,7 +439,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         r?.rPath,
       );
       if (!config) {
-        return;
+        return {
+          status: "failed",
+          message: "Configuration could not be loaded.",
+        };
       }
 
       const contentRecord = this.state.findContentRecord(
@@ -452,6 +463,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             kind: HostToWebviewMessageType.PUBLISH_CANCEL,
           });
         },
+        cancellationToken,
         stream: this.stream,
         serverUrl: credential.url,
         title: deploymentName,
@@ -470,7 +482,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           },
         });
 
-        runDeployWithProgress({
+        return await runDeployWithProgress({
           deploy: (onProgress, signal) =>
             connectCloudPublish({
               api: cloudApi,
@@ -514,7 +526,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           ),
         );
 
-        runDeployWithProgress({
+        return await runDeployWithProgress({
           deploy: (onProgress, signal) =>
             connectPublish({
               api: connectApi,
@@ -535,13 +547,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             }),
           ...progressOptions,
           onError: (err) =>
-            this.handleDeployError(err, credential, isRetry, {
-              deploymentName,
-              credentialName,
-              configurationName,
-              projectDir,
-              secrets,
-            }),
+            this.handleDeployError(
+              err,
+              credential,
+              isRetry,
+              {
+                deploymentName,
+                credentialName,
+                configurationName,
+                projectDir,
+                secrets,
+              },
+              cancellationToken,
+            ),
         });
       }
     } catch (error: unknown) {
@@ -552,11 +570,76 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // been shown the error.
       const msg = getSummaryStringFromError("initiateDeployment", error);
       window.showErrorMessage(`Deployment failed: ${msg}`);
+      return { status: "failed", message: msg };
     } finally {
       this.webviewConduit.sendMsg({
         kind: HostToWebviewMessageType.PUBLISH_INIT,
       });
     }
+  }
+
+  /**
+   * Headless deploy entry point for agent tooling. Runs the same deployment
+   * pipeline as the webview Deploy button and resolves the structured outcome.
+   */
+  public async deployProject(
+    deploymentName: string,
+    credentialName: string,
+    configurationName: string,
+    projectDir: string,
+    // Forwarded from the agent tool's invocation so canceling the chat
+    // request aborts the deploy instead of leaving it running unobserved.
+    cancellationToken?: CancellationToken,
+  ): Promise<DeployOutcome> {
+    // Focus the sidebar on the deployment we are about to deploy (the tool has
+    // already written its config + record to disk) so the user watches progress
+    // on the selected target, and a failure leaves it selected with its logs.
+    // The webview Deploy path manages its own selection, so we only do this on
+    // the programmatic (tool) path.
+    await this.selectDeployment(deploymentName, projectDir);
+    return this.initiateDeployment(
+      deploymentName,
+      credentialName,
+      configurationName,
+      projectDir,
+      undefined,
+      false,
+      cancellationToken,
+    );
+  }
+
+  /**
+   * Select a deployment in the Home view sidebar by name + project directory.
+   * Refreshes the configuration and content-record caches first so freshly
+   * created files (e.g. those just written by the deploy tool) are present
+   * before the selection is pushed down to the webview. No-op if the record
+   * cannot be found.
+   */
+  public async selectDeployment(
+    deploymentName: string,
+    projectDir: string,
+  ): Promise<void> {
+    // Both caches need refreshing: the deploy tool may have just written a
+    // new deployment record AND a new configuration to disk, and the
+    // webview needs the configuration in cache to render the selection
+    // (not just the content record used to find it below).
+    await Promise.all([
+      this.state.refreshContentRecords(),
+      this.state.refreshConfigurations(),
+    ]);
+    const contentRecord = this.state.findContentRecord(
+      deploymentName,
+      projectDir,
+    );
+    if (!contentRecord) {
+      return;
+    }
+    const deploymentSelector: DeploymentSelector = {
+      deploymentName: contentRecord.deploymentName,
+      deploymentPath: contentRecord.deploymentPath,
+      projectDir: contentRecord.projectDir,
+    };
+    this.propagateDeploymentSelection(deploymentSelector);
   }
 
   private onDeployMsg(msg: DeployMsg) {
@@ -574,6 +657,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
    * (SessionExpiredError), prompts the user to sign in again, persists the new
    * tokens, and retries the deployment once. Other failures are already surfaced
    * by runDeployWithProgress, so this is a no-op for them.
+   *
+   * The initial failure is always recorded via the publish/failure event
+   * injected by runDeployWithProgress before this is called, so it's visible
+   * in the logs regardless of what happens here. When a retry is attempted,
+   * its DeployOutcome is returned so the caller sees the final result (e.g.
+   * a successful retry) instead of the initial failure.
    */
   private async handleDeployError(
     err: unknown,
@@ -586,7 +675,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       projectDir: string;
       secrets?: Record<string, string>;
     },
-  ): Promise<void> {
+    cancellationToken?: CancellationToken,
+  ): Promise<DeployOutcome | void> {
     if (
       isRetry ||
       !(err instanceof SessionExpiredError) ||
@@ -633,13 +723,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     // Retry the deployment once with the refreshed credential.
-    await this.initiateDeployment(
+    return this.initiateDeployment(
       deployArgs.deploymentName,
       deployArgs.credentialName,
       deployArgs.configurationName,
       deployArgs.projectDir,
       deployArgs.secrets,
       true,
+      cancellationToken,
     );
   }
 
@@ -1850,20 +1941,42 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
    * Prompt the user for credential information. Then create or update the credential. Afterwards, refresh the provider.
    *
    * Once the server url is provided, the user is prompted with the url hostname as the default server name.
+   *
+   * Returns the outcome (added or canceled) so agent tooling can wait for the
+   * user to finish before deciding whether to continue a pending deployment.
    */
-  public addCredential = async (startingServerUrl?: string) => {
+  public addCredential = async (
+    startingServerUrl?: string,
+    startingServerType?: ServerType,
+    authMethodHint?: "browser" | "apiKey",
+    // Only true for the addCredential agent tool, which already confirmed
+    // the URL with the user before calling in. Human entry points (the "+"
+    // button, "Add credential for this deployment") must still see the
+    // editable URL prompt even when they pass a pre-fill hint.
+    trustServerUrl = false,
+  ): Promise<AddCredentialOutcome> => {
     try {
       const credential = await newCredential(
         Views.HomeView,
         createNewCredentialLabel,
         this.state.credentialsService,
         startingServerUrl,
+        undefined,
+        startingServerType,
+        authMethodHint,
+        trustServerUrl,
       );
-      if (credential) {
-        this.refreshCredentials();
+      if (!credential) {
+        return { status: "canceled" };
       }
-    } catch {
+      await this.refreshCredentials();
+      return { status: "added", credentialName: credential.name };
+    } catch (error) {
+      if (error instanceof UnavailablePlatformError) {
+        return { status: "unavailable", reason: error.message };
+      }
       /* the user dismissed this flow, do nothing more */
+      return { status: "canceled" };
     }
   };
 

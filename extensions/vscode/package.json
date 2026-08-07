@@ -80,6 +80,135 @@
     ],
     "commands": [
       {
+        "command": "posit.publisher.agent.planDeployment",
+        "title": "Plan a Deployment",
+        "category": "Posit Publisher",
+        "agent": {
+          "description": "Inspect a project directory to determine what can be deployed to Posit Connect or Connect Cloud. Returns detected content type and entrypoint candidates, interpreter defaults, any existing deployment configurations and records, and the list of available server credentials (names and URLs only, never secrets). Use this before deploying to build a plan to confirm with the user.",
+          "args": [
+            {
+              "name": "directory",
+              "description": "Workspace-relative directory to inspect. Defaults to the workspace root.",
+              "required": false,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "returns": "A JSON object with the inspected projectDir, interpreter defaults, deployable candidates, existing configurations and deployments, and redacted credentials."
+        }
+      },
+      {
+        "command": "posit.publisher.agent.deployContent",
+        "title": "Deploy Content to Connect",
+        "category": "Posit Publisher",
+        "agent": {
+          "description": "Deploy a project directory to Posit Connect or Connect Cloud. Creates a deployment configuration and record if they do not exist, then publishes and returns the deployed content URLs. Requires the name of an existing stored credential, never a secret directly. If no suitable credential exists it returns status 'needs-credential' — call the addCredential command (passing target/serverUrl if known) and wait for its result, then call this command again if a credential was added. Always confirm the deployment plan (from planDeployment) with the user before calling this command.",
+          "args": [
+            {
+              "name": "directory",
+              "description": "Workspace-relative project directory.",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "entrypoint",
+              "description": "Entrypoint filename to deploy, e.g. app.py.",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "credentialName",
+              "description": "Name of an existing stored credential to deploy with.",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "title",
+              "description": "Human-readable content title. Optional.",
+              "required": false,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "contentType",
+              "description": "Override the detected content type (e.g. python-shiny). Optional.",
+              "required": false,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "deploymentName",
+              "description": "Reuse an existing deployment record by name to redeploy. Optional.",
+              "required": false,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "configurationName",
+              "description": "Reuse an existing configuration by name. Optional.",
+              "required": false,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "returns": "A JSON object with a status field: 'success' (with deployment/configuration names and content URLs), 'needs-credential', 'needs-content-type', or 'failed' (with an error message)."
+        }
+      },
+      {
+        "command": "posit.publisher.agent.addCredential",
+        "title": "Add a Connect Credential",
+        "category": "Posit Publisher",
+        "agent": {
+          "description": "Open the Publisher UI for creating a new Posit Connect or Connect Cloud credential, and wait for the user to finish or cancel. Use this when a deployment needs a credential that does not yet exist. The user completes authentication in the UI — never ask the user for a secret directly, and never pass one to any tool or command.",
+          "args": [
+            {
+              "name": "serverUrl",
+              "description": "Posit Connect server URL to pre-fill in the New Credential UI. Optional, not a secret. Only applies when targeting a Connect server, not Connect Cloud.",
+              "required": false,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "target",
+              "description": "Which product the deployment targets, if known: 'connect' for a Posit Connect server, 'connect-cloud' for Connect Cloud. Only set this when the user's intent is clear from context; leave it unset to let the user choose.",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "connect",
+                  "connect-cloud"
+                ]
+              }
+            },
+            {
+              "name": "authMethod",
+              "description": "Only used when target is 'connect' and serverUrl is set: 'browser' (the default) signs the user in automatically; 'apiKey' lets the user paste one in instead. Set 'apiKey' only when the user explicitly asked to enter one manually.",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "browser",
+                  "apiKey"
+                ]
+              }
+            }
+          ],
+          "returns": "A JSON object with status 'added' (with credentialName) once the user finishes, 'canceled' if they dismiss the UI, or 'unavailable' (with a reason) if the requested target is disabled, e.g. Connect Cloud when positPublisher.enableConnectCloud is off — ask the user how they'd like to proceed instead of retrying. If 'added', continue any pending deployment automatically."
+        }
+      },
+      {
         "command": "posit.publisher.logs.fileview",
         "title": "Open Raw Logs",
         "icon": "$(list-flat)"
@@ -322,6 +451,18 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "posit.publisher.agent.planDeployment",
+          "when": "false"
+        },
+        {
+          "command": "posit.publisher.agent.deployContent",
+          "when": "false"
+        },
+        {
+          "command": "posit.publisher.agent.addCredential",
+          "when": "false"
+        },
         {
           "command": "posit.publisher.init-project",
           "when": "workbenchState == folder && posit.publish.state == 'initialized' && isWorkspaceTrusted"
@@ -645,6 +786,117 @@
         "inputSchema": {
           "type": "object",
           "properties": {}
+        }
+      },
+      {
+        "name": "publish-content_planDeployment",
+        "tags": [
+          "posit",
+          "publisher",
+          "positron-assistant"
+        ],
+        "toolReferenceName": "planDeployment",
+        "displayName": "Plan a Deployment",
+        "modelDescription": "Inspect a project directory to determine what can be deployed to Posit Connect or Connect Cloud. Returns detected content type and entrypoint candidates, interpreter defaults, any existing deployment configurations and records, and the list of available server credentials (names and URLs only, never secrets). Use this before deploying to build a plan to confirm with the user.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(search-sparkle)",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "directory": {
+              "type": "string",
+              "description": "Workspace-relative directory to inspect. Defaults to the workspace root."
+            }
+          }
+        }
+      },
+      {
+        "name": "publish-content_deployContent",
+        "tags": [
+          "posit",
+          "publisher",
+          "positron-assistant"
+        ],
+        "toolReferenceName": "deployContent",
+        "displayName": "Deploy Content to Connect",
+        "modelDescription": "Deploy a project directory to Posit Connect or Connect Cloud. Creates a deployment configuration and record if they do not exist, then publishes. Requires the name of an existing stored credential, never a secret directly. Always confirm the deployment plan (from planDeployment) with the user before calling this tool. Returns a JSON object with a status field: 'success' (with deployment/configuration names and content URLs), 'needs-credential' (call addCredential, passing target/serverUrl if known, wait for its result, then call this tool again if it returns 'added'), 'needs-content-type' (the content type could not be detected — ask the user or pass contentType explicitly, then retry), or 'failed' (with an error message).",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(cloud-upload)",
+        "inputSchema": {
+          "type": "object",
+          "required": [
+            "directory",
+            "entrypoint",
+            "credentialName"
+          ],
+          "properties": {
+            "directory": {
+              "type": "string",
+              "description": "Workspace-relative project directory."
+            },
+            "entrypoint": {
+              "type": "string",
+              "description": "Entrypoint filename to deploy, e.g. app.py."
+            },
+            "credentialName": {
+              "type": "string",
+              "description": "Name of an existing stored credential to deploy with."
+            },
+            "title": {
+              "type": "string",
+              "description": "Human-readable content title. Optional."
+            },
+            "contentType": {
+              "type": "string",
+              "description": "Override the detected content type (e.g. python-shiny). Optional."
+            },
+            "deploymentName": {
+              "type": "string",
+              "description": "Reuse an existing deployment record by name to redeploy. Optional."
+            },
+            "configurationName": {
+              "type": "string",
+              "description": "Reuse an existing configuration by name. Optional."
+            }
+          }
+        }
+      },
+      {
+        "name": "publish-content_addCredential",
+        "tags": [
+          "posit",
+          "publisher",
+          "positron-assistant"
+        ],
+        "toolReferenceName": "addCredential",
+        "displayName": "Add a Connect Credential",
+        "modelDescription": "Open the Publisher UI for creating a new Posit Connect or Connect Cloud credential, and wait for the user to finish or cancel. Use this when a deployment needs a credential that does not yet exist. The user completes authentication in the UI — never ask the user for a secret directly, and never pass one to any tool. Returns a JSON object with status 'added' (with credentialName — if this was requested to unblock a deployment, continue that deployment automatically without asking the user again), 'canceled' if the user dismisses the UI, or 'unavailable' (with a reason) if the requested target is disabled, e.g. Connect Cloud when positPublisher.enableConnectCloud is off — ask the user how they'd like to proceed instead of retrying.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(key)",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "serverUrl": {
+              "type": "string",
+              "description": "Posit Connect server URL to pre-fill in the New Credential UI. Optional, not a secret. Only applies when targeting a Connect server, not Connect Cloud."
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "connect",
+                "connect-cloud"
+              ],
+              "description": "Which product the deployment targets, if known: 'connect' for a Posit Connect server, 'connect-cloud' for Connect Cloud. Only set this when the user's intent is clear from context; leave it unset to let the user choose."
+            },
+            "authMethod": {
+              "type": "string",
+              "enum": [
+                "browser",
+                "apiKey"
+              ],
+              "description": "Only used when target is 'connect' and serverUrl is set: 'browser' (the default) signs the user in automatically; 'apiKey' lets the user paste one in instead. Set 'apiKey' only when the user explicitly asked to enter one manually."
+            }
+          }
         }
       }
     ]

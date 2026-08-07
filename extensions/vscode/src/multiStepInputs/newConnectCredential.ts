@@ -69,6 +69,15 @@ export async function newConnectCredential(
   credentialsService: CredentialsService,
   startingServerUrl?: string,
   previousSteps?: InputStep[],
+  // When set, skips the auth-method picker and goes straight to that method
+  // (e.g. the addCredential agent tool inferred "browser sign-in" from a
+  // supplied server URL, or the caller explicitly asked for an API key).
+  authMethodHint?: "browser" | "apiKey",
+  // Only true for the addCredential agent tool, which already confirmed the
+  // URL with the user before calling in. Human entry points (the "+" button,
+  // "Add credential for this deployment") pass startingServerUrl only as a
+  // pre-fill hint and must still see the editable prompt.
+  trustServerUrl = false,
 ): Promise<Credential | undefined> {
   let credentials: Credential[] = [];
 
@@ -222,102 +231,75 @@ export async function newConnectCredential(
   }
 
   // ***************************************************************
-  // Step: Get the server url (used for Connect & Snowflake)
+  // Validate a candidate server URL: well-formed, not already claimed by
+  // another credential, and reachable. Shared by the interactive input box
+  // (as its finalValidation) and the auto-proceed fast path below, so both
+  // enforce the same rules.
   // ***************************************************************
-  async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
-    let currentURL = typeof state.data.url === "string" ? state.data.url : "";
-
-    if (currentURL === "") {
-      currentURL = await extensionSettings.defaultConnectServer();
+  async function validateServerUrl(
+    rawUrl: string,
+  ): Promise<
+    { ok: true; serverType?: ServerType } | { ok: false; error: string }
+  > {
+    const url = formatURL(rawUrl);
+    try {
+      // will validate that this is a valid URL
+      new URL(url);
+    } catch (e) {
+      if (!(e instanceof TypeError)) {
+        return {
+          ok: false,
+          error: `Unexpected error within NewCredential::inputSeverUrl.finalValidation: ${JSON.stringify(e)}`,
+        };
+      }
+      return {
+        ok: false,
+        error: `Error: Invalid URL (${getMessageFromError(e)}).`,
+      };
     }
 
-    // Two credentials for the same URL is not allowed so clear the default if one is found
-    if (
-      currentURL !== "" &&
-      findExistingCredentialByURL(credentials, currentURL)
-    ) {
-      currentURL = "";
+    const existingCredential = findExistingCredentialByURL(credentials, url);
+    if (existingCredential) {
+      return {
+        ok: false,
+        error: `Error: Invalid URL (this server URL is already assigned to your credential "${existingCredential.name}". Only one credential per unique URL is allowed).`,
+      };
     }
 
-    const resp = await input.showInputBox({
-      title: state.title,
-      step: 0,
-      totalSteps: 0,
-      value: currentURL,
-      prompt: "Please provide the Posit Connect server's URL",
-      placeholder: "Server URL",
-      validate: (input: string) => {
-        if (input.includes(" ")) {
-          return Promise.resolve({
-            message: "Error: Invalid URL (spaces are not allowed).",
-            severity: InputBoxValidationSeverity.Error,
-          });
+    try {
+      const testResult = await testServerURL({
+        url,
+        insecure: !extensionSettings.verifyCertificates(),
+      });
+      if (testResult.error) {
+        if (testResult.error.code === "errorCertificateVerification") {
+          return {
+            ok: false,
+            error: `Error: URL Not Accessible - ${testResult.error.msg}. If applicable, consider disabling [Verify TLS Certificates](${openConfigurationCommand}).`,
+          };
         }
-        return Promise.resolve(undefined);
-      },
-      finalValidation: async (input: string) => {
-        input = formatURL(input);
-        try {
-          // will validate that this is a valid URL
-          new URL(input);
-        } catch (e) {
-          if (!(e instanceof TypeError)) {
-            return Promise.resolve({
-              message: `Unexpected error within NewCredential::inputSeverUrl.finalValidation: ${JSON.stringify(e)}`,
-              severity: InputBoxValidationSeverity.Error,
-            });
-          }
-          return Promise.resolve({
-            message: `Error: Invalid URL (${getMessageFromError(e)}).`,
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        const existingCredential = findExistingCredentialByURL(
-          credentials,
-          input,
-        );
-        if (existingCredential) {
-          return Promise.resolve({
-            message: `Error: Invalid URL (this server URL is already assigned to your credential "${existingCredential.name}". Only one credential per unique URL is allowed).`,
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        try {
-          const testResult = await testServerURL({
-            url: input,
-            insecure: !extensionSettings.verifyCertificates(),
-          });
-          if (testResult.error) {
-            if (testResult.error.code === "errorCertificateVerification") {
-              return Promise.resolve({
-                message: `Error: URL Not Accessible - ${testResult.error.msg}. If applicable, consider disabling [Verify TLS Certificates](${openConfigurationCommand}).`,
-                severity: InputBoxValidationSeverity.Error,
-              });
-            }
-            return Promise.resolve({
-              message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(testResult.error)}).`,
-              severity: InputBoxValidationSeverity.Error,
-            });
-          }
+        return {
+          ok: false,
+          error: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(testResult.error)}).`,
+        };
+      }
+      // serverType will be overwritten if it is snowflake
+      return { ok: true, serverType: testResult.serverType ?? undefined };
+    } catch (e) {
+      return {
+        ok: false,
+        error: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(e)}).`,
+      };
+    }
+  }
 
-          if (testResult.serverType) {
-            // serverType will be overwritten if it is snowflake
-            serverType = testResult.serverType;
-          }
-        } catch (e) {
-          return Promise.resolve({
-            message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(e)}).`,
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        return Promise.resolve(undefined);
-      },
-      shouldResume: () => Promise.resolve(false),
-      ignoreFocusOut: true,
-    });
-
-    state.data.url = formatURL(resp.trim());
-
+  // ***************************************************************
+  // Shared continuation once a server URL has been accepted, whether from
+  // the auto-proceed fast path or the interactive prompt.
+  // ***************************************************************
+  async function afterServerUrlAccepted(
+    state: MultiStepState,
+  ): Promise<void | InputStep> {
     if (isSnowflake(serverType)) {
       return {
         name: step.INPUT_SNOWFLAKE_CONN,
@@ -339,10 +321,148 @@ export async function newConnectCredential(
         ),
     );
 
+    // Skip the picker when the caller already knows what to do.
+    if (authMethodHint) {
+      return dispatchAuthMethod(authMethodHint, state);
+    }
+
     return {
       name: step.INPUT_AUTH_METHOD,
       step: (input: MultiStepInput) =>
         steps[step.INPUT_AUTH_METHOD](input, state),
+    };
+  }
+
+  // ***************************************************************
+  // Step: Get the server url (used for Connect & Snowflake)
+  // ***************************************************************
+  async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
+    let currentURL = typeof state.data.url === "string" ? state.data.url : "";
+
+    if (currentURL === "") {
+      currentURL = await extensionSettings.defaultConnectServer();
+    }
+
+    // Two credentials for the same URL is not allowed so clear the default if one is found
+    if (
+      currentURL !== "" &&
+      findExistingCredentialByURL(credentials, currentURL)
+    ) {
+      currentURL = "";
+    }
+
+    // The caller (e.g. the addCredential agent tool) already supplied and
+    // confirmed this URL with the user before calling in — asking them to
+    // retype/re-confirm it adds a step with no value. Validate it in the
+    // background and skip the prompt entirely on success. Fall through to
+    // the normal prompt (still pre-filled) if validation fails, so the user
+    // sees the problem and can fix it.
+    if (
+      trustServerUrl &&
+      startingServerUrl &&
+      currentURL === startingServerUrl
+    ) {
+      const result = await showProgress("Checking server URL", viewId, () =>
+        validateServerUrl(currentURL),
+      );
+      if (result.ok) {
+        state.data.url = formatURL(currentURL);
+        if (result.serverType) {
+          serverType = result.serverType;
+        }
+        return afterServerUrlAccepted(state);
+      }
+      logger.debug(
+        `addCredential-supplied server URL failed validation, falling back to the prompt: ${result.error}`,
+      );
+    }
+
+    const resp = await input.showInputBox({
+      title: state.title,
+      step: 0,
+      totalSteps: 0,
+      value: currentURL,
+      prompt: "Please provide the Posit Connect server's URL",
+      placeholder: "Server URL",
+      validate: (input: string) => {
+        if (input.includes(" ")) {
+          return Promise.resolve({
+            message: "Error: Invalid URL (spaces are not allowed).",
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        return Promise.resolve(undefined);
+      },
+      finalValidation: async (input: string) => {
+        const result = await validateServerUrl(input);
+        if (!result.ok) {
+          return {
+            message: result.error,
+            severity: InputBoxValidationSeverity.Error,
+          };
+        }
+        if (result.serverType) {
+          serverType = result.serverType;
+        }
+        return undefined;
+      },
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
+
+    state.data.url = formatURL(resp.trim());
+
+    return afterServerUrlAccepted(state);
+  }
+
+  // ***************************************************************
+  // Resolve a chosen auth method (from the picker, or a caller-supplied
+  // hint) into the next step. Also clears fields from other methods so
+  // back-navigation can't leave a credential with mixed material.
+  // ***************************************************************
+  function dispatchAuthMethod(
+    choice: "browser" | "apiKey",
+    state: MultiStepState,
+  ): InputStep {
+    const clearOAuth = () => {
+      state.data.oauthClientId = undefined;
+      state.data.accessToken = undefined;
+      state.data.refreshToken = undefined;
+      state.data.tokenExpiresAt = undefined;
+    };
+    const clearToken = () => {
+      state.data.token = undefined;
+      state.data.privateKey = undefined;
+    };
+
+    if (choice === "apiKey") {
+      authMethod = AuthMethod.API_KEY;
+      clearToken();
+      clearOAuth();
+      return {
+        name: step.INPUT_API_KEY,
+        step: (input: MultiStepInput) =>
+          steps[step.INPUT_API_KEY](input, state),
+      };
+    }
+
+    // Browser sign-in: OAuth when supported, else the token flow.
+    state.data.apiKey = undefined;
+    if (oauthMetadata) {
+      authMethod = AuthMethod.OAUTH;
+      clearToken();
+      return {
+        name: step.INPUT_OAUTH,
+        step: (input: MultiStepInput) => steps[step.INPUT_OAUTH](input, state),
+        skipStepHistory: true,
+      };
+    }
+    authMethod = AuthMethod.TOKEN;
+    clearOAuth();
+    return {
+      name: step.INPUT_TOKEN,
+      step: (input: MultiStepInput) => steps[step.INPUT_TOKEN](input, state),
+      skipStepHistory: true,
     };
   }
 
@@ -378,48 +498,10 @@ export async function newConnectCredential(
       ignoreFocusOut: true,
     });
 
-    // Clear auth fields from other methods so back-navigation can't leave a
-    // credential with mixed material.
-    const clearOAuth = () => {
-      state.data.oauthClientId = undefined;
-      state.data.accessToken = undefined;
-      state.data.refreshToken = undefined;
-      state.data.tokenExpiresAt = undefined;
-    };
-    const clearToken = () => {
-      state.data.token = undefined;
-      state.data.privateKey = undefined;
-    };
-
-    if (pick.label === AuthMethodName.API_KEY) {
-      authMethod = AuthMethod.API_KEY;
-      clearToken();
-      clearOAuth();
-      return {
-        name: step.INPUT_API_KEY,
-        step: (input: MultiStepInput) =>
-          steps[step.INPUT_API_KEY](input, state),
-      };
-    }
-
-    // Browser sign-in: OAuth when supported, else the token flow.
-    state.data.apiKey = undefined;
-    if (oauthMetadata) {
-      authMethod = AuthMethod.OAUTH;
-      clearToken();
-      return {
-        name: step.INPUT_OAUTH,
-        step: (input: MultiStepInput) => steps[step.INPUT_OAUTH](input, state),
-        skipStepHistory: true,
-      };
-    }
-    authMethod = AuthMethod.TOKEN;
-    clearOAuth();
-    return {
-      name: step.INPUT_TOKEN,
-      step: (input: MultiStepInput) => steps[step.INPUT_TOKEN](input, state),
-      skipStepHistory: true,
-    };
+    return dispatchAuthMethod(
+      pick.label === AuthMethodName.API_KEY ? "apiKey" : "browser",
+      state,
+    );
   }
 
   // ***************************************************************

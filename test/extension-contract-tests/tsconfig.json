@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "lib": ["ES2023", "DOM"],
+    "types": ["node", "vitest/globals"],
+    "paths": {
+      "src/*": ["../../extensions/vscode/src/*"]
+    }
+  },
+  "include": [
+    "vitest.config.ts",
+    "src/**/*.ts",
+    "../../extensions/vscode/src/@types/positron.d.ts"
+  ],
+  "exclude": ["src/mocks/*.conformance.ts"]
+}
