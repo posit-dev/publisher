@@ -23,7 +23,7 @@ export function resolveWithinWorkspace(
   const absPath = nodePath.resolve(root, relDir);
   const rel = nodePath.relative(root, absPath);
   // We can't just check rel.startsWith("..") because a directory literally
-  // named ".." would be a false positive.
+  // named "..config" would be a false positive.
   if (
     rel === ".." ||
     rel.startsWith(".." + nodePath.sep) ||

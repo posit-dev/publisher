@@ -17,7 +17,7 @@ export function normalizeAgentCommandArgs<T extends object>(
 ): Partial<T> {
   const first = raw[0];
   if (typeof first === "object" && first !== null && !Array.isArray(first)) {
-    return first as Partial<T>;
+    return first;
   }
 
   const input: Record<string, unknown> = {};

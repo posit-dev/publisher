@@ -174,7 +174,7 @@ export function isServerLogStep(step: AnyPublishStep): boolean {
  * Run a deployment inside a VSCode progress notification,
  * feeding events into the Publishing Log tree view via the EventStream.
  */
-export function runDeployWithProgress(
+export async function runDeployWithProgress(
   options: DeployProgressOptions,
 ): Promise<DeployOutcome> {
   const {
@@ -188,13 +188,13 @@ export function runDeployWithProgress(
     title,
   } = options;
 
-  return window.withProgress(
+  return await window.withProgress(
     {
       location: ProgressLocation.Notification,
       title: "Deploying your project",
       cancellable: true,
     },
-    async (progress, token) => {
+    async (progress, token): Promise<DeployOutcome> => {
       const controller = new AbortController();
       let canceled = false;
 
@@ -436,7 +436,7 @@ export function runDeployWithProgress(
         onComplete();
       }
     },
-  ) as Promise<DeployOutcome>;
+  );
 }
 
 /**

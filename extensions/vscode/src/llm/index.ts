@@ -82,7 +82,7 @@ export function registerLLMTooling(
             "contentType",
             "deploymentName",
             "configurationName",
-          ]) as DeployContentInput,
+          ]),
         ),
     ),
     commands.registerCommand(
