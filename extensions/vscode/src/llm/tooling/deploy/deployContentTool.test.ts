@@ -162,7 +162,7 @@ describe("DeployContentTool", () => {
     );
 
     expect(inspectProject).toHaveBeenCalledWith({
-      projectDir: "/root/project",
+      projectDir: expect.stringMatching(/[\\/]project$/),
       entrypoint: "app.py",
       relativeDir: "project",
     });

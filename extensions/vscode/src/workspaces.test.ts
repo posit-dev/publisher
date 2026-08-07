@@ -8,7 +8,7 @@ vi.mock("vscode", () => ({ workspace: { workspaceFolders: undefined } }));
 import { resolveWithinWorkspace } from "./workspaces";
 
 describe("resolveWithinWorkspace", () => {
-  const root = path.join(path.sep, "root");
+  const root = path.resolve(path.sep, "root");
 
   test("resolves a plain relative directory", () => {
     expect(resolveWithinWorkspace(root, "sub/dir")).toEqual({
