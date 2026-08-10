@@ -70,6 +70,7 @@ function makeTool(overrides: {
 }) {
   const state = {
     findCredential: vi.fn(() => overrides.credential),
+    refreshCredentials: vi.fn(),
     credentialsService: {
       list: vi.fn(() =>
         (overrides.credentialNames ?? []).map((name) => ({ name })),
@@ -257,6 +258,48 @@ describe("DeployContentTool", () => {
     expect(parse(res).status).toBe("needs-credential");
   });
 
+  test("reloads credentials before reporting a stored credential missing", async () => {
+    const credential = {
+      name: "prod",
+      url: "https://c",
+      serverType: ServerType.CONNECT,
+      accountName: "",
+    };
+    let cacheLoaded = false;
+    const findCredential = vi.fn(() =>
+      cacheLoaded ? credential : undefined,
+    );
+    const refreshCredentials = vi.fn(async () => {
+      cacheLoaded = true;
+    });
+    const deployProject = vi.fn(() => ({
+      status: "success",
+      result: {
+        contentId: "abc",
+        dashboardUrl: "https://c/dash",
+        directUrl: "https://c/d",
+        logsUrl: "https://c/l",
+      },
+    }));
+    const state = {
+      findCredential,
+      refreshCredentials,
+      credentialsService: { list: vi.fn(() => [{ name: "prod" }]) },
+    };
+    // @ts-expect-error minimal mocks for the unit test
+    const tool = new DeployContentTool(state, { deployProject }, "9.9.9");
+
+    const res = await tool.invoke(
+      opts({ directory: ".", entrypoint: "app.py", credentialName: "prod" }),
+      {} as CancellationToken,
+    );
+
+    expect(refreshCredentials).toHaveBeenCalledOnce();
+    expect(findCredential).toHaveBeenCalledTimes(2);
+    expect(deployProject).toHaveBeenCalled();
+    expect(parse(res).status).toBe("success");
+  });
+
   test("returns needs-content-type when detected type is unknown and none supplied", async () => {
     const { inspectProject } = await import("src/inspect");
     (
@@ -328,6 +371,7 @@ describe("DeployContentTool", () => {
         serverType: ServerType.CONNECT,
         accountName: "",
       })),
+      refreshCredentials: vi.fn(),
       credentialsService: { list: vi.fn(() => []) },
     };
     const deployProject = vi.fn(() => ({
