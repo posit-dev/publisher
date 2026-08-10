@@ -13,10 +13,6 @@
       "src/*": ["../../extensions/vscode/src/*"]
     }
   },
-  "include": [
-    "vitest.config.ts",
-    "src/**/*.ts",
-    "../../extensions/vscode/src/@types/positron.d.ts"
-  ],
+  "include": ["vitest.config.ts", "src/**/*.ts"],
   "exclude": ["src/mocks/*.conformance.ts"]
 }
