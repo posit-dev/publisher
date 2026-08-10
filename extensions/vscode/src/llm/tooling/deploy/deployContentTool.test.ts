@@ -267,8 +267,9 @@ describe("DeployContentTool", () => {
     };
     let cacheLoaded = false;
     const findCredential = vi.fn(() => (cacheLoaded ? credential : undefined));
-    const refreshCredentials = vi.fn(async () => {
+    const refreshCredentials = vi.fn(() => {
       cacheLoaded = true;
+      return Promise.resolve();
     });
     const deployProject = vi.fn(() => ({
       status: "success",
