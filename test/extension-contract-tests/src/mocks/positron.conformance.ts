@@ -29,14 +29,9 @@ type _Metadata = Pick<RealMetadata, keyof MockMetadata>;
 // ---------------------------------------------------------------------------
 // Acquisition helper check
 // ---------------------------------------------------------------------------
-// The mock injects acquirePositronApi as a global, exactly as Positron does at
-// runtime. @posit-dev/positron declares that global and its
-// tryAcquirePositronApi() helper — which the extension calls — reads it. Verify
-// the mock's stand-in is callable the same way: no arguments.
-//
-// The return types are deliberately not compared: the real global resolves to
-// the entire "positron" module namespace, while the mock models only the slice
-// Publisher uses (checked above).
+// Only the call signature is compared. The real global's return type resolves
+// to the entire "positron" module namespace, while the mock models just the
+// slice Publisher uses (checked above), so the two are not interchangeable.
 
 // Fails to compile unless T is exactly `true`.
 type Assert<T extends true> = T;
