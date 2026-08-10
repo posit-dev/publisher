@@ -266,7 +266,7 @@ describe("DeployContentTool", () => {
       accountName: "",
     };
     let cacheLoaded = false;
-    const findCredential = vi.fn(() => cacheLoaded ? credential : undefined);
+    const findCredential = vi.fn(() => (cacheLoaded ? credential : undefined));
     const refreshCredentials = vi.fn(async () => {
       cacheLoaded = true;
     });
