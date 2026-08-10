@@ -12,8 +12,5 @@
       "src/*": ["../../extensions/vscode/src/*"]
     }
   },
-  "include": [
-    "src/mocks/*.conformance.ts",
-    "../../extensions/vscode/src/@types/positron.d.ts"
-  ]
+  "include": ["src/mocks/*.conformance.ts"]
 }

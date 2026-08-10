@@ -14,7 +14,10 @@
 import * as assert from "assert";
 import os from "node:os";
 import path from "node:path";
-import { LanguageRuntimeMetadata } from "positron";
+import {
+  tryAcquirePositronApi,
+  type LanguageRuntimeMetadata,
+} from "@posit-dev/positron";
 import {
   getPythonInterpreterPath,
   getRInterpreterPath,
@@ -29,7 +32,8 @@ import {
 async function waitForPreferredRuntime(
   languageId: string,
 ): Promise<LanguageRuntimeMetadata> {
-  const api = acquirePositronApi();
+  const api = tryAcquirePositronApi();
+  assert.ok(api, "these tests must run inside Positron");
   const deadline = Date.now() + 120000;
   let lastFailure = "getPreferredRuntime was never attempted";
 
