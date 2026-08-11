@@ -157,7 +157,15 @@ export class DeployContentTool implements LanguageModelTool<DeployContentInput> 
       const absDir = resolvedDir.absPath;
       const relDir = relativeProjectDir(absDir, root);
 
-      const credential = this.state.findCredential(credentialName);
+      let credential = this.state.findCredential(credentialName);
+      if (!credential) {
+        // planDeployment reads SecretStorage directly, while PublisherState
+        // may still be loading its in-memory cache during extension startup.
+        // Refresh before reporting that a credential is missing so the two
+        // agent tools cannot disagree about an existing stored credential.
+        await this.state.refreshCredentials();
+        credential = this.state.findCredential(credentialName);
+      }
       if (!credential) {
         const all = await this.state.credentialsService.list();
         return {
