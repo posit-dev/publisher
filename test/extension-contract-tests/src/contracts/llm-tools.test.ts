@@ -70,6 +70,7 @@ const state: LLMToolingState = {
   credentialsService: {
     list: async () => [],
   },
+  refreshCredentials: async () => {},
   findCredential: () => undefined,
   getSelectedConfiguration: async () => undefined,
 };

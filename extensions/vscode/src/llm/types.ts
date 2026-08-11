@@ -16,6 +16,7 @@ export interface LLMToolingContext {
 
 export interface LLMToolingState {
   readonly credentialsService: Pick<CredentialsService, "list">;
+  refreshCredentials(): Promise<void>;
   findCredential(name: string): Credential | undefined;
   getSelectedConfiguration(): Promise<
     Configuration | ConfigurationError | undefined

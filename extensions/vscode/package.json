@@ -4,7 +4,7 @@
   "author": "Posit, PBC",
   "displayName": "Posit Publisher",
   "description": "Publish and share your Python and R content on Posit Connect",
-  "version": "2.9.16",
+  "version": "2.9.17",
   "license": "MIT",
   "icon": "assets/img/posit-publisher.png",
   "repository": {
@@ -940,10 +940,10 @@
     "eslint-config-prettier": "^10.0.1",
     "fantasticon": "^4.1.0",
     "fishery": "^2.4.0",
-    "globals": "^17.8.0",
-    "mocha": "^11.7.6",
+    "globals": "^17.9.0",
+    "mocha": "^11.8.0",
     "typescript": "^7.0.2",
-    "typescript-eslint": "^8.65.0",
+    "typescript-eslint": "^8.66.0",
     "vitest": "^4.1.10"
   },
   "dependencies": {
