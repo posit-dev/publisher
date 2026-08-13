@@ -14,7 +14,10 @@ export class PublishFailureTroubleshootTool implements LanguageModelTool<never> 
     _options: LanguageModelToolInvocationOptions<never>,
     _token: CancellationToken,
   ): LanguageModelToolResult {
-    const logsData = LogsViewProvider.getLogsText();
-    return new LanguageModelToolResult([new LanguageModelTextPart(logsData)]);
+    return new LanguageModelToolResult([new LanguageModelTextPart(this.run())]);
+  }
+
+  run(): string {
+    return LogsViewProvider.getLogsText();
   }
 }

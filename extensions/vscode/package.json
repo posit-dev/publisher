@@ -80,6 +80,26 @@
     ],
     "commands": [
       {
+        "command": "posit.publisher.agent.troubleshootDeploymentFailure",
+        "title": "Troubleshoot Deployment Failure",
+        "category": "Posit Publisher",
+        "agent": {
+          "description": "When the user asks about a deployment failure to Connect or Connect Cloud (e.g., \"why did my deployment fail?\", \"troubleshoot deployment error\", or similar), use this command proactively to retrieve and analyze the latest deployment logs, even if the user does not tell you to use it explicitly. Use the log data to provide a targeted diagnosis and troubleshooting steps.",
+          "args": [],
+          "returns": "The latest Publisher deployment logs as text."
+        }
+      },
+      {
+        "command": "posit.publisher.agent.troubleshootConfigurationError",
+        "title": "Troubleshoot Deployment Configuration Error",
+        "category": "Posit Publisher",
+        "agent": {
+          "description": "When the user asks about deployment configuration errors (e.g., \"can you help to fix my deployment configuration?\", \"what is wrong with my configuration?\", \"what is a proper content type for my deployment configuration?\", or similar), use this command proactively to gather information in order to provide a solution, even if the user does not explicitly mention the command.",
+          "args": [],
+          "returns": "Diagnostic guidance for the selected deployment configuration as an array of text instructions."
+        }
+      },
+      {
         "command": "posit.publisher.agent.planDeployment",
         "title": "Plan a Deployment",
         "category": "Posit Publisher",
@@ -451,6 +471,14 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "posit.publisher.agent.troubleshootDeploymentFailure",
+          "when": "false"
+        },
+        {
+          "command": "posit.publisher.agent.troubleshootConfigurationError",
+          "when": "false"
+        },
         {
           "command": "posit.publisher.agent.planDeployment",
           "when": "false"
