@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Browser sign-in now works in VS Code and Positron served through Posit Workbench, completing the sign-in through Workbench's OAuth redirect instead of falling back to a code you confirm by hand. This requires a Connect administrator to allow your Workbench server's `/oauth_redirect_callback` URL as a redirect URI; when it isn't allowed, Publisher falls back to the device-code flow automatically. (#3878)
 - Added a `positPublisher.useDeviceCodeAuth` setting as a backup for environments where browser sign-in can't finish redirecting back to the editor. Publisher normally chooses a working redirect on its own, so enable this only if sign-in is having trouble. The device-code flow requires Posit Connect 2026.06.0 or later. (#3878)
 - AI assistants (Positron Assistant, GitHub Copilot, and other tool-capable chat clients) can now deploy your project to Posit Connect or Connect Cloud: they can inspect the project, confirm a deployment plan with you, and publish it end-to-end, then open the credential-creation UI when a credential is missing. When your intent is clear from context, the assistant can pre-fill the server URL and start browser sign-in for you automatically, then continue the deployment once you finish. Secrets are never passed through the assistant. (#4305)
+- Positron Assistant can now access Publisher's deployment-failure logs and configuration diagnostics when troubleshooting deployment problems. (#4336)
 
 ### Changed
 

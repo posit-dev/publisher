@@ -19,24 +19,32 @@ import type {
 // Mock internal dependencies. The tool modules transitively pull in the heavy
 // src/toml + src/api + src/state graph, so we stub them to keep this contract
 // focused on the registration wiring (and to avoid loading that graph).
+// Shared run() spies so we can assert the path-2 command handlers dispatch to
+// the same tool instances used by the vscode.lm registrations.
+const {
+  publishFailureRun,
+  configurationRun,
+  planRun,
+  deployRun,
+  addCredentialRun,
+} = vi.hoisted(() => ({
+  publishFailureRun: vi.fn(() => "deployment logs"),
+  configurationRun: vi.fn(async () => ["configuration guidance"]),
+  planRun: vi.fn(),
+  deployRun: vi.fn(),
+  addCredentialRun: vi.fn(),
+}));
+
 vi.mock("src/llm/tooling/troubleshoot/publishFailureTroubleshootTool", () => ({
   PublishFailureTroubleshootTool: vi.fn(function () {
-    return { name: "publish-failure" };
+    return { run: publishFailureRun };
   }),
 }));
 
 vi.mock("src/llm/tooling/troubleshoot/configurationTroubleshootTool", () => ({
   ConfigurationTroubleshootTool: vi.fn(function () {
-    return { name: "config-error" };
+    return { run: configurationRun };
   }),
-}));
-
-// Shared run() spies for the three deploy tools so we can assert the path-2
-// command handlers forward their single object argument into run().
-const { planRun, deployRun, addCredentialRun } = vi.hoisted(() => ({
-  planRun: vi.fn(),
-  deployRun: vi.fn(),
-  addCredentialRun: vi.fn(),
 }));
 
 vi.mock("src/llm/tooling/deploy/planDeploymentTool", () => ({
@@ -114,6 +122,8 @@ describe("llm-tools contract", () => {
 
   // Path 2 — agent-compatible commands for Positron's positron.ai allow-list.
   it.each([
+    "posit.publisher.agent.troubleshootDeploymentFailure",
+    "posit.publisher.agent.troubleshootConfigurationError",
     "posit.publisher.agent.planDeployment",
     "posit.publisher.agent.deployContent",
     "posit.publisher.agent.addCredential",
@@ -124,6 +134,28 @@ describe("llm-tools contract", () => {
       commandId,
       expect.any(Function),
     );
+  });
+
+  it("troubleshootDeploymentFailure command dispatches to the tool", () => {
+    register();
+
+    const result = handlerFor(
+      "posit.publisher.agent.troubleshootDeploymentFailure",
+    )();
+
+    expect(publishFailureRun).toHaveBeenCalledOnce();
+    expect(result).toBe("deployment logs");
+  });
+
+  it("troubleshootConfigurationError command dispatches to the tool", async () => {
+    register();
+
+    const result = await handlerFor(
+      "posit.publisher.agent.troubleshootConfigurationError",
+    )();
+
+    expect(configurationRun).toHaveBeenCalledOnce();
+    expect(result).toEqual(["configuration guidance"]);
   });
 
   it("planDeployment command forwards its input object into run()", () => {
