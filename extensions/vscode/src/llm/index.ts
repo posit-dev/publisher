@@ -30,11 +30,13 @@ export function registerLLMTooling(
 ) {
   const clientVersion = context.extension.packageJSON.version || "unknown";
 
-  // The three deploy tools are constructed once and exposed two ways so they
+  // The tools are constructed once and exposed two ways so they
   // work in every host: as `vscode.lm` tools (path 1, tagged `positron-assistant`)
   // and as agent-compatible VSCode commands driven by Positron's `positron.ai`
   // allow-list (path 2, see posit-dev/positron#15077). Both paths call the same
   // tool `run()` method.
+  const publishFailureTool = new PublishFailureTroubleshootTool();
+  const configurationTool = new ConfigurationTroubleshootTool(state);
   const planTool = new PlanDeploymentTool(state);
   const deployTool = new DeployContentTool(
     state,
@@ -47,11 +49,11 @@ export function registerLLMTooling(
     // Path 1 — vscode.lm Language Model Tools.
     lm.registerTool(
       "publish-content_troubleshootDeploymentFailure",
-      new PublishFailureTroubleshootTool(),
+      publishFailureTool,
     ),
     lm.registerTool(
       "publish-content_troubleshootConfigurationError",
-      new ConfigurationTroubleshootTool(state),
+      configurationTool,
     ),
     lm.registerTool("publish-content_planDeployment", planTool),
     lm.registerTool("publish-content_deployContent", deployTool),
@@ -63,6 +65,13 @@ export function registerLLMTooling(
     // declared in package.json's contributes.commands entries, sometimes the
     // same values spread positionally in that order. normalizeAgentCommandArgs
     // detects which shape arrived and produces the object `run()` expects.
+    commands.registerCommand(Commands.Agent.TroubleshootDeploymentFailure, () =>
+      publishFailureTool.run(),
+    ),
+    commands.registerCommand(
+      Commands.Agent.TroubleshootConfigurationError,
+      () => configurationTool.run(),
+    ),
     commands.registerCommand(
       Commands.Agent.PlanDeployment,
       (...raw: unknown[]) =>

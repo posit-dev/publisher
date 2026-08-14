@@ -106,8 +106,12 @@ const homeViewCommands = {
 
 // Agent-compatible commands surfaced to Positron's `positron.ai` allow-list
 // (see posit-dev/positron#15077). These wrap the same logic as the `vscode.lm`
-// deploy tools so the operations are reachable via both host mechanisms.
+// tools so the operations are reachable via both host mechanisms.
 const agentCommands = {
+  TroubleshootDeploymentFailure:
+    "posit.publisher.agent.troubleshootDeploymentFailure",
+  TroubleshootConfigurationError:
+    "posit.publisher.agent.troubleshootConfigurationError",
   PlanDeployment: "posit.publisher.agent.planDeployment",
   DeployContent: "posit.publisher.agent.deployContent",
   AddCredential: "posit.publisher.agent.addCredential",

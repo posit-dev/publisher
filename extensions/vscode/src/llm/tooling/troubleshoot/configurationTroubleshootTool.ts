@@ -30,53 +30,53 @@ export class ConfigurationTroubleshootTool implements LanguageModelTool<never> {
     _options: LanguageModelToolInvocationOptions<never>,
     _token: CancellationToken,
   ): Promise<LanguageModelToolResult> {
+    const diagnosticParts = await this.run();
+    return new LanguageModelToolResult(
+      diagnosticParts.map((part) => new LanguageModelTextPart(part)),
+    );
+  }
+
+  async run(): Promise<string[]> {
     const config = await this.state.getSelectedConfiguration();
     if (!config) {
       // There is no existing selected configuration.
-      return this.noopToolResult();
+      return [this.noopMessage()];
     }
 
     if (isConfigurationError(config)) {
       // Help with current configuration error
-      return this.helpWithConfigErrorToolResult(config);
+      return [this.helpWithConfigErrorMessage(config)];
     }
 
     if (this.isUnknownSet(config)) {
       // Help with content type "unknown"
-      return this.helpWithUnknownToolResult(config);
+      return this.helpWithUnknownMessages(config);
     }
 
-    return new LanguageModelToolResult([
-      new LanguageModelTextPart(
-        "Nothing seems to be wrong with the current deployment configuration.",
-      ),
-    ]);
+    return [
+      "Nothing seems to be wrong with the current deployment configuration.",
+    ];
   }
 
   private isUnknownSet(config: Configuration) {
     return config.configuration.type === ContentType.UNKNOWN;
   }
 
-  private noopToolResult() {
-    const noopMsg = `The user does not have a selected deployment configuration,
+  private noopMessage() {
+    return `The user does not have a selected deployment configuration,
 so there is nothing to help with at the moment. A deployment configuration needs to be selected
 or the user should start a new deployment first, and in case of configuration errors, then this tool can be used to help the user.`;
-
-    return new LanguageModelToolResult([new LanguageModelTextPart(noopMsg)]);
   }
 
-  private helpWithConfigErrorToolResult(config: ConfigurationError) {
+  private helpWithConfigErrorMessage(config: ConfigurationError) {
     const { error, configurationPath } = config;
-    const toolInstruction = `The current deployment configuration file has the following error
+    return `The current deployment configuration file has the following error
 "${error.msg}", read the deployment configuration file at ${configurationPath} to find possible solutions
 that help the user get past this error. Offer the user help to edit the deployment configuration file,
 present the possible changes and ask for permission to do it.`;
-    return new LanguageModelToolResult([
-      new LanguageModelTextPart(toolInstruction),
-    ]);
   }
 
-  private helpWithUnknownToolResult(config: Configuration) {
+  private helpWithUnknownMessages(config: Configuration) {
     const { projectDir, configurationPath } = config;
     const readProjectDirInstruction = `Take a look to the files under ${projectDir} to see 
 if you can help the user find a proper content type to be used that is not "unknown".
@@ -96,12 +96,10 @@ If the "[quarto]" section is added:
 - Include "markdown" within the "engines" field only if the project does not require R nor Python.
 `;
 
-    return new LanguageModelToolResult([
-      new LanguageModelTextPart(
-        this.contentTypesInstructions(configurationPath),
-      ),
-      new LanguageModelTextPart(readProjectDirInstruction),
-    ]);
+    return [
+      this.contentTypesInstructions(configurationPath),
+      readProjectDirInstruction,
+    ];
   }
 
   private contentTypesInstructions(configPath: string): string {
