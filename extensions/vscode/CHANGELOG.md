@@ -6,6 +6,25 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.0]
+
+### Added
+
+- Support for signing in to Posit Connect with OAuth when creating a credential. When the server supports it, Publisher signs you in through your browser (no API key or token to copy) and keeps the session fresh automatically, prompting you to sign in again only if it can't. You can still choose to enter an API key instead, and existing API key and token credentials keep working unchanged. OAuth requires Posit Connect 2026.02.0 or later; against older servers the browser sign-in uses the existing token flow. (#3878)
+- Browser sign-in now works in VS Code and Positron served through Posit Workbench, completing the sign-in through Workbench's OAuth redirect instead of falling back to a code you confirm by hand. This requires a Connect administrator to allow your Workbench server's `/oauth_redirect_callback` URL as a redirect URI; when it isn't allowed, Publisher falls back to the device-code flow automatically. (#3878)
+- Added a `positPublisher.useDeviceCodeAuth` setting as a backup for environments where browser sign-in can't finish redirecting back to the editor. Publisher normally chooses a working redirect on its own, so enable this only if sign-in is having trouble. The device-code flow requires Posit Connect 2026.06.0 or later. (#3878)
+- AI assistants (Positron Assistant, GitHub Copilot, and other tool-capable chat clients) can now deploy your project to Posit Connect or Connect Cloud: they can inspect the project, confirm a deployment plan with you, and publish it end-to-end, then open the credential-creation UI when a credential is missing. When your intent is clear from context, the assistant can pre-fill the server URL and start browser sign-in for you automatically, then continue the deployment once you finish. Secrets are never passed through the assistant. (#4305)
+- Positron Assistant can now access Publisher's deployment-failure logs and configuration diagnostics when troubleshooting deployment problems. (#4336)
+
+### Changed
+
+- The "missing package-lock.json" error when publishing Node.js content now states that Connect installs Node.js dependencies with npm, helping publishers who build with yarn or pnpm understand why a `package-lock.json` is required. (#4260)
+
+### Fixed
+
+- Fixed deploying large projects (multiple GiB) failing at the "Create Bundle" step. The bundle is now streamed to disk and uploaded as a stream instead of being held in memory, so bundles are no longer limited by available memory. (#4249)
+- Turning off `positPublisher.verifyCertificates` now skips certificate checks as expected, so you can deploy to Connect servers with self-signed or otherwise untrusted certificates. (#4265)
+
 ## [2.8.0]
 
 ### Added

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.10.0]
+
 ### Added
 
 - Support for signing in to Posit Connect with OAuth when creating a credential. When the server supports it, Publisher signs you in through your browser (no API key or token to copy) and keeps the session fresh automatically, prompting you to sign in again only if it can't. You can still choose to enter an API key instead, and existing API key and token credentials keep working unchanged. OAuth requires Posit Connect 2026.02.0 or later; against older servers the browser sign-in uses the existing token flow. (#3878)
