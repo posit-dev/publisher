@@ -4,7 +4,7 @@
   "author": "Posit, PBC",
   "displayName": "Posit Publisher",
   "description": "Publish and share your Python and R content on Posit Connect",
-  "version": "2.10.0",
+  "version": "2.11.0",
   "license": "MIT",
   "icon": "assets/img/posit-publisher.png",
   "repository": {
@@ -70,7 +70,7 @@
             "default": true
           },
           "positPublisher.useDeviceCodeAuth": {
-            "markdownDescription": "Use the OAuth **device-code** flow for Posit Connect browser sign-in instead of redirecting back to the editor automatically. Publisher normally picks a redirect that works in your environment, and falls back to the device-code flow on its own when none does. Enable this as a backup if browser sign-in is having trouble completing \u2014 you'll confirm a short code in the browser instead. Requires Posit Connect 2026.06.0 or later.",
+            "markdownDescription": "Use the OAuth **device-code** flow for Posit Connect browser sign-in instead of redirecting back to the editor automatically. Publisher normally picks a redirect that works in your environment, and falls back to the device-code flow on its own when none does. Enable this as a backup if browser sign-in is having trouble completing — you'll confirm a short code in the browser instead. Requires Posit Connect 2026.06.0 or later.",
             "type": "boolean",
             "default": false,
             "scope": "machine-overridable"
@@ -123,7 +123,7 @@
         "title": "Deploy Content to Connect",
         "category": "Posit Publisher",
         "agent": {
-          "description": "Deploy a project directory to Posit Connect or Connect Cloud. Creates a deployment configuration and record if they do not exist, then publishes and returns the deployed content URLs. Requires the name of an existing stored credential, never a secret directly. If no suitable credential exists it returns status 'needs-credential' \u2014 call the addCredential command (passing target/serverUrl if known) and wait for its result, then call this command again if a credential was added. Always confirm the deployment plan (from planDeployment) with the user before calling this command.",
+          "description": "Deploy a project directory to Posit Connect or Connect Cloud. Creates a deployment configuration and record if they do not exist, then publishes and returns the deployed content URLs. Requires the name of an existing stored credential, never a secret directly. If no suitable credential exists it returns status 'needs-credential' — call the addCredential command (passing target/serverUrl if known) and wait for its result, then call this command again if a credential was added. Always confirm the deployment plan (from planDeployment) with the user before calling this command.",
           "args": [
             {
               "name": "directory",
@@ -190,7 +190,7 @@
         "title": "Add a Connect Credential",
         "category": "Posit Publisher",
         "agent": {
-          "description": "Open the Publisher UI for creating a new Posit Connect or Connect Cloud credential, and wait for the user to finish or cancel. Use this when a deployment needs a credential that does not yet exist. The user completes authentication in the UI \u2014 never ask the user for a secret directly, and never pass one to any tool or command.",
+          "description": "Open the Publisher UI for creating a new Posit Connect or Connect Cloud credential, and wait for the user to finish or cancel. Use this when a deployment needs a credential that does not yet exist. The user completes authentication in the UI — never ask the user for a secret directly, and never pass one to any tool or command.",
           "args": [
             {
               "name": "serverUrl",
@@ -225,7 +225,7 @@
               }
             }
           ],
-          "returns": "A JSON object with status 'added' (with credentialName) once the user finishes, 'canceled' if they dismiss the UI, or 'unavailable' (with a reason) if the requested target is disabled, e.g. Connect Cloud when positPublisher.enableConnectCloud is off \u2014 ask the user how they'd like to proceed instead of retrying. If 'added', continue any pending deployment automatically."
+          "returns": "A JSON object with status 'added' (with credentialName) once the user finishes, 'canceled' if they dismiss the UI, or 'unavailable' (with a reason) if the requested target is disabled, e.g. Connect Cloud when positPublisher.enableConnectCloud is off — ask the user how they'd like to proceed instead of retrying. If 'added', continue any pending deployment automatically."
         }
       },
       {
@@ -847,7 +847,7 @@
         ],
         "toolReferenceName": "deployContent",
         "displayName": "Deploy Content to Connect",
-        "modelDescription": "Deploy a project directory to Posit Connect or Connect Cloud. Creates a deployment configuration and record if they do not exist, then publishes. Requires the name of an existing stored credential, never a secret directly. Always confirm the deployment plan (from planDeployment) with the user before calling this tool. Returns a JSON object with a status field: 'success' (with deployment/configuration names and content URLs), 'needs-credential' (call addCredential, passing target/serverUrl if known, wait for its result, then call this tool again if it returns 'added'), 'needs-content-type' (the content type could not be detected \u2014 ask the user or pass contentType explicitly, then retry), or 'failed' (with an error message).",
+        "modelDescription": "Deploy a project directory to Posit Connect or Connect Cloud. Creates a deployment configuration and record if they do not exist, then publishes. Requires the name of an existing stored credential, never a secret directly. Always confirm the deployment plan (from planDeployment) with the user before calling this tool. Returns a JSON object with a status field: 'success' (with deployment/configuration names and content URLs), 'needs-credential' (call addCredential, passing target/serverUrl if known, wait for its result, then call this tool again if it returns 'added'), 'needs-content-type' (the content type could not be detected — ask the user or pass contentType explicitly, then retry), or 'failed' (with an error message).",
         "canBeReferencedInPrompt": true,
         "icon": "$(cloud-upload)",
         "inputSchema": {
@@ -898,7 +898,7 @@
         ],
         "toolReferenceName": "addCredential",
         "displayName": "Add a Connect Credential",
-        "modelDescription": "Open the Publisher UI for creating a new Posit Connect or Connect Cloud credential, and wait for the user to finish or cancel. Use this when a deployment needs a credential that does not yet exist. The user completes authentication in the UI \u2014 never ask the user for a secret directly, and never pass one to any tool. Returns a JSON object with status 'added' (with credentialName \u2014 if this was requested to unblock a deployment, continue that deployment automatically without asking the user again), 'canceled' if the user dismisses the UI, or 'unavailable' (with a reason) if the requested target is disabled, e.g. Connect Cloud when positPublisher.enableConnectCloud is off \u2014 ask the user how they'd like to proceed instead of retrying.",
+        "modelDescription": "Open the Publisher UI for creating a new Posit Connect or Connect Cloud credential, and wait for the user to finish or cancel. Use this when a deployment needs a credential that does not yet exist. The user completes authentication in the UI — never ask the user for a secret directly, and never pass one to any tool. Returns a JSON object with status 'added' (with credentialName — if this was requested to unblock a deployment, continue that deployment automatically without asking the user again), 'canceled' if the user dismisses the UI, or 'unavailable' (with a reason) if the requested target is disabled, e.g. Connect Cloud when positPublisher.enableConnectCloud is off — ask the user how they'd like to proceed instead of retrying.",
         "canBeReferencedInPrompt": true,
         "icon": "$(key)",
         "inputSchema": {
