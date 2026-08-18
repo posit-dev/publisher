@@ -952,7 +952,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@posit-dev/mock-connect": "*",
-    "@posit-dev/positron-test-electron": "^0.0.2",
+    "@posit-dev/positron-test-electron": "^0.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mocha": "^10.0.2",
     "@types/node": "^22.0.0",
