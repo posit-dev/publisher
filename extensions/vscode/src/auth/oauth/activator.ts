@@ -38,6 +38,29 @@ interface AuthorizeResult {
   tokenResponse: OAuthTokenResponse;
 }
 
+export type OAuthTransportUnavailableReason =
+  "missingDeviceAuthorizationEndpoint" | "missingRegistrationEndpoint";
+
+/**
+ * Raised when Connect metadata deterministically lacks a capability required by
+ * the selected OAuth flow.
+ *
+ * Operational registration, network, authorization, and polling failures retain
+ * their original error so callers do not mistake them for compatibility cases.
+ */
+export class OAuthTransportUnavailableError extends Error {
+  constructor(
+    public readonly reason: OAuthTransportUnavailableReason = "missingDeviceAuthorizationEndpoint",
+  ) {
+    super(
+      reason === "missingRegistrationEndpoint"
+        ? "Posit Connect does not advertise a dynamic client registration endpoint required for OAuth sign-in."
+        : "Posit Connect does not advertise an OAuth device authorization endpoint.",
+    );
+    this.name = "OAuthTransportUnavailableError";
+  }
+}
+
 // Fallback device poll interval when the server omits `interval` (RFC 8628).
 const DEFAULT_DEVICE_POLL_MS = 5_000;
 const SLOW_DOWN_INCREMENT_MS = 5_000;
@@ -56,6 +79,22 @@ async function openExternalUrl(url: string): Promise<void> {
   // @ts-expect-error env.openExternal is typed for Uri, but the string overload
   // is what preserves nested-redirect encoding (see comment above).
   await env.openExternal(url);
+}
+
+function isInvalidRedirectUriError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  if (
+    "code" in error &&
+    (error as { code?: unknown }).code === "invalid_redirect_uri"
+  ) {
+    return true;
+  }
+  const message = error.message.trim().toLowerCase();
+  return (
+    message === "invalid redirect_uri" || message === "invalid redirect uri"
+  );
 }
 
 /**
@@ -125,9 +164,22 @@ export class ConnectOAuthActivator {
    *    `remoteName`. In any web UI or remote setup (Remote-SSH, Codespaces, WSL)
    *    the socket binds fine on the host but the redirect never arrives, so it
    *    would hang until timeout.
-   * 4. **Device flow** — the universal fallback.
+   * 4. **Device flow** — the fallback when advertised by Connect.
+   *
+   * Dynamic client registration is required by every flow. When it is absent,
+   * or when the selected flow reaches unadvertised device authorization, throws
+   * {@link OAuthTransportUnavailableError}. Other OAuth failures are propagated
+   * unchanged.
    */
   private async authorize(): Promise<AuthorizeResult> {
+    if (!this.metadata.registration_endpoint) {
+      logger.debug(
+        "OAuth sign-in is unavailable because Posit Connect did not advertise " +
+          "a dynamic client registration endpoint.",
+      );
+      throw new OAuthTransportUnavailableError("missingRegistrationEndpoint");
+    }
+
     const workbench = detectWorkbench();
 
     if (this.deviceCodeForced()) {
@@ -199,9 +251,9 @@ export class ConnectOAuthActivator {
   /**
    * Authorization Code + PKCE through Posit Workbench's OAuth redirect relay,
    * the mechanism Workbench's own VS Code extension uses. Returns `undefined`
-   * when the relay can't be used in this deployment (unreachable, or Connect
-   * hasn't allowlisted the Workbench redirect URI) so the caller can fall back;
-   * rethrows when the user's authorization attempt itself failed.
+   * when the relay is unavailable or Connect rejects the Workbench redirect
+   * URI, allowing the caller to apply the device-or-legacy fallback cascade.
+   * Terminal failures and unrelated errors are rethrown.
    */
   private async tryWorkbenchFlow(
     workbench: WorkbenchEnvironment,
@@ -221,9 +273,17 @@ export class ConnectOAuthActivator {
     try {
       clientId = await this.register(redirectUri);
     } catch (err) {
-      // Connect rejects a non-loopback redirect URI unless an administrator has
-      // added it to the allowed redirect URIs, so this is the expected outcome
-      // on a Workbench deployment Connect doesn't know about.
+      // A rejected Workbench redirect URI means this authorization-code
+      // transport is unavailable. Preserve all other registration failures so
+      // network, server, and unrelated OAuth errors are not treated as a
+      // transport compatibility case.
+      if (!isInvalidRedirectUriError(err)) {
+        logger.debug(
+          `OAuth client registration for the Posit Workbench redirect failed ` +
+            `and cannot fall back: ${describeError(err)}`,
+        );
+        throw err;
+      }
       this.logFallback(
         "Posit Workbench redirect relay",
         `Posit Connect did not accept the redirect URI ${redirectUri} ` +
@@ -334,6 +394,16 @@ export class ConnectOAuthActivator {
 
   /** RFC 8628 device flow: show the user code, then poll until authorized. */
   private async deviceCodeFlow(): Promise<AuthorizeResult> {
+    if (!this.metadata.device_authorization_endpoint) {
+      logger.debug(
+        "OAuth device-code sign-in is unavailable because Posit Connect did " +
+          "not advertise a device authorization endpoint.",
+      );
+      throw new OAuthTransportUnavailableError(
+        "missingDeviceAuthorizationEndpoint",
+      );
+    }
+
     // The device flow has no redirect, but Connect's dynamic client registration
     // still requires at least one redirect URI. Register the loopback URI, which
     // Connect always accepts.

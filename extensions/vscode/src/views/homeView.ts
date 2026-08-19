@@ -45,7 +45,10 @@ import {
 } from "src/api";
 import { ConnectAPI, GUID, SessionExpiredError } from "@posit-dev/connect-api";
 import type { Integration } from "@posit-dev/connect-api";
-import { ConnectOAuthActivator } from "src/auth/oauth";
+import {
+  ConnectOAuthActivator,
+  OAuthTransportUnavailableError,
+} from "src/auth/oauth";
 import {
   ConnectCloudAPI,
   ContentID,
@@ -716,6 +719,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       });
       await this.refreshCredentials();
     } catch (reauthErr) {
+      if (reauthErr instanceof OAuthTransportUnavailableError) {
+        const missingCapability =
+          reauthErr.reason === "missingRegistrationEndpoint"
+            ? "dynamic client registration"
+            : "device authorization";
+        window.showErrorMessage(
+          `OAuth reauthentication is unavailable for ${credential.url} because the server does not advertise ${missingCapability}. The existing credential was not changed; create a new credential to use legacy browser sign-in or an API key.`,
+        );
+        return;
+      }
       window.showErrorMessage(
         `Sign-in failed: ${getMessageFromError(reauthErr)}`,
       );
