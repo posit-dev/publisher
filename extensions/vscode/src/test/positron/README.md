@@ -46,10 +46,10 @@ Positron can discover on the machine.
 Add a `<name>.test.ts` file in this directory using Mocha's tdd UI
 (`suite`/`test`). Things to know:
 
-- The Positron API is reached through the `acquirePositronApi()` global that
-  Positron injects into the extension host (typed by
-  `src/@types/positron.d.ts`). Publisher's own code feature-detects Positron
-  the same way (`src/utils/vscode.ts`).
+- The Positron API is reached through `tryAcquirePositronApi()` from
+  `@posit-dev/positron`, which reads the `acquirePositronApi()` global that
+  Positron injects into the extension host. Publisher's own code acquires the
+  API the same way (`src/utils/vscode.ts`).
 - Prefer testing Publisher's real behavior at the API boundary: import the
   extension source (e.g. `import { ... } from "src/utils/vscode"`) and assert
   on what it sends to / receives from the live API.

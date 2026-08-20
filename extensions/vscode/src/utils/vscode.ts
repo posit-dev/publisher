@@ -6,22 +6,20 @@ import { Uri, commands, workspace } from "vscode";
 import { fileExists, isDir } from "./files";
 import { delay } from "./throttle";
 import { substituteVariables } from "./variables";
-import { LanguageRuntimeMetadata, PositronApi } from "positron";
+import {
+  tryAcquirePositronApi,
+  type LanguageRuntimeMetadata,
+  type PositronApi,
+} from "@posit-dev/positron";
 import { PythonExecutable, RExecutable } from "src/types/shared";
-
-declare global {
-  function acquirePositronApi(): PositronApi;
-}
 
 let positronApi: PositronApi | null | undefined;
 
 function getPositronApi(): PositronApi | null {
   if (positronApi === undefined) {
-    try {
-      positronApi = acquirePositronApi();
-    } catch {
-      positronApi = null;
-    }
+    // Returns undefined outside Positron; null is our "already checked" cache
+    // sentinel so we only probe the global once.
+    positronApi = tryAcquirePositronApi() ?? null;
   }
   return positronApi;
 }

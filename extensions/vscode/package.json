@@ -977,6 +977,7 @@
   "dependencies": {
     "@posit-dev/connect-api": "*",
     "@posit-dev/connect-cloud-api": "*",
+    "@posit-dev/positron": "^0.2.7",
     "@vscode/codicons": "^0.0.45",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
