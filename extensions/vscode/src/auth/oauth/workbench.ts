@@ -171,7 +171,15 @@ export async function pollWorkbenchAuthCode(
   while (Date.now() < deadline) {
     await new Promise((resolve) => setTimeout(resolve, WORKBENCH_POLL_MS));
 
-    const resp = await http.get(url);
+    let resp;
+    try {
+      resp = await http.get(url);
+    } catch (err) {
+      throw new WorkbenchRelayError(
+        `Posit Workbench became unreachable while waiting for authorization: ${getMessageFromError(err)}`,
+        false,
+      );
+    }
     if (resp.status === 200 && isCodeResponse(resp.data)) {
       return resp.data.code;
     }

@@ -104,7 +104,10 @@ vi.mock("./workbench", async () => {
   };
 });
 
-import { ConnectOAuthActivator } from "./activator";
+import {
+  ConnectOAuthActivator,
+  OAuthTransportUnavailableError,
+} from "./activator";
 import { OAuthMetadata } from "./types";
 import { WorkbenchRelayError } from "./workbench";
 
@@ -116,6 +119,27 @@ const METADATA: OAuthMetadata = {
   device_authorization_endpoint:
     "https://connect.example.com/oauth/v1/device/authorize",
 };
+
+const NO_DEVICE_METADATA: OAuthMetadata = {
+  issuer: METADATA.issuer,
+  authorization_endpoint: METADATA.authorization_endpoint,
+  token_endpoint: METADATA.token_endpoint,
+  registration_endpoint: METADATA.registration_endpoint,
+};
+
+const NO_REGISTRATION_METADATA: OAuthMetadata = {
+  issuer: METADATA.issuer,
+  authorization_endpoint: METADATA.authorization_endpoint,
+  token_endpoint: METADATA.token_endpoint,
+  device_authorization_endpoint: METADATA.device_authorization_endpoint,
+};
+
+function makeOAuthError(
+  message: string,
+  code: string,
+): Error & { code: string } {
+  return Object.assign(new Error(message), { code });
+}
 
 const WORKBENCH = {
   externalServerUrl: "https://workbench.example.com",
@@ -138,6 +162,24 @@ function makeActivator(): ConnectOAuthActivator {
   );
 }
 
+function makeActivatorWithoutDeviceFlow(): ConnectOAuthActivator {
+  return new ConnectOAuthActivator(
+    "https://connect.example.com",
+    NO_DEVICE_METADATA,
+    "view-id",
+    false,
+  );
+}
+
+function makeActivatorWithoutRegistration(): ConnectOAuthActivator {
+  return new ConnectOAuthActivator(
+    "https://connect.example.com",
+    NO_REGISTRATION_METADATA,
+    "view-id",
+    false,
+  );
+}
+
 /** Makes the loopback transport succeed end to end. */
 function stubLoopbackSuccess(): void {
   h.startLoopbackServer.mockResolvedValue({
@@ -152,12 +194,22 @@ beforeEach(() => {
   h.uiKind = 1;
   h.remoteName = undefined;
   h.forceDeviceCode = false;
-  h.registerClient.mockResolvedValue({ client_id: "client-abc" });
-  h.buildAuthorizeUrl.mockReturnValue("https://connect.example.com/authorize");
-  h.exchangeAuthCode.mockResolvedValue(TOKENS);
-  h.getCurrentUser.mockResolvedValue({ username: "publisher1" });
-  // Not in Workbench unless a test says so.
-  h.detectWorkbench.mockReturnValue(undefined);
+  h.registerClient.mockReset().mockResolvedValue({ client_id: "client-abc" });
+  h.buildAuthorizeUrl
+    .mockReset()
+    .mockReturnValue("https://connect.example.com/authorize");
+  h.exchangeAuthCode.mockReset().mockResolvedValue(TOKENS);
+  h.startDeviceAuth.mockReset();
+  h.pollDeviceToken.mockReset();
+  h.startLoopbackServer.mockReset();
+  h.detectWorkbench.mockReset().mockReturnValue(undefined);
+  h.isWorkbenchRelayReachable.mockReset();
+  h.pollWorkbenchAuthCode.mockReset();
+  h.getCurrentUser.mockReset().mockResolvedValue({ username: "publisher1" });
+  h.openExternal.mockReset().mockResolvedValue(true);
+  h.loggerDebug
+    .mockReset()
+    .mockImplementation((..._args: unknown[]) => undefined);
 });
 
 afterEach(() => {
@@ -165,6 +217,29 @@ afterEach(() => {
 });
 
 describe("ConnectOAuthActivator transport selection", () => {
+  it("reports missing registration before selecting a transport", async () => {
+    let error: unknown;
+    try {
+      await makeActivatorWithoutRegistration().authenticate();
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error).toBeInstanceOf(OAuthTransportUnavailableError);
+    expect(error).toMatchObject({
+      reason: "missingRegistrationEndpoint",
+      message:
+        "Posit Connect does not advertise a dynamic client registration endpoint required for OAuth sign-in.",
+    });
+    expect(h.detectWorkbench).not.toHaveBeenCalled();
+    expect(h.isWorkbenchRelayReachable).not.toHaveBeenCalled();
+    expect(h.pollWorkbenchAuthCode).not.toHaveBeenCalled();
+    expect(h.registerClient).not.toHaveBeenCalled();
+    expect(h.startLoopbackServer).not.toHaveBeenCalled();
+    expect(h.startDeviceAuth).not.toHaveBeenCalled();
+    expect(h.openExternal).not.toHaveBeenCalled();
+  });
+
   it("uses loopback on desktop (local)", async () => {
     stubLoopbackSuccess();
 
@@ -177,6 +252,24 @@ describe("ConnectOAuthActivator transport selection", () => {
     expect(h.registerClient).toHaveBeenCalledWith(METADATA, [
       "http://127.0.0.1/callback",
     ]);
+    expect(result).toMatchObject({
+      oauthClientId: "client-abc",
+      accessToken: "at",
+      refreshToken: "rt",
+      userName: "publisher1",
+    });
+  });
+
+  it("uses loopback on desktop when device flow is not advertised", async () => {
+    stubLoopbackSuccess();
+
+    const result = await makeActivatorWithoutDeviceFlow().authenticate();
+
+    expect(h.startLoopbackServer).toHaveBeenCalledTimes(1);
+    expect(h.registerClient).toHaveBeenCalledWith(NO_DEVICE_METADATA, [
+      "http://127.0.0.1/callback",
+    ]);
+    expect(h.startDeviceAuth).not.toHaveBeenCalled();
     expect(result).toMatchObject({
       oauthClientId: "client-abc",
       accessToken: "at",
@@ -213,6 +306,37 @@ describe("ConnectOAuthActivator transport selection", () => {
 
     expect(h.startLoopbackServer).not.toHaveBeenCalled();
     expect(h.startDeviceAuth).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    { name: "web UI", uiKind: 2, remoteName: undefined },
+    { name: "remote host", uiKind: 1, remoteName: "ssh-remote" },
+  ])(
+    "reports OAuth transport unavailable in a $name when device flow is not advertised",
+    async ({ uiKind, remoteName }) => {
+      h.uiKind = uiKind;
+      h.remoteName = remoteName;
+
+      await expect(
+        makeActivatorWithoutDeviceFlow().authenticate(),
+      ).rejects.toBeInstanceOf(OAuthTransportUnavailableError);
+
+      expect(h.startLoopbackServer).not.toHaveBeenCalled();
+      expect(h.registerClient).not.toHaveBeenCalled();
+      expect(h.startDeviceAuth).not.toHaveBeenCalled();
+    },
+  );
+
+  it("reports OAuth transport unavailable when device code is forced without an endpoint", async () => {
+    h.forceDeviceCode = true;
+
+    await expect(
+      makeActivatorWithoutDeviceFlow().authenticate(),
+    ).rejects.toBeInstanceOf(OAuthTransportUnavailableError);
+
+    expect(h.registerClient).not.toHaveBeenCalled();
+    expect(h.startLoopbackServer).not.toHaveBeenCalled();
+    expect(h.startDeviceAuth).not.toHaveBeenCalled();
   });
 
   it("uses the device flow when useDeviceCodeAuth is enabled, even in Workbench", async () => {
@@ -272,6 +396,22 @@ describe("ConnectOAuthActivator Posit Workbench flow", () => {
     });
   });
 
+  it("runs auth code + PKCE through Workbench when device flow is not advertised", async () => {
+    const result = await makeActivatorWithoutDeviceFlow().authenticate();
+
+    const redirectUri = "https://workbench.example.com/oauth_redirect_callback";
+    expect(h.registerClient).toHaveBeenCalledWith(NO_DEVICE_METADATA, [
+      redirectUri,
+    ]);
+    expect(h.pollWorkbenchAuthCode).toHaveBeenCalledTimes(1);
+    expect(h.startDeviceAuth).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      oauthClientId: "client-abc",
+      accessToken: "at",
+      userName: "publisher1",
+    });
+  });
+
   it("falls back to the device flow when the relay is unreachable", async () => {
     h.isWorkbenchRelayReachable.mockResolvedValue(false);
     h.startDeviceAuth.mockRejectedValue(new Error("DEVICE_PATH"));
@@ -283,10 +423,23 @@ describe("ConnectOAuthActivator Posit Workbench flow", () => {
     expect(h.startDeviceAuth).toHaveBeenCalledTimes(1);
   });
 
+  it("reports OAuth transport unavailable when the relay is unreachable and device flow is not advertised", async () => {
+    h.isWorkbenchRelayReachable.mockResolvedValue(false);
+
+    await expect(
+      makeActivatorWithoutDeviceFlow().authenticate(),
+    ).rejects.toBeInstanceOf(OAuthTransportUnavailableError);
+
+    expect(h.registerClient).not.toHaveBeenCalled();
+    expect(h.startDeviceAuth).not.toHaveBeenCalled();
+  });
+
   it("falls back to the device flow when Connect rejects the Workbench redirect URI", async () => {
     // Connect only accepts non-loopback redirect URIs an administrator has
     // allowlisted, so registration is where an unlisted Workbench URL fails.
-    h.registerClient.mockRejectedValueOnce(new Error("invalid redirect_uri"));
+    h.registerClient.mockRejectedValueOnce(
+      makeOAuthError("invalid redirect_uri", "invalid_redirect_uri"),
+    );
     h.startDeviceAuth.mockRejectedValue(new Error("DEVICE_PATH"));
 
     await expect(makeActivator().authenticate()).rejects.toThrow("DEVICE_PATH");
@@ -299,6 +452,35 @@ describe("ConnectOAuthActivator Posit Workbench flow", () => {
     ]);
   });
 
+  it("rethrows non-redirect Workbench registration failures without device auth", async () => {
+    const registrationError = makeOAuthError(
+      "Connect returned an internal server error.",
+      "server_error",
+    );
+    h.registerClient.mockRejectedValueOnce(registrationError);
+
+    await expect(makeActivator().authenticate()).rejects.toBe(
+      registrationError,
+    );
+
+    expect(h.registerClient).toHaveBeenCalledTimes(1);
+    expect(h.startDeviceAuth).not.toHaveBeenCalled();
+    expect(h.openExternal).not.toHaveBeenCalled();
+  });
+
+  it("reports OAuth transport unavailable when Connect rejects the Workbench redirect and device flow is not advertised", async () => {
+    h.registerClient.mockRejectedValueOnce(
+      makeOAuthError("invalid redirect_uri", "invalid_redirect_uri"),
+    );
+
+    await expect(
+      makeActivatorWithoutDeviceFlow().authenticate(),
+    ).rejects.toBeInstanceOf(OAuthTransportUnavailableError);
+
+    expect(h.registerClient).toHaveBeenCalledTimes(1);
+    expect(h.startDeviceAuth).not.toHaveBeenCalled();
+  });
+
   it("falls back to the device flow on a non-terminal relay failure", async () => {
     h.pollWorkbenchAuthCode.mockRejectedValue(
       new WorkbenchRelayError("unexpected status (500)", false),
@@ -307,6 +489,24 @@ describe("ConnectOAuthActivator Posit Workbench flow", () => {
 
     await expect(makeActivator().authenticate()).rejects.toThrow("DEVICE_PATH");
     expect(h.startDeviceAuth).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports OAuth transport unavailable when the relay fails during polling and device flow is not advertised", async () => {
+    h.pollWorkbenchAuthCode.mockRejectedValue(
+      new WorkbenchRelayError(
+        "Posit Workbench became unreachable while waiting for authorization: ECONNRESET",
+        false,
+      ),
+    );
+
+    await expect(
+      makeActivatorWithoutDeviceFlow().authenticate(),
+    ).rejects.toMatchObject({
+      name: "OAuthTransportUnavailableError",
+      reason: "missingDeviceAuthorizationEndpoint",
+    });
+
+    expect(h.startDeviceAuth).not.toHaveBeenCalled();
   });
 
   it("surfaces a terminal relay failure instead of retrying elsewhere", async () => {
@@ -363,7 +563,9 @@ describe("ConnectOAuthActivator sign-in diagnostics", () => {
     h.uiKind = 2;
     h.detectWorkbench.mockReturnValue(WORKBENCH);
     h.isWorkbenchRelayReachable.mockResolvedValue(true);
-    h.registerClient.mockRejectedValueOnce(new Error("invalid redirect_uri"));
+    h.registerClient.mockRejectedValueOnce(
+      makeOAuthError("invalid redirect_uri", "invalid_redirect_uri"),
+    );
     h.startDeviceAuth.mockRejectedValue(new Error("DEVICE_PATH"));
 
     await expect(makeActivator().authenticate()).rejects.toThrow("DEVICE_PATH");
@@ -415,6 +617,22 @@ describe("ConnectOAuthActivator sign-in diagnostics", () => {
     ]) {
       expect(signInLog()).not.toContain(secret);
     }
+  });
+});
+
+describe("ConnectOAuthActivator legacy token fallback", () => {
+  it("reports OAuth transport unavailable when loopback cannot bind and device flow is not advertised", async () => {
+    h.startLoopbackServer.mockRejectedValue(new Error("EADDRINUSE"));
+
+    await expect(
+      makeActivatorWithoutDeviceFlow().authenticate(),
+    ).rejects.toBeInstanceOf(OAuthTransportUnavailableError);
+
+    expect(h.registerClient).toHaveBeenCalledWith(NO_DEVICE_METADATA, [
+      "http://127.0.0.1/callback",
+    ]);
+    expect(h.startLoopbackServer).toHaveBeenCalledTimes(1);
+    expect(h.startDeviceAuth).not.toHaveBeenCalled();
   });
 });
 

@@ -12,8 +12,14 @@ export {
   ACCESS_DENIED,
 } from "./client";
 export type { DevicePollResult } from "./client";
-export { ConnectOAuthActivator } from "./activator";
-export type { OAuthAuthResult } from "./activator";
+export {
+  ConnectOAuthActivator,
+  OAuthTransportUnavailableError,
+} from "./activator";
+export type {
+  OAuthAuthResult,
+  OAuthTransportUnavailableReason,
+} from "./activator";
 export { generatePkcePair, generateState } from "./pkce";
 export { startLoopbackServer } from "./loopback";
 export type { LoopbackHandle } from "./loopback";
