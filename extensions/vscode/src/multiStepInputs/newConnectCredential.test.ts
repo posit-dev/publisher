@@ -3,6 +3,14 @@
 import { describe, expect, test, vi, beforeEach, afterEach } from "vitest";
 import { ServerType } from "src/api/types/contentRecords";
 import { newConnectCredential } from "./newConnectCredential";
+import {
+  fetchSnowflakeConnections,
+  findExistingCredentialByURL,
+  getExistingCredentials,
+  inputCredentialNameStep,
+} from "src/multiStepInputs/common";
+import { isConnect, isSnowflake } from "src/utils/multiStepHelpers";
+import { window } from "vscode";
 
 const CANCEL = Symbol("cancel");
 
@@ -88,6 +96,7 @@ vi.mock("./multiStepHelper", () => {
     },
     isString: (d: unknown): d is string => typeof d === "string",
     isQuickPickItemWithIndex: vi.fn(() => false),
+    isCancellation: (e: unknown) => e === CANCEL,
   };
 });
 
@@ -233,11 +242,29 @@ const oauthStepperMocks = vi.hoisted(() => ({
   authenticate: vi.fn(),
 }));
 
+const OAuthTransportUnavailableErrorMock = vi.hoisted(() => {
+  return class OAuthTransportUnavailableError extends Error {
+    constructor(
+      public readonly reason:
+        | "missingDeviceAuthorizationEndpoint"
+        | "missingRegistrationEndpoint" = "missingDeviceAuthorizationEndpoint",
+    ) {
+      super(
+        reason === "missingRegistrationEndpoint"
+          ? "Posit Connect does not advertise a dynamic client registration endpoint required for OAuth sign-in."
+          : "Posit Connect does not advertise an OAuth device authorization endpoint.",
+      );
+      this.name = "OAuthTransportUnavailableError";
+    }
+  };
+});
+
 vi.mock("src/auth/oauth", () => ({
   discoverOAuthMetadata: oauthStepperMocks.discoverOAuthMetadata,
   ConnectOAuthActivator: class {
     authenticate = oauthStepperMocks.authenticate;
   },
+  OAuthTransportUnavailableError: OAuthTransportUnavailableErrorMock,
 }));
 
 vi.mock("src/utils/errors", () => ({
@@ -256,9 +283,32 @@ vi.mock("src/logging", () => ({
   },
 }));
 
+function resetMutableMocks(): void {
+  vi.clearAllMocks();
+  stepControl.quickPickLabel = "API Key";
+  shownInputBoxSteps.length = 0;
+
+  vi.mocked(fetchSnowflakeConnections)
+    .mockReset()
+    .mockResolvedValue({ connections: [], connectionQuickPicks: [] });
+  vi.mocked(findExistingCredentialByURL).mockReset().mockReturnValue(undefined);
+  vi.mocked(getExistingCredentials).mockReset().mockResolvedValue([]);
+  vi.mocked(inputCredentialNameStep)
+    .mockReset()
+    .mockResolvedValue("My Credential");
+  vi.mocked(isConnect).mockReset().mockReturnValue(true);
+  vi.mocked(isSnowflake).mockReset().mockReturnValue(false);
+
+  oauthStepperMocks.discoverOAuthMetadata.mockReset().mockResolvedValue(null);
+  oauthStepperMocks.authenticate.mockReset();
+  tokenActivatorMocks.activateToken.mockReset();
+  mockCredentialsServiceList.mockReset().mockResolvedValue([]);
+  mockCredentialsServiceCreate.mockReset();
+}
+
 describe("newConnectCredential cancellation", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    resetMutableMocks();
     stepControl.quickPickLabel = "API Key";
 
     // Default: server does not support OAuth, so the token/API-key flow runs.
@@ -323,7 +373,7 @@ describe("newConnectCredential cancellation", () => {
 
 describe("newConnectCredential OAuth path", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    resetMutableMocks();
     stepControl.quickPickLabel = "API Key";
     mockCredentialsServiceList.mockResolvedValue([]);
     mockCredentialsServiceCreate.mockResolvedValue({
@@ -446,6 +496,132 @@ describe("newConnectCredential OAuth path", () => {
     );
   });
 
+  test.each([
+    {
+      reason: "missingDeviceAuthorizationEndpoint" as const,
+      message:
+        "Posit Connect does not advertise an OAuth device authorization endpoint.",
+    },
+    {
+      reason: "missingRegistrationEndpoint" as const,
+      message:
+        "Posit Connect does not advertise a dynamic client registration endpoint required for OAuth sign-in.",
+    },
+  ])(
+    "browser sign-in falls back to the token flow for $reason",
+    async ({ reason, message }) => {
+      stepControl.quickPickLabel = "Sign in with a browser";
+      oauthStepperMocks.discoverOAuthMetadata.mockResolvedValue({
+        token_endpoint: "https://connect.example.com/oauth/v1/token",
+        authorization_endpoint:
+          "https://connect.example.com/oauth/v1/authorize",
+      });
+      const { OAuthTransportUnavailableError } = await import("src/auth/oauth");
+      const transportError = new OAuthTransportUnavailableError(reason);
+      expect(transportError).toMatchObject({ reason, message });
+      oauthStepperMocks.authenticate.mockRejectedValue(transportError);
+      tokenActivatorMocks.activateToken.mockResolvedValue({
+        token: "T-token",
+        privateKey: "priv-key",
+        userName: "publisher1",
+        serverUrl: "https://connect.example.com",
+      });
+      const { inputCredentialNameStep } =
+        await import("src/multiStepInputs/common");
+      vi.mocked(inputCredentialNameStep).mockResolvedValue(
+        "connect.example.com",
+      );
+
+      await newConnectCredential(
+        "test-view-id",
+        "Create a New Credential",
+        mockCredentialsService as unknown as import("src/credentials/service").CredentialsService,
+        "https://connect.example.com",
+      );
+
+      expect(oauthStepperMocks.authenticate).toHaveBeenCalledTimes(1);
+      expect(tokenActivatorMocks.activateToken).toHaveBeenCalledTimes(1);
+      expect(mockCredentialsServiceCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          token: "T-token",
+          privateKey: "priv-key",
+          apiKey: undefined,
+          oauthClientId: undefined,
+          accessToken: undefined,
+          refreshToken: undefined,
+          tokenExpiresAt: undefined,
+        }),
+      );
+      expect(window.showErrorMessage).not.toHaveBeenCalled();
+    },
+  );
+
+  test("generic OAuth failures return to the picker without token fallback", async () => {
+    stepControl.quickPickLabel = "Sign in with a browser";
+    oauthStepperMocks.discoverOAuthMetadata.mockResolvedValue({
+      token_endpoint: "https://connect.example.com/oauth/v1/token",
+      authorization_endpoint: "https://connect.example.com/oauth/v1/authorize",
+    });
+    oauthStepperMocks.authenticate.mockImplementationOnce(() => {
+      // Choose a reachable next step after the OAuth error is handled.
+      stepControl.quickPickLabel = "API Key";
+      throw new Error("OAuth server rejected sign-in");
+    });
+
+    await newConnectCredential(
+      "test-view-id",
+      "Create a New Credential",
+      mockCredentialsService as unknown as import("src/credentials/service").CredentialsService,
+      "https://connect.example.com",
+    );
+
+    expect(oauthStepperMocks.authenticate).toHaveBeenCalledTimes(1);
+    expect(tokenActivatorMocks.activateToken).not.toHaveBeenCalled();
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      "OAuth sign-in did not complete: Error: OAuth server rejected sign-in. You can use an API key instead.",
+    );
+    expect(mockCredentialsServiceCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        apiKey: "mock-api-key-value",
+        token: undefined,
+        privateKey: undefined,
+        oauthClientId: undefined,
+      }),
+    );
+  });
+
+  test("OAuth cancellation returns to the picker without token fallback or an error", async () => {
+    stepControl.quickPickLabel = "Sign in with a browser";
+    oauthStepperMocks.discoverOAuthMetadata.mockResolvedValue({
+      token_endpoint: "https://connect.example.com/oauth/v1/token",
+      authorization_endpoint: "https://connect.example.com/oauth/v1/authorize",
+    });
+    oauthStepperMocks.authenticate.mockImplementationOnce(() => {
+      // Choose a reachable next step after the dismissal is handled.
+      stepControl.quickPickLabel = "API Key";
+      throw CANCEL;
+    });
+
+    await newConnectCredential(
+      "test-view-id",
+      "Create a New Credential",
+      mockCredentialsService as unknown as import("src/credentials/service").CredentialsService,
+      "https://connect.example.com",
+    );
+
+    expect(oauthStepperMocks.authenticate).toHaveBeenCalledTimes(1);
+    expect(tokenActivatorMocks.activateToken).not.toHaveBeenCalled();
+    expect(window.showErrorMessage).not.toHaveBeenCalled();
+    expect(mockCredentialsServiceCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        apiKey: "mock-api-key-value",
+        token: undefined,
+        privateKey: undefined,
+        oauthClientId: undefined,
+      }),
+    );
+  });
+
   test("creates an API-key credential when the user picks API key (no OAuth)", async () => {
     stepControl.quickPickLabel = "API Key";
     oauthStepperMocks.discoverOAuthMetadata.mockResolvedValue(null);
@@ -472,7 +648,7 @@ describe("newConnectCredential OAuth path", () => {
 
 describe("newConnectCredential authMethodHint", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    resetMutableMocks();
     // The picker would pick API Key if shown — the hint must bypass it.
     stepControl.quickPickLabel = "API Key";
     mockCredentialsServiceList.mockResolvedValue([]);
@@ -553,7 +729,7 @@ describe("newConnectCredential authMethodHint", () => {
 
 describe("newConnectCredential auto-proceed with a supplied server URL", () => {
   beforeEach(async () => {
-    vi.clearAllMocks();
+    resetMutableMocks();
     shownInputBoxSteps.length = 0;
     stepControl.quickPickLabel = "API Key";
     mockCredentialsServiceList.mockResolvedValue([]);

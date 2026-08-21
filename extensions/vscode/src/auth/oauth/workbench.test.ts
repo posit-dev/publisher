@@ -21,6 +21,7 @@ import {
   detectWorkbench,
   isWorkbenchRelayReachable,
   pollWorkbenchAuthCode,
+  WorkbenchRelayError,
   workbenchRedirectUri,
   WORKBENCH_POLL_MS,
 } from "./workbench";
@@ -154,9 +155,10 @@ describe("pollWorkbenchAuthCode", () => {
       mockGet.mockResolvedValue({ status: 403, data: "" });
 
       const promise = pollWorkbenchAuthCode(WORKBENCH, "state-123", false);
-      const assertion = expect(promise).rejects.toThrow(
-        "Authorization was denied.",
-      );
+      const assertion = expect(promise).rejects.toMatchObject({
+        message: "Authorization was denied.",
+        terminal: true,
+      });
       await vi.advanceTimersByTimeAsync(WORKBENCH_POLL_MS + 100);
       await assertion;
     } finally {
@@ -170,7 +172,30 @@ describe("pollWorkbenchAuthCode", () => {
       mockGet.mockResolvedValue({ status: 500, data: "" });
 
       const promise = pollWorkbenchAuthCode(WORKBENCH, "state-123", false);
-      const assertion = expect(promise).rejects.toThrow("500");
+      const assertion = expect(promise).rejects.toMatchObject({
+        message:
+          "Posit Workbench returned an unexpected status (500) while waiting for authorization.",
+        terminal: false,
+      });
+      await vi.advanceTimersByTimeAsync(WORKBENCH_POLL_MS + 100);
+      await assertion;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("reports a polling connection failure as a non-terminal relay error", async () => {
+    vi.useFakeTimers();
+    try {
+      mockGet.mockRejectedValue(new Error("ECONNRESET"));
+
+      const promise = pollWorkbenchAuthCode(WORKBENCH, "state-123", false);
+      const assertion = expect(promise).rejects.toMatchObject({
+        name: "WorkbenchRelayError",
+        terminal: false,
+        message:
+          "Posit Workbench became unreachable while waiting for authorization: Error: ECONNRESET",
+      } satisfies Partial<WorkbenchRelayError>);
       await vi.advanceTimersByTimeAsync(WORKBENCH_POLL_MS + 100);
       await assertion;
     } finally {
@@ -189,7 +214,10 @@ describe("pollWorkbenchAuthCode", () => {
         false,
         WORKBENCH_POLL_MS * 2,
       );
-      const assertion = expect(promise).rejects.toThrow("Timed out");
+      const assertion = expect(promise).rejects.toMatchObject({
+        message: "Timed out waiting for authorization in your browser.",
+        terminal: true,
+      });
       await vi.advanceTimersByTimeAsync(WORKBENCH_POLL_MS * 3);
       await assertion;
     } finally {

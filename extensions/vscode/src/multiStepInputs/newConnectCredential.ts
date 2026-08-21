@@ -45,6 +45,7 @@ import {
   discoverOAuthMetadata,
   OAuthAuthResult,
   OAuthMetadata,
+  OAuthTransportUnavailableError,
 } from "src/auth/oauth";
 import { logger } from "src/logging";
 
@@ -629,6 +630,21 @@ export async function newConnectCredential(
       // Leave the credential name for inputCredentialName to default to the
       // server hostname, matching the token-based flow (the user can edit it).
     } catch (e) {
+      if (e instanceof OAuthTransportUnavailableError) {
+        logger.debug(`${e.message} Using legacy browser token authentication.`);
+        authMethod = AuthMethod.TOKEN;
+        state.data.oauthClientId = undefined;
+        state.data.accessToken = undefined;
+        state.data.refreshToken = undefined;
+        state.data.tokenExpiresAt = undefined;
+        return {
+          name: step.INPUT_TOKEN,
+          step: (input: MultiStepInput) =>
+            steps[step.INPUT_TOKEN](input, state),
+          skipStepHistory: true,
+        };
+      }
+
       // A dismissal or an OAuth failure both divert to the manual auth-method
       // chooser so an API key is always reachable. Only a real failure warrants
       // an error popup — see isCancellation for why a dismissal must not take
