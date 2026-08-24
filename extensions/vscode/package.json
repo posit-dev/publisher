@@ -964,7 +964,7 @@
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.1.0",
     "esbuild": "^0.28.2",
-    "eslint": "^10.8.1",
+    "eslint": "^10.9.0",
     "eslint-config-prettier": "^10.0.1",
     "fantasticon": "^4.1.0",
     "fishery": "^2.4.0",
@@ -972,7 +972,7 @@
     "mocha": "^11.8.0",
     "typescript": "^7.0.2",
     "typescript-eslint": "^8.67.0",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "dependencies": {
     "@posit-dev/connect-api": "*",
@@ -990,7 +990,7 @@
     "picomatch": "^4.0.5",
     "retry": "^0.13.1",
     "smol-toml": "^1.8.0",
-    "snowflake-sdk": "3.1.0",
+    "snowflake-sdk": "3.2.0",
     "tar-stream": "^3.2.0",
     "vscode-uri": "^3.0.8"
   }

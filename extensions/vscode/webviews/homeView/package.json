@@ -17,7 +17,7 @@
     "minimatch": ">=9.0.7"
   },
   "devDependencies": {
-    "@tsconfig/node22": "^22.0.5",
+    "@tsconfig/node22": "^22.0.6",
     "@vue/devtools-api": "^8.2.1",
     "@types/node": "^22.0.0",
     "@types/vscode-webview": "^1.57.5",
@@ -27,10 +27,10 @@
     "@vue/test-utils": "^2.4.11",
     "@vue/tsconfig": "^0.9.1",
     "jsdom": "^30.0.1",
-    "sass-embedded": "^1.102.0",
+    "sass-embedded": "^1.103.1",
     "typescript": "^7.0.2",
-    "vite": "^8.2.1",
-    "vitest": "^4.1.10",
-    "vue-tsc": "^3.3.9"
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11",
+    "vue-tsc": "^3.3.11"
   }
 }
