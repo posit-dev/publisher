@@ -1,14 +1,15 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-// Mock of the "positron" module for contract tests.
+// Mock Positron host for contract tests.
 //
 // Positron is a fork of VS Code that provides additional APIs for data science
 // workflows. The extension optionally depends on these APIs (they are only
 // available when running inside Positron, not plain VS Code).
 //
-// This mock is aliased to the "positron" module via vitest.config.ts so that
-// `import { acquirePositronApi } from "positron"` in extension source code
-// resolves here instead of requiring the real Positron runtime.
+// Positron exposes its API by injecting an acquirePositronApi global into the
+// extension host. Tests assign this module's acquirePositronApi to globalThis to
+// impersonate that host, so tryAcquirePositronApi() from @posit-dev/positron —
+// which the extension calls — finds the mock API below.
 
 import { vi } from "vitest";
 

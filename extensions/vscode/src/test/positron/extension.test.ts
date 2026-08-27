@@ -3,23 +3,23 @@
 // Positron-only integration test.
 //
 // Sanity checks for the contract Publisher depends on when running inside
-// Positron: the extension host injects an `acquirePositronApi` global
-// (Publisher feature-detects Positron by calling it — see
+// Positron: the extension host injects an `acquirePositronApi` global (which
+// tryAcquirePositronApi() reads to feature-detect Positron — see
 // src/utils/vscode.ts), and the Publisher extension activates.
 
 import * as assert from "assert";
 import { extensions } from "vscode";
+import { inPositron, tryAcquirePositronApi } from "@posit-dev/positron";
 
 suite("Positron: extension host", () => {
   test("Positron injects the acquirePositronApi global", () => {
-    assert.strictEqual(
-      typeof acquirePositronApi,
-      "function",
+    assert.ok(
+      inPositron(),
       "the extension host should provide the acquirePositronApi global",
     );
 
-    const api = acquirePositronApi();
-    assert.ok(api, "acquirePositronApi() should return the Positron API");
+    const api = tryAcquirePositronApi();
+    assert.ok(api, "tryAcquirePositronApi() should return the Positron API");
     assert.strictEqual(typeof api.version, "string");
     assert.ok(
       api.version.length > 0,
