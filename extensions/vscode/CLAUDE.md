@@ -46,7 +46,8 @@ npm run test-unit
 # Run only Mocha integration tests (opens VSCode test instance)
 npm test
 
-# Run Positron API integration tests (downloads a Positron build; macOS only)
+# Run Positron API integration tests (downloads a Positron build)
+# On Linux, prefix with `xvfb-run -a` when running headless.
 npm run test-positron
 ```
 

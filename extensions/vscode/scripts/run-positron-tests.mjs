@@ -10,8 +10,9 @@
 // first). Set POSITRON_CHANNEL=daily to test against a daily Positron build
 // (default: stable).
 //
-// NOTE: the released @posit-dev/positron-test-electron supports macOS only;
-// Windows/Linux support has landed upstream and is pending an npm release.
+// NOTE: on Linux, Positron is an Electron app and needs a display server, so
+// wrap the command in `xvfb-run` when running headless (as the
+// Positron-API-Tests GitHub Actions workflow does).
 
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
