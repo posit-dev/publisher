@@ -40,8 +40,7 @@ interface AuthorizeResult {
 }
 
 export type OAuthTransportUnavailableReason =
-  | "missingDeviceAuthorizationEndpoint"
-  | "missingRegistrationEndpoint";
+  "missingDeviceAuthorizationEndpoint" | "missingRegistrationEndpoint";
 
 /**
  * Raised when Connect metadata deterministically lacks a capability required by

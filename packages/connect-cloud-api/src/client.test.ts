@@ -43,8 +43,8 @@ vi.mock("axios", () => {
     const resp = await mockRequest(processedConfig);
     const validate =
       (processedConfig.validateStatus as
-        | ((s: number) => boolean)
-        | undefined) ?? ((s: number) => s >= 200 && s < 300);
+        ((s: number) => boolean) | undefined) ??
+      ((s: number) => s >= 200 && s < 300);
     if (!validate(resp.status as number)) {
       throw Object.assign(
         new Error(`Request failed with status code ${resp.status}`),
