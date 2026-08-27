@@ -27,6 +27,7 @@ import {
 import { CONNECT_CLOUD_ENV } from "src/constants";
 import config from "src/config";
 import { logger } from "src/logging";
+import { getUserAgent } from "src/utils/userAgent";
 import {
   discoverOAuthMetadata,
   OAuthClient,
@@ -87,7 +88,8 @@ export async function connectAPIOptionsFromCredential(
     credential.serverType === ServerType.SNOWFLAKE &&
     credential.snowflakeConnection
   ) {
-    return await service.buildSnowflakeOptions(credential, extra);
+    const options = await service.buildSnowflakeOptions(credential, extra);
+    return { ...options, userAgent: getUserAgent() };
   }
 
   // OAuth bearer credential. The refresh callback is invoked by the client on a
@@ -111,6 +113,7 @@ export async function connectAPIOptionsFromCredential(
           insecure,
         ),
       ...extra,
+      userAgent: getUserAgent(),
     };
   }
 
@@ -120,6 +123,7 @@ export async function connectAPIOptionsFromCredential(
       token: credential.token,
       privateKey: credential.privateKey,
       ...extra,
+      userAgent: getUserAgent(),
     };
   }
   if (credential.apiKey) {
@@ -127,11 +131,13 @@ export async function connectAPIOptionsFromCredential(
       url: credential.url,
       apiKey: credential.apiKey,
       ...extra,
+      userAgent: getUserAgent(),
     };
   }
   return {
     url: credential.url,
     ...extra,
+    userAgent: getUserAgent(),
   };
 }
 

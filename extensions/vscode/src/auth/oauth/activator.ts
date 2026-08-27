@@ -6,6 +6,7 @@ import { ConnectAPI } from "@posit-dev/connect-api";
 import { logger } from "src/logging";
 import { describeError, getMessageFromError } from "src/utils/errors";
 import { showProgress } from "src/utils/progress";
+import { getUserAgent } from "src/utils/userAgent";
 import { OAuthClient, tokenExpiresAt } from "./client";
 import { discoverOAuthMetadata } from "./discovery";
 import { startLoopbackServer } from "./loopback";
@@ -39,7 +40,8 @@ interface AuthorizeResult {
 }
 
 export type OAuthTransportUnavailableReason =
-  "missingDeviceAuthorizationEndpoint" | "missingRegistrationEndpoint";
+  | "missingDeviceAuthorizationEndpoint"
+  | "missingRegistrationEndpoint";
 
 /**
  * Raised when Connect metadata deterministically lacks a capability required by
@@ -468,6 +470,7 @@ export class ConnectOAuthActivator {
         url: this.serverUrl,
         accessToken,
         rejectUnauthorized: this.insecure ? false : undefined,
+        userAgent: getUserAgent(),
       });
       const user = await api.getCurrentUser();
       return user.username;

@@ -3,6 +3,7 @@
 import crypto from "crypto";
 import { ConnectAPI } from "@posit-dev/connect-api";
 import { discoverServerURL } from "src/utils/url";
+import { getUserAgent } from "src/utils/userAgent";
 import { logger } from "src/logging";
 
 /**
@@ -69,6 +70,7 @@ export async function generateToken(
       url: urlToTest,
       snowflakeToken,
       rejectUnauthorized: insecure ? false : undefined,
+      userAgent: getUserAgent(),
     });
 
     const response = await client.registerToken(tokenId, publicKey);

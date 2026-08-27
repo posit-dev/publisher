@@ -6,6 +6,7 @@ import { listConnections } from "./connections";
 import { getListOfPossibleURLs } from "../utils/url";
 import { logger } from "src/logging";
 import { CredentialsService } from "src/credentials/service";
+import { getUserAgent } from "src/utils/userAgent";
 import type { SnowflakeConnection } from "./types";
 
 const VALIDATION_TIMEOUT_MS = 30_000;
@@ -37,6 +38,7 @@ export async function discoverSnowflakeConnections(
           url: candidateUrl,
           snowflakeToken: token,
           timeout: VALIDATION_TIMEOUT_MS,
+          userAgent: getUserAgent(),
         });
 
         try {

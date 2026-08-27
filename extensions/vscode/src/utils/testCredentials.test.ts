@@ -24,6 +24,10 @@ vi.mock("@posit-dev/connect-api", async (importOriginal) => {
   };
 });
 
+vi.mock("src/utils/userAgent", () => ({
+  getUserAgent: () => "PositPublisher/test",
+}));
+
 import { ConnectAPI } from "@posit-dev/connect-api";
 
 const mockUser = {

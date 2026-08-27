@@ -36,15 +36,20 @@ export class ConnectCloudAPI {
   private refreshToken?: string;
   private readonly environment?: CloudEnvironment;
   private readonly onTokenRefresh?: (tokens: TokenResponse) => Promise<void>;
+  private readonly userAgent?: string;
 
   constructor(options: ConnectCloudAPIOptions) {
     this.accessToken = options.accessToken;
     this.refreshToken = options.refreshToken;
     this.environment = options.environment;
     this.onTokenRefresh = options.onTokenRefresh;
+    this.userAgent = options.userAgent;
 
     this.client = axios.create({
       baseURL: options.apiBaseUrl,
+      ...(this.userAgent && {
+        headers: { "User-Agent": this.userAgent },
+      }),
     });
 
     // Use request interceptor to set auth header dynamically (token may change after refresh)
@@ -71,7 +76,7 @@ export class ConnectCloudAPI {
       throw new Error("Token refresh not configured");
     }
 
-    const authClient = new CloudAuthClient(this.environment!);
+    const authClient = new CloudAuthClient(this.environment!, this.userAgent);
     const tokens = await authClient.exchangeToken({
       grant_type: "refresh_token",
       refresh_token: this.refreshToken!,
@@ -221,6 +226,7 @@ export class ConnectCloudAPI {
       headers: {
         "Content-Type": "application/gzip",
         "Content-Length": contentLength,
+        ...(this.userAgent && { "User-Agent": this.userAgent }),
       },
       maxRedirects: 0,
       signal,

@@ -23,6 +23,9 @@ vi.mock("@posit-dev/connect-api", async (importOriginal) => {
 
 vi.mock("src/logging");
 vi.mock("./connections");
+vi.mock("src/utils/userAgent", () => ({
+  getUserAgent: () => "PositPublisher/test",
+}));
 
 import { ConnectAPI } from "@posit-dev/connect-api";
 import { listConnections } from "./connections";
@@ -70,6 +73,7 @@ describe("discoverSnowflakeConnections", () => {
       url: "https://example.snowflakecomputing.app",
       snowflakeToken: "sf-token-123",
       timeout: 30000,
+      userAgent: "PositPublisher/test",
     });
   });
 

@@ -4,6 +4,7 @@ import https from "https";
 import type { ClientRequest, IncomingMessage } from "http";
 import axios from "axios";
 import type { AxiosInstance, AxiosRequestConfig } from "axios";
+import { getUserAgent } from "src/utils/userAgent";
 
 /** Request timeout for OAuth endpoints (ms). */
 export const OAUTH_TIMEOUT_MS = 30_000;
@@ -24,6 +25,7 @@ export function createOAuthHttpClient(insecure: boolean): AxiosInstance {
     // JSON bodies (e.g. `authorization_pending`, `invalid_client`) that callers
     // must inspect.
     validateStatus: () => true,
+    headers: { "User-Agent": getUserAgent() },
   };
 
   if (insecure) {

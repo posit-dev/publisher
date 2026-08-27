@@ -444,6 +444,50 @@ describe("timeout option", () => {
 });
 
 // ---------------------------------------------------------------------------
+// User-Agent header
+// ---------------------------------------------------------------------------
+
+describe("User-Agent header", () => {
+  const USER_AGENT = "posit-publisher/1.2.3";
+
+  it("sets User-Agent when provided with an API key", () => {
+    new ConnectAPI({
+      url: BASE_URL,
+      apiKey: API_KEY,
+      userAgent: USER_AGENT,
+    });
+
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: `Key ${API_KEY}`,
+          "User-Agent": USER_AGENT,
+        }),
+      }),
+    );
+  });
+
+  it("sets User-Agent when provided with no auth", () => {
+    new ConnectAPI({ url: BASE_URL, userAgent: USER_AGENT });
+
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          "User-Agent": USER_AGENT,
+        }),
+      }),
+    );
+  });
+
+  it("does not set User-Agent when omitted", () => {
+    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY });
+
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.headers).not.toHaveProperty("User-Agent");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // testAuthentication
 // ---------------------------------------------------------------------------
 

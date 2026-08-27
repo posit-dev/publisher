@@ -87,6 +87,7 @@ import {
 import type { Credential } from "src/api/types/credentials";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
+import { getUserAgent } from "src/utils/userAgent";
 import { runDeployWithProgress, DeployOutcome } from "src/views/deployProgress";
 import { connectPublish } from "src/publish/connectPublish";
 import { connectCloudPublish } from "src/publish/connectCloudPublish";
@@ -483,6 +484,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             credential.refreshToken = tokens.refresh_token;
             await storeCredential(this.context.secrets, credential);
           },
+          userAgent: getUserAgent(),
         });
 
         return await runDeployWithProgress({

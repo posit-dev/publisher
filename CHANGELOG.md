@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Publisher now sends a User-Agent header (e.g. PositPublisher/2.11.4) on requests to Posit Connect and Connect Cloud. (#4355)
+
 ### Fixed
 
 - Browser sign-in now falls back to the legacy token flow when Connect advertises OAuth without dynamic client registration, or when device authorization is selected or needed as a fallback but the server does not advertise it. This includes forced device-code mode. (#4347)

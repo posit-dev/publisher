@@ -45,6 +45,7 @@ import {
   cloudEnvironmentBaseUrls,
 } from "@posit-dev/connect-cloud-api";
 import { CONNECT_CLOUD_ENVIRONMENT } from "../constants";
+import { getUserAgent } from "../utils/userAgent";
 
 // Search for the first credential that includes
 // the targetURL.
@@ -124,7 +125,7 @@ export const fetchSnowflakeConnections = async (
 
 // Fetch the device auth for Connect Cloud
 export const fetchDeviceAuth = async (): Promise<ApiResponse<DeviceAuth>> => {
-  const client = new CloudAuthClient(CONNECT_CLOUD_ENVIRONMENT);
+  const client = new CloudAuthClient(CONNECT_CLOUD_ENVIRONMENT, getUserAgent());
   const response = await client.createDeviceAuth();
   return { data: toDeviceAuth(response), intervalAdjustment: 0 };
 };
@@ -133,7 +134,7 @@ export const fetchDeviceAuth = async (): Promise<ApiResponse<DeviceAuth>> => {
 export const fetchAuthToken = async (
   deviceCode: string,
 ): Promise<ApiResponse<AuthToken>> => {
-  const client = new CloudAuthClient(CONNECT_CLOUD_ENVIRONMENT);
+  const client = new CloudAuthClient(CONNECT_CLOUD_ENVIRONMENT, getUserAgent());
   try {
     const response = await client.exchangeToken({
       grant_type: "urn:ietf:params:oauth:grant-type:device_code",
@@ -163,6 +164,7 @@ export const fetchConnectCloudAccounts = async (
   const client = new ConnectCloudAPI({
     apiBaseUrl: cloudEnvironmentBaseUrls[CONNECT_CLOUD_ENVIRONMENT],
     accessToken,
+    userAgent: getUserAgent(),
   });
 
   // Check if this is a new user (authenticated with auth service but

@@ -6,6 +6,7 @@ import { generateToken } from "./generateToken";
 import { logger } from "src/logging";
 import { getMessageFromError } from "src/utils/errors";
 import { showProgress } from "src/utils/progress";
+import { getUserAgent } from "src/utils/userAgent";
 
 export interface TokenAuthResult {
   token: string;
@@ -107,6 +108,7 @@ export class ConnectAuthTokenActivator {
           privateKey,
           snowflakeToken: this.snowflakeToken,
           rejectUnauthorized: this.insecure ? false : undefined,
+          userAgent: getUserAgent(),
         });
 
         while (!isClaimed && attempt < maxAttempts) {
