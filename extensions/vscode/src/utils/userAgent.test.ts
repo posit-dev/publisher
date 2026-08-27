@@ -9,7 +9,23 @@ vi.mock("vscode", () => ({
 }));
 
 import { extensions } from "vscode";
-import { getUserAgent } from "./userAgent";
+import { getExtensionVersion, getUserAgent } from "./userAgent";
+
+describe("getExtensionVersion", () => {
+  test("returns the version when the extension is found", () => {
+    vi.mocked(extensions.getExtension).mockReturnValue({
+      packageJSON: { version: "2.11.4" },
+    } as ReturnType<typeof extensions.getExtension>);
+
+    expect(getExtensionVersion()).toBe("2.11.4");
+  });
+
+  test("falls back to unknown when the extension is not found", () => {
+    vi.mocked(extensions.getExtension).mockReturnValue(undefined);
+
+    expect(getExtensionVersion()).toBe("unknown");
+  });
+});
 
 describe("getUserAgent", () => {
   test("returns PositPublisher/<version> when the extension is found", () => {

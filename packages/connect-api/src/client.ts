@@ -161,7 +161,7 @@ export class ConnectAPI {
       config.timeout = options.timeout;
     }
 
-    if (options.userAgent !== undefined) {
+    if (options.userAgent) {
       config.headers = { ...config.headers, "User-Agent": options.userAgent };
     }
 

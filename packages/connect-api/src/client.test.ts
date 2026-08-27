@@ -485,6 +485,13 @@ describe("User-Agent header", () => {
     const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
     expect(call?.headers).not.toHaveProperty("User-Agent");
   });
+
+  it("does not set User-Agent when empty", () => {
+    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY, userAgent: "" });
+
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.headers).not.toHaveProperty("User-Agent");
+  });
 });
 
 // ---------------------------------------------------------------------------

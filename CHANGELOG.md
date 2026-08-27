@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Publisher now sends a User-Agent header (e.g. PositPublisher/2.11.4) on requests to Posit Connect and Connect Cloud. (#4355)
+- Publisher now sends a User-Agent header (e.g. PositPublisher/2.11.4) on its HTTP requests, including those to Posit Connect and Connect Cloud. (#4355)
 
 ### Fixed
 

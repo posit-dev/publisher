@@ -84,12 +84,14 @@ export async function connectAPIOptionsFromCredential(
   >,
   extra?: Pick<ConnectAPIOptions, "rejectUnauthorized" | "timeout">,
 ): Promise<ConnectAPIOptions> {
+  const userAgent = getUserAgent();
+
   if (
     credential.serverType === ServerType.SNOWFLAKE &&
     credential.snowflakeConnection
   ) {
     const options = await service.buildSnowflakeOptions(credential, extra);
-    return { ...options, userAgent: getUserAgent() };
+    return { ...options, userAgent };
   }
 
   // OAuth bearer credential. The refresh callback is invoked by the client on a
@@ -112,8 +114,8 @@ export async function connectAPIOptionsFromCredential(
           },
           insecure,
         ),
+      userAgent,
       ...extra,
-      userAgent: getUserAgent(),
     };
   }
 
@@ -122,22 +124,22 @@ export async function connectAPIOptionsFromCredential(
       url: credential.url,
       token: credential.token,
       privateKey: credential.privateKey,
+      userAgent,
       ...extra,
-      userAgent: getUserAgent(),
     };
   }
   if (credential.apiKey) {
     return {
       url: credential.url,
       apiKey: credential.apiKey,
+      userAgent,
       ...extra,
-      userAgent: getUserAgent(),
     };
   }
   return {
     url: credential.url,
+    userAgent,
     ...extra,
-    userAgent: getUserAgent(),
   };
 }
 
