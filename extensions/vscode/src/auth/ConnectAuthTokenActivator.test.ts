@@ -19,6 +19,13 @@ vi.mock("vscode", () => ({
   env: {
     openExternal: vi.fn(),
   },
+  extensions: {
+    getExtension: vi.fn(),
+  },
+}));
+
+vi.mock("src/utils/userAgent", () => ({
+  getUserAgent: () => "PositPublisher/test",
 }));
 
 vi.mock("src/utils/progress", () => ({
@@ -110,6 +117,7 @@ describe("ConnectAuthTokenActivator", () => {
       privateKey: "test-private-key-123",
       snowflakeToken: undefined,
       rejectUnauthorized: undefined,
+      userAgent: "PositPublisher/test",
     });
     expect(result).toEqual({
       token: "test-token-123",
@@ -194,6 +202,7 @@ describe("ConnectAuthTokenActivator", () => {
       privateKey: "test-private-key-123",
       snowflakeToken: undefined,
       rejectUnauthorized: false,
+      userAgent: "PositPublisher/test",
     });
     expect(result.userName).toBe("testuser");
   });
@@ -269,6 +278,7 @@ describe("ConnectAuthTokenActivator", () => {
       privateKey: "test-private-key-123",
       snowflakeToken: "snowflake-session-token",
       rejectUnauthorized: undefined,
+      userAgent: "PositPublisher/test",
     });
   });
 

@@ -10,6 +10,10 @@ import {
 
 vi.mock("src/logging");
 
+vi.mock("src/utils/userAgent", () => ({
+  getUserAgent: () => "PositPublisher/test",
+}));
+
 // ---------------------------------------------------------------------------
 // Mock discoverServerURL
 // ---------------------------------------------------------------------------

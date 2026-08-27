@@ -209,4 +209,84 @@ describe("CloudAuthClient", () => {
       await expect(client.createDeviceAuth()).rejects.toThrow("Network error");
     });
   });
+
+  describe("userAgent", () => {
+    it("includes User-Agent on exchangeToken when provided", async () => {
+      mockPost.mockResolvedValue({ data: tokenResponse });
+
+      const client = new CloudAuthClient(
+        CloudEnvironment.Production,
+        "posit-publisher/1.2.3",
+      );
+      await client.exchangeToken({
+        grant_type: "refresh_token",
+        refresh_token: "my-refresh-token",
+      });
+
+      const [, , config] = mockPost.mock.calls[0];
+      expect(config.headers["User-Agent"]).toBe("posit-publisher/1.2.3");
+      expect(config.headers["Content-Type"]).toBe(
+        "application/x-www-form-urlencoded",
+      );
+    });
+
+    it("omits User-Agent on exchangeToken when not provided", async () => {
+      mockPost.mockResolvedValue({ data: tokenResponse });
+
+      const client = new CloudAuthClient(CloudEnvironment.Production);
+      await client.exchangeToken({
+        grant_type: "refresh_token",
+        refresh_token: "my-refresh-token",
+      });
+
+      const [, , config] = mockPost.mock.calls[0];
+      expect(config.headers).not.toHaveProperty("User-Agent");
+    });
+
+    it("includes User-Agent on createDeviceAuth when provided", async () => {
+      mockPost.mockResolvedValue({
+        data: {
+          device_code: "test-device-code",
+          user_code: "ABCD-1234",
+          verification_uri: "https://login.posit.cloud/activate",
+          verification_uri_complete:
+            "https://login.posit.cloud/activate?user_code=ABCD-1234",
+          expires_in: 900,
+          interval: 5,
+        },
+      });
+
+      const client = new CloudAuthClient(
+        CloudEnvironment.Production,
+        "posit-publisher/1.2.3",
+      );
+      await client.createDeviceAuth();
+
+      const [, , config] = mockPost.mock.calls[0];
+      expect(config.headers["User-Agent"]).toBe("posit-publisher/1.2.3");
+      expect(config.headers["Content-Type"]).toBe(
+        "application/x-www-form-urlencoded",
+      );
+    });
+
+    it("omits User-Agent on createDeviceAuth when not provided", async () => {
+      mockPost.mockResolvedValue({
+        data: {
+          device_code: "test-device-code",
+          user_code: "ABCD-1234",
+          verification_uri: "https://login.posit.cloud/activate",
+          verification_uri_complete:
+            "https://login.posit.cloud/activate?user_code=ABCD-1234",
+          expires_in: 900,
+          interval: 5,
+        },
+      });
+
+      const client = new CloudAuthClient(CloudEnvironment.Production);
+      await client.createDeviceAuth();
+
+      const [, , config] = mockPost.mock.calls[0];
+      expect(config.headers).not.toHaveProperty("User-Agent");
+    });
+  });
 });

@@ -161,6 +161,10 @@ export class ConnectAPI {
       config.timeout = options.timeout;
     }
 
+    if (options.userAgent) {
+      config.headers = { ...config.headers, "User-Agent": options.userAgent };
+    }
+
     this.client = axios.create(config);
 
     // For token auth, add a request interceptor that computes per-request signing headers

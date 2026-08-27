@@ -25,6 +25,8 @@ interface ConnectAPIBaseOptions {
   /** Whether to verify TLS certificates. Defaults to true. */
   rejectUnauthorized?: boolean;
   timeout?: number; // request timeout in milliseconds
+  /** Value for the User-Agent header sent on every request. When omitted or empty, axios's default is used. */
+  userAgent?: string;
 }
 
 interface ApiKeyAuth extends ConnectAPIBaseOptions {

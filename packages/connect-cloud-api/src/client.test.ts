@@ -197,6 +197,89 @@ describe("Authorization header", () => {
 });
 
 // ---------------------------------------------------------------------------
+// User-Agent header
+// ---------------------------------------------------------------------------
+
+describe("User-Agent header", () => {
+  it("includes User-Agent in the axios.create config when provided", () => {
+    new ConnectCloudAPI({
+      apiBaseUrl: BASE_URL,
+      accessToken: ACCESS_TOKEN,
+      userAgent: "posit-publisher/1.2.3",
+    });
+
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: { "User-Agent": "posit-publisher/1.2.3" },
+      }),
+    );
+  });
+
+  it("omits headers from the axios.create config when not provided", () => {
+    createClient();
+
+    expect(axios.create).toHaveBeenCalledWith({
+      baseURL: BASE_URL,
+    });
+  });
+
+  it("includes User-Agent on the direct upload POST when provided", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(null, 200));
+
+    const client = new ConnectCloudAPI({
+      apiBaseUrl: BASE_URL,
+      accessToken: ACCESS_TOKEN,
+      userAgent: "posit-publisher/1.2.3",
+    });
+    const body = Readable.from(Buffer.from([1]));
+    await client.uploadBundle("https://upload.example.com/presigned", body, 1);
+
+    expect(axios.post).toHaveBeenCalledWith(
+      "https://upload.example.com/presigned",
+      body,
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          "User-Agent": "posit-publisher/1.2.3",
+        }),
+      }),
+    );
+  });
+
+  it("omits User-Agent on the direct upload POST when not provided", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(null, 200));
+
+    const client = createClient();
+    const body = Readable.from(Buffer.from([1]));
+    await client.uploadBundle("https://upload.example.com/presigned", body, 1);
+
+    const calls = (axios.post as ReturnType<typeof vi.fn>).mock.calls;
+    const [, , config] = calls[calls.length - 1];
+    expect(config.headers).not.toHaveProperty("User-Agent");
+  });
+
+  it("forwards userAgent to CloudAuthClient used for token refresh", async () => {
+    const userResponse: UserResponse = { account_roles: {} };
+    mockRequest
+      .mockResolvedValueOnce(textResponse("Unauthorized", 401, "Unauthorized"))
+      .mockResolvedValueOnce(jsonResponse(userResponse));
+
+    const client = new ConnectCloudAPI({
+      apiBaseUrl: BASE_URL,
+      accessToken: ACCESS_TOKEN,
+      refreshToken: "test-refresh-token",
+      environment: CloudEnvironment.Production,
+      userAgent: "posit-publisher/1.2.3",
+    });
+    await client.getCurrentUser();
+
+    expect(MockCloudAuthClientConstructor).toHaveBeenCalledWith(
+      CloudEnvironment.Production,
+      "posit-publisher/1.2.3",
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
 // getCurrentUser
 // ---------------------------------------------------------------------------
 
@@ -636,9 +719,16 @@ const mockExchangeToken = vi.fn().mockResolvedValue({
   scope: "vivid",
 });
 
+const MockCloudAuthClientConstructor = vi.fn();
+
 vi.mock("./auth.js", () => ({
   CloudAuthClient: class MockCloudAuthClient {
-    constructor(public environment: CloudEnvironment) {}
+    constructor(
+      public environment: CloudEnvironment,
+      public userAgent?: string,
+    ) {
+      MockCloudAuthClientConstructor(environment, userAgent);
+    }
     exchangeToken = mockExchangeToken;
   },
 }));

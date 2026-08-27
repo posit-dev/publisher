@@ -55,6 +55,9 @@ vi.mock("vscode", () => ({
       get: () => true,
     }),
   },
+  extensions: {
+    getExtension: vi.fn(),
+  },
 }));
 
 import {

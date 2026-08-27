@@ -23,6 +23,8 @@ export interface ConnectCloudAPIOptions {
   environment?: CloudEnvironment;
   /** Called after successful token refresh so caller can persist new tokens. */
   onTokenRefresh?: (tokens: TokenResponse) => Promise<void>;
+  /** Value for the User-Agent header sent on every request. When omitted or empty, axios's default is used. */
+  userAgent?: string;
 }
 
 // ---------------------------------------------------------------------------

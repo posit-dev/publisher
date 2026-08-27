@@ -11,7 +11,6 @@ import {
 } from "src/multiStepInputs/multiStepHelper";
 import {
   commands,
-  extensions,
   InputBoxValidationSeverity,
   QuickPickItem,
   QuickPickItemKind,
@@ -39,6 +38,7 @@ import {
   getRInterpreterPath,
 } from "src/utils/vscode";
 import { getSummaryStringFromError } from "src/utils/errors";
+import { getExtensionVersion } from "src/utils/userAgent";
 import { newConfigFileNameFromTitle, newDeploymentName } from "src/utils/names";
 import { updateFileList } from "src/configFiles";
 import {
@@ -909,9 +909,7 @@ export async function newDeployment(
       existingNames = [];
     }
     const contentRecordName = newDeploymentName(existingNames);
-    const clientVersion =
-      extensions.getExtension("posit.publisher")?.packageJSON.version ||
-      "unknown";
+    const clientVersion = getExtensionVersion();
     newContentRecord = await createDeploymentRecord({
       saveName: contentRecordName,
       projectDir: newDeploymentData.entrypoint.inspectionResult.projectDir,

@@ -22,7 +22,11 @@ import {
   IncompleteCredentialError,
 } from "./errors";
 
-vi.mock("vscode");
+vi.mock("vscode", () => ({
+  extensions: {
+    getExtension: vi.fn(),
+  },
+}));
 vi.mock("src/logging");
 vi.mock("src/snowflake/connections");
 vi.mock("snowflake-sdk");
@@ -403,6 +407,7 @@ describe("connectAPIOptionsFromCredential", () => {
       expect(result).toEqual({
         url: "https://connect.example.com",
         apiKey: "my-key",
+        userAgent: "PositPublisher/unknown",
       });
     });
   });
@@ -426,6 +431,7 @@ describe("connectAPIOptionsFromCredential", () => {
         url: "https://connect.example.com",
         token: "my-token",
         privateKey: "my-private-key",
+        userAgent: "PositPublisher/unknown",
       });
     });
 
@@ -447,6 +453,7 @@ describe("connectAPIOptionsFromCredential", () => {
         url: "https://connect.example.com",
         token: "my-token",
         privateKey: "my-private-key",
+        userAgent: "PositPublisher/unknown",
       });
     });
   });
@@ -468,6 +475,7 @@ describe("connectAPIOptionsFromCredential", () => {
 
       expect(result).toEqual({
         url: "https://connect.example.com",
+        userAgent: "PositPublisher/unknown",
       });
     });
   });
@@ -496,6 +504,7 @@ describe("connectAPIOptionsFromCredential", () => {
         apiKey: "my-key",
         rejectUnauthorized: false,
         timeout: 5000,
+        userAgent: "PositPublisher/unknown",
       });
     });
   });

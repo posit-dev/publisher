@@ -41,6 +41,9 @@ vi.mock("vscode", () => ({
       get: (_key: string, _def?: unknown) => h.forceDeviceCode,
     }),
   },
+  extensions: {
+    getExtension: vi.fn(),
+  },
 }));
 
 vi.mock("src/logging", () => ({

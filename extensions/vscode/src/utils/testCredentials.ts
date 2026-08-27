@@ -8,6 +8,7 @@ import { ServerType } from "src/api/types/contentRecords";
 import { TestResult } from "src/api/types/credentials";
 import type { ErrorCode } from "src/utils/errorTypes";
 import { serverTypeFromURL, discoverServerURL } from "src/utils/url";
+import { getUserAgent } from "src/utils/userAgent";
 
 const CERTIFICATE_ERROR_PATTERNS = [
   "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
@@ -97,6 +98,7 @@ export async function testServerURL(
       url: urlToTest,
       rejectUnauthorized: !params.insecure,
       timeout: DEFAULT_TIMEOUT_MS,
+      userAgent: getUserAgent(),
     });
 
     try {
@@ -167,6 +169,7 @@ export async function testAuthentication(
       ...auth,
       rejectUnauthorized: !params.insecure,
       timeout: DEFAULT_TIMEOUT_MS,
+      userAgent: getUserAgent(),
     });
 
     const result = await client.testAuthentication();

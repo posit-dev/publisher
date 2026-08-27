@@ -23,10 +23,17 @@ const AUTH_SCOPE = "vivid";
 export class CloudAuthClient {
   private readonly baseUrl: string;
   private readonly clientId: string;
+  private readonly userAgent?: string;
 
-  constructor(environment: CloudEnvironment) {
+  constructor(environment: CloudEnvironment, userAgent?: string) {
     this.baseUrl = cloudAuthBaseUrls[environment];
     this.clientId = cloudAuthClientIds[environment];
+    this.userAgent = userAgent;
+  }
+
+  /** Headers to merge into every request, carrying the User-Agent when configured. */
+  private headers(base: Record<string, string>): Record<string, string> {
+    return this.userAgent ? { ...base, "User-Agent": this.userAgent } : base;
   }
 
   /**
@@ -44,7 +51,9 @@ export class CloudAuthClient {
       `${this.baseUrl}/oauth/device/authorize`,
       body,
       {
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        headers: this.headers({
+          "Content-Type": "application/x-www-form-urlencoded",
+        }),
       },
     );
 
@@ -73,7 +82,9 @@ export class CloudAuthClient {
       `${this.baseUrl}/oauth/token`,
       body,
       {
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        headers: this.headers({
+          "Content-Type": "application/x-www-form-urlencoded",
+        }),
       },
     );
 
