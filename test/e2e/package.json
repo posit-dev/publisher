@@ -12,7 +12,7 @@
   "license": "UNLICENSED",
   "private": true,
   "devDependencies": {
-    "@cypress/grep": "^6.0.3",
+    "@cypress/grep": "^7.0.0",
     "@eslint/js": "^10.0.0",
     "globals": "^17.11.0",
     "@testing-library/cypress": "^10.1.3",
