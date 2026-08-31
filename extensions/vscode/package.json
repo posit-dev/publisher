@@ -992,7 +992,7 @@
     "retry": "^0.13.1",
     "smol-toml": "^1.8.0",
     "snowflake-sdk": "3.2.0",
-    "tar-stream": "^3.2.1",
+    "tar-stream": "3.2.0",
     "vscode-uri": "^3.2.0"
   }
 }
