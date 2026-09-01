@@ -985,7 +985,7 @@
     "axios": "^1.20.0",
     "debounce": "^3.0.0",
     "entities": "^8.0.0",
-    "filenamify": "^7.0.2",
+    "filenamify": "^7.0.3",
     "js-yaml": "^5.4.1",
     "jsonwebtoken": "^9.0.3",
     "picomatch": "^4.0.5",
