@@ -11,10 +11,10 @@
     "@posit-dev/connect-cloud-api": "*"
   },
   "devDependencies": {
-    "@posit-dev/positron": "^0.2.7",
+    "@posit-dev/positron": "^0.2.8",
     "@types/vscode": "1.105.0",
-    "js-yaml": "^5.3.0",
+    "js-yaml": "^5.4.1",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   }
 }

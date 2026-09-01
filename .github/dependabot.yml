@@ -12,6 +12,12 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      # tar-stream 3.2.1 bundles its own type declarations, which take
+      # precedence over @types/tar-stream and describe streamx streams
+      # instead of Node streams. Pinned to 3.2.0 until the code migrates.
+      - dependency-name: "tar-stream"
+        versions: [">=3.2.1"]
     groups:
       npm-minor-and-patch:
         patterns:
