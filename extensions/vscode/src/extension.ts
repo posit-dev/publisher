@@ -92,7 +92,7 @@ function initializeExtension(context: ExtensionContext) {
   const watchers = new WatcherManager();
   context.subscriptions.push(watchers);
 
-  configureSnowflakeSDK(context.secrets);
+  configureSnowflakeSDK(context.secrets, context.logUri);
 
   const state = new PublisherState(context);
   resolvePublisherState(state);
