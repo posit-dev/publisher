@@ -10,9 +10,16 @@ import {
 import { logger } from "src/logging";
 import { ProductType } from "src/api/types/contentRecords";
 import { runDetectors } from "./detectorRunner";
-import { normalizeConfig, NormalizedConfig } from "./normalize";
+import {
+  isPythonContentType,
+  isQuartoContentType,
+  isRRequiredContentType,
+  normalizeConfig,
+  NormalizedConfig,
+} from "./normalize";
 import { sortConfigs } from "./sorting";
 import { InspectOptions, PartialConfig } from "./types";
+import { defaultQuartoVersion } from "./detectors/quarto";
 
 const CONFIG_SCHEMA_URL =
   "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json";
@@ -107,6 +114,48 @@ async function inspectSingleDir(
     `[inspect] inspection complete, found ${results.length} configuration(s)`,
   );
   return results;
+}
+
+/**
+ * Build a configuration for an entrypoint using a content type chosen manually
+ * by the user, rather than one produced by a detector. Used when detection
+ * could not determine a content type (`ContentType.UNKNOWN`) and the user was
+ * prompted to pick one from the list of valid types. Fills in the same
+ * placeholder sections (`python`, `r`, `quarto`) that a detector would have
+ * set, so the resulting configuration is valid per the schema and behaves as
+ * if it had been detected automatically.
+ */
+export async function inspectManualContentType(
+  options: InspectOptions,
+  type: ContentType,
+): Promise<ConfigurationInspectionResult> {
+  const { projectDir, pythonPath, rPath, entrypoint, relativeDir } = options;
+
+  const cfg: PartialConfig = {
+    type,
+    entrypoint: entrypoint ?? "",
+  };
+  if (isPythonContentType(type)) {
+    cfg.python = {};
+  }
+  if (isRRequiredContentType(type)) {
+    cfg.r = {};
+  }
+  if (isQuartoContentType(type)) {
+    cfg.quarto = { version: defaultQuartoVersion };
+  }
+
+  const normalized = await normalizeConfig(
+    cfg,
+    projectDir,
+    pythonPath,
+    rPath,
+    entrypoint,
+  );
+  return {
+    configuration: toConfigurationDetails(normalized),
+    projectDir: relativeDir ?? ".",
+  };
 }
 
 async function inspectRecursive(
