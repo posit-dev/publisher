@@ -188,6 +188,7 @@ export async function newDeployment(
   let lastInspectionContext:
     | {
         absoluteDir: string;
+        relEntryPointDir: string;
         relEntryPointFile: string;
         pythonPath?: string;
         rPath?: string;
@@ -212,6 +213,7 @@ export async function newDeployment(
 
       lastInspectionContext = {
         absoluteDir,
+        relEntryPointDir,
         relEntryPointFile,
         pythonPath: python?.pythonPath,
         rPath: r?.rPath,
@@ -264,8 +266,13 @@ export async function newDeployment(
     if (!lastInspectionContext) {
       return Promise.resolve([]);
     }
-    const { absoluteDir, relEntryPointFile, pythonPath, rPath } =
-      lastInspectionContext;
+    const {
+      absoluteDir,
+      relEntryPointDir,
+      relEntryPointFile,
+      pythonPath,
+      rPath,
+    } = lastInspectionContext;
 
     return Promise.all(
       allValidContentTypes.map(async (type) => {
@@ -275,6 +282,7 @@ export async function newDeployment(
             pythonPath,
             rPath,
             entrypoint: relEntryPointFile,
+            relativeDir: relEntryPointDir,
           },
           type,
         );
