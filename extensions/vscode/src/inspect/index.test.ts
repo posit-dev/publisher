@@ -1,7 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { inspectProject } from "./index";
+import { inspectManualContentType, inspectProject } from "./index";
 import { ContentType } from "src/api/types/configurations";
 
 const { mockReaddir, mockStat, mockReadFile, mockAccess } = vi.hoisted(() => ({
@@ -117,5 +117,85 @@ describe("inspectProject", () => {
     for (const result of results) {
       expect(result.projectDir).toBe(".");
     }
+  });
+});
+
+describe("inspectManualContentType", () => {
+  test("fills in an empty python placeholder for python content types", async () => {
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    const result = await inspectManualContentType(
+      { projectDir: "/myproject", entrypoint: "app.py" },
+      ContentType.PYTHON_FASTAPI,
+    );
+
+    expect(result.configuration.type).toBe(ContentType.PYTHON_FASTAPI);
+    expect(result.configuration.entrypoint).toBe("app.py");
+    expect(result.configuration.python).toEqual({
+      version: "",
+      packageFile: "",
+      packageManager: "",
+    });
+    expect(result.configuration.r).toBeUndefined();
+    expect(result.configuration.files).toContain("/requirements.txt");
+  });
+
+  test("fills in an empty r placeholder for r content types", async () => {
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    const result = await inspectManualContentType(
+      { projectDir: "/myproject", entrypoint: "app.R" },
+      ContentType.R_SHINY,
+    );
+
+    expect(result.configuration.type).toBe(ContentType.R_SHINY);
+    expect(result.configuration.r).toEqual({
+      version: "",
+      packageFile: "",
+      packageManager: "",
+    });
+    expect(result.configuration.python).toBeUndefined();
+    expect(result.configuration.files).toContain("/renv.lock");
+  });
+
+  test("fills in a default quarto version for quarto content types", async () => {
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    const result = await inspectManualContentType(
+      { projectDir: "/myproject", entrypoint: "report.qmd" },
+      ContentType.QUARTO,
+    );
+
+    expect(result.configuration.type).toBe(ContentType.QUARTO);
+    expect(result.configuration.quarto?.version).toBeTruthy();
+  });
+
+  test("sets neither python, r, nor quarto for content types that don't need them", async () => {
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    const result = await inspectManualContentType(
+      { projectDir: "/myproject", entrypoint: "index.html" },
+      ContentType.HTML,
+    );
+
+    expect(result.configuration.type).toBe(ContentType.HTML);
+    expect(result.configuration.python).toBeUndefined();
+    expect(result.configuration.r).toBeUndefined();
+    expect(result.configuration.quarto).toBeUndefined();
+  });
+
+  test("uses the provided relativeDir as the result's projectDir", async () => {
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    const result = await inspectManualContentType(
+      {
+        projectDir: "/workspace/myapp",
+        entrypoint: "app.py",
+        relativeDir: "myapp",
+      },
+      ContentType.PYTHON_SHINY,
+    );
+
+    expect(result.projectDir).toBe("myapp");
   });
 });
