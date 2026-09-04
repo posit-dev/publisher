@@ -109,3 +109,10 @@ vi.mock("src/open_connect", () => ({
   handleConnectUri: vi.fn(),
   promptOpenConnectContent: vi.fn(() => Promise.resolve()),
 }));
+
+// src/snowflake/sdkConfig.ts calls the real snowflake-sdk during activation,
+// which opens a winston log file transport and creates its directory on disk.
+// The mock ExtensionContext hands it a log directory that does not exist, so
+// leave the SDK out of it — these tests cover VSCode API usage, and the SDK
+// configuration has its own unit tests.
+vi.mock("snowflake-sdk");
