@@ -1,6 +1,8 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { SecretStorage } from "vscode";
+import * as path from "path";
+
+import { SecretStorage, Uri } from "vscode";
 import snowflake from "snowflake-sdk";
 
 import { SnowflakeSecretStorageCredentialManager } from "./secretStorageCredentialManager";
@@ -13,11 +15,20 @@ import { SnowflakeSecretStorageCredentialManager } from "./secretStorageCredenti
  *
  * Wires the SDK's credential cache (used for the externalbrowser SSO id-token)
  * to the extension's SecretStorage so cached tokens are persisted securely.
+ *
+ * Also pins the SDK's log file to `logDir`. The SDK logs to `snowflake.log`
+ * relative to the working directory, which on Linux is the user's home
+ * directory, so the first log write drops a `snowflake.log` there. Winston
+ * creates the directory as needed, so `logDir` need not exist yet.
  */
-export function configureSnowflakeSDK(secrets: SecretStorage): void {
+export function configureSnowflakeSDK(
+  secrets: SecretStorage,
+  logDir: Uri,
+): void {
   snowflake.configure({
     customCredentialManager: new SnowflakeSecretStorageCredentialManager(
       secrets,
     ),
+    logFilePath: path.join(logDir.fsPath, "snowflake.log"),
   });
 }

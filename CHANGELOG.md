@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Publisher no longer leaves a `snowflake.log` file in the directory the editor was launched from, which on Linux is usually your home directory. The Snowflake SDK now logs to Publisher's own log directory alongside its other logs, so a stray file can be deleted once and will not come back. (#4372)
+
 ## [2.12.0]
 
 ### Added

@@ -1,6 +1,9 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import * as path from "path";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Uri } from "vscode";
 
 import { mockSecretStorage } from "src/test/unit-test-utils/vscode-mocks";
 import { SnowflakeSecretStorageCredentialManager } from "./secretStorageCredentialManager";
@@ -11,13 +14,15 @@ import snowflake from "snowflake-sdk";
 
 import { configureSnowflakeSDK } from "./sdkConfig";
 
+const logDir = { fsPath: path.join("tmp", "logs", "posit.publisher") } as Uri;
+
 describe("configureSnowflakeSDK", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("configures snowflake-sdk with a credential manager", () => {
-    configureSnowflakeSDK(new mockSecretStorage());
+    configureSnowflakeSDK(new mockSecretStorage(), logDir);
 
     expect(snowflake.configure).toHaveBeenCalledTimes(1);
     const options = vi.mocked(snowflake.configure).mock.calls[0]?.[0];
@@ -30,9 +35,18 @@ describe("configureSnowflakeSDK", () => {
     );
   });
 
+  it("points the SDK log file at the given log directory", () => {
+    configureSnowflakeSDK(new mockSecretStorage(), logDir);
+
+    const options = vi.mocked(snowflake.configure).mock.calls[0]?.[0];
+    expect(options?.logFilePath).toBe(
+      path.join(logDir.fsPath, "snowflake.log"),
+    );
+  });
+
   it("installs a credential manager wired to the provided SecretStorage", async () => {
     const secrets = new mockSecretStorage();
-    configureSnowflakeSDK(secrets);
+    configureSnowflakeSDK(secrets, logDir);
 
     // configure()'s type declares customCredentialManager as `object`; narrow to
     // the concrete manager we install so we can exercise its hooks.
