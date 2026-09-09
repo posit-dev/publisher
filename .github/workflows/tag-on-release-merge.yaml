@@ -19,6 +19,29 @@ jobs:
       startsWith(github.event.pull_request.head.ref, 'release/v')
     runs-on: ubuntu-latest
     steps:
+      - name: Verify main branch CI is green
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'main.yaml',
+              branch: 'main',
+              status: 'completed',
+              per_page: 1,
+            });
+            if (runs.data.workflow_runs.length === 0) {
+              core.setFailed('No completed main.yaml runs found');
+              return;
+            }
+            const lastRun = runs.data.workflow_runs[0];
+            console.log(`Last main.yaml run: ${lastRun.html_url}`);
+            console.log(`Conclusion: ${lastRun.conclusion}`);
+            if (lastRun.conclusion !== 'success') {
+              core.setFailed(`Cannot tag release: last main.yaml run was '${lastRun.conclusion}'. Fix CI on main before releasing.`);
+            }
+
       - name: Generate token for GitHub App
         id: generate-token
         uses: actions/create-github-app-token@v3
