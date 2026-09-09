@@ -968,16 +968,16 @@
     "eslint-config-prettier": "^10.0.1",
     "fantasticon": "^4.1.0",
     "fishery": "^2.4.0",
-    "globals": "^17.11.0",
+    "globals": "^17.12.0",
     "mocha": "^11.8.0",
     "typescript": "^7.0.2",
-    "typescript-eslint": "^8.68.0",
+    "typescript-eslint": "^8.69.0",
     "vitest": "^4.1.11"
   },
   "dependencies": {
     "@posit-dev/connect-api": "*",
     "@posit-dev/connect-cloud-api": "*",
-    "@posit-dev/positron": "^0.2.8",
+    "@posit-dev/positron": "^0.2.9",
     "@vscode/codicons": "^0.0.45",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
@@ -991,7 +991,7 @@
     "picomatch": "^4.0.5",
     "retry": "^0.13.1",
     "smol-toml": "^1.8.0",
-    "snowflake-sdk": "3.2.0",
+    "snowflake-sdk": "3.3.0",
     "tar-stream": "3.2.0",
     "vscode-uri": "^3.2.0"
   }
