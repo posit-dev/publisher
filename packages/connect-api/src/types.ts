@@ -341,25 +341,37 @@ export interface SchedulerSettings {
   max_nvidia_gpu_limit: number;
 }
 
+/** The configured, licensed, and discovered state of a runtime. */
+export interface RuntimeStatus {
+  enabled: boolean;
+  licensed: boolean;
+  available: boolean;
+  usable: boolean;
+}
+
 export interface PyInstallation {
   version: string;
   cluster_name: string;
   image_name: string;
+  publishable: boolean;
 }
 
 export interface PyInfo {
   installations: PyInstallation[];
   api_enabled: boolean;
+  status: RuntimeStatus;
 }
 
 export interface RInstallation {
   version: string;
   cluster_name: string;
   image_name: string;
+  publishable: boolean;
 }
 
 export interface RInfo {
   installations: RInstallation[];
+  status: RuntimeStatus;
 }
 
 export interface QuartoInstallation {
@@ -370,12 +382,14 @@ export interface QuartoInstallation {
 
 export interface QuartoInfo {
   installations: QuartoInstallation[];
+  status: RuntimeStatus;
 }
 
 export interface NodejsInstallation {
   version: string;
   cluster_name: string;
   image_name: string;
+  publishable: boolean;
 }
 
 export interface NodejsInfo {
@@ -387,6 +401,7 @@ export interface NodejsInfo {
    * (graceful 404 fallback in getSettings).
    */
   enabled: boolean;
+  status: RuntimeStatus;
 }
 
 /** Composite settings from all 8 server endpoints. */

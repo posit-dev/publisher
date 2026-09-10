@@ -1,7 +1,23 @@
 {
   "installations": [
-    { "version": "3.11.6", "cluster_name": "", "image_name": "" },
-    { "version": "3.10.12", "cluster_name": "", "image_name": "" }
+    {
+      "version": "3.11.6",
+      "cluster_name": "",
+      "image_name": "",
+      "publishable": true
+    },
+    {
+      "version": "3.10.12",
+      "cluster_name": "",
+      "image_name": "",
+      "publishable": true
+    }
   ],
-  "api_enabled": true
+  "api_enabled": true,
+  "status": {
+    "enabled": true,
+    "licensed": true,
+    "available": true,
+    "usable": true
+  }
 }

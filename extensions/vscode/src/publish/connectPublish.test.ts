@@ -363,10 +363,28 @@ function makeSettings(overrides?: Partial<AllSettings>): AllSettings {
       max_nvidia_gpu_limit: 4,
       ...overrides?.scheduler,
     },
-    python: { installations: [], api_enabled: true, ...overrides?.python },
-    r: { installations: [], ...overrides?.r },
-    quarto: { installations: [], ...overrides?.quarto },
-    nodejs: { installations: [], enabled: true, ...overrides?.nodejs },
+    python: {
+      installations: [],
+      api_enabled: true,
+      status: { enabled: true, licensed: true, available: true, usable: true },
+      ...overrides?.python,
+    },
+    r: {
+      installations: [],
+      status: { enabled: true, licensed: true, available: true, usable: true },
+      ...overrides?.r,
+    },
+    quarto: {
+      installations: [],
+      status: { enabled: true, licensed: true, available: true, usable: true },
+      ...overrides?.quarto,
+    },
+    nodejs: {
+      installations: [],
+      enabled: true,
+      status: { enabled: true, licensed: true, available: true, usable: true },
+      ...overrides?.nodejs,
+    },
   };
 }
 
@@ -2523,7 +2541,16 @@ describe("connectPublish — server settings validation", () => {
     const api = makeMockApi();
     vi.mocked(api.getSettings).mockResolvedValue(
       makeSettings({
-        nodejs: { installations: [], enabled: false },
+        nodejs: {
+          installations: [],
+          enabled: false,
+          status: {
+            enabled: false,
+            licensed: false,
+            available: false,
+            usable: false,
+          },
+        },
       }),
     );
 
@@ -2556,7 +2583,16 @@ describe("connectPublish — server settings validation", () => {
     const api = makeMockApi();
     vi.mocked(api.getSettings).mockResolvedValue(
       makeSettings({
-        nodejs: { installations: [], enabled: false },
+        nodejs: {
+          installations: [],
+          enabled: false,
+          status: {
+            enabled: false,
+            licensed: false,
+            available: false,
+            usable: false,
+          },
+        },
       }),
     );
 

@@ -1365,19 +1365,50 @@ describe("getSettings", () => {
     nvidia_gpu_limit: 0,
     max_nvidia_gpu_limit: 0,
   };
+  const runtimeStatus = {
+    enabled: true,
+    licensed: true,
+    available: true,
+    usable: true,
+  };
   const python = {
-    installations: [{ version: "3.11.0", cluster_name: "", image_name: "" }],
+    installations: [
+      {
+        version: "3.11.0",
+        cluster_name: "",
+        image_name: "",
+        publishable: true,
+      },
+    ],
     api_enabled: true,
+    status: runtimeStatus,
   };
   const r = {
-    installations: [{ version: "4.3.0", cluster_name: "", image_name: "" }],
+    installations: [
+      {
+        version: "4.3.0",
+        cluster_name: "",
+        image_name: "",
+        publishable: true,
+      },
+    ],
+    status: runtimeStatus,
   };
   const quarto = {
     installations: [{ version: "1.4.0", cluster_name: "", image_name: "" }],
+    status: runtimeStatus,
   };
   const nodejs = {
-    installations: [{ version: "22.11.0", cluster_name: "", image_name: "" }],
+    installations: [
+      {
+        version: "22.11.0",
+        cluster_name: "",
+        image_name: "",
+        publishable: true,
+      },
+    ],
     enabled: true,
+    status: runtimeStatus,
   };
 
   const urlResponseMap: Record<string, unknown> = {
@@ -1517,7 +1548,16 @@ describe("getSettings", () => {
     const client = createClient();
     const settings = await client.getSettings();
 
-    expect(settings.nodejs).toEqual({ installations: [], enabled: false });
+    expect(settings.nodejs).toEqual({
+      installations: [],
+      enabled: false,
+      status: {
+        enabled: false,
+        licensed: false,
+        available: false,
+        usable: false,
+      },
+    });
     // The other 7 settings must still come through correctly.
     expect(settings.general).toEqual(general);
     expect(settings.python).toEqual(python);
