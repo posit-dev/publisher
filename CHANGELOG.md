@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- When Publisher can't automatically determine the content type for an entrypoint, it now prompts you to pick one from the list of valid content types instead of writing `type = "unknown"` to the configuration and leaving you to edit the TOML by hand. Picking a type fills in the same required fields (e.g. an empty `[python]` or `[r]` section) that automatic detection would have set. (#2833, #2666)
 - Publisher no longer leaves a `snowflake.log` file in the directory the editor was launched from, which on Linux is usually your home directory. The Snowflake SDK now logs to Publisher's own log directory alongside its other logs, so a stray file can be deleted once and will not come back. (#4372)
 
 ## [2.12.0]

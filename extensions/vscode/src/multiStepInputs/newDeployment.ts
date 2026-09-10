@@ -21,6 +21,7 @@ import {
 } from "vscode";
 
 import {
+  allValidContentTypes,
   areInspectionResultsSimilarEnough,
   Configuration,
   ConfigurationDetails,
@@ -66,7 +67,7 @@ import {
 } from "src/utils/multiStepHelpers";
 import { CredentialsService } from "src/credentials/service";
 import { extensionSettings } from "src/extension";
-import { inspectProject } from "src/inspect";
+import { inspectManualContentType, inspectProject } from "src/inspect";
 
 const viewTitle = "Create a New Deployment";
 
@@ -181,6 +182,19 @@ export async function newDeployment(
     }
   };
 
+  // Remembers the resolved inspection context (project dir, entrypoint,
+  // interpreter paths) from the last call to getConfigurationInspectionQuickPicks
+  // so getManualContentTypeQuickPicks can reuse it without re-resolving.
+  let lastInspectionContext:
+    | {
+        absoluteDir: string;
+        relEntryPointDir: string;
+        relEntryPointFile: string;
+        pythonPath?: string;
+        rPath?: string;
+      }
+    | undefined;
+
   const getConfigurationInspectionQuickPicks = async (
     relEntryPoint: string,
   ): Promise<QuickPickItemWithInspectionResult[]> => {
@@ -196,6 +210,14 @@ export async function newDeployment(
       const absoluteDir = root
         ? path.resolve(root, relEntryPointDir)
         : relEntryPointDir;
+
+      lastInspectionContext = {
+        absoluteDir,
+        relEntryPointDir,
+        relEntryPointFile,
+        pythonPath: python?.pythonPath,
+        rPath: r?.rPath,
+      };
 
       const inspectionResults = await inspectProject({
         projectDir: absoluteDir,
@@ -232,6 +254,46 @@ export async function newDeployment(
       throw new Error(msg);
     }
     return inspectionListItems;
+  };
+
+  // Builds a quick pick for every valid content type, used when detection
+  // could not determine one (ContentType.UNKNOWN) and the user must choose
+  // manually. Each item's inspection result is built as if that type had
+  // been detected automatically (see inspectManualContentType).
+  const getManualContentTypeQuickPicks = (): Promise<
+    QuickPickItemWithInspectionResult[]
+  > => {
+    if (!lastInspectionContext) {
+      return Promise.resolve([]);
+    }
+    const {
+      absoluteDir,
+      relEntryPointDir,
+      relEntryPointFile,
+      pythonPath,
+      rPath,
+    } = lastInspectionContext;
+
+    return Promise.all(
+      allValidContentTypes.map(async (type) => {
+        const inspectionResult = await inspectManualContentType(
+          {
+            projectDir: absoluteDir,
+            pythonPath,
+            rPath,
+            entrypoint: relEntryPointFile,
+            relativeDir: relEntryPointDir,
+          },
+          type,
+        );
+        return {
+          iconPath: new ThemeIcon("gear"),
+          label: getContentTypeLabel(type),
+          description: `(${contentTypeStrings[type]})`,
+          inspectionResult,
+        };
+      }),
+    );
   };
 
   const getCredentials = async (): Promise<void> => {
@@ -538,11 +600,19 @@ export async function newDeployment(
     // default next step, select the content inspection result
     let nextStepId = step.INPUT_CONTENT_TYPE;
 
-    // if there is only one choice, set it as the inspection result
-    // account for the existence of config alternatives too.
-    if (inspectionQuickPicks.length === 1 && inspectionQuickPicks[0]) {
+    const singlePick =
+      inspectionQuickPicks.length === 1 ? inspectionQuickPicks[0] : undefined;
+    const isUndetected =
+      singlePick?.inspectionResult?.configuration.type === ContentType.UNKNOWN;
+
+    // if there is only one choice, and detection actually determined a content
+    // type for it, set it as the inspection result. Account for the existence
+    // of config alternatives too. If detection couldn't determine a content
+    // type, fall through to INPUT_CONTENT_TYPE so the user can pick one from
+    // the full list of valid content types.
+    if (singlePick && !isUndetected) {
       newDeploymentData.entrypoint.inspectionResult =
-        inspectionQuickPicks[0].inspectionResult;
+        singlePick.inspectionResult;
       // If applicable, the user has to pick a config alternative
       nextStepId = hasConfigAlternatives()
         ? step.INPUT_CONFIG_ALTERNATIVES
@@ -567,6 +637,25 @@ export async function newDeployment(
   ) {
     stepHistoryFlush(step.INPUT_CONTENT_TYPE);
 
+    // If detection could not determine a content type at all (a single
+    // "unknown" result), swap in the full list of valid content types so
+    // the user can pick the one that matches their project.
+    const isUndetected =
+      inspectionQuickPicks.length === 1 &&
+      inspectionQuickPicks[0]?.inspectionResult?.configuration.type ===
+        ContentType.UNKNOWN;
+
+    let placeholder = `Select the content type for your entrypoint file (${newDeploymentData.entrypoint.filePath}).`;
+
+    if (isUndetected) {
+      inspectionQuickPicks = await showProgress(
+        "Scanning::newDeployment",
+        viewId,
+        async () => await getManualContentTypeQuickPicks(),
+      );
+      placeholder = `Publisher could not automatically determine the content type for your entrypoint file (${newDeploymentData.entrypoint.filePath}). Select the framework or content type you're using.`;
+    }
+
     if (newDeploymentData.entrypoint.inspectionResult) {
       inspectionQuickPicks.forEach((pick) => {
         if (
@@ -585,7 +674,7 @@ export async function newDeployment(
       title: state.title,
       step: 0,
       totalSteps: 0,
-      placeholder: `Select the content type for your entrypoint file (${newDeploymentData.entrypoint.filePath}).`,
+      placeholder,
       items: inspectionQuickPicks,
       buttons: [],
       shouldResume: () => Promise.resolve(false),
