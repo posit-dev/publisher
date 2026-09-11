@@ -294,6 +294,11 @@ const TEST_DEPLOY_OUTPUT: DeployOutput = {
   task_id: "task-99",
 };
 
+const interpreterDefaults = {
+  installations: [],
+  status: { enabled: true, licensed: true, available: true, usable: true },
+};
+
 /** Default server settings — all capabilities enabled, generous limits. */
 function makeSettings(overrides?: Partial<AllSettings>): AllSettings {
   return {
@@ -364,25 +369,21 @@ function makeSettings(overrides?: Partial<AllSettings>): AllSettings {
       ...overrides?.scheduler,
     },
     python: {
-      installations: [],
+      ...interpreterDefaults,
       api_enabled: true,
-      status: { enabled: true, licensed: true, available: true, usable: true },
       ...overrides?.python,
     },
     r: {
-      installations: [],
-      status: { enabled: true, licensed: true, available: true, usable: true },
+      ...interpreterDefaults,
       ...overrides?.r,
     },
     quarto: {
-      installations: [],
-      status: { enabled: true, licensed: true, available: true, usable: true },
+      ...interpreterDefaults,
       ...overrides?.quarto,
     },
     nodejs: {
-      installations: [],
+      ...interpreterDefaults,
       enabled: true,
-      status: { enabled: true, licensed: true, available: true, usable: true },
       ...overrides?.nodejs,
     },
   };
