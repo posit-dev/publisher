@@ -349,6 +349,8 @@ export interface RuntimeStatus {
   usable: boolean;
 }
 
+// Kept separate rather than sharing a base type: these mirror independent
+// Connect API responses, not one true concept (e.g. Quarto has no `publishable`).
 export interface PyInstallation {
   version: string;
   cluster_name: string;
