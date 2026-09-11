@@ -1,5 +1,11 @@
 {
   "installations": [
     { "version": "1.4.550", "cluster_name": "", "image_name": "" }
-  ]
+  ],
+  "status": {
+    "enabled": true,
+    "licensed": true,
+    "available": true,
+    "usable": true
+  }
 }

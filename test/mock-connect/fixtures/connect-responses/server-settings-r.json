@@ -1,5 +1,16 @@
 {
   "installations": [
-    { "version": "4.3.1", "cluster_name": "", "image_name": "" }
-  ]
+    {
+      "version": "4.3.1",
+      "cluster_name": "",
+      "image_name": "",
+      "publishable": true
+    }
+  ],
+  "status": {
+    "enabled": true,
+    "licensed": true,
+    "available": true,
+    "usable": true
+  }
 }
