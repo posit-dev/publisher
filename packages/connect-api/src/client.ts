@@ -653,7 +653,18 @@ export class ConnectAPI {
         .get<NodejsInfo>("/__api__/v1/server_settings/nodejs", { signal })
         .catch((err): { data: NodejsInfo } => {
           if (axios.isAxiosError(err) && err.response?.status === 404) {
-            return { data: { installations: [], enabled: false } };
+            return {
+              data: {
+                installations: [],
+                enabled: false,
+                status: {
+                  enabled: false,
+                  licensed: false,
+                  available: false,
+                  usable: false,
+                },
+              },
+            };
           }
           throw err;
         }),

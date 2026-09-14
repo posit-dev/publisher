@@ -348,7 +348,9 @@ Cypress.Commands.add(
     // Open the entrypoint ahead of time for easier selection later
     // Uses the Workbench-specific open folder flow
     // Note this deviates from VS Code logic as it does not handle 'projectDir = "."' but that might not be needed here
-    cy.get("button").contains("Open Folder...").click();
+    // Drive the command directly instead of clicking the Welcome-page button: the button's
+    // label/state depends on the Welcome page's async "Environment setup" health checks
+    cy.runCommandPaletteCommand("File: Open Folder...");
     cy.get(".quick-input-widget").within(() => {
       cy.get(".quick-input-box input").should("be.visible");
       cy.get('.monaco-list-row[aria-label=".positron-server"]').should(

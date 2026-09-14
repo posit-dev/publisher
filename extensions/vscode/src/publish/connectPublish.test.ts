@@ -294,6 +294,11 @@ const TEST_DEPLOY_OUTPUT: DeployOutput = {
   task_id: "task-99",
 };
 
+const interpreterDefaults = {
+  installations: [],
+  status: { enabled: true, licensed: true, available: true, usable: true },
+};
+
 /** Default server settings — all capabilities enabled, generous limits. */
 function makeSettings(overrides?: Partial<AllSettings>): AllSettings {
   return {
@@ -363,10 +368,24 @@ function makeSettings(overrides?: Partial<AllSettings>): AllSettings {
       max_nvidia_gpu_limit: 4,
       ...overrides?.scheduler,
     },
-    python: { installations: [], api_enabled: true, ...overrides?.python },
-    r: { installations: [], ...overrides?.r },
-    quarto: { installations: [], ...overrides?.quarto },
-    nodejs: { installations: [], enabled: true, ...overrides?.nodejs },
+    python: {
+      ...interpreterDefaults,
+      api_enabled: true,
+      ...overrides?.python,
+    },
+    r: {
+      ...interpreterDefaults,
+      ...overrides?.r,
+    },
+    quarto: {
+      ...interpreterDefaults,
+      ...overrides?.quarto,
+    },
+    nodejs: {
+      ...interpreterDefaults,
+      enabled: true,
+      ...overrides?.nodejs,
+    },
   };
 }
 
@@ -2523,7 +2542,16 @@ describe("connectPublish — server settings validation", () => {
     const api = makeMockApi();
     vi.mocked(api.getSettings).mockResolvedValue(
       makeSettings({
-        nodejs: { installations: [], enabled: false },
+        nodejs: {
+          installations: [],
+          enabled: false,
+          status: {
+            enabled: false,
+            licensed: false,
+            available: false,
+            usable: false,
+          },
+        },
       }),
     );
 
@@ -2556,7 +2584,16 @@ describe("connectPublish — server settings validation", () => {
     const api = makeMockApi();
     vi.mocked(api.getSettings).mockResolvedValue(
       makeSettings({
-        nodejs: { installations: [], enabled: false },
+        nodejs: {
+          installations: [],
+          enabled: false,
+          status: {
+            enabled: false,
+            licensed: false,
+            available: false,
+            usable: false,
+          },
+        },
       }),
     );
 
