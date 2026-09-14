@@ -369,6 +369,12 @@ Cypress.Commands.add("loadTomlFile", (filePath) => {
 // runCommandPaletteCommand
 // Purpose: Invoke a command by label through the VS Code command palette.
 Cypress.Commands.add("runCommandPaletteCommand", (commandLabel) => {
+  // Open via the global "Show all Commands" keybinding rather than clicking through
+  // menu UI (Command Center / Application Menu / hamburger menu): those elements and
+  // their internal structure differ across code-server and Positron/Workbench and have
+  // changed shape across releases, breaking e2e (#4382). The keybinding is a stable
+  // VS Code default independent of menu layout.
+  const modifier = Cypress.platform === "darwin" ? "meta" : "ctrl";
   cy.retryWithBackoff(
     () =>
       cy
@@ -377,23 +383,7 @@ Cypress.Commands.add("runCommandPaletteCommand", (commandLabel) => {
           if ($body.find(".quick-input-widget:visible").length > 0) {
             return;
           }
-          if ($body.find(".command-center-center").length > 0) {
-            $body.find(".command-center-center").get(0).click();
-            return;
-          }
-          if ($body.find('[aria-label="Application Menu"]').length > 0) {
-            $body.find('[aria-label="Application Menu"]').get(0).click();
-            cy.contains(".monaco-menu", "Command Palette").click({
-              force: true,
-            });
-            return;
-          }
-          if ($body.find('[aria-label="Menu"]').length > 0) {
-            $body.find('[aria-label="Menu"]').get(0).click();
-            cy.contains(".monaco-menu", "Command Palette").click({
-              force: true,
-            });
-          }
+          cy.get("body").type(`{${modifier}}{shift}p`);
         })
         .then(() => cy.get(".quick-input-widget:visible")),
     8,
