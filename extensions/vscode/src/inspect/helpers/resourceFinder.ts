@@ -43,6 +43,23 @@ const cssUrlRe = /url\(['"]?([^'")]+)['"]?\)/g;
 const doubleQuoteRe = /"([^"\n]*)"/g;
 const singleQuoteRe = /'([^'\n]*)'/g;
 
+// Fenced code block delimiter: ``` or ~~~ (3 or more), with optional info string
+const fenceRe = /^\s*(`{3,}|~{3,})(.*)$/;
+// Inline executable code: `r nrow(df)`, `{python} len(df)`
+const inlineCodeRe = /`\{?([A-Za-z][\w.+-]*)\}?[ \t]+([^`\n]+)`/g;
+
+// Comment prefix by chunk engine; knitr/Quarto engines mostly use "#"
+const defaultCommentPrefix = "#";
+const engineCommentPrefixes = new Map([
+  ["ojs", "//"],
+  ["js", "//"],
+  ["javascript", "//"],
+  ["ts", "//"],
+  ["typescript", "//"],
+  ["d3", "//"],
+  ["sql", "--"],
+]);
+
 /**
  * Discover linked resources (images, CSS, scripts, etc.) referenced from
  * content files. Scans file contents via regex and returns additional
@@ -114,7 +131,16 @@ async function discoverResources(
     case ".md":
     case ".rmd":
     case ".qmd":
-      await scanMarkdown(baseDir, absFilePath, content, visited, resourceMap);
+      // Only .rmd/.qmd chunks are executed, so only those can reference data
+      // files at render time. Code blocks in plain .md are just illustration.
+      await scanMarkdown(
+        baseDir,
+        absFilePath,
+        content,
+        ext !== ".md",
+        visited,
+        resourceMap,
+      );
       break;
     case ".html":
     case ".htm":
@@ -133,6 +159,7 @@ async function scanMarkdown(
   baseDir: string,
   absFilePath: string,
   content: string,
+  scanCodeChunks: boolean,
   visited: Set<string>,
   resourceMap: Set<string>,
 ): Promise<void> {
@@ -142,6 +169,10 @@ async function scanMarkdown(
   let inYAML = false;
   let yamlContent = "";
   let yamlParsed = false;
+
+  // Open fenced code block, if any, and the chunk lines collected so far
+  let fence: OpenFence | null = null;
+  let chunkLines: string[] = [];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i] ?? "";
@@ -168,6 +199,44 @@ async function scanMarkdown(
     if (inYAML) {
       yamlContent += line + "\n";
       continue;
+    }
+
+    if (scanCodeChunks) {
+      const fenceMatch = line.match(fenceRe);
+      if (fence) {
+        if (isClosingFence(fenceMatch, fence)) {
+          if (fence.engine !== undefined) {
+            await scanCodeStrings(
+              chunkLines.join("\n"),
+              commentPrefixFor(fence.engine),
+              baseDir,
+              inputDir,
+              visited,
+              resourceMap,
+            );
+          }
+          fence = null;
+          chunkLines = [];
+          continue;
+        }
+        // A fence with no info string is verbatim text — often an example
+        // chunk — so its contents are not code references
+        if (fence.engine !== undefined) {
+          chunkLines.push(line);
+        }
+      } else if (fenceMatch) {
+        fence = {
+          marker: fenceMatch[1]?.[0] ?? "`",
+          length: fenceMatch[1]?.length ?? 3,
+          engine: chunkEngine(fenceMatch[2] ?? ""),
+        };
+        continue;
+      }
+
+      // Inline executable code, e.g. `r read.csv("data/x.csv")`
+      if (!fence) {
+        await scanInlineCode(line, baseDir, inputDir, visited, resourceMap);
+      }
     }
 
     // Markdown image references
@@ -202,6 +271,141 @@ async function scanMarkdown(
       resourceMap,
     );
   }
+
+  // A chunk left unclosed at end of file still references real files
+  if (fence && chunkLines.length > 0) {
+    await scanCodeStrings(
+      chunkLines.join("\n"),
+      commentPrefixFor(fence.engine),
+      baseDir,
+      inputDir,
+      visited,
+      resourceMap,
+    );
+  }
+}
+
+// ---- Code chunk scanning ----
+
+interface OpenFence {
+  marker: string;
+  length: number;
+  engine: string | undefined;
+}
+
+/**
+ * Determine the engine of a fenced code block from its info string, e.g.
+ * "{r penguins, echo=FALSE}" -> "r", "{python}" -> "python", "r" -> "r".
+ * Returns undefined when the block carries no info string (verbatim output).
+ */
+function chunkEngine(infoString: string): string | undefined {
+  let info = infoString.trim();
+  if (info.startsWith("{")) {
+    info = info.substring(1);
+    if (info.endsWith("}")) {
+      info = info.substring(0, info.length - 1);
+    }
+  }
+  // First token, up to a space or comma: the engine (or chunk label separator)
+  const engine = info.split(/[\s,]/)[0]?.replace(/^\./, "").toLowerCase();
+  return engine ? engine : undefined;
+}
+
+function commentPrefixFor(engine: string | undefined): string {
+  if (engine === undefined) {
+    return defaultCommentPrefix;
+  }
+  return engineCommentPrefixes.get(engine) ?? defaultCommentPrefix;
+}
+
+/**
+ * A fence closes on a line of the same marker, at least as long as the opening
+ * one, with nothing after it. Longer fences can wrap shorter ones, which Quarto
+ * documents use to show example chunks.
+ */
+function isClosingFence(
+  fenceMatch: RegExpMatchArray | null,
+  fence: OpenFence,
+): boolean {
+  if (!fenceMatch) {
+    return false;
+  }
+  const marker = fenceMatch[1] ?? "";
+  return (
+    marker[0] === fence.marker &&
+    marker.length >= fence.length &&
+    (fenceMatch[2] ?? "").trim() === ""
+  );
+}
+
+/**
+ * Scan inline executable code — `r nrow(df)` in R Markdown, `{r} nrow(df)` or
+ * `{python} len(df)` in Quarto — for referenced files.
+ */
+async function scanInlineCode(
+  line: string,
+  baseDir: string,
+  inputDir: string,
+  visited: Set<string>,
+  resourceMap: Set<string>,
+): Promise<void> {
+  inlineCodeRe.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = inlineCodeRe.exec(line)) !== null) {
+    const code = match[2];
+    if (code) {
+      await scanCodeStrings(
+        code,
+        commentPrefixFor(match[1]?.toLowerCase()),
+        baseDir,
+        inputDir,
+        visited,
+        resourceMap,
+      );
+    }
+  }
+}
+
+/**
+ * Extract quoted string literals from code and keep the ones that resolve to a
+ * file in the project. Comments are stripped first so that commented-out paths
+ * are not picked up.
+ */
+async function scanCodeStrings(
+  code: string,
+  commentPrefix: string,
+  baseDir: string,
+  inputDir: string,
+  visited: Set<string>,
+  resourceMap: Set<string>,
+): Promise<void> {
+  const stripped = code
+    .split("\n")
+    .map((line) => {
+      const commentIdx = line.indexOf(commentPrefix);
+      return commentIdx >= 0 ? line.substring(0, commentIdx) : line;
+    })
+    .join("\n");
+
+  const doubleMatches = extractMatches(doubleQuoteRe, stripped);
+  await processMatches(
+    doubleMatches,
+    baseDir,
+    inputDir,
+    false,
+    visited,
+    resourceMap,
+  );
+
+  const singleMatches = extractMatches(singleQuoteRe, stripped);
+  await processMatches(
+    singleMatches,
+    baseDir,
+    inputDir,
+    false,
+    visited,
+    resourceMap,
+  );
 }
 
 async function scanHTML(
@@ -245,31 +449,11 @@ async function scanR(
   visited: Set<string>,
   resourceMap: Set<string>,
 ): Promise<void> {
-  const inputDir = path.dirname(absFilePath);
-
-  // Strip comments before extracting strings
-  const strippedLines = content.split("\n").map((line) => {
-    const commentIdx = line.indexOf("#");
-    return commentIdx >= 0 ? line.substring(0, commentIdx) : line;
-  });
-  const stripped = strippedLines.join("\n");
-
-  const doubleMatches = extractMatches(doubleQuoteRe, stripped);
-  await processMatches(
-    doubleMatches,
+  await scanCodeStrings(
+    content,
+    defaultCommentPrefix,
     baseDir,
-    inputDir,
-    false,
-    visited,
-    resourceMap,
-  );
-
-  const singleMatches = extractMatches(singleQuoteRe, stripped);
-  await processMatches(
-    singleMatches,
-    baseDir,
-    inputDir,
-    false,
+    path.dirname(absFilePath),
     visited,
     resourceMap,
   );
@@ -359,6 +543,20 @@ async function addResource(
     absPath = path.resolve(inputDir, relpath);
   }
 
+  // Compute path relative to baseDir; anything outside the project directory
+  // cannot be bundled, so drop it before touching the disk
+  const relToBase = path.relative(baseDir, absPath).replace(/\\/g, "/");
+  if (
+    relToBase === ".." ||
+    relToBase.startsWith("../") ||
+    path.isAbsolute(relToBase)
+  ) {
+    logger.debug(
+      `[resourceFinder] resource outside the project directory: ${relpath}`,
+    );
+    return;
+  }
+
   // Check existence on disk
   let stat: { isFile(): boolean; isDirectory(): boolean };
   try {
@@ -374,9 +572,6 @@ async function addResource(
   if (!explicit && stat.isDirectory()) {
     return;
   }
-
-  // Compute path relative to baseDir
-  const relToBase = path.relative(baseDir, absPath).replace(/\\/g, "/");
 
   // Add to map if not already tracked
   if (!resourceMap.has(relToBase)) {
