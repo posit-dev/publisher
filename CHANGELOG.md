@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Data files read by code in a Quarto or R Markdown document are now included in the deployment. Publisher scans fenced code chunks (`{r}`, `{python}`, `{ojs}`, and others) and inline code for referenced files, so a report that calls something like `read_csv("data/penguins.csv")` no longer fails to render on the server the first time it is deployed. Only paths that resolve to a file inside the project directory are added. (#4388)
 - Publisher no longer leaves a `snowflake.log` file in the directory the editor was launched from, which on Linux is usually your home directory. The Snowflake SDK now logs to Publisher's own log directory alongside its other logs, so a stray file can be deleted once and will not come back. (#4372)
 
 ## [2.12.0]
