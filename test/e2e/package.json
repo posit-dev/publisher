@@ -21,11 +21,11 @@
     "cypress-network-idle": "^2.0.1",
     "cypress-terminal-report": "^7.3.3",
     "cypress-wait-until": "^3.0.2",
-    "eslint": "^10.9.1",
+    "eslint": "^10.10.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-cypress": "^6.4.3",
     "eslint-plugin-mocha": "^11.3.0",
-    "playwright": "^1.62.1",
+    "playwright": "^1.63.0",
     "prettier": "^3.9.6",
     "smol-toml": "^1.8.0"
   }
