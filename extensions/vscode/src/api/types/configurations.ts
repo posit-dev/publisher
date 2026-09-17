@@ -163,7 +163,6 @@ export const contentTypePickerDescriptions: Partial<
   [ContentType.PYTHON_PANEL]: "Python app",
   [ContentType.PYTHON_SHINY]: "Python app",
   [ContentType.PYTHON_STREAMLIT]: "Python app",
-  [ContentType.QUARTO_STATIC]: "Rendered once, not interactive",
   [ContentType.QUARTO_SHINY]: "Interactive Quarto",
   [ContentType.R_PLUMBER]: "R API",
   [ContentType.R_SHINY]: "R app",
