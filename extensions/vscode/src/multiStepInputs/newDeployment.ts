@@ -21,12 +21,12 @@ import {
 } from "vscode";
 
 import {
-  allValidContentTypes,
   areInspectionResultsSimilarEnough,
   Configuration,
   ConfigurationDetails,
   ConfigurationInspectionResult,
   ContentType,
+  contentTypePickerDescriptions,
   contentTypeStrings,
   getContentTypeLabel,
   Credential,
@@ -67,7 +67,12 @@ import {
 } from "src/utils/multiStepHelpers";
 import { CredentialsService } from "src/credentials/service";
 import { extensionSettings } from "src/extension";
-import { inspectManualContentType, inspectProject } from "src/inspect";
+import {
+  inspectManualContentType,
+  inspectManualScript,
+  inspectProject,
+} from "src/inspect";
+import { planManualContentTypeItems } from "src/inspect/manualContentTypeRanking";
 
 const viewTitle = "Create a New Deployment";
 
@@ -259,7 +264,10 @@ export async function newDeployment(
   // Builds a quick pick for every valid content type, used when detection
   // could not determine one (ContentType.UNKNOWN) and the user must choose
   // manually. Each item's inspection result is built as if that type had
-  // been detected automatically (see inspectManualContentType).
+  // been detected automatically (see inspectManualContentType). Items are
+  // ranked by entrypoint extension into "Suggested" and "All content types"
+  // groups (see planManualContentTypeItems); no icon is shown, since a single
+  // gear icon on every row conveyed nothing.
   const getManualContentTypeQuickPicks = (): Promise<
     QuickPickItemWithInspectionResult[]
   > => {
@@ -274,24 +282,42 @@ export async function newDeployment(
       rPath,
     } = lastInspectionContext;
 
+    const inspectOptions = {
+      projectDir: absoluteDir,
+      pythonPath,
+      rPath,
+      entrypoint: relEntryPointFile,
+      relativeDir: relEntryPointDir,
+    };
+
+    const entries = planManualContentTypeItems(relEntryPointFile);
+
     return Promise.all(
-      allValidContentTypes.map(async (type) => {
-        const inspectionResult = await inspectManualContentType(
-          {
-            projectDir: absoluteDir,
-            pythonPath,
-            rPath,
-            entrypoint: relEntryPointFile,
-            relativeDir: relEntryPointDir,
-          },
-          type,
-        );
-        return {
-          iconPath: new ThemeIcon("gear"),
-          label: getContentTypeLabel(type),
-          description: `(${contentTypeStrings[type]})`,
-          inspectionResult,
-        };
+      entries.map(async (entry): Promise<QuickPickItemWithInspectionResult> => {
+        switch (entry.kind) {
+          case "separator":
+            return { label: entry.label, kind: QuickPickItemKind.Separator };
+          case "script":
+            return {
+              label: "Script",
+              description: `Render ${relEntryPointFile} as ${
+                entry.language === "r" ? "an R" : "a Python"
+              } script using Quarto`,
+              inspectionResult: await inspectManualScript(
+                inspectOptions,
+                entry.language,
+              ),
+            };
+          case "type":
+            return {
+              label: getContentTypeLabel(entry.contentType),
+              description: contentTypePickerDescriptions[entry.contentType],
+              inspectionResult: await inspectManualContentType(
+                inspectOptions,
+                entry.contentType,
+              ),
+            };
+        }
       }),
     );
   };

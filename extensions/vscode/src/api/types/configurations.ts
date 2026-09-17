@@ -113,17 +113,63 @@ export const contentTypeStrings = {
     "unknown content type; manual selection needed to deploy",
 };
 
-// Human-readable labels for content types shown in the picker.
-// Only includes types that can appear in multi-choice scenarios (.ipynb, .Rmd files).
+// Human-readable, noun-phrase labels for content types shown in pickers.
+// contentTypeStrings is left untouched for this purpose (see its doc comment)
+// since its verb-phrase form reads badly as a list of things to pick.
 const contentTypeLabelOverrides: Partial<Record<ContentType, string>> = {
+  [ContentType.HTML]: "Static HTML",
   [ContentType.JUPYTER_NOTEBOOK]: "Jupyter Notebook",
+  [ContentType.JUPYTER_VOILA]: "Voilà",
+  [ContentType.NODEJS]: "Node.js",
+  [ContentType.PYTHON_BOKEH]: "Bokeh",
+  [ContentType.PYTHON_DASH]: "Dash",
+  [ContentType.PYTHON_FASTAPI]: "FastAPI",
+  [ContentType.PYTHON_FLASK]: "Flask",
+  [ContentType.PYTHON_GRADIO]: "Gradio",
+  [ContentType.PYTHON_PANEL]: "Panel",
+  [ContentType.PYTHON_SHINY]: "Shiny for Python",
+  [ContentType.PYTHON_STREAMLIT]: "Streamlit",
   [ContentType.QUARTO]: "Quarto Document",
   [ContentType.QUARTO_STATIC]: "Quarto Document",
+  [ContentType.QUARTO_SHINY]: "Quarto Document with Shiny",
+  [ContentType.R_PLUMBER]: "Plumber",
+  [ContentType.R_SHINY]: "Shiny for R",
   [ContentType.RMD]: "R Markdown Document",
+  [ContentType.RMD_SHINY]: "R Markdown with Shiny",
 };
 
 export const getContentTypeLabel = (type: ContentType): string =>
   contentTypeLabelOverrides[type] ?? contentTypeStrings[type] ?? type;
+
+// Short descriptions shown alongside the label in the manual content-type
+// picker only (see getManualContentTypeQuickPicks). Distinct from
+// contentTypeStrings so the label and description are never the same string.
+// ContentType.QUARTO is intentionally omitted: it is a legacy alias for
+// ContentType.QUARTO_STATIC (both map to Connect's "quarto-static" app mode,
+// see bundler/appMode.ts) kept only so old configs still parse, and is never
+// offered as a choice.
+export const contentTypePickerDescriptions: Partial<
+  Record<ContentType, string>
+> = {
+  [ContentType.HTML]: "Serve HTML and other static files",
+  [ContentType.JUPYTER_NOTEBOOK]: "Render with nbconvert",
+  [ContentType.JUPYTER_VOILA]: "Interactive notebook app",
+  [ContentType.NODEJS]: "Server-side JavaScript app",
+  [ContentType.PYTHON_BOKEH]: "Python app",
+  [ContentType.PYTHON_DASH]: "Python app",
+  [ContentType.PYTHON_FASTAPI]: "Python API",
+  [ContentType.PYTHON_FLASK]: "Python API",
+  [ContentType.PYTHON_GRADIO]: "Python app",
+  [ContentType.PYTHON_PANEL]: "Python app",
+  [ContentType.PYTHON_SHINY]: "Python app",
+  [ContentType.PYTHON_STREAMLIT]: "Python app",
+  [ContentType.QUARTO_STATIC]: "Rendered once, not interactive",
+  [ContentType.QUARTO_SHINY]: "Interactive Quarto",
+  [ContentType.R_PLUMBER]: "R API",
+  [ContentType.R_SHINY]: "R app",
+  [ContentType.RMD]: "Rendered with rmarkdown",
+  [ContentType.RMD_SHINY]: "Interactive rmarkdown",
+};
 
 export type ConfigurationDetails = {
   $schema: SchemaURL;

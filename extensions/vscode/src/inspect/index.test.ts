@@ -1,7 +1,11 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { inspectManualContentType, inspectProject } from "./index";
+import {
+  inspectManualContentType,
+  inspectManualScript,
+  inspectProject,
+} from "./index";
 import { ContentType } from "src/api/types/configurations";
 
 const { mockReaddir, mockStat, mockReadFile, mockAccess } = vi.hoisted(() => ({
@@ -194,6 +198,62 @@ describe("inspectManualContentType", () => {
         relativeDir: "myapp",
       },
       ContentType.PYTHON_SHINY,
+    );
+
+    expect(result.projectDir).toBe("myapp");
+  });
+});
+
+describe("inspectManualScript", () => {
+  test("produces quarto-static with an [r] section and knitr engine for R", async () => {
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    const result = await inspectManualScript(
+      { projectDir: "/myproject", entrypoint: "script.R" },
+      "r",
+    );
+
+    expect(result.configuration.type).toBe(ContentType.QUARTO_STATIC);
+    expect(result.configuration.entrypoint).toBe("script.R");
+    expect(result.configuration.r).toEqual({
+      version: "",
+      packageFile: "",
+      packageManager: "",
+    });
+    expect(result.configuration.python).toBeUndefined();
+    expect(result.configuration.quarto?.engines).toEqual(["knitr"]);
+    expect(result.configuration.quarto?.version).toBeTruthy();
+  });
+
+  test("produces quarto-static with a [python] section and jupyter engine for Python", async () => {
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    const result = await inspectManualScript(
+      { projectDir: "/myproject", entrypoint: "script.py" },
+      "python",
+    );
+
+    expect(result.configuration.type).toBe(ContentType.QUARTO_STATIC);
+    expect(result.configuration.entrypoint).toBe("script.py");
+    expect(result.configuration.python).toEqual({
+      version: "",
+      packageFile: "",
+      packageManager: "",
+    });
+    expect(result.configuration.r).toBeUndefined();
+    expect(result.configuration.quarto?.engines).toEqual(["jupyter"]);
+  });
+
+  test("uses the provided relativeDir as the result's projectDir", async () => {
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    const result = await inspectManualScript(
+      {
+        projectDir: "/workspace/myapp",
+        entrypoint: "script.R",
+        relativeDir: "myapp",
+      },
+      "r",
     );
 
     expect(result.projectDir).toBe("myapp");
