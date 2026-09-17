@@ -56,8 +56,13 @@ describe("planManualContentTypeItems", () => {
     expect(contentTypesOf(entries)).toEqual(manualContentTypeChoices);
   });
 
-  test("drops no content type from the combined list, for every mapped extension", () => {
-    for (const ext of Object.keys(suggestedContentTypesByExtension)) {
+  test("drops no content type from the combined list, for every mapped extension without a Script entry", () => {
+    for (const [ext, suggestion] of Object.entries(
+      suggestedContentTypesByExtension,
+    )) {
+      if (suggestion?.script) {
+        continue;
+      }
       const entries = planManualContentTypeItems(`entrypoint${ext}`);
       expect(new Set(contentTypesOf(entries))).toEqual(
         new Set(manualContentTypeChoices),
@@ -65,6 +70,14 @@ describe("planManualContentTypeItems", () => {
       expect(contentTypesOf(entries)).toHaveLength(
         manualContentTypeChoices.length,
       );
+    }
+  });
+
+  test("drops the generic Quarto Document type for extensions with a Script entry, since only the Script entry sets the required engine", () => {
+    for (const entrypoint of ["script.R", "app.py"]) {
+      const entries = planManualContentTypeItems(entrypoint);
+      expect(contentTypesOf(entries)).not.toContain(ContentType.QUARTO_STATIC);
+      expect(entries.some((entry) => entry.kind === "script")).toBe(true);
     }
   });
 

@@ -10,8 +10,7 @@ import { ScriptLanguage } from "./index";
 // Content types the manual picker suggests first for a given entrypoint
 // extension, ranked by likelihood, plus (for .R/.r and .py) the language to
 // use for the "Script" entry. Extensions not listed here get no "Suggested"
-// group; every type still appears under "All content types" regardless. See
-// PICKER-PLAN.md for the reasoning behind this mapping.
+// group; every type still appears under "All content types" regardless.
 export const suggestedContentTypesByExtension: Partial<
   Record<string, { script?: ScriptLanguage; types: ContentType[] }>
 > = {
@@ -91,6 +90,12 @@ export function planManualContentTypeItems(
   ];
   if (suggestion.script) {
     entries.push({ kind: "script", language: suggestion.script });
+    // The generic "Quarto Document" type entry (inspectManualContentType)
+    // writes a [quarto] section with no engine and no [python]/[r] section,
+    // which Connect can't render for a bare script. The "Script" entry above
+    // (inspectManualScript) is the only correct way to render this
+    // entrypoint with Quarto, so don't also offer the generic type below.
+    suggestedTypes.add(ContentType.QUARTO_STATIC);
   }
   for (const contentType of suggestion.types) {
     entries.push({ kind: "type", contentType });
