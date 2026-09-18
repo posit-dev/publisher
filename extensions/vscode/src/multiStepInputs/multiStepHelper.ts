@@ -1,6 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import { ConfigurationInspectionResult } from "../api";
+import { ScriptLanguage } from "src/inspect";
 import {
   isAxiosErrorWithJson,
   resolveAgentJsonErrorMsg,
@@ -53,6 +54,10 @@ export function isString(d: StateData): d is string {
 export type QuickPickItemWithIndex = QuickPickItem & { index: number };
 export type QuickPickItemWithInspectionResult = QuickPickItem & {
   inspectionResult?: ConfigurationInspectionResult;
+  // Set only for the "Script" entry in the manual content-type picker, so it
+  // can be identified unambiguously (rather than inferring it from
+  // type === QUARTO_STATIC + extension).
+  scriptLanguage?: ScriptLanguage;
 };
 
 export function isQuickPickItemWithIndex(
