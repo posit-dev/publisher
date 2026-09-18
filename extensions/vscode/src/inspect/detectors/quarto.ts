@@ -26,7 +26,7 @@ const specialYmlFiles = [
 // Fallback version used when `quarto inspect` is unavailable (e.g. quarto not
 // installed). Matches the latest stable release at the time this detector was
 // written. The exact value is non-critical — Connect uses it only as a hint.
-const defaultQuartoVersion = "1.7.34";
+export const defaultQuartoVersion = "1.7.34";
 
 const quartoSuffixes = [".qmd", ".Rmd", ".ipynb", ".R", ".py", ".jl", ".md"];
 const quartoSuffixesLower = quartoSuffixes.map((s) => s.toLowerCase());

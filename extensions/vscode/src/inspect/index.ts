@@ -10,9 +10,16 @@ import {
 import { logger } from "src/logging";
 import { ProductType } from "src/api/types/contentRecords";
 import { runDetectors } from "./detectorRunner";
-import { normalizeConfig, NormalizedConfig } from "./normalize";
+import {
+  isPythonContentType,
+  isQuartoContentType,
+  isRRequiredContentType,
+  normalizeConfig,
+  NormalizedConfig,
+} from "./normalize";
 import { sortConfigs } from "./sorting";
 import { InspectOptions, PartialConfig } from "./types";
+import { defaultQuartoVersion } from "./detectors/quarto";
 
 const CONFIG_SCHEMA_URL =
   "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json";
@@ -107,6 +114,95 @@ async function inspectSingleDir(
     `[inspect] inspection complete, found ${results.length} configuration(s)`,
   );
   return results;
+}
+
+/**
+ * Build a configuration for an entrypoint using a content type chosen manually
+ * by the user, rather than one produced by a detector. Used when detection
+ * could not determine a content type (`ContentType.UNKNOWN`) and the user was
+ * prompted to pick one from the list of valid types. Fills in the same
+ * placeholder sections (`python`, `r`, `quarto`) that a detector would have
+ * set, so the resulting configuration is valid per the schema and behaves as
+ * if it had been detected automatically.
+ */
+export async function inspectManualContentType(
+  options: InspectOptions,
+  type: ContentType,
+): Promise<ConfigurationInspectionResult> {
+  const { projectDir, pythonPath, rPath, entrypoint, relativeDir } = options;
+
+  const cfg: PartialConfig = {
+    type,
+    entrypoint: entrypoint ?? "",
+  };
+  if (isPythonContentType(type)) {
+    cfg.python = {};
+  }
+  if (isRRequiredContentType(type)) {
+    cfg.r = {};
+  }
+  if (isQuartoContentType(type)) {
+    cfg.quarto = { version: defaultQuartoVersion };
+  }
+
+  const normalized = await normalizeConfig(
+    cfg,
+    projectDir,
+    pythonPath,
+    rPath,
+    entrypoint,
+  );
+  return {
+    configuration: toConfigurationDetails(normalized),
+    projectDir: relativeDir ?? ".",
+  };
+}
+
+// The two languages Connect can render a bare script (.R or .py) as a Quarto
+// document (https://docs.posit.co/connect/user/scripts/). Both use
+// ContentType.QUARTO_STATIC; the language determines the required frontmatter
+// engine and language section.
+export type ScriptLanguage = "r" | "python";
+
+/**
+ * Build a configuration for rendering a bare R or Python script as a Quarto
+ * document, for the "Script" entry in the manual content-type picker
+ * (getManualContentTypeQuickPicks). Unlike inspectManualContentType, this
+ * always sets the `[quarto] engines` field, since a script is only valid
+ * Quarto input with the right engine declared. Writing the required
+ * frontmatter into the script itself is out of scope here (see #3323).
+ */
+export async function inspectManualScript(
+  options: InspectOptions,
+  language: ScriptLanguage,
+): Promise<ConfigurationInspectionResult> {
+  const { projectDir, pythonPath, rPath, entrypoint, relativeDir } = options;
+
+  const cfg: PartialConfig = {
+    type: ContentType.QUARTO_STATIC,
+    entrypoint: entrypoint ?? "",
+    quarto: {
+      version: defaultQuartoVersion,
+      engines: [language === "r" ? "knitr" : "jupyter"],
+    },
+  };
+  if (language === "r") {
+    cfg.r = {};
+  } else {
+    cfg.python = {};
+  }
+
+  const normalized = await normalizeConfig(
+    cfg,
+    projectDir,
+    pythonPath,
+    rPath,
+    entrypoint,
+  );
+  return {
+    configuration: toConfigurationDetails(normalized),
+    projectDir: relativeDir ?? ".",
+  };
 }
 
 async function inspectRecursive(
