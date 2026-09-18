@@ -75,8 +75,8 @@ import {
 } from "src/inspect";
 import { planManualContentTypeItems } from "src/inspect/manualContentTypeRanking";
 import {
-  buildQuartoScriptFrontmatter,
   hasQuartoScriptFrontmatter,
+  insertQuartoScriptFrontmatter,
 } from "src/inspect/helpers/quartoScriptFrontmatter";
 
 const viewTitle = "Create a New Deployment";
@@ -728,11 +728,12 @@ export async function newDeployment(
         const content = await fs.readFile(entrypointPath, "utf-8");
         if (!hasQuartoScriptFrontmatter(content, pick.scriptLanguage)) {
           const title = path.basename(absoluteDir);
-          const frontmatter = buildQuartoScriptFrontmatter(
+          const newContent = insertQuartoScriptFrontmatter(
+            content,
             pick.scriptLanguage,
             title,
           );
-          await fs.writeFile(entrypointPath, frontmatter + content, "utf-8");
+          await fs.writeFile(entrypointPath, newContent, "utf-8");
           await commands.executeCommand(
             "vscode.open",
             Uri.file(entrypointPath),

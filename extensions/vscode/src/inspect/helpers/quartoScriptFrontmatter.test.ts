@@ -4,6 +4,7 @@ import { describe, expect, test } from "vitest";
 import {
   buildQuartoScriptFrontmatter,
   hasQuartoScriptFrontmatter,
+  insertQuartoScriptFrontmatter,
 } from "./quartoScriptFrontmatter";
 
 describe("hasQuartoScriptFrontmatter", () => {
@@ -65,6 +66,57 @@ describe("hasQuartoScriptFrontmatter", () => {
     ].join("\n");
     expect(hasQuartoScriptFrontmatter(content, "python")).toBe(false);
   });
+
+  test("detects R frontmatter after a shebang line", () => {
+    const content = [
+      "#!/usr/bin/env Rscript",
+      "#' ---",
+      '#\' title: "My Report"',
+      "#' ---",
+      "",
+      "print('hello')",
+      "",
+    ].join("\n");
+    expect(hasQuartoScriptFrontmatter(content, "r")).toBe(true);
+  });
+
+  test("detects Python frontmatter after a shebang line", () => {
+    const content = [
+      "#!/usr/bin/env python3",
+      "# %% [markdown]",
+      "# ---",
+      '# title: "My Report"',
+      "# ---",
+      "",
+      "# %%",
+      "print('hello')",
+      "",
+    ].join("\n");
+    expect(hasQuartoScriptFrontmatter(content, "python")).toBe(true);
+  });
+
+  test("rejects a later, unrelated comment block delimited by --- lines (R)", () => {
+    const content = [
+      "print('hello')",
+      "",
+      "#' ---",
+      "#' not real frontmatter",
+      "#' ---",
+    ].join("\n");
+    expect(hasQuartoScriptFrontmatter(content, "r")).toBe(false);
+  });
+
+  test("rejects a later, unrelated markdown cell delimited by --- lines (Python)", () => {
+    const content = [
+      "print('hello')",
+      "",
+      "# %% [markdown]",
+      "# ---",
+      "# not real frontmatter",
+      "# ---",
+    ].join("\n");
+    expect(hasQuartoScriptFrontmatter(content, "python")).toBe(false);
+  });
 });
 
 describe("buildQuartoScriptFrontmatter", () => {
@@ -85,5 +137,43 @@ describe("buildQuartoScriptFrontmatter", () => {
   test("escapes double quotes in the title", () => {
     const result = buildQuartoScriptFrontmatter("r", 'My "Report"');
     expect(result).toContain('title: "My \\"Report\\""');
+  });
+});
+
+describe("insertQuartoScriptFrontmatter", () => {
+  test("prepends frontmatter when there is no shebang", () => {
+    const content = "print('hello')\n";
+    const result = insertQuartoScriptFrontmatter(content, "r", "My Report");
+    expect(result).toBe(
+      "#' ---\n#' title: \"My Report\"\n#' ---\n\nprint('hello')\n",
+    );
+    expect(hasQuartoScriptFrontmatter(result, "r")).toBe(true);
+  });
+
+  test("inserts frontmatter after a shebang line (R)", () => {
+    const content = "#!/usr/bin/env Rscript\nprint('hello')\n";
+    const result = insertQuartoScriptFrontmatter(content, "r", "My Report");
+    expect(result).toBe(
+      "#!/usr/bin/env Rscript\n#' ---\n#' title: \"My Report\"\n#' ---\n\nprint('hello')\n",
+    );
+    expect(result.split("\n")[0]).toBe("#!/usr/bin/env Rscript");
+    expect(hasQuartoScriptFrontmatter(result, "r")).toBe(true);
+  });
+
+  test("inserts frontmatter after a shebang line (Python)", () => {
+    const content = "#!/usr/bin/env python3\nprint('hello')\n";
+    const result = insertQuartoScriptFrontmatter(
+      content,
+      "python",
+      "My Report",
+    );
+    expect(result.split("\n")[0]).toBe("#!/usr/bin/env python3");
+    expect(hasQuartoScriptFrontmatter(result, "python")).toBe(true);
+  });
+
+  test("does not treat a mid-file '#!' as a shebang", () => {
+    const content = "print('hello')\n#!not a shebang\n";
+    const result = insertQuartoScriptFrontmatter(content, "r", "My Report");
+    expect(result.startsWith("#' ---")).toBe(true);
   });
 });
