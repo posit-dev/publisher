@@ -9,6 +9,10 @@ import { logger } from "src/logging";
 import { ContentTypeDetector, PartialConfig } from "../types";
 import { globDir } from "../helpers/globDir";
 import { detectMarkdownLanguagesInContent } from "../helpers/markdownLanguages";
+import {
+  hasQuartoScriptFrontmatter,
+  ScriptLanguage,
+} from "../helpers/quartoScriptFrontmatter";
 import { findLinkedResources } from "../helpers/resourceFinder";
 import { QuartoInspectOutput } from "./quartoInspectOutput";
 
@@ -462,6 +466,15 @@ export class QuartoDetector implements ContentTypeDetector {
     }
 
     const ext = path.extname(inspectPath).toLowerCase();
+
+    // Bare .R/.py scripts aren't recognized by _quarto.yml presence, since
+    // scripts aren't part of a Quarto project — they carry their own
+    // frontmatter instead. Detect that frontmatter directly rather than
+    // falling through to the extension allowlist below.
+    if (ext === ".r" || ext === ".py") {
+      return this.genScriptConfig(baseDir, inspectPath, ext);
+    }
+
     if (
       !quartoYmlExists &&
       ext !== ".qmd" &&
@@ -527,6 +540,58 @@ export class QuartoDetector implements ContentTypeDetector {
 
     // Include special yml files
     await this.includeSpecialYmlFiles(baseDir, files, cfg);
+
+    const assets = await findLinkedResources(baseDir, files);
+    files.push(...assets);
+
+    return cfg;
+  }
+
+  // Fallback detection for a bare .R/.py script (no _quarto.yml, so it's not
+  // part of a Quarto project): only recognized as Quarto content if it
+  // already carries the frontmatter Connect needs to render it. Produces the
+  // same shape as the manual "Script" picker (inspectManualScript in
+  // ../index.ts).
+  private async genScriptConfig(
+    baseDir: string,
+    inspectPath: string,
+    ext: ".r" | ".py",
+  ): Promise<PartialConfig | undefined> {
+    const language: ScriptLanguage = ext === ".r" ? "r" : "python";
+    const relEntrypoint = path.basename(inspectPath);
+
+    let content: string;
+    try {
+      content = await fs.readFile(inspectPath, "utf-8");
+    } catch (err: unknown) {
+      logger.debug(
+        `[quarto] could not read script for frontmatter detection: ${inspectPath}: ${err}`,
+      );
+      return undefined;
+    }
+
+    if (!hasQuartoScriptFrontmatter(content, language)) {
+      return undefined;
+    }
+    logger.debug(
+      `[quarto] detected Quarto script frontmatter: ${relEntrypoint}`,
+    );
+
+    const files = [`/${relEntrypoint}`];
+    const cfg: PartialConfig = {
+      type: ContentType.QUARTO_STATIC,
+      entrypoint: relEntrypoint,
+      quarto: {
+        version: defaultQuartoVersion,
+        engines: [language === "r" ? "knitr" : "jupyter"],
+      },
+      files,
+    };
+    if (language === "r") {
+      cfg.r = {};
+    } else {
+      cfg.python = {};
+    }
 
     const assets = await findLinkedResources(baseDir, files);
     files.push(...assets);
