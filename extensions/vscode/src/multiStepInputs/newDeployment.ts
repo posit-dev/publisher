@@ -1,5 +1,6 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
+import * as fs from "fs/promises";
 import path from "path";
 import {
   InputStep,
@@ -73,6 +74,10 @@ import {
   inspectProject,
 } from "src/inspect";
 import { planManualContentTypeItems } from "src/inspect/manualContentTypeRanking";
+import {
+  hasQuartoScriptFrontmatter,
+  insertQuartoScriptFrontmatter,
+} from "src/inspect/helpers/quartoScriptFrontmatter";
 
 const viewTitle = "Create a New Deployment";
 
@@ -307,6 +312,7 @@ export async function newDeployment(
                 inspectOptions,
                 entry.language,
               ),
+              scriptLanguage: entry.language,
             };
           case "type":
             return {
@@ -709,6 +715,39 @@ export async function newDeployment(
 
     if (!pick || !isQuickPickItemWithInspectionResult(pick)) {
       return;
+    }
+
+    // The "Script" entry requires Quarto frontmatter that Connect can't
+    // render without. Picking it is itself the user's affirmative choice to
+    // treat this file as a Quarto script, so insert the frontmatter
+    // unconditionally rather than asking again.
+    if (pick.scriptLanguage && lastInspectionContext) {
+      const { absoluteDir, relEntryPointFile } = lastInspectionContext;
+      const entrypointPath = path.join(absoluteDir, relEntryPointFile);
+      try {
+        const content = await fs.readFile(entrypointPath, "utf-8");
+        if (!hasQuartoScriptFrontmatter(content, pick.scriptLanguage)) {
+          const title = path.basename(absoluteDir);
+          const newContent = insertQuartoScriptFrontmatter(
+            content,
+            pick.scriptLanguage,
+            title,
+          );
+          await fs.writeFile(entrypointPath, newContent, "utf-8");
+          await commands.executeCommand(
+            "vscode.open",
+            Uri.file(entrypointPath),
+          );
+        }
+      } catch (error: unknown) {
+        const summary = getSummaryStringFromError(
+          "newDeployment, inputContentType, insert Quarto frontmatter",
+          error,
+        );
+        window.showErrorMessage(
+          `Unable to insert Quarto frontmatter into ${relEntryPointFile}. ${summary}`,
+        );
+      }
     }
 
     newDeploymentData.entrypoint.inspectionResult = pick.inspectionResult;
