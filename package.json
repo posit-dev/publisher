@@ -25,6 +25,6 @@
     "@vitest/coverage-v8": "^4.1.11",
     "husky": "^9.0.11",
     "lint-staged": "^17.5.1",
-    "prettier": "^3.9.6"
+    "prettier": "^3.9.8"
   }
 }
