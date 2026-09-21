@@ -13,6 +13,10 @@ import {
 // YAML — the same thing Quarto does when it renders the script — so the tests
 // assert the title survives the round trip rather than matching an escaping
 // scheme character by character.
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function parseFrontmatter(
   block: string,
   language: ScriptLanguage,
@@ -27,8 +31,9 @@ function parseFrontmatter(
   if (open === -1 || close === -1) {
     throw new Error(`No delimited frontmatter block found in: ${block}`);
   }
-  const parsed = yaml.load(uncommented.slice(open + 1, close).join("\n"));
-  if (typeof parsed !== "object" || parsed === null) {
+  const body = uncommented.slice(open + 1, close).join("\n");
+  const parsed = yaml.load(body);
+  if (!isRecord(parsed)) {
     throw new Error(`Frontmatter did not parse to an object: ${body}`);
   }
   return parsed;
