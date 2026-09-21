@@ -176,9 +176,15 @@ export async function inspectManualScript(
 ): Promise<ConfigurationInspectionResult> {
   const { projectDir, pythonPath, rPath, entrypoint, relativeDir } = options;
 
+  // A script is a single file, so its own name is a more natural default
+  // title than the project directory name normalizeConfig would otherwise
+  // fall back to.
   const cfg: PartialConfig = {
     type: ContentType.QUARTO_STATIC,
     entrypoint: entrypoint ?? "",
+    title: entrypoint
+      ? path.basename(entrypoint, path.extname(entrypoint))
+      : undefined,
     quarto: {
       version: defaultQuartoVersion,
       engines: [language === "r" ? "knitr" : "jupyter"],
