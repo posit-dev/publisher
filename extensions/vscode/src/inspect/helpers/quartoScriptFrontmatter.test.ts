@@ -117,6 +117,17 @@ describe("hasQuartoScriptFrontmatter", () => {
     ].join("\n");
     expect(hasQuartoScriptFrontmatter(content, "python")).toBe(false);
   });
+
+  test("rejects a Python markdown cell with prose before the opening delimiter", () => {
+    const content = [
+      "# %% [markdown]",
+      "# Some notes about this script",
+      "# ---",
+      '# title: "My Report"',
+      "# ---",
+    ].join("\n");
+    expect(hasQuartoScriptFrontmatter(content, "python")).toBe(false);
+  });
 });
 
 describe("buildQuartoScriptFrontmatter", () => {

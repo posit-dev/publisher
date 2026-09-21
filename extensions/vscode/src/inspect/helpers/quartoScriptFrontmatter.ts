@@ -62,17 +62,19 @@ function hasPythonFrontmatter(lines: string[]): boolean {
   if (lines[start]?.trim() !== "# %% [markdown]") {
     return false;
   }
-  let sawOpen = false;
-  for (let i = start + 1; i < lines.length; i++) {
+  // The opening `---` must be the first line of the markdown cell, not
+  // merely present somewhere in it — otherwise a cell that opens with prose
+  // and happens to later contain two `# ---` lines would be misdetected.
+  if (lines[start + 1]?.trim() !== "# ---") {
+    return false;
+  }
+  for (let i = start + 2; i < lines.length; i++) {
     const line = lines[i]?.trim() ?? "";
+    if (line === "# ---") {
+      return true;
+    }
     if (!line.startsWith("#")) {
       return false;
-    }
-    if (line === "# ---") {
-      if (sawOpen) {
-        return true;
-      }
-      sawOpen = true;
     }
   }
   return false;

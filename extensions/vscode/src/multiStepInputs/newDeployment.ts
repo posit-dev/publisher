@@ -632,6 +632,13 @@ export async function newDeployment(
     // use the passed in a specific file and continue to inspection
     newDeploymentData.entrypoint.filePath ||= entryPointFile;
 
+    // Reset from any previous run of this step (e.g. the user went back and
+    // picked a different entrypoint). Otherwise a stale scriptLanguage from
+    // an earlier manual "Script" pick could survive into a run that never
+    // reaches inputContentType (the singlePick fast path below), and trigger
+    // frontmatter insertion into the wrong file at the end of the wizard.
+    newDeploymentData.entrypoint.scriptLanguage = undefined;
+
     // get the inspections only after the `filePath` has been initialized
     await getInspectionQuickPicks();
 
