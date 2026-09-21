@@ -57,6 +57,12 @@ function hasRFrontmatter(lines: string[]): boolean {
   return false;
 }
 
+// A jupytext cell marker (`# %%`, optionally followed by a cell type or name)
+// starts a new cell, so it ends the markdown cell the frontmatter lives in.
+function isPythonCellMarker(line: string): boolean {
+  return /^#\s*%%/.test(line);
+}
+
 function hasPythonFrontmatter(lines: string[]): boolean {
   const start = skipBlankLines(lines, skipShebang(lines));
   if (lines[start]?.trim() !== "# %% [markdown]") {
@@ -73,7 +79,10 @@ function hasPythonFrontmatter(lines: string[]): boolean {
     if (line === "# ---") {
       return true;
     }
-    if (!line.startsWith("#")) {
+    // The closing delimiter has to appear in the same markdown cell the
+    // opening one did — a new cell leaves the block unclosed, even if a later
+    // cell happens to contain a `# ---` line of its own.
+    if (isPythonCellMarker(line) || !line.startsWith("#")) {
       return false;
     }
   }
