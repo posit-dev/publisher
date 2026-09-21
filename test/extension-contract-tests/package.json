@@ -13,7 +13,7 @@
   "devDependencies": {
     "@posit-dev/positron": "^0.2.10",
     "@types/vscode": "1.105.0",
-    "js-yaml": "^5.4.1",
+    "js-yaml": "^5.4.2",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   }
