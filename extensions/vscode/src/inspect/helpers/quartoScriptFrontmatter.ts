@@ -97,7 +97,11 @@ export function buildQuartoScriptFrontmatter(
   language: ScriptLanguage,
   title: string,
 ): string {
-  const escapedTitle = title.replace(/"/g, '\\"');
+  // The title goes into a double-quoted YAML scalar, where a backslash starts
+  // an escape sequence — so it has to be escaped first, before the quotes, or
+  // a title like `C:\Users\me` either changes meaning (`\t` becomes a tab) or
+  // fails to parse outright (`\U` starts a Unicode escape).
+  const escapedTitle = title.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
   if (language === "r") {
     return `#' ---\n#' title: "${escapedTitle}"\n#' ---\n\n`;
   }

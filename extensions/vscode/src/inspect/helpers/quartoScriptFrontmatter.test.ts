@@ -1,11 +1,38 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { describe, expect, test } from "vitest";
+import * as yaml from "js-yaml";
 import {
   buildQuartoScriptFrontmatter,
   hasQuartoScriptFrontmatter,
   insertQuartoScriptFrontmatter,
+  type ScriptLanguage,
 } from "./quartoScriptFrontmatter";
+
+// Strip the comment prefix off each frontmatter line and parse what's left as
+// YAML — the same thing Quarto does when it renders the script — so the tests
+// assert the title survives the round trip rather than matching an escaping
+// scheme character by character.
+function parseFrontmatter(
+  block: string,
+  language: ScriptLanguage,
+): Record<string, unknown> {
+  const prefix = language === "r" ? "#'" : "#";
+  const uncommented = block
+    .split("\n")
+    .filter((line) => line.startsWith(prefix))
+    .map((line) => line.slice(prefix.length).trim());
+  const open = uncommented.indexOf("---");
+  const close = uncommented.indexOf("---", open + 1);
+  if (open === -1 || close === -1) {
+    throw new Error(`No delimited frontmatter block found in: ${block}`);
+  }
+  const parsed = yaml.load(uncommented.slice(open + 1, close).join("\n"));
+  if (typeof parsed !== "object" || parsed === null) {
+    throw new Error(`Frontmatter did not parse to an object: ${body}`);
+  }
+  return parsed;
+}
 
 describe("hasQuartoScriptFrontmatter", () => {
   test("detects R frontmatter", () => {
@@ -161,6 +188,28 @@ describe("buildQuartoScriptFrontmatter", () => {
   test("escapes double quotes in the title", () => {
     const result = buildQuartoScriptFrontmatter("r", 'My "Report"');
     expect(result).toContain('title: "My \\"Report\\""');
+  });
+
+  test("escapes backslashes in the title", () => {
+    const result = buildQuartoScriptFrontmatter("r", "C:\\Users\\me");
+    expect(result).toContain('title: "C:\\\\Users\\\\me"');
+  });
+
+  // Titles are free-form user input, so they can contain characters that are
+  // meaningful inside a double-quoted YAML scalar. `\U` in particular starts a
+  // Unicode escape and makes the whole block fail to parse when unescaped.
+  test.each<[string, string]>([
+    ["a backslash path", "C:\\Users\\me"],
+    ["a tab-like escape", "My \\three Report"],
+    ["a Unicode-like escape", "My \\Ultimate Report"],
+    ["a trailing backslash", "Report\\"],
+    ["both quotes and backslashes", 'My "C:\\temp" Report'],
+  ])("round-trips a title containing %s", (_label, title) => {
+    for (const language of ["r", "python"] as const) {
+      const result = buildQuartoScriptFrontmatter(language, title);
+      expect(parseFrontmatter(result, language).title).toBe(title);
+      expect(hasQuartoScriptFrontmatter(result, language)).toBe(true);
+    }
   });
 });
 
