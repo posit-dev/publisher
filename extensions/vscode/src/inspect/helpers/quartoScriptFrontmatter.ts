@@ -89,6 +89,12 @@ function hasPythonFrontmatter(lines: string[]): boolean {
   return false;
 }
 
+// Explains, to anyone reading the script later, why Publisher edited their
+// file. It's a YAML comment inside the frontmatter block rather than a line
+// above it, because the block has to be the first thing in the script.
+export const QUARTO_SCRIPT_FRONTMATTER_NOTE =
+  "# Added by Posit Publisher: Connect requires this Quarto frontmatter to render this script.";
+
 /**
  * Build the Quarto frontmatter block to prepend to a bare R or Python script
  * so Connect can render it (see hasQuartoScriptFrontmatter).
@@ -102,10 +108,11 @@ export function buildQuartoScriptFrontmatter(
   // a title like `C:\Users\me` either changes meaning (`\t` becomes a tab) or
   // fails to parse outright (`\U` starts a Unicode escape).
   const escapedTitle = title.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  const note = QUARTO_SCRIPT_FRONTMATTER_NOTE;
   if (language === "r") {
-    return `#' ---\n#' title: "${escapedTitle}"\n#' ---\n\n`;
+    return `#' ---\n#' ${note}\n#' title: "${escapedTitle}"\n#' ---\n\n`;
   }
-  return `# %% [markdown]\n# ---\n# title: "${escapedTitle}"\n# ---\n\n# %%\n\n`;
+  return `# %% [markdown]\n# ---\n# ${note}\n# title: "${escapedTitle}"\n# ---\n\n# %%\n\n`;
 }
 
 /**
