@@ -70,10 +70,8 @@ Cypress.skipCI = (fn) => (Cypress.env("CI") === "true" ? fn.skip : fn);
 // Debugging command
 Cypress.debugIf = (fn) => (Cypress.env("DEBUG_CYPRESS") ? fn : () => {});
 
-/* eslint-disable mocha/no-top-level-hooks */
 afterEach(() => {
   if (Cypress.env("DEBUG_CYPRESS") === "true") {
     cy.debugIframes();
   }
 });
-/* eslint-enable mocha/no-top-level-hooks */

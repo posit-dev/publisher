@@ -20,6 +20,10 @@ export default defineConfig([
       semi: "error",
       "mocha/no-mocha-arrows": "off",
       "mocha/no-exclusive-tests": "error",
+      // Disabling no-async-in-sync-tests
+      // Added in eslint-plugin-mocha 12.0.0. It doesn't recognize Cypress's chainable
+      // command queue, so it flags nearly every existing spec's cy.*().then() usage.
+      "mocha/no-async-in-sync-tests": "off",
       "no-restricted-syntax": [
         "error",
         {
