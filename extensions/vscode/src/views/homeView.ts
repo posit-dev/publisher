@@ -56,7 +56,10 @@ import {
 } from "@posit-dev/connect-cloud-api";
 import { connectAPIOptionsFromCredential } from "src/credentials/service";
 import { storeCredential } from "src/credentials/storage";
-import { updateFileList as updateFileListInConfig } from "src/configFiles";
+import {
+  includeFile as includeFileInConfig,
+  updateFileList as updateFileListInConfig,
+} from "src/configFiles";
 import {
   addSecret as addSecretToConfig,
   removeSecret as removeSecretFromConfig,
@@ -1360,11 +1363,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             this.root!.uri.fsPath,
             activeConfiguration.projectDir,
           );
-          return await scanPythonDependencies(
+          const result = await scanPythonDependencies(
             projectDir,
             pythonPath,
             relPathPackageFile,
           );
+          // Deployment requires the package file to be in the file list.
+          await includeFileInConfig(
+            activeConfiguration.configurationName,
+            `/${relPathPackageFile}`,
+            activeConfiguration.projectDir,
+            this.root!.uri.fsPath,
+          );
+          return result;
         },
       );
 
@@ -1447,6 +1458,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             r?.rPath || "R",
             relPathPackageFile,
             positron?.r,
+          );
+          // Deployment requires the package file to be in the file list.
+          await includeFileInConfig(
+            activeConfiguration.configurationName,
+            `/${relPathPackageFile}`,
+            activeConfiguration.projectDir,
+            this.root!.uri.fsPath,
           );
         },
       );
