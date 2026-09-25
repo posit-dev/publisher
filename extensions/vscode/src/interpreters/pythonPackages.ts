@@ -3,8 +3,12 @@
 import path from "node:path";
 
 import { DEFAULT_PYTHON_PACKAGE_FILE } from "../constants";
-import { readFileText } from "../utils/fsUtils";
+import { fileExistsAt, readFileText } from "../utils/fsUtils";
 import { generateRequirements } from "./pythonDependencySources";
+import {
+  scanPythonDependencies,
+  type ScanPythonDependenciesResult,
+} from "./scanPythonDependencies";
 
 /**
  * Read a Python requirements file and return its package lines,
@@ -53,4 +57,31 @@ export async function getPythonPackages(
   }
 
   throw new Error(`Requirements file not found: ${filePath}`);
+}
+
+/**
+ * Make sure a Python project has a requirements file to deploy with.
+ *
+ * If the configured package file is missing and no other dependency source
+ * (pylock.toml, uv.lock, pyproject.toml) can stand in for the default
+ * requirements.txt, scan the project's imports and write the package file.
+ *
+ * Returns the scan result if a file was written, or undefined if an existing
+ * dependency source was found.
+ */
+export async function ensurePythonPackageFile(
+  projectDir: string,
+  packageFile: string,
+  pythonPath: string,
+): Promise<ScanPythonDependenciesResult | undefined> {
+  if (await fileExistsAt(path.join(projectDir, packageFile))) {
+    return undefined;
+  }
+  if (
+    packageFile === DEFAULT_PYTHON_PACKAGE_FILE &&
+    (await generateRequirements(projectDir)) !== null
+  ) {
+    return undefined;
+  }
+  return await scanPythonDependencies(projectDir, pythonPath, packageFile);
 }
