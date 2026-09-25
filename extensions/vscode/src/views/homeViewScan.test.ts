@@ -74,6 +74,7 @@ const mocks = vi.hoisted(() => ({
   }),
   scanRPackages: vi.fn().mockResolvedValue(undefined),
   fileExists: vi.fn().mockResolvedValue(false),
+  needsPythonPackageScan: vi.fn(),
 }));
 
 vi.mock("src/configFiles", () => ({
@@ -83,6 +84,11 @@ vi.mock("src/configFiles", () => ({
 
 vi.mock("src/interpreters/scanPythonDependencies", () => ({
   scanPythonDependencies: mocks.scanPythonDependencies,
+}));
+
+vi.mock("src/interpreters/pythonPackages", () => ({
+  needsPythonPackageScan: mocks.needsPythonPackageScan,
+  getPythonPackages: vi.fn(),
 }));
 
 vi.mock("src/interpreters/rPackages", () => ({
@@ -228,5 +234,79 @@ describe("HomeViewProvider scan handlers", () => {
     await provider["onScanForRPackageRequirements"]();
 
     expect(mocks.includeFile).not.toHaveBeenCalled();
+  });
+});
+
+describe("HomeViewProvider ensurePythonPackageFile before deploy", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  test("adds a generated requirements.txt to the config files", async () => {
+    const config = configurationFactory.build({
+      configurationName: "my-config",
+      projectDir: "my project",
+    });
+    config.configuration.python = {
+      version: "3.12",
+      packageFile: "",
+      packageManager: "pip",
+    };
+    mocks.needsPythonPackageScan.mockResolvedValueOnce(true);
+    const provider = makeProvider(config);
+
+    const changed = await provider["ensurePythonPackageFile"](
+      config,
+      "/root",
+      "/root/my project",
+      "/usr/bin/python3",
+    );
+
+    expect(changed).toBe(true);
+    expect(mocks.scanPythonDependencies).toHaveBeenCalledWith(
+      "/root/my project",
+      "/usr/bin/python3",
+      "requirements.txt",
+    );
+    expect(mocks.includeFile).toHaveBeenCalledWith(
+      "my-config",
+      "/requirements.txt",
+      "my project",
+      "/root",
+    );
+  });
+
+  test("leaves the config alone when no file was generated", async () => {
+    const config = configurationFactory.build();
+    config.configuration.python = {
+      version: "3.12",
+      packageFile: "requirements.txt",
+      packageManager: "pip",
+    };
+    mocks.needsPythonPackageScan.mockResolvedValueOnce(false);
+    const provider = makeProvider(config);
+
+    const changed = await provider["ensurePythonPackageFile"](
+      config,
+      "/root",
+      "/root",
+    );
+
+    expect(changed).toBe(false);
+    expect(mocks.scanPythonDependencies).not.toHaveBeenCalled();
+    expect(mocks.includeFile).not.toHaveBeenCalled();
+  });
+
+  test("skips non-Python configs", async () => {
+    const config = configurationFactory.build();
+    config.configuration.python = undefined;
+    const provider = makeProvider(config);
+
+    const changed = await provider["ensurePythonPackageFile"](
+      config,
+      "/root",
+      "/root",
+    );
+
+    expect(changed).toBe(false);
+    expect(mocks.needsPythonPackageScan).not.toHaveBeenCalled();
   });
 });

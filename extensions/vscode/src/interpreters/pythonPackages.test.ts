@@ -2,7 +2,11 @@
 
 import path from "node:path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { getPythonPackages, readRequirementsFile } from "./pythonPackages";
+import {
+  getPythonPackages,
+  needsPythonPackageScan,
+  readRequirementsFile,
+} from "./pythonPackages";
 import { generateRequirements } from "./pythonDependencySources";
 
 const mockFiles: Record<string, string> = {};
@@ -15,6 +19,9 @@ vi.mock("../utils/fsUtils", () => ({
     }
     return Promise.resolve(content);
   }),
+  fileExistsAt: vi.fn((filePath: string) =>
+    Promise.resolve(mockFiles[filePath] !== undefined),
+  ),
 }));
 
 vi.mock("./pythonDependencySources", () => ({
@@ -124,6 +131,42 @@ describe("getPythonPackages", () => {
     await expect(
       getPythonPackages("/project", "requirements-dev.txt"),
     ).rejects.toThrow("Requirements file not found");
+    expect(generateRequirements).not.toHaveBeenCalled();
+  });
+});
+
+describe("needsPythonPackageScan", () => {
+  const projectDir = path.join("/my project");
+
+  beforeEach(() => {
+    for (const key of Object.keys(mockFiles)) {
+      delete mockFiles[key];
+    }
+    vi.mocked(generateRequirements).mockReset().mockResolvedValue(null);
+  });
+
+  test("false when the package file exists", async () => {
+    setFile(projectDir, "requirements.txt", "numpy\n");
+    expect(await needsPythonPackageScan(projectDir, "requirements.txt")).toBe(
+      false,
+    );
+  });
+
+  test("false when a lockfile can stand in for requirements.txt", async () => {
+    vi.mocked(generateRequirements).mockResolvedValueOnce(["pandas==2.0"]);
+    expect(await needsPythonPackageScan(projectDir, "requirements.txt")).toBe(
+      false,
+    );
+  });
+
+  test("true when no dependency source exists", async () => {
+    expect(await needsPythonPackageScan(projectDir, "requirements.txt")).toBe(
+      true,
+    );
+  });
+
+  test("true for a missing non-default package file without checking lockfiles", async () => {
+    expect(await needsPythonPackageScan(projectDir, "reqs.txt")).toBe(true);
     expect(generateRequirements).not.toHaveBeenCalled();
   });
 });

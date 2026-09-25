@@ -133,6 +133,7 @@ import {
   CONNECT_CLOUD_ENVIRONMENT,
   Contexts,
   DebounceDelaysMS,
+  DEFAULT_PYTHON_PACKAGE_FILE,
   Views,
 } from "src/constants";
 import { showProgress } from "src/utils/progress";
@@ -160,7 +161,10 @@ import {
 } from "src/utils/multiStepHelpers";
 import { recordAddConnectCloudUrlParams } from "src/utils/connectCloudHelpers";
 import { getRPackages } from "src/interpreters/rPackages";
-import { getPythonPackages } from "src/interpreters/pythonPackages";
+import {
+  getPythonPackages,
+  needsPythonPackageScan,
+} from "src/interpreters/pythonPackages";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -347,6 +351,53 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     return await setSelectionIsPreContentRecord(match);
   }
 
+  // If a Python project has no requirements file (or other dependency
+  // source), scan its imports to generate one and add it to the config's
+  // files list, like the "Scan" button does. Returns true if the config
+  // was changed.
+  private async ensurePythonPackageFile(
+    config: Configuration,
+    rootDir: string,
+    absProjectDir: string,
+    pythonPath?: string,
+  ): Promise<boolean> {
+    if (!config.configuration.python) {
+      return false;
+    }
+    const packageFile =
+      config.configuration.python.packageFile || DEFAULT_PYTHON_PACKAGE_FILE;
+    if (!(await needsPythonPackageScan(absProjectDir, packageFile))) {
+      return false;
+    }
+    const result = await showProgress(
+      `Scanning for Python dependencies to generate ${packageFile}`,
+      Views.HomeView,
+      () =>
+        scanPythonDependencies(
+          absProjectDir,
+          pythonPath ?? "python3",
+          packageFile,
+        ),
+    );
+    await includeFileInConfig(
+      config.configurationName,
+      `/${packageFile}`,
+      config.projectDir,
+      rootDir,
+    );
+    await Promise.allSettled([
+      this.refreshPythonPackages(),
+      this.sendRefreshedFilesLists(),
+    ]);
+    if (result.incomplete.length > 0) {
+      const importList = result.incomplete.join(", ");
+      window.showWarningMessage(
+        `Generated ${packageFile}, but could not find installed packages for some imports using ${result.python}. Imports: ${importList}`,
+      );
+    }
+    return true;
+  }
+
   // Read a config fresh from disk and apply interpreter defaults.
   // Returns undefined (with an error message shown) if the config
   // cannot be loaded.
@@ -437,14 +488,28 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // missing interpreter defaults like r.version. The file watcher
       // will eventually refresh the cache, but the user can click Deploy
       // before that completes.
-      const config = await this.loadFreshConfig(
-        configurationName,
-        projectDir,
-        root,
-        absProjectDir,
-        python?.pythonPath,
-        r?.rPath,
-      );
+      const loadConfig = () =>
+        this.loadFreshConfig(
+          configurationName,
+          projectDir,
+          root,
+          absProjectDir,
+          python?.pythonPath,
+          r?.rPath,
+        );
+      let config = await loadConfig();
+      if (
+        config &&
+        (await this.ensurePythonPackageFile(
+          config,
+          root,
+          absProjectDir,
+          python?.pythonPath,
+        ))
+      ) {
+        // Reload so the deploy sees the package file in the files list.
+        config = await loadConfig();
+      }
       if (!config) {
         return {
           status: "failed",
