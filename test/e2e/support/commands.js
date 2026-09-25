@@ -129,7 +129,6 @@ Cypress.Commands.add("skipIfConnectVersionBefore", (targetVersion, reason) => {
 
 // Add a global afterEach to log iframes if a test fails (for CI reliability)
 if (typeof afterEach === "function") {
-  /* eslint-disable-next-line mocha/no-top-level-hooks */
   afterEach(function () {
     if (this.currentTest.state === "failed") {
       cy.debugIframes();
