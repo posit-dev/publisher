@@ -153,8 +153,7 @@ Cypress.Commands.add(
     return cy
       .getPublisherTomlFilePaths(projectDir)
       .then((filePaths) => {
-        // Wait for the contentRecord TOML file to exist before loading
-        cy.readFile(filePaths.contentRecord.path).then(() => {
+        cy.waitForContentRecordInConfig(filePaths).then(() => {
           let result = {
             config: {
               name: filePaths.config.name,
@@ -335,8 +334,7 @@ Cypress.Commands.add(
     return cy
       .getPublisherTomlFilePaths(projectDir)
       .then((filePaths) => {
-        // Wait for the contentRecord TOML file to exist before loading
-        cy.readFile(filePaths.contentRecord.path).then(() => {
+        cy.waitForContentRecordInConfig(filePaths).then(() => {
           let result = {
             config: {
               name: filePaths.config.name,

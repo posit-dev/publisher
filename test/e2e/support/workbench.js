@@ -14,7 +14,7 @@ Cypress.Commands.add("checkPositronExtension", () => {
 
   cy.log("Checking if Publisher extension is installed...");
 
-  cy.exec(`cd "${e2eDir}" && just check-positron-extension`, {
+  cy.shell(`cd "${e2eDir}" && just check-positron-extension`, {
     failOnNonZeroExit: false,
     timeout: 20_000,
   }).then((result) => {
@@ -66,7 +66,7 @@ Cypress.Commands.add("cleanupWorkbenchData", () => {
   cy.log("Cleaning up Workbench data");
 
   // First check if the container is running
-  cy.exec(
+  cy.shell(
     "docker ps | grep publisher-e2e.workbench-release || echo 'not-running'",
     {
       failOnNonZeroExit: false,
@@ -91,7 +91,7 @@ Cypress.Commands.add("cleanupWorkbenchData", () => {
       ".vscode",
     ];
 
-    cy.exec(
+    cy.shell(
       `docker exec publisher-e2e.workbench-release bash -c "cd /content-workspace && rm -rf ${cleanupPaths.join(" ")}"`,
       {
         failOnNonZeroExit: false,
@@ -122,7 +122,7 @@ Cypress.Commands.add("restartWorkbench", () => {
   cy.cleanupWorkbenchData();
 
   cy.log("Stopping and removing Workbench container");
-  cy.exec(`just remove-workbench release`, {
+  cy.shell(`just remove-workbench release`, {
     failOnNonZeroExit: false,
     timeout: 10_000,
   }).then((result) => {
@@ -160,7 +160,7 @@ Cypress.Commands.add("restartWorkbench", () => {
       );
 
       // Check the container status to get additional information
-      cy.exec("docker ps -a | grep workbench", {
+      cy.shell("docker ps -a | grep workbench", {
         failOnNonZeroExit: false,
       }).then((statusResult) => {
         cy.log(
@@ -169,9 +169,12 @@ Cypress.Commands.add("restartWorkbench", () => {
       });
 
       // Get container logs if possible
-      cy.exec("docker logs publisher-e2e.workbench-release 2>&1 | tail -n 50", {
-        failOnNonZeroExit: false,
-      }).then((logsResult) => {
+      cy.shell(
+        "docker logs publisher-e2e.workbench-release 2>&1 | tail -n 50",
+        {
+          failOnNonZeroExit: false,
+        },
+      ).then((logsResult) => {
         cy.log(
           `Container logs (last 50 lines): ${logsResult.stdout || "No logs available"}`,
         );
@@ -180,7 +183,7 @@ Cypress.Commands.add("restartWorkbench", () => {
     throw err; // Re-throw the error to continue normal Cypress error handling
   });
 
-  cy.exec(`just start-workbench release`, {
+  cy.shell(`just start-workbench release`, {
     failOnNonZeroExit: false,
     timeout: 100_000, // Increased to give buffer beyond the justfile timeout (90s)
   }).then((result) => {
@@ -208,7 +211,7 @@ Cypress.Commands.add("restartWorkbench", () => {
 
   // Install the Publisher extension
   cy.log("Installing Publisher extension in Workbench");
-  cy.exec(`just install-positron-extension release`, {
+  cy.shell(`just install-positron-extension release`, {
     failOnNonZeroExit: false,
     timeout: 30_000,
   }).then((result) => {
@@ -488,10 +491,12 @@ Cypress.Commands.add(
           .click();
       });
 
-    cy.get(".quick-input-widget")
-      .should("contain.text", "The API key")
-      .find("input")
-      .type(Cypress.env("BOOTSTRAP_ADMIN_API_KEY") + "{enter}");
+    cy.env(["BOOTSTRAP_ADMIN_API_KEY"]).then(({ BOOTSTRAP_ADMIN_API_KEY }) => {
+      cy.get(".quick-input-widget")
+        .should("contain.text", "The API key")
+        .find("input")
+        .type(BOOTSTRAP_ADMIN_API_KEY + "{enter}");
+    });
 
     cy.get(".quick-input-widget")
       .should("contain.text", "Enter a unique nickname for this server")
@@ -501,6 +506,7 @@ Cypress.Commands.add(
     return cy
       .getPublisherTomlFilePaths(projectDir)
       .then((filePaths) => {
+        cy.waitForContentRecordInConfig(filePaths);
         let result = {
           config: {
             name: filePaths.config.name,
