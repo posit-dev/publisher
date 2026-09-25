@@ -264,23 +264,30 @@ Cypress.Commands.add("setAdminCredentials", () => {
 
 // clearupDeployments
 // Purpose: Remove .posit metadata to reset deployments per test or per subdir, with exclusions.
+// - Runs inside the code-server container: the extension creates these files as
+//   the container user (and CI chowns the workspace to it), so deleting from the
+//   host can fail silently and leave stale deployments behind. Falls back to the
+//   host when the container isn't running (e.g. Workbench-only runs).
 Cypress.Commands.add(
   "clearupDeployments",
   (subdir, excludeDirs = ["config-errors"]) => {
+    let cmd;
     // If subdir is provided, only target that directory
     if (subdir) {
       // If subdir is in the exclude list, skip deletion
       if (excludeDirs.includes(subdir)) return;
-      const target = `content-workspace/${subdir}/.posit`;
-      cy.shell(`rm -rf ${target}`, { failOnNonZeroExit: false });
+      cmd = `rm -rf ${subdir}/.posit`;
     } else {
       // Build a list of all .posit directories except excluded ones
       const excludePatterns = excludeDirs
         .map((dir) => `-not -path "*/${dir}/*"`)
         .join(" ");
-      const findCmd = `find content-workspace -type d -name ".posit" ${excludePatterns}`;
-      cy.shell(`${findCmd} -exec rm -rf {} +`, { failOnNonZeroExit: false });
+      cmd = `find . -type d -name ".posit" ${excludePatterns} -exec rm -rf {} +`;
     }
+    cy.shell(
+      `docker exec -w /home/coder/workspace publisher-e2e.code-server bash -c '${cmd}' || (cd content-workspace && ${cmd})`,
+      { failOnNonZeroExit: false },
+    );
   },
 );
 
