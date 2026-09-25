@@ -406,6 +406,87 @@ describe("QuartoDetector", () => {
     expect(configs[0]?.files).toContain("/notes.md");
   });
 
+  test("fallback when quarto binary missing: .R with frontmatter", async () => {
+    setupGlobDir(["script.R"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue(
+      ["#' ---", '#\' title: "My Script"', "#' ---", "", "1 + 1", ""].join(
+        "\n",
+      ),
+    );
+
+    mockExecFile.mockRejectedValue(
+      new Error("executable file not found in $PATH"),
+    );
+
+    const configs = await detector.inferType("/project", "script.R");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.type).toBe(ContentType.QUARTO_STATIC);
+    expect(configs[0]?.r).toEqual({});
+    expect(configs[0]?.quarto).toEqual({
+      version: "1.7.34",
+      engines: ["knitr"],
+    });
+    expect(configs[0]?.files).toContain("/script.R");
+  });
+
+  test("fallback when quarto binary missing: .R without frontmatter", async () => {
+    setupGlobDir(["script.R"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue("1 + 1\n");
+
+    mockExecFile.mockRejectedValue(
+      new Error("executable file not found in $PATH"),
+    );
+
+    const configs = await detector.inferType("/project", "script.R");
+    expect(configs).toHaveLength(0);
+  });
+
+  test("fallback when quarto binary missing: .py with frontmatter", async () => {
+    setupGlobDir(["script.py"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue(
+      [
+        "# %% [markdown]",
+        "# ---",
+        '# title: "My Script"',
+        "# ---",
+        "",
+        "# %%",
+        "1 + 1",
+        "",
+      ].join("\n"),
+    );
+
+    mockExecFile.mockRejectedValue(
+      new Error("executable file not found in $PATH"),
+    );
+
+    const configs = await detector.inferType("/project", "script.py");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.type).toBe(ContentType.QUARTO_STATIC);
+    expect(configs[0]?.python).toEqual({});
+    expect(configs[0]?.quarto).toEqual({
+      version: "1.7.34",
+      engines: ["jupyter"],
+    });
+    expect(configs[0]?.files).toContain("/script.py");
+  });
+
+  test("fallback when quarto binary missing: .py without frontmatter", async () => {
+    setupGlobDir(["script.py"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue("1 + 1\n");
+
+    mockExecFile.mockRejectedValue(
+      new Error("executable file not found in $PATH"),
+    );
+
+    const configs = await detector.inferType("/project", "script.py");
+    expect(configs).toHaveLength(0);
+  });
+
   test("skips non-quarto entrypoints", async () => {
     const configs = await detector.inferType("/project", "index.html");
     expect(configs).toHaveLength(0);
