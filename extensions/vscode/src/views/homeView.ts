@@ -2,6 +2,7 @@
 
 import fs from "fs";
 import path from "path";
+import axios from "axios";
 import debounce from "debounce";
 
 import {
@@ -2103,6 +2104,101 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.refreshCredentials();
   };
 
+  public deleteDeployment = async () => {
+    const contentRecord = await this.state.getSelectedContentRecord();
+    if (!contentRecord) {
+      return;
+    }
+    const name = contentRecord.deploymentName;
+    // Pre-deployment records may not have content on the server yet.
+    const contentId = contentRecord.id;
+
+    let credential: Credential | undefined;
+    if (contentId) {
+      credential = this.state.findCredentialForContentRecord(contentRecord);
+      if (!credential) {
+        window.showErrorMessage(
+          `Unable to delete deployment '${name}': no credential found for ${contentRecord.serverUrl}. Add a credential for this server and try again.`,
+        );
+        return;
+      }
+    }
+
+    const message = contentId
+      ? `Are you sure you want to delete the deployment '${name}'? This will permanently delete the content from ${contentRecord.serverUrl} and remove the local deployment record. The configuration file will not be changed. This cannot be undone.`
+      : `Are you sure you want to delete the deployment '${name}'? This will remove the local deployment record. The configuration file will not be changed.`;
+    const ok = await confirmDelete(message);
+    if (!ok) {
+      return;
+    }
+
+    if (contentId && credential) {
+      try {
+        await this.deleteContentOnServer(credential, ContentID(contentId));
+      } catch (error: unknown) {
+        // Content that is already gone from the server is fine; proceed to
+        // remove the local record.
+        if (!(axios.isAxiosError(error) && error.response?.status === 404)) {
+          const summary = getSummaryStringFromError(
+            "deployment::delete",
+            error,
+          );
+          window.showErrorMessage(
+            `Unable to delete deployment '${name}' from the server: ${summary}`,
+          );
+          return;
+        }
+      }
+    }
+
+    try {
+      await fs.promises.rm(contentRecord.deploymentPath, { force: true });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("deployment::delete", error);
+      window.showErrorMessage(
+        `Unable to remove the local deployment record for '${name}': ${summary}`,
+      );
+      return;
+    }
+
+    await this.saveSelectionState(null);
+    await this.state.refreshContentRecords();
+    this.updateWebViewViewContentRecords(null);
+    window.setStatusBarMessage(`Deployment '${name}' has been deleted.`, 5000);
+  };
+
+  private async deleteContentOnServer(
+    credential: Credential,
+    contentId: ContentID,
+  ) {
+    if (credential.serverType === ServerType.CONNECT_CLOUD) {
+      const cloudApi = new ConnectCloudAPI({
+        apiBaseUrl: cloudEnvironmentBaseUrls[CONNECT_CLOUD_ENVIRONMENT],
+        accessToken: credential.accessToken,
+        refreshToken: credential.refreshToken,
+        environment: CONNECT_CLOUD_ENVIRONMENT,
+        onTokenRefresh: async (tokens) => {
+          credential.accessToken = tokens.access_token;
+          credential.refreshToken = tokens.refresh_token;
+          await storeCredential(this.context.secrets, credential);
+        },
+        userAgent: getUserAgent(),
+      });
+      await cloudApi.deleteContent(contentId);
+      return;
+    }
+    const connectApi = new ConnectAPI(
+      await connectAPIOptionsFromCredential(
+        this.state.credentialsService,
+        credential,
+        {
+          rejectUnauthorized: extensionSettings.verifyCertificates(),
+        },
+      ),
+    );
+    await connectApi.deleteContent(contentId);
+  }
+
   private showPublishingLog() {
     return commands.executeCommand(Commands.Logs.Focus);
   }
@@ -2945,6 +3041,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         Commands.HomeView.AssociateDeployment,
         () => showAssociateGUID(this.state),
         this,
+      ),
+      commands.registerCommand(
+        Commands.HomeView.DeleteDeployment,
+        this.deleteDeployment,
       ),
       commands.registerCommand(
         Commands.HomeView.CreateConfigForDeployment,
