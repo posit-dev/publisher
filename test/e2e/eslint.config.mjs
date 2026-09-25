@@ -38,5 +38,12 @@ export default defineConfig([
       "mocha/no-async-in-sync-tests": "off",
     },
   },
+  {
+    // Support files use top-level hooks intentionally (e.g., global afterEach for cleanup).
+    files: ["**/support/*.js"],
+    rules: {
+      "mocha/no-top-level-hooks": "off",
+    },
+  },
   eslintConfigPrettier,
 ]);
