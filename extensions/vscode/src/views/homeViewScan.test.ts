@@ -74,7 +74,7 @@ const mocks = vi.hoisted(() => ({
   }),
   scanRPackages: vi.fn().mockResolvedValue(undefined),
   fileExists: vi.fn().mockResolvedValue(false),
-  ensurePythonPackageFile: vi.fn(),
+  needsPythonPackageScan: vi.fn(),
 }));
 
 vi.mock("src/configFiles", () => ({
@@ -87,7 +87,7 @@ vi.mock("src/interpreters/scanPythonDependencies", () => ({
 }));
 
 vi.mock("src/interpreters/pythonPackages", () => ({
-  ensurePythonPackageFile: mocks.ensurePythonPackageFile,
+  needsPythonPackageScan: mocks.needsPythonPackageScan,
   getPythonPackages: vi.fn(),
 }));
 
@@ -250,11 +250,7 @@ describe("HomeViewProvider ensurePythonPackageFile before deploy", () => {
       packageFile: "",
       packageManager: "pip",
     };
-    mocks.ensurePythonPackageFile.mockResolvedValueOnce({
-      requirements: ["numpy==2.0"],
-      incomplete: [],
-      python: "python3",
-    });
+    mocks.needsPythonPackageScan.mockResolvedValueOnce(true);
     const provider = makeProvider(config);
 
     const changed = await provider["ensurePythonPackageFile"](
@@ -265,10 +261,10 @@ describe("HomeViewProvider ensurePythonPackageFile before deploy", () => {
     );
 
     expect(changed).toBe(true);
-    expect(mocks.ensurePythonPackageFile).toHaveBeenCalledWith(
+    expect(mocks.scanPythonDependencies).toHaveBeenCalledWith(
       "/root/my project",
-      "requirements.txt",
       "/usr/bin/python3",
+      "requirements.txt",
     );
     expect(mocks.includeFile).toHaveBeenCalledWith(
       "my-config",
@@ -285,7 +281,7 @@ describe("HomeViewProvider ensurePythonPackageFile before deploy", () => {
       packageFile: "requirements.txt",
       packageManager: "pip",
     };
-    mocks.ensurePythonPackageFile.mockResolvedValueOnce(undefined);
+    mocks.needsPythonPackageScan.mockResolvedValueOnce(false);
     const provider = makeProvider(config);
 
     const changed = await provider["ensurePythonPackageFile"](
@@ -295,6 +291,7 @@ describe("HomeViewProvider ensurePythonPackageFile before deploy", () => {
     );
 
     expect(changed).toBe(false);
+    expect(mocks.scanPythonDependencies).not.toHaveBeenCalled();
     expect(mocks.includeFile).not.toHaveBeenCalled();
   });
 
@@ -310,6 +307,6 @@ describe("HomeViewProvider ensurePythonPackageFile before deploy", () => {
     );
 
     expect(changed).toBe(false);
-    expect(mocks.ensurePythonPackageFile).not.toHaveBeenCalled();
+    expect(mocks.needsPythonPackageScan).not.toHaveBeenCalled();
   });
 });

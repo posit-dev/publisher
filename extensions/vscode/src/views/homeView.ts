@@ -162,8 +162,8 @@ import {
 import { recordAddConnectCloudUrlParams } from "src/utils/connectCloudHelpers";
 import { getRPackages } from "src/interpreters/rPackages";
 import {
-  ensurePythonPackageFile,
   getPythonPackages,
+  needsPythonPackageScan,
 } from "src/interpreters/pythonPackages";
 
 enum HomeViewInitialized {
@@ -366,19 +366,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
     const packageFile =
       config.configuration.python.packageFile || DEFAULT_PYTHON_PACKAGE_FILE;
+    if (!(await needsPythonPackageScan(absProjectDir, packageFile))) {
+      return false;
+    }
     const result = await showProgress(
       `Scanning for Python dependencies to generate ${packageFile}`,
       Views.HomeView,
       () =>
-        ensurePythonPackageFile(
+        scanPythonDependencies(
           absProjectDir,
-          packageFile,
           pythonPath ?? "python3",
+          packageFile,
         ),
     );
-    if (!result) {
-      return false;
-    }
     await includeFileInConfig(
       config.configurationName,
       `/${packageFile}`,

@@ -3,12 +3,11 @@
 import path from "node:path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import {
-  ensurePythonPackageFile,
   getPythonPackages,
+  needsPythonPackageScan,
   readRequirementsFile,
 } from "./pythonPackages";
 import { generateRequirements } from "./pythonDependencySources";
-import { scanPythonDependencies } from "./scanPythonDependencies";
 
 const mockFiles: Record<string, string> = {};
 
@@ -27,12 +26,6 @@ vi.mock("../utils/fsUtils", () => ({
 
 vi.mock("./pythonDependencySources", () => ({
   generateRequirements: vi.fn(() => Promise.resolve(null)),
-}));
-
-vi.mock("./scanPythonDependencies", () => ({
-  scanPythonDependencies: vi.fn(() =>
-    Promise.resolve({ requirements: ["numpy"], incomplete: [], python: "py" }),
-  ),
 }));
 
 function setFile(dir: string, filename: string, content: string) {
@@ -142,7 +135,7 @@ describe("getPythonPackages", () => {
   });
 });
 
-describe("ensurePythonPackageFile", () => {
+describe("needsPythonPackageScan", () => {
   const projectDir = path.join("/my project");
 
   beforeEach(() => {
@@ -150,53 +143,30 @@ describe("ensurePythonPackageFile", () => {
       delete mockFiles[key];
     }
     vi.mocked(generateRequirements).mockReset().mockResolvedValue(null);
-    vi.mocked(scanPythonDependencies).mockClear();
   });
 
-  test("does nothing when the package file exists", async () => {
+  test("false when the package file exists", async () => {
     setFile(projectDir, "requirements.txt", "numpy\n");
-    const result = await ensurePythonPackageFile(
-      projectDir,
-      "requirements.txt",
-      "py",
+    expect(await needsPythonPackageScan(projectDir, "requirements.txt")).toBe(
+      false,
     );
-    expect(result).toBeUndefined();
-    expect(scanPythonDependencies).not.toHaveBeenCalled();
   });
 
-  test("does nothing when a lockfile can stand in for requirements.txt", async () => {
+  test("false when a lockfile can stand in for requirements.txt", async () => {
     vi.mocked(generateRequirements).mockResolvedValueOnce(["pandas==2.0"]);
-    const result = await ensurePythonPackageFile(
-      projectDir,
-      "requirements.txt",
-      "py",
-    );
-    expect(result).toBeUndefined();
-    expect(scanPythonDependencies).not.toHaveBeenCalled();
-  });
-
-  test("scans and writes requirements.txt when no dependency source exists", async () => {
-    const result = await ensurePythonPackageFile(
-      projectDir,
-      "requirements.txt",
-      "py",
-    );
-    expect(result?.requirements).toEqual(["numpy"]);
-    expect(scanPythonDependencies).toHaveBeenCalledWith(
-      projectDir,
-      "py",
-      "requirements.txt",
+    expect(await needsPythonPackageScan(projectDir, "requirements.txt")).toBe(
+      false,
     );
   });
 
-  test("scans and writes a missing non-default package file without checking lockfiles", async () => {
-    const result = await ensurePythonPackageFile(projectDir, "reqs.txt", "py");
-    expect(result).toBeDefined();
+  test("true when no dependency source exists", async () => {
+    expect(await needsPythonPackageScan(projectDir, "requirements.txt")).toBe(
+      true,
+    );
+  });
+
+  test("true for a missing non-default package file without checking lockfiles", async () => {
+    expect(await needsPythonPackageScan(projectDir, "reqs.txt")).toBe(true);
     expect(generateRequirements).not.toHaveBeenCalled();
-    expect(scanPythonDependencies).toHaveBeenCalledWith(
-      projectDir,
-      "py",
-      "reqs.txt",
-    );
   });
 });
