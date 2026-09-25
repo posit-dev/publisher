@@ -44,7 +44,12 @@ import {
   IntegrationRequest,
   UpdateConfigWithDefaults,
 } from "src/api";
-import { ConnectAPI, GUID, SessionExpiredError } from "@posit-dev/connect-api";
+import {
+  ConnectAPI,
+  ContentID as ConnectContentID,
+  GUID,
+  SessionExpiredError,
+} from "@posit-dev/connect-api";
 import type { Integration } from "@posit-dev/connect-api";
 import {
   ConnectOAuthActivator,
@@ -2134,7 +2139,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     if (contentId && credential) {
       try {
-        await this.deleteContentOnServer(credential, ContentID(contentId));
+        await this.deleteContentOnServer(credential, contentId);
       } catch (error: unknown) {
         // Content that is already gone from the server is fine; proceed to
         // remove the local record.
@@ -2169,7 +2174,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async deleteContentOnServer(
     credential: Credential,
-    contentId: ContentID,
+    contentId: string,
   ) {
     if (credential.serverType === ServerType.CONNECT_CLOUD) {
       const cloudApi = new ConnectCloudAPI({
@@ -2184,7 +2189,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         },
         userAgent: getUserAgent(),
       });
-      await cloudApi.deleteContent(contentId);
+      await cloudApi.deleteContent(ContentID(contentId));
       return;
     }
     const connectApi = new ConnectAPI(
@@ -2196,7 +2201,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         },
       ),
     );
-    await connectApi.deleteContent(contentId);
+    await connectApi.deleteContent(ConnectContentID(contentId));
   }
 
   private showPublishingLog() {
