@@ -8,6 +8,27 @@ import "./selectors";
 import "./sequences";
 import "./workbench";
 
+// shell
+// Purpose: Run a shell command in Node via the "exec" task (cy.shell() was
+// removed in Cypress 16). Runs from the e2e project root.
+// Yields { exitCode, stdout, stderr }; fails on non-zero exit unless
+// failOnNonZeroExit is false.
+Cypress.Commands.add(
+  "shell",
+  (command, { failOnNonZeroExit = true, timeout = 60_000 } = {}) => {
+    return cy
+      .task("exec", { command, timeout }, { timeout: timeout + 5_000 })
+      .then((result) => {
+        if (failOnNonZeroExit && result.exitCode !== 0) {
+          throw new Error(
+            `Command failed with exit code ${result.exitCode}: ${command}\n${result.stderr}`,
+          );
+        }
+        return result;
+      });
+  },
+);
+
 // initializeConnect: Simple initialization for use with with-connect action
 // The API key is passed via CYPRESS_BOOTSTRAP_ADMIN_API_KEY environment variable
 // from the with-connect GitHub Action, which handles Connect startup and bootstrapping.
@@ -21,23 +42,34 @@ Cypress.Commands.add("initializeConnect", () => {
   cy.setAdminCredentials();
 });
 
+// getPCCUser
+// Purpose: Yield the Connect Cloud test user (including password) from the
+// secret pccConfig env value.
+Cypress.Commands.add("getPCCUser", () => {
+  return cy
+    .env(["pccConfig"])
+    .then(({ pccConfig }) => pccConfig.pcc_user_ccqa3);
+});
+
 // getConnectVersion
 // Purpose: Fetch the Connect server version from the server_settings API.
 // Returns: A promise that resolves with the version string (e.g., "2025.03.0")
 Cypress.Commands.add("getConnectVersion", () => {
   const connectUrl =
-    Cypress.env("CONNECT_SERVER_URL") || "http://localhost:3939";
-  const apiKey = Cypress.env("BOOTSTRAP_ADMIN_API_KEY");
+    Cypress.expose("CONNECT_SERVER_URL") || "http://localhost:3939";
 
   return cy
-    .request({
-      method: "GET",
-      url: `${connectUrl}/__api__/server_settings`,
-      headers: {
-        Authorization: `Key ${apiKey}`,
-      },
-      failOnStatusCode: false,
-    })
+    .env(["BOOTSTRAP_ADMIN_API_KEY"])
+    .then(({ BOOTSTRAP_ADMIN_API_KEY: apiKey }) =>
+      cy.request({
+        method: "GET",
+        url: `${connectUrl}/__api__/server_settings`,
+        headers: {
+          Authorization: `Key ${apiKey}`,
+        },
+        failOnStatusCode: false,
+      }),
+    )
     .then((response) => {
       if (response.status === 200 && response.body.version) {
         return response.body.version;
@@ -163,11 +195,13 @@ Cypress.Commands.add("resetCredentials", () => {
 // Purpose: Create the admin PCS credential via the UI credential creation flow.
 // Requires UI to be loaded (page visited, sidebar open, iframe ready).
 Cypress.Commands.add("setAdminCredentials", () => {
-  if (!Cypress.env("BOOTSTRAP_ADMIN_API_KEY")) {
-    throw new Error(
-      "Cypress env BOOTSTRAP_ADMIN_API_KEY is empty. Cannot set admin credentials.",
-    );
-  }
+  cy.env(["BOOTSTRAP_ADMIN_API_KEY"]).then(({ BOOTSTRAP_ADMIN_API_KEY }) => {
+    if (!BOOTSTRAP_ADMIN_API_KEY) {
+      throw new Error(
+        "Cypress env BOOTSTRAP_ADMIN_API_KEY is empty. Cannot set admin credentials.",
+      );
+    }
+  });
 
   cy.ensureCredentialsSectionExpanded();
   cy.clickSectionAction("New Credential");
@@ -206,9 +240,9 @@ Cypress.Commands.add("setAdminCredentials", () => {
     "include.text",
     "The API key to be used to authenticate with Posit Connect.",
   );
-  cy.get(".quick-input-widget").type(
-    `${Cypress.env("BOOTSTRAP_ADMIN_API_KEY")}{enter}`,
-  );
+  cy.env(["BOOTSTRAP_ADMIN_API_KEY"]).then(({ BOOTSTRAP_ADMIN_API_KEY }) => {
+    cy.get(".quick-input-widget").type(`${BOOTSTRAP_ADMIN_API_KEY}{enter}`);
+  });
 
   // Wait for successful connection
   cy.get(".quick-input-message", { timeout: 15000 }).should(
@@ -235,14 +269,14 @@ Cypress.Commands.add(
       // If subdir is in the exclude list, skip deletion
       if (excludeDirs.includes(subdir)) return;
       const target = `content-workspace/${subdir}/.posit`;
-      cy.exec(`rm -rf ${target}`, { failOnNonZeroExit: false });
+      cy.shell(`rm -rf ${target}`, { failOnNonZeroExit: false });
     } else {
       // Build a list of all .posit directories except excluded ones
       const excludePatterns = excludeDirs
         .map((dir) => `-not -path "*/${dir}/*"`)
         .join(" ");
       const findCmd = `find content-workspace -type d -name ".posit" ${excludePatterns}`;
-      cy.exec(`${findCmd} -exec rm -rf {} +`, { failOnNonZeroExit: false });
+      cy.shell(`${findCmd} -exec rm -rf {} +`, { failOnNonZeroExit: false });
     }
   },
 );
@@ -289,7 +323,7 @@ Cypress.Commands.add("getPublisherTomlFilePaths", (projectDir) => {
 
 Cypress.Commands.add("expandWildcardFile", (targetDir, wildCardPath) => {
   const cmd = `cd ${targetDir} && ls -t ${wildCardPath} | head -1`;
-  return cy.exec(cmd).then((result) => {
+  return cy.shell(cmd).then((result) => {
     if (result.exitCode === 0 && result.stdout) {
       return result.stdout.trim();
     }
@@ -310,12 +344,12 @@ Cypress.Commands.add("savePublisherFile", (filePath, jsonObject) => {
 
   // Read the file content from inside the container
   return cy
-    .exec(
+    .shell(
       `docker exec publisher-e2e.code-server bash -c "cat '${dockerPath}'"`,
       { failOnNonZeroExit: false },
     )
     .then((readResult) => {
-      if (readResult.code !== 0 || !readResult.stdout) {
+      if (readResult.exitCode !== 0 || !readResult.stdout) {
         throw new Error(
           `Failed to read TOML via Docker: ${readResult.stderr || "no stdout"}`,
         );
@@ -347,7 +381,7 @@ Cypress.Commands.add("savePublisherFile", (filePath, jsonObject) => {
       const escaped = modifiedContent
         .replace(/\\/g, "\\\\")
         .replace(/'/g, "'\"'\"'");
-      return cy.exec(
+      return cy.shell(
         `docker exec publisher-e2e.code-server bash -c "cat <<'EOF' > '${dockerPath}'\n${escaped}\nEOF"`,
       );
     });
@@ -357,7 +391,7 @@ Cypress.Commands.add("savePublisherFile", (filePath, jsonObject) => {
 // Purpose: Read and parse TOML into JSON for assertions.
 Cypress.Commands.add("loadTomlFile", (filePath) => {
   return cy
-    .exec(`cat ${filePath}`, { failOnNonZeroExit: false })
+    .shell(`cat ${filePath}`, { failOnNonZeroExit: false })
     .then((result) => {
       if (result.exitCode === 0 && result.stdout) {
         return parse(result.stdout);
@@ -441,7 +475,7 @@ Cypress.Commands.add("waitForPublisherIframe", (timeout = 60000) => {
 // Debug: Waits for all iframes to exist (helps with timing issues in CI).
 // If DEBUG_CYPRESS is "true", also logs iframe attributes for debugging.
 Cypress.Commands.add("debugIframes", () => {
-  if (Cypress.env("DEBUG_CYPRESS") !== "true") return;
+  if (Cypress.expose("DEBUG_CYPRESS") !== "true") return;
   // Simplified logging - less verbose
   cy.get("iframe", { timeout: 30000 }).then(($iframes) => {
     cy.task("print", `Found ${$iframes.length} iframes total`);
@@ -706,7 +740,7 @@ Cypress.Commands.add("writeTomlFile", (filePath, tomlContent) => {
       })
       .join(" && ");
 
-    return cy.exec(
+    return cy.shell(
       `docker exec publisher-e2e.code-server bash -c "${commands}"`,
     );
   }
@@ -718,7 +752,7 @@ Cypress.Commands.add("writeTomlFile", (filePath, tomlContent) => {
   );
   // Use double quotes for shell, single quotes for TOML if needed
   return cy
-    .exec(
+    .shell(
       `docker exec publisher-e2e.code-server bash -c "cat <<EOF >> '${dockerPath}'\n${tomlContent}\nEOF"`,
     )
     .then((result) => {
@@ -757,12 +791,16 @@ Cypress.Commands.add("expectCredentialsSectionEmpty", () => {
 
 // deletePCCContent
 // Purpose: Delete ALL PCC content for the test account to ensure clean state.
-// - Requires Cypress.env("PCC_ACCESS_TOKEN") set by setPCCCredential()
-// - Requires Cypress.env("PCC_ACCOUNT_ID") set by setPCCCredential()
+// - Requires PCC_ACCESS_TOKEN and PCC_ACCOUNT_ID in Cypress env; skips otherwise.
 Cypress.Commands.add("deletePCCContent", () => {
-  const token = Cypress.env("PCC_ACCESS_TOKEN");
-  const accountId = Cypress.env("PCC_ACCOUNT_ID");
-  const env = Cypress.env("CONNECT_CLOUD_ENV") || "staging";
+  cy.env(["PCC_ACCESS_TOKEN", "PCC_ACCOUNT_ID"]).then(
+    ({ PCC_ACCESS_TOKEN, PCC_ACCOUNT_ID }) =>
+      deletePCCContent(PCC_ACCESS_TOKEN, PCC_ACCOUNT_ID),
+  );
+});
+
+function deletePCCContent(token, accountId) {
+  const env = Cypress.expose("CONNECT_CLOUD_ENV") || "staging";
 
   // Mask token in any logging
   const mask = (t) => (t ? `${t.slice(0, 4)}***${t.slice(-4)}` : "(none)");
@@ -848,7 +886,7 @@ Cypress.Commands.add("deletePCCContent", () => {
     // Start deleting items
     deleteItems(contents);
   });
-});
+}
 
 // NOTE: Specific exception handling is done in support/index.js
 // Do not add a catch-all here as it masks real errors.

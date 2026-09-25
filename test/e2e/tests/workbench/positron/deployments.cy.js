@@ -1,6 +1,6 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-const WORKBENCH_BASE_URL = Cypress.env("WORKBENCH_URL");
+const WORKBENCH_BASE_URL = Cypress.expose("WORKBENCH_URL");
 
 describe(
   "Workbench > Positron",

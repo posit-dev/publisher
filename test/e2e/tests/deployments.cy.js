@@ -100,11 +100,11 @@ describe("Deployments Section", () => {
         cy.getPublisherSidebarIcon().click();
         cy.waitForPublisherIframe();
         cy.resetCredentials();
-        const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-        cy.log("PCC user for addPCCCredential: " + JSON.stringify(user));
-        cy.addPCCCredential(user, "pcc-deploy-credential", {
-          assertEmpty: false,
-        });
+        cy.getPCCUser().then((user) =>
+          cy.addPCCCredential(user, "pcc-deploy-credential", {
+            assertEmpty: false,
+          }),
+        );
 
         // Verify credential is ready before proceeding
         cy.ensureCredentialsSectionExpanded();

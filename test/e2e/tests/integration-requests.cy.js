@@ -42,10 +42,11 @@ describe("IntegrationRequests Section", () => {
         // Setup - moved from before/beforeEach to avoid running when @uses-posit-connect-cloud tests are filtered
         cy.initializeConnect();
 
-        const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-        cy.addPCCCredential(user, "connect-cloud-deployment-test", {
-          assertEmpty: false,
-        });
+        cy.getPCCUser().then((user) =>
+          cy.addPCCCredential(user, "connect-cloud-deployment-test", {
+            assertEmpty: false,
+          }),
+        );
 
         cy.expectInitialPublisherState();
 

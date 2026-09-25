@@ -59,9 +59,9 @@ describe("Credentials Section", () => {
       "The API key to be used to authenticate with Posit Connect.",
     );
 
-    cy.get(".quick-input-widget").type(
-      `${Cypress.env("BOOTSTRAP_ADMIN_API_KEY")}{enter}`,
-    );
+    cy.env(["BOOTSTRAP_ADMIN_API_KEY"]).then(({ BOOTSTRAP_ADMIN_API_KEY }) => {
+      cy.get(".quick-input-widget").type(`${BOOTSTRAP_ADMIN_API_KEY}{enter}`);
+    });
 
     cy.get(".quick-input-message", { timeout: 15000 }).should(
       "include.text",
@@ -84,9 +84,10 @@ describe("Credentials Section", () => {
     "New PCC Credential - OAuth Device Code",
     { tags: "@uses-posit-connect-cloud" },
     () => {
-      const user = Cypress.env("pccConfig").pcc_user_ccqa3;
       // Drive full OAuth UI flow and nickname entry via helper
-      cy.addPCCCredential(user, "connect-cloud-credential");
+      cy.getPCCUser().then((user) =>
+        cy.addPCCCredential(user, "connect-cloud-credential"),
+      );
 
       // Verify the credential appears in the list
       cy.ensureCredentialsSectionExpanded();

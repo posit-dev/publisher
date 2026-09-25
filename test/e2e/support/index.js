@@ -30,7 +30,7 @@ Cypress.on("uncaught:exception", (err) => {
     return false;
   }
   // Log but don't fail on other errors in CI
-  if (Cypress.env("CI") === "true") {
+  if (Cypress.expose("CI") === "true") {
     console.error("Uncaught exception:", err.message);
     return false;
   }
@@ -65,14 +65,14 @@ Cypress.on("window:before:load", (win) => {
 configure({ testIdAttribute: "data-automation" });
 
 // Global command for skipping tests in CI
-Cypress.skipCI = (fn) => (Cypress.env("CI") === "true" ? fn.skip : fn);
+Cypress.skipCI = (fn) => (Cypress.expose("CI") === "true" ? fn.skip : fn);
 
 // Debugging command
-Cypress.debugIf = (fn) => (Cypress.env("DEBUG_CYPRESS") ? fn : () => {});
+Cypress.debugIf = (fn) => (Cypress.expose("DEBUG_CYPRESS") ? fn : () => {});
 
 /* eslint-disable mocha/no-top-level-hooks */
 afterEach(() => {
-  if (Cypress.env("DEBUG_CYPRESS") === "true") {
+  if (Cypress.expose("DEBUG_CYPRESS") === "true") {
     cy.debugIframes();
   }
 });

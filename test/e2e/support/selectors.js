@@ -17,13 +17,13 @@ Cypress.Commands.add("publisherWebview", () => {
     return cy
       .get("iframe.webview.ready", { timeout: 30000 })
       .then(($iframes) => {
-        if (Cypress.env("DEBUG_CYPRESS") === "true") {
+        if (Cypress.expose("DEBUG_CYPRESS") === "true") {
           cy.task("print", `Found ${$iframes.length} webview.ready iframes`);
         }
         const $target = Cypress.$($iframes).filter((i, el) =>
           (el.src || "").includes("extensionId=posit.publisher"),
         );
-        if (Cypress.env("DEBUG_CYPRESS") === "true") {
+        if (Cypress.expose("DEBUG_CYPRESS") === "true") {
           cy.task("print", `Found ${$target.length} publisher iframes`);
         }
         if ($target.length > 0) {
@@ -103,7 +103,7 @@ Cypress.Commands.add("publisherWebview", () => {
           );
           cy.log(`Content preview: ${bodyText.substring(0, 200)}`);
 
-          if (Cypress.env("DEBUG_CYPRESS") === "true") {
+          if (Cypress.expose("DEBUG_CYPRESS") === "true") {
             const bodyHtml = $body.html() || "";
             cy.task(
               "print",
