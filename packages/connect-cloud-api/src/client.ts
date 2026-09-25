@@ -172,6 +172,13 @@ export class ConnectCloudAPI {
     });
   }
 
+  /** Deletes a content item by ID. */
+  async deleteContent(contentId: ContentID): Promise<void> {
+    return this.withRetry(async () => {
+      await this.client.delete(`/v1/contents/${contentId}`);
+    });
+  }
+
   /** Requests authorization for a resource. */
   async getAuthorization(
     request: AuthorizationRequest,

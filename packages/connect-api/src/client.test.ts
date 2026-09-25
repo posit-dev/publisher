@@ -117,6 +117,8 @@ vi.mock("axios", () => {
             data?: unknown,
             config?: Record<string, unknown>,
           ) => request({ method: "PATCH", url, data, ...config }),
+          delete: (url: string, config?: Record<string, unknown>) =>
+            request({ method: "DELETE", url, ...config }),
           interceptors: {
             request: reqInterceptors,
             response: resInterceptors,
@@ -824,6 +826,33 @@ describe("updateDeployment", () => {
     await expect(
       client.updateDeployment(contentId, { title: "x" }),
     ).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// deleteContent
+// ---------------------------------------------------------------------------
+
+describe("deleteContent", () => {
+  const contentId = ContentID("content-123");
+
+  it("DELETEs the content and returns void", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(null, 204));
+
+    const client = createClient();
+    const result = await client.deleteContent(contentId);
+
+    expect(result).toBeUndefined();
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.url).toBe(`/__api__/v1/content/${contentId}`);
+    expect(call.method).toBe("DELETE");
+  });
+
+  it("throws on non-2xx", async () => {
+    mockRequest.mockResolvedValue(textResponse("not found", 404, "Not Found"));
+
+    const client = createClient();
+    await expect(client.deleteContent(contentId)).rejects.toThrow();
   });
 });
 

@@ -67,6 +67,8 @@ vi.mock("axios", () => {
           data?: unknown,
           config?: Record<string, unknown>,
         ) => request({ method: "PATCH", url, data, ...config }),
+        delete: (url: string, config?: Record<string, unknown>) =>
+          request({ method: "DELETE", url, ...config }),
         interceptors: {
           request: {
             use: (
@@ -637,6 +639,35 @@ describe("publishContent", () => {
 
     const client = createClient();
     await expect(client.publishContent(contentId)).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// deleteContent
+// ---------------------------------------------------------------------------
+
+describe("deleteContent", () => {
+  const contentId = ContentID("content-123");
+
+  it("DELETEs /v1/contents/:id and returns void", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(null, 204));
+
+    const client = createClient();
+    const result = await client.deleteContent(contentId);
+
+    expect(result).toBeUndefined();
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.url).toBe("/v1/contents/content-123");
+    expect(call.method).toBe("DELETE");
+  });
+
+  it("throws on non-2xx", async () => {
+    mockRequest.mockResolvedValue(
+      textResponse("err", 500, "Internal Server Error"),
+    );
+
+    const client = createClient();
+    await expect(client.deleteContent(contentId)).rejects.toThrow();
   });
 });
 

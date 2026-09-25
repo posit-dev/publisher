@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- You can now delete a deployment from the "..." menu in the Deployment section. After you confirm, Publisher deletes the content from the Connect or Connect Cloud server and removes the local deployment record. Configuration files are not changed, so other deployments that share a configuration keep working. (#2881)
+
 ### Fixed
 
 - Data files read by code in a Quarto or R Markdown document are now included in the deployment. Publisher scans fenced code chunks (`{r}`, `{python}`, `{ojs}`, and others) and inline code for referenced files, so a report that calls something like `read_csv("data/penguins.csv")` no longer fails to render on the server the first time it is deployed. Only paths that resolve to a file inside the project directory are added. (#4388)
