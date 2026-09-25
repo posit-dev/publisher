@@ -1,5 +1,6 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
+import * as fs from "fs/promises";
 import path from "path";
 import {
   InputStep,
@@ -71,8 +72,13 @@ import {
   inspectManualContentType,
   inspectManualScript,
   inspectProject,
+  ScriptLanguage,
 } from "src/inspect";
 import { planManualContentTypeItems } from "src/inspect/manualContentTypeRanking";
+import {
+  hasQuartoScriptFrontmatter,
+  insertQuartoScriptFrontmatter,
+} from "src/inspect/helpers/quartoScriptFrontmatter";
 
 const viewTitle = "Create a New Deployment";
 
@@ -128,6 +134,11 @@ export async function newDeployment(
     filePath?: string;
     inspectionResult?: ConfigurationInspectionResult;
     contentType?: ContentType;
+    // Set only when the user picked the "Script" entry in the manual
+    // content-type picker; drives the deferred Quarto frontmatter insertion
+    // once the final title is known (see inputTitle and the Quarto
+    // frontmatter insertion below).
+    scriptLanguage?: ScriptLanguage;
   };
   type NewDeploymentData = {
     entrypoint: SelectedEntrypoint;
@@ -307,6 +318,7 @@ export async function newDeployment(
                 inspectOptions,
                 entry.language,
               ),
+              scriptLanguage: entry.language,
             };
           case "type":
             return {
@@ -620,6 +632,13 @@ export async function newDeployment(
     // use the passed in a specific file and continue to inspection
     newDeploymentData.entrypoint.filePath ||= entryPointFile;
 
+    // Reset from any previous run of this step (e.g. the user went back and
+    // picked a different entrypoint). Otherwise a stale scriptLanguage from
+    // an earlier manual "Script" pick could survive into a run that never
+    // reaches inputContentType (the singlePick fast path below), and trigger
+    // frontmatter insertion into the wrong file at the end of the wizard.
+    newDeploymentData.entrypoint.scriptLanguage = undefined;
+
     // get the inspections only after the `filePath` has been initialized
     await getInspectionQuickPicks();
 
@@ -710,6 +729,14 @@ export async function newDeployment(
     if (!pick || !isQuickPickItemWithInspectionResult(pick)) {
       return;
     }
+
+    // The "Script" entry requires Quarto frontmatter that Connect can't
+    // render without. Picking it is itself the user's affirmative choice to
+    // treat this file as a Quarto script. The actual insertion is deferred
+    // until the final title is known (see the Quarto frontmatter insertion
+    // near the end of newDeployment), so the frontmatter reflects whatever
+    // title the user ultimately enters rather than a placeholder.
+    newDeploymentData.entrypoint.scriptLanguage = pick.scriptLanguage;
 
     newDeploymentData.entrypoint.inspectionResult = pick.inspectionResult;
 
@@ -959,6 +986,32 @@ export async function newDeployment(
 
   newDeploymentData.entrypoint.inspectionResult.configuration.title =
     newDeploymentData.title;
+
+  const scriptLanguage = newDeploymentData.entrypoint.scriptLanguage;
+  if (scriptLanguage && lastInspectionContext) {
+    const { absoluteDir, relEntryPointFile } = lastInspectionContext;
+    const entrypointPath = path.join(absoluteDir, relEntryPointFile);
+    try {
+      const content = await fs.readFile(entrypointPath, "utf-8");
+      if (!hasQuartoScriptFrontmatter(content, scriptLanguage)) {
+        const newContent = insertQuartoScriptFrontmatter(
+          content,
+          scriptLanguage,
+          newDeploymentData.title,
+        );
+        await fs.writeFile(entrypointPath, newContent, "utf-8");
+        await commands.executeCommand("vscode.open", Uri.file(entrypointPath));
+      }
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "newDeployment, insert Quarto frontmatter",
+        error,
+      );
+      window.showErrorMessage(
+        `Unable to insert Quarto frontmatter into ${relEntryPointFile}. ${summary}`,
+      );
+    }
+  }
 
   const root = workspaces.path();
   if (!root) {

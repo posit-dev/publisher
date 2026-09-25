@@ -20,6 +20,9 @@ import {
 import { sortConfigs } from "./sorting";
 import { InspectOptions, PartialConfig } from "./types";
 import { defaultQuartoVersion } from "./detectors/quarto";
+import { ScriptLanguage } from "./helpers/quartoScriptFrontmatter";
+
+export type { ScriptLanguage };
 
 const CONFIG_SCHEMA_URL =
   "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json";
@@ -158,19 +161,14 @@ export async function inspectManualContentType(
   };
 }
 
-// The two languages Connect can render a bare script (.R or .py) as a Quarto
-// document (https://docs.posit.co/connect/user/scripts/). Both use
-// ContentType.QUARTO_STATIC; the language determines the required frontmatter
-// engine and language section.
-export type ScriptLanguage = "r" | "python";
-
 /**
  * Build a configuration for rendering a bare R or Python script as a Quarto
  * document, for the "Script" entry in the manual content-type picker
  * (getManualContentTypeQuickPicks). Unlike inspectManualContentType, this
  * always sets the `[quarto] engines` field, since a script is only valid
- * Quarto input with the right engine declared. Writing the required
- * frontmatter into the script itself is out of scope here (see #3323).
+ * Quarto input with the right engine declared. Inserting the required
+ * frontmatter into the script itself, if missing, is handled by the caller
+ * (see quartoScriptFrontmatter.ts).
  */
 export async function inspectManualScript(
   options: InspectOptions,
@@ -178,9 +176,15 @@ export async function inspectManualScript(
 ): Promise<ConfigurationInspectionResult> {
   const { projectDir, pythonPath, rPath, entrypoint, relativeDir } = options;
 
+  // A script is a single file, so its own name is a more natural default
+  // title than the project directory name normalizeConfig would otherwise
+  // fall back to.
   const cfg: PartialConfig = {
     type: ContentType.QUARTO_STATIC,
     entrypoint: entrypoint ?? "",
+    title: entrypoint
+      ? path.basename(entrypoint, path.extname(entrypoint))
+      : undefined,
     quarto: {
       version: defaultQuartoVersion,
       engines: [language === "r" ? "knitr" : "jupyter"],
