@@ -33,6 +33,9 @@ if (isMockMode) {
 }
 
 module.exports = defineConfig({
+  // Electron is deprecated as a test browser in Cypress 16. CI already passes
+  // --browser chrome; this makes local `cypress run`/`open` match.
+  defaultBrowser: "chrome",
   e2e: {
     baseUrl: "http://localhost:8080",
     supportFile: "support/index.js",
