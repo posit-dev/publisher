@@ -214,4 +214,19 @@ describe("HomeViewProvider scan handlers", () => {
       "/root",
     );
   });
+
+  test("R scan does not touch the config if scanning fails", async () => {
+    const config = configurationFactory.build();
+    config.configuration.r = {
+      version: "4.4.0",
+      packageFile: "renv.lock",
+      packageManager: "renv",
+    };
+    mocks.scanRPackages.mockRejectedValueOnce(new Error("boom"));
+    const provider = makeProvider(config);
+
+    await provider["onScanForRPackageRequirements"]();
+
+    expect(mocks.includeFile).not.toHaveBeenCalled();
+  });
 });
