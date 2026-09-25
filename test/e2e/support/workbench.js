@@ -506,6 +506,7 @@ Cypress.Commands.add(
     return cy
       .getPublisherTomlFilePaths(projectDir)
       .then((filePaths) => {
+        cy.waitForContentRecordInConfig(filePaths);
         let result = {
           config: {
             name: filePaths.config.name,

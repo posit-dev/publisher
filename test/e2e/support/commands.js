@@ -15,9 +15,12 @@ import "./workbench";
 // failOnNonZeroExit is false.
 Cypress.Commands.add(
   "shell",
-  (command, { failOnNonZeroExit = true, timeout = 60_000 } = {}) => {
+  (
+    command,
+    { failOnNonZeroExit = true, timeout = 60_000, log = true } = {},
+  ) => {
     return cy
-      .task("exec", { command, timeout }, { timeout: timeout + 5_000 })
+      .task("exec", { command, timeout }, { timeout: timeout + 5_000, log })
       .then((result) => {
         if (failOnNonZeroExit && result.exitCode !== 0) {
           throw new Error(
@@ -321,14 +324,54 @@ Cypress.Commands.add("getPublisherTomlFilePaths", (projectDir) => {
     });
 });
 
+// expandWildcardFile
+// Purpose: Yield the newest file in targetDir matching wildCardPath, waiting
+// for the extension to create it (the directory may not exist yet).
 Cypress.Commands.add("expandWildcardFile", (targetDir, wildCardPath) => {
   const cmd = `cd ${targetDir} && ls -t ${wildCardPath} | head -1`;
-  return cy.shell(cmd).then((result) => {
-    if (result.exitCode === 0 && result.stdout) {
-      return result.stdout.trim();
-    }
-    throw new Error(`Could not expandWildcardFile. ${result.stderr}`);
-  });
+  return cy.waitUntil(
+    () =>
+      cy
+        .shell(cmd, { failOnNonZeroExit: false, log: false })
+        .then((result) =>
+          result.exitCode === 0 && result.stdout ? result.stdout : false,
+        ),
+    {
+      timeout: 15_000,
+      interval: 500,
+      errorMsg: `Could not expandWildcardFile: no ${wildCardPath} in ${targetDir}`,
+    },
+  );
+});
+
+// waitForContentRecordInConfig
+// Purpose: Wait for the new-deployment flow to finish writing the config. The
+// extension creates the content record file and only afterwards adds its path
+// to the config's `files` list, so reading the config as soon as the record
+// exists can see a stale `files` list.
+Cypress.Commands.add("waitForContentRecordInConfig", (filePaths) => {
+  const recordEntry = `/.posit/publish/deployments/${filePaths.contentRecord.name}`;
+  return cy.waitUntil(
+    () =>
+      cy
+        .shell(`cat ${filePaths.config.path}`, {
+          failOnNonZeroExit: false,
+          log: false,
+        })
+        .then((result) => {
+          try {
+            return (parse(result.stdout).files || []).includes(recordEntry);
+          } catch {
+            // File may be mid-write; try again
+            return false;
+          }
+        }),
+    {
+      timeout: 15_000,
+      interval: 500,
+      errorMsg: `${filePaths.config.path} never listed ${recordEntry} in files`,
+    },
+  );
 });
 
 // savePublisherFile
