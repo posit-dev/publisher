@@ -30,5 +30,20 @@ export default defineConfig([
       ],
     },
   },
+  {
+    // no-async-in-sync-tests can't tell Cypress's cy.*().then() chains from real
+    // Promises, so only turn it off for Cypress specs.
+    files: ["**/*.cy.js"],
+    rules: {
+      "mocha/no-async-in-sync-tests": "off",
+    },
+  },
+  {
+    // Support files use top-level hooks intentionally (e.g., global afterEach for cleanup).
+    files: ["**/support/*.js"],
+    rules: {
+      "mocha/no-top-level-hooks": "off",
+    },
+  },
   eslintConfigPrettier,
 ]);
