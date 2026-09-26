@@ -338,6 +338,12 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.homeView.deleteDeployment",
+        "title": "Delete Deployment",
+        "icon": "$(trash)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.homeView.selectDeployment",
         "title": "Select Deployment",
         "icon": "$(list-selection)",
@@ -548,6 +554,10 @@
           "when": "posit.publisher.homeView.initialized == 'initialized' && isWorkspaceTrusted"
         },
         {
+          "command": "posit.publisher.homeView.deleteDeployment",
+          "when": "posit.publisher.homeView.initialized == 'initialized' && isWorkspaceTrusted"
+        },
+        {
           "command": "posit.publisher.showOutputChannel",
           "when": "posit.publisher.homeView.initialized == 'initialized' && isWorkspaceTrusted"
         },
@@ -579,15 +589,23 @@
       "webview/context": [
         {
           "command": "posit.publisher.homeView.showSelectConfigForDeployment",
-          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs'"
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs'",
+          "group": "1_configuration@1"
         },
         {
           "command": "posit.publisher.homeView.associateDeployment",
-          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs' && posit.publish.selection.hasCredentialMatch == 'true' && posit.publish.selection.isPreContentRecord == 'false'"
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs' && posit.publish.selection.hasCredentialMatch == 'true' && posit.publish.selection.isPreContentRecord == 'false'",
+          "group": "1_configuration@2"
         },
         {
           "command": "posit.publisher.homeView.createConfigForDeployment",
-          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-no-matching-configs'"
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-no-matching-configs'",
+          "group": "1_configuration@1"
+        },
+        {
+          "command": "posit.publisher.homeView.deleteDeployment",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection =~ /^even-easier-deploy-more-menu-/",
+          "group": "9_delete@1"
         },
         {
           "command": "posit.publisher.homeView.navigateToDeployment.Server",
