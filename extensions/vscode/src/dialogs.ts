@@ -29,11 +29,13 @@ const yesItem: MessageItem = {
 async function confirm(
   message: string,
   affirmativeItem: MessageItem,
+  detail?: string,
 ): Promise<boolean> {
   const choice = await window.showInformationMessage(
     message,
     {
       modal: true,
+      detail,
     },
     affirmativeItem,
   );
@@ -48,8 +50,11 @@ export function confirmYes(message: string): Promise<boolean> {
   return confirm(message, yesItem);
 }
 
-export function confirmDelete(message: string): Promise<boolean> {
-  return confirm(message, deleteItem);
+export function confirmDelete(
+  message: string,
+  detail?: string,
+): Promise<boolean> {
+  return confirm(message, deleteItem, detail);
 }
 
 export function confirmForget(message: string): Promise<boolean> {

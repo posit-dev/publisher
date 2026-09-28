@@ -2156,18 +2156,27 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }
     }
 
-    let configNote = "";
-    if (otherUsers.length > 0) {
-      const names = otherUsers.map((r) => `'${r.deploymentName}'`).join(", ");
-      configNote = ` The configuration file '${configFile}' is also used by ${otherUsers.length === 1 ? "deployment" : "deployments"} ${names} and will be kept.`;
-    } else if (configPath) {
-      configNote = ` The configuration file '${configFile}' will also be deleted.`;
+    const steps: string[] = [];
+    if (contentId) {
+      let server = contentRecord.serverUrl;
+      try {
+        server = new URL(server).host;
+      } catch {
+        // Fall back to the raw URL.
+      }
+      steps.push(`Delete the content from ${server}`);
     }
-
-    const message = contentId
-      ? `Are you sure you want to delete the deployment '${name}'? This will permanently delete the content from ${contentRecord.serverUrl} and remove the local deployment record.${configNote} This cannot be undone.`
-      : `Are you sure you want to delete the deployment '${name}'? This will remove the local deployment record.${configNote}`;
-    const ok = await confirmDelete(message);
+    steps.push("Remove the local deployment record");
+    if (configPath) {
+      steps.push(`Delete the configuration file ${configFile}`);
+    }
+    let detail = `This will:\n${steps.map((s) => `• ${s}`).join("\n")}`;
+    if (otherUsers.length > 0) {
+      const names = otherUsers.map((r) => r.deploymentName).join(", ");
+      detail += `\n\nThe configuration file ${configFile} is kept because it is also used by ${names}.`;
+    }
+    detail += "\n\nThis cannot be undone.";
+    const ok = await confirmDelete(`Delete deployment '${name}'?`, detail);
     if (!ok) {
       return;
     }
