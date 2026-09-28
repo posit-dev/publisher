@@ -9,7 +9,7 @@ vi.mock("vscode", () => ({
 }));
 
 import { extensions } from "vscode";
-import { getQuartoExtensionBinDir } from "./quartoExtension";
+import { getQuartoExtensionPath } from "./quartoExtension";
 
 type Ext = ReturnType<typeof extensions.getExtension>;
 
@@ -17,11 +17,11 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("getQuartoExtensionBinDir", () => {
+describe("getQuartoExtensionPath", () => {
   test("returns undefined when the Quarto extension isn't installed", async () => {
     vi.mocked(extensions.getExtension).mockReturnValue(undefined);
 
-    expect(await getQuartoExtensionBinDir()).toBeUndefined();
+    expect(await getQuartoExtensionPath()).toBeUndefined();
     expect(extensions.getExtension).toHaveBeenCalledWith("quarto.quarto");
   });
 
@@ -33,7 +33,7 @@ describe("getQuartoExtensionBinDir", () => {
       activate,
     } as unknown as Ext);
 
-    expect(await getQuartoExtensionBinDir()).toBe("/opt/quarto/bin");
+    expect(await getQuartoExtensionPath()).toBe("/opt/quarto/bin");
     expect(activate).not.toHaveBeenCalled();
   });
 
@@ -44,7 +44,7 @@ describe("getQuartoExtensionBinDir", () => {
       activate: () => Promise.resolve({ getQuartoPath: () => "/q/bin" }),
     } as unknown as Ext);
 
-    expect(await getQuartoExtensionBinDir()).toBe("/q/bin");
+    expect(await getQuartoExtensionPath()).toBe("/q/bin");
   });
 
   test("returns undefined when the extension found no Quarto", async () => {
@@ -53,7 +53,7 @@ describe("getQuartoExtensionBinDir", () => {
       exports: { getQuartoPath: () => undefined },
     } as unknown as Ext);
 
-    expect(await getQuartoExtensionBinDir()).toBeUndefined();
+    expect(await getQuartoExtensionPath()).toBeUndefined();
   });
 
   test("tolerates an older extension without getQuartoPath", async () => {
@@ -62,6 +62,6 @@ describe("getQuartoExtensionBinDir", () => {
       exports: undefined,
     } as unknown as Ext);
 
-    expect(await getQuartoExtensionBinDir()).toBeUndefined();
+    expect(await getQuartoExtensionPath()).toBeUndefined();
   });
 });

@@ -20,7 +20,7 @@ import { getXDGConfigProperty } from "src/utils/config";
 import { PublisherState } from "./state";
 import { configureSnowflakeSDK } from "src/snowflake/sdkConfig";
 import { configureQuartoLookup } from "src/utils/quartoBinary";
-import { getQuartoExtensionBinDir } from "src/utils/quartoExtension";
+import { getQuartoExtensionPath } from "src/utils/quartoExtension";
 import { PublisherAuthProvider } from "./authProvider";
 import { logger } from "./logging";
 import { copySystemInfoCommand } from "src/commands";
@@ -176,7 +176,7 @@ export function activate(context: ExtensionContext) {
   console.log("Posit Publisher extension activated at %s", now.toString());
   configureQuartoLookup({
     appRoot: env.appRoot,
-    quartoExtensionLookup: getQuartoExtensionBinDir,
+    quartoExtensionLookup: getQuartoExtensionPath,
   });
   context.subscriptions.push(
     registerConnectContentFileSystem(publisherStateReady),

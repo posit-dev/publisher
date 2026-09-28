@@ -69,6 +69,15 @@ describe("resolveQuartoBinary", () => {
     expect(await resolveQuartoBinary()).toBe(configured);
   });
 
+  test("accepts the Quarto extension returning the executable itself", async () => {
+    const configured = makeExecutable(path.join(tmpDir, "my quarto", "bin"));
+    configureQuartoLookup({
+      quartoExtensionLookup: () => Promise.resolve(configured),
+    });
+
+    expect(await resolveQuartoBinary()).toBe(configured);
+  });
+
   test("ignores the Quarto extension when it finds nothing or throws", async () => {
     const appRoot = path.join(tmpDir, "app");
     const bundled = makeExecutable(path.join(appRoot, "quarto", "bin"));

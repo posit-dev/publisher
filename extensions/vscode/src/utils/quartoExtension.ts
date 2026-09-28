@@ -9,10 +9,10 @@ interface QuartoExtensionApi {
   getQuartoPath(): string | undefined;
 }
 
-// Returns the bin directory of the Quarto CLI selected by the Quarto
-// extension, activating it if needed. Undefined when the extension isn't
-// installed or didn't find Quarto.
-export async function getQuartoExtensionBinDir(): Promise<string | undefined> {
+// Returns getQuartoPath() from the Quarto extension (currently the bin
+// directory of its selected Quarto CLI), activating it if needed. Undefined
+// when the extension isn't installed or didn't find Quarto.
+export async function getQuartoExtensionPath(): Promise<string | undefined> {
   const ext =
     extensions.getExtension<Partial<QuartoExtensionApi>>(QUARTO_EXTENSION_ID);
   if (!ext) {

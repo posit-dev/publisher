@@ -1,10 +1,10 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import * as path from "path";
-import { access, constants } from "fs/promises";
+import { access, constants, stat } from "fs/promises";
 
-// Returns the bin directory of the Quarto CLI the Quarto extension selected,
-// if that extension is installed and found one.
+// Returns the bin directory (or executable) of the Quarto CLI the Quarto
+// extension selected, if that extension is installed and found one.
 export type QuartoExtensionLookup = () => Promise<string | undefined>;
 
 let quartoExtensionLookup: QuartoExtensionLookup | undefined;
@@ -36,14 +36,20 @@ function executableNames(): string[] {
   return exts.map((ext) => "quarto" + ext.toLowerCase());
 }
 
+async function isExecutableFile(file: string): Promise<boolean> {
+  try {
+    await access(file, constants.X_OK);
+    return (await stat(file)).isFile();
+  } catch {
+    return false;
+  }
+}
+
 async function findInDir(dir: string): Promise<string | undefined> {
   for (const name of executableNames()) {
     const candidate = path.join(dir, name);
-    try {
-      await access(candidate, constants.X_OK);
+    if (await isExecutableFile(candidate)) {
       return candidate;
-    } catch {
-      // not here
     }
   }
   return undefined;
@@ -64,8 +70,16 @@ async function fromQuartoExtension(): Promise<string | undefined> {
     return undefined;
   }
   try {
-    const binDir = await quartoExtensionLookup();
-    return binDir ? await findInDir(binDir) : undefined;
+    const quartoPath = await quartoExtensionLookup();
+    if (!quartoPath) {
+      return undefined;
+    }
+    // getQuartoPath() returns the bin directory today, but its docs describe
+    // it as the path to the binary, so accept the executable itself too.
+    if (await isExecutableFile(quartoPath)) {
+      return quartoPath;
+    }
+    return await findInDir(quartoPath);
   } catch {
     return undefined;
   }
