@@ -1,17 +1,17 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { exec, execSync } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { QuartoProjectHelper } from "./quartoProjectHelper";
 
-// Mock runTerminalCommand since it depends on VSCode terminal APIs.
+// Mock runTerminalProcess since it depends on VSCode terminal APIs.
 // We use a controllable mock that different test suites configure as needed.
-const mockRunTerminalCommand = vi.fn();
+const mockRunTerminalProcess = vi.fn();
 vi.mock("./window", () => ({
-  runTerminalCommand: (...args: unknown[]) => mockRunTerminalCommand(...args),
+  runTerminalProcess: (...args: unknown[]) => mockRunTerminalProcess(...args),
 }));
 
 // Mock child_process.execFile used by isQuartoBinAvailable.
@@ -54,7 +54,7 @@ beforeEach(() => {
     },
   );
   // Default: render commands succeed
-  mockRunTerminalCommand.mockResolvedValue(0);
+  mockRunTerminalProcess.mockResolvedValue(0);
 });
 
 afterEach(() => {
@@ -94,17 +94,19 @@ describe.skipIf(!quartoAvailable)(
   () => {
     beforeEach(() => {
       // Replace mock with real command execution via child_process
-      mockRunTerminalCommand.mockImplementation((cmd: string) => {
-        return new Promise<number>((resolve, reject) => {
-          exec(cmd, (error) => {
-            if (error) {
-              reject(error.code);
-            } else {
-              resolve(0);
-            }
+      mockRunTerminalProcess.mockImplementation(
+        (cmd: string, args: string[]) => {
+          return new Promise<number>((resolve, reject) => {
+            spawn(cmd, args, { stdio: "ignore" }).on("close", (code) => {
+              if (code === 0) {
+                resolve(0);
+              } else {
+                reject(code);
+              }
+            });
           });
-        });
-      });
+        },
+      );
     });
 
     test("renders a standalone .qmd document to HTML", async () => {
@@ -258,9 +260,9 @@ describe("QuartoProjectHelper - relative vs absolute projectDir", () => {
       "project:\n  type: website\n",
     );
 
-    let capturedCommand: string | undefined;
-    mockRunTerminalCommand.mockImplementation((cmd: string) => {
-      capturedCommand = cmd;
+    let capturedCommand: string[] | undefined;
+    mockRunTerminalProcess.mockImplementation((cmd: string, args: string[]) => {
+      capturedCommand = [cmd, ...args];
       return Promise.resolve(0);
     });
 
@@ -268,17 +270,17 @@ describe("QuartoProjectHelper - relative vs absolute projectDir", () => {
     await helper.render();
 
     // Should render the project directory, not the single document
-    expect(capturedCommand).toBe(`quarto render "${tmpDir}"`);
+    expect(capturedCommand).toEqual(["quarto", "render", tmpDir]);
   });
 });
 
 describe("QuartoProjectHelper - command construction smoke test", () => {
-  let capturedCommand: string | undefined;
+  let capturedCommand: string[] | undefined;
 
   beforeEach(() => {
     capturedCommand = undefined;
-    mockRunTerminalCommand.mockImplementation((cmd: string) => {
-      capturedCommand = cmd;
+    mockRunTerminalProcess.mockImplementation((cmd: string, args: string[]) => {
+      capturedCommand = [cmd, ...args];
       return Promise.resolve(0);
     });
   });
@@ -292,16 +294,18 @@ describe("QuartoProjectHelper - command construction smoke test", () => {
     const helper = new QuartoProjectHelper("index.qmd", "index.html", tmpDir);
     await helper.render();
 
-    expect(capturedCommand).toBe(`quarto render "${tmpDir}"`);
+    expect(capturedCommand).toEqual(["quarto", "render", tmpDir]);
   });
 
   test("constructs document render command when _quarto.yml does not exist", async () => {
     const helper = new QuartoProjectHelper("index.qmd", "index.html", tmpDir);
     await helper.render();
 
-    expect(capturedCommand).toBe(
-      `quarto render "${path.join(tmpDir, "index.qmd")}"`,
-    );
+    expect(capturedCommand).toEqual([
+      "quarto",
+      "render",
+      path.join(tmpDir, "index.qmd"),
+    ]);
   });
 
   test("constructs project render command when source is _quarto.yml", async () => {
@@ -309,6 +313,6 @@ describe("QuartoProjectHelper - command construction smoke test", () => {
     const helper = new QuartoProjectHelper("_quarto.yml", "index.html", tmpDir);
     await helper.render();
 
-    expect(capturedCommand).toBe(`quarto render "${tmpDir}"`);
+    expect(capturedCommand).toEqual(["quarto", "render", tmpDir]);
   });
 });

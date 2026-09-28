@@ -1,5 +1,6 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
+import * as path from "path";
 import { describe, expect, beforeEach, test, vi } from "vitest";
 import { window } from "vscode";
 import {
@@ -8,6 +9,7 @@ import {
   taskWithProgressMsg,
   openTerminalCommand,
   runTerminalCommand,
+  runTerminalProcess,
 } from "./window";
 
 const terminalMock = {
@@ -162,6 +164,25 @@ describe("Consumers of vscode window", () => {
         expect(window.onDidCloseTerminal).toHaveBeenCalled();
         expect(existStatus).toBe(1);
       }
+    });
+  });
+
+  describe("runTerminalProcess", () => {
+    test("runs the executable as the terminal process without a shell", async () => {
+      const exe = path.join("Applications", "My App", "quarto");
+      const exitStatus = await runTerminalProcess(exe, ["render", "a $b"]);
+      expect(window.createTerminal).toHaveBeenCalledWith({
+        shellPath: exe,
+        shellArgs: ["render", "a $b"],
+      });
+      expect(terminalMock.sendText).not.toHaveBeenCalled();
+      expect(terminalMock.show).not.toHaveBeenCalled();
+      expect(exitStatus).toBe(0);
+    });
+
+    test("rejects with a non zero exit status", async () => {
+      terminalMock.exitStatus.code = 1;
+      await expect(runTerminalProcess("quarto", ["render"])).rejects.toBe(1);
     });
   });
 

@@ -1,6 +1,12 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import { window, ProgressLocation, Progress, CancellationToken } from "vscode";
+import {
+  window,
+  ProgressLocation,
+  Progress,
+  CancellationToken,
+  Terminal,
+} from "vscode";
 
 export function showErrorMessageWithTroubleshoot(
   message: string,
@@ -59,7 +65,24 @@ export function openTerminalCommand(cmd: string) {
 export function runTerminalCommand(cmd: string): Promise<number | undefined> {
   const term = window.createTerminal();
   term.sendText(`${cmd}; exit $?`);
+  return waitForTerminalExit(term);
+}
 
+// Like runTerminalCommand, but runs the executable directly as the terminal's
+// process instead of through a shell, so its path and arguments need no
+// shell-specific quoting.
+export function runTerminalProcess(
+  executable: string,
+  args: string[],
+): Promise<number | undefined> {
+  const term = window.createTerminal({
+    shellPath: executable,
+    shellArgs: args,
+  });
+  return waitForTerminalExit(term);
+}
+
+function waitForTerminalExit(term: Terminal): Promise<number | undefined> {
   return new Promise((resolve, reject) => {
     const disposeToken = window.onDidCloseTerminal((closedTerminal) => {
       if (closedTerminal === term) {

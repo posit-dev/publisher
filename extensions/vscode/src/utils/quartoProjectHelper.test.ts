@@ -16,9 +16,11 @@ vi.mock("child_process", () => ({
 const mockRenderCmd = vi.fn().mockResolvedValue(0);
 vi.mock("./window", () => {
   return {
-    runTerminalCommand: vi.fn().mockImplementation((cmd: string) => {
-      return mockRenderCmd(cmd);
-    }),
+    runTerminalProcess: vi
+      .fn()
+      .mockImplementation((cmd: string, args: string[]) => {
+        return mockRenderCmd(cmd, args);
+      }),
   };
 });
 
@@ -48,9 +50,10 @@ describe("QuartoProjectHelper", () => {
 
       const helper = new QuartoProjectHelper("index.qmd", "index.html", ".");
       await helper.render();
-      expect(mockRenderCmd).toHaveBeenCalledWith(
-        `quarto render "${path.join(".", "index.qmd")}"`,
-      );
+      expect(mockRenderCmd).toHaveBeenCalledWith("quarto", [
+        "render",
+        path.join(".", "index.qmd"),
+      ]);
     });
 
     test("it is a project, _quarto.yml present, renders as a project (uses dir)", async () => {
@@ -58,7 +61,7 @@ describe("QuartoProjectHelper", () => {
 
       const helper = new QuartoProjectHelper("index.qmd", "index.html", ".");
       await helper.render();
-      expect(mockRenderCmd).toHaveBeenCalledWith(`quarto render "."`);
+      expect(mockRenderCmd).toHaveBeenCalledWith("quarto", ["render", "."]);
     });
 
     test("source is _quarto.yml, renders as a project (uses dir)", async () => {
@@ -66,7 +69,7 @@ describe("QuartoProjectHelper", () => {
       await helper.render();
       // No need to check on files if source is already the .yml
       expect(mockFileExistsAt).not.toHaveBeenCalled();
-      expect(mockRenderCmd).toHaveBeenCalledWith(`quarto render "."`);
+      expect(mockRenderCmd).toHaveBeenCalledWith("quarto", ["render", "."]);
     });
   });
 
@@ -83,9 +86,10 @@ describe("QuartoProjectHelper", () => {
         projectDir,
       );
       await helper.render();
-      expect(mockRenderCmd).toHaveBeenCalledWith(
-        `quarto render "${path.join(projectDir, sourceEntrypoint)}"`,
-      );
+      expect(mockRenderCmd).toHaveBeenCalledWith("quarto", [
+        "render",
+        path.join(projectDir, sourceEntrypoint),
+      ]);
     });
 
     test("it is a project, _quarto.yml present, renders as a project (uses dir)", async () => {
@@ -97,9 +101,10 @@ describe("QuartoProjectHelper", () => {
         projectDir,
       );
       await helper.render();
-      expect(mockRenderCmd).toHaveBeenCalledWith(
-        `quarto render "${projectDir}"`,
-      );
+      expect(mockRenderCmd).toHaveBeenCalledWith("quarto", [
+        "render",
+        projectDir,
+      ]);
     });
 
     test("source is _quarto.yml, renders as a project (uses dir)", async () => {
@@ -111,9 +116,10 @@ describe("QuartoProjectHelper", () => {
       await helper.render();
       // No need to check on files if source is already the .yml
       expect(mockFileExistsAt).not.toHaveBeenCalled();
-      expect(mockRenderCmd).toHaveBeenCalledWith(
-        `quarto render "${projectDir}"`,
-      );
+      expect(mockRenderCmd).toHaveBeenCalledWith("quarto", [
+        "render",
+        projectDir,
+      ]);
     });
   });
 

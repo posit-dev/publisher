@@ -5,7 +5,7 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import { fileExistsAt } from "./fsUtils";
 import { resolveQuartoBinary } from "./quartoBinary";
-import { runTerminalCommand } from "./window";
+import { runTerminalProcess } from "./window";
 
 const execFileAsync = promisify(execFile);
 
@@ -21,12 +21,6 @@ export class ErrorQuartoRender extends Error {
     super("Could not render Quarto project.");
     this.name = "ErrorQuartoRender";
   }
-}
-
-// Leave the bare "quarto" command alone; quote absolute paths (e.g.
-// Positron's bundled binary) in case they contain spaces.
-function shellQuoteBinary(quarto: string): string {
-  return path.isAbsolute(quarto) ? `"${quarto}"` : quarto;
 }
 
 export class QuartoProjectHelper {
@@ -77,13 +71,11 @@ export class QuartoProjectHelper {
   }
 
   renderProject(quarto = "quarto") {
-    const command = `${shellQuoteBinary(quarto)} render "${this.projectDir}"`;
-    return runTerminalCommand(command);
+    return runTerminalProcess(quarto, ["render", this.projectDir]);
   }
 
   renderDocument(quarto = "quarto") {
     const fullEntryPath = path.join(this.projectDir, this.source);
-    const command = `${shellQuoteBinary(quarto)} render "${fullEntryPath}"`;
-    return runTerminalCommand(command);
+    return runTerminalProcess(quarto, ["render", fullEntryPath]);
   }
 }
