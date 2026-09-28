@@ -75,6 +75,7 @@ import {
   loadAllDeployments,
   loadConfiguration,
   ConfigurationLoadError,
+  getConfigPath,
   patchDeploymentRecord,
 } from "src/toml";
 import {
@@ -2129,9 +2130,43 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }
     }
 
+    const configName = contentRecord.configurationName;
+    const configFile = `${configName}.toml`;
+    // A configuration can be referenced by more than one deployment record
+    // (e.g. via "Select Active Configuration For Deployment"). Only delete it
+    // when no other record in the project still uses it.
+    const otherUsers = this.state.contentRecords.filter(
+      (r) =>
+        r.projectDir === contentRecord.projectDir &&
+        r.configurationName === configName &&
+        r.deploymentPath !== contentRecord.deploymentPath,
+    );
+    let configPath: string | undefined;
+    const root = workspaces.path();
+    if (root && otherUsers.length === 0) {
+      const resolved = workspaces.resolveWithinWorkspace(
+        root,
+        contentRecord.projectDir,
+      );
+      if (resolved.ok) {
+        const candidate = getConfigPath(resolved.absPath, configName);
+        if (fs.existsSync(candidate)) {
+          configPath = candidate;
+        }
+      }
+    }
+
+    let configNote = "";
+    if (otherUsers.length > 0) {
+      const names = otherUsers.map((r) => `'${r.deploymentName}'`).join(", ");
+      configNote = ` The configuration file '${configFile}' is also used by ${otherUsers.length === 1 ? "deployment" : "deployments"} ${names} and will be kept.`;
+    } else if (configPath) {
+      configNote = ` The configuration file '${configFile}' will also be deleted.`;
+    }
+
     const message = contentId
-      ? `Are you sure you want to delete the deployment '${name}'? This will permanently delete the content from ${contentRecord.serverUrl} and remove the local deployment record. The configuration file will not be changed. This cannot be undone.`
-      : `Are you sure you want to delete the deployment '${name}'? This will remove the local deployment record. The configuration file will not be changed.`;
+      ? `Are you sure you want to delete the deployment '${name}'? This will permanently delete the content from ${contentRecord.serverUrl} and remove the local deployment record.${configNote} This cannot be undone.`
+      : `Are you sure you want to delete the deployment '${name}'? This will remove the local deployment record.${configNote}`;
     const ok = await confirmDelete(message);
     if (!ok) {
       return;
@@ -2166,8 +2201,21 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
+    if (configPath) {
+      try {
+        await fs.promises.rm(configPath, { force: true });
+      } catch (error: unknown) {
+        const summary = getSummaryStringFromError("deployment::delete", error);
+        window.showErrorMessage(
+          `Deployment '${name}' was deleted, but the configuration file '${configFile}' could not be removed: ${summary}`,
+        );
+      }
+    }
+
     await this.saveSelectionState(null);
     await this.state.refreshContentRecords();
+    await this.state.refreshConfigurations();
+    this.updateWebViewViewConfigurations();
     this.updateWebViewViewContentRecords(null);
     window.setStatusBarMessage(`Deployment '${name}' has been deleted.`, 5000);
   };
