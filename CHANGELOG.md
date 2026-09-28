@@ -10,8 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - You can now delete a deployment from the "..." menu in the Deployment section. After you confirm, Publisher deletes the content from the Connect or Connect Cloud server and removes the local deployment record. Its configuration file is deleted too, unless another deployment still uses it. (#2881)
+- You can now start a deployment from a configuration file. When a configuration file in `.posit/publish/` is open, the "Deploy with Posit Publisher" button appears in the editor title bar. Clicking it selects a deployment that uses that configuration or, if none exists yet, creates one. You only choose a credential; you don't choose an entrypoint or have to regenerate the configuration. This makes it easy to copy an existing configuration, tweak it, and deploy it separately. (#3428)
 
 ### Fixed
+
+- "Select Active Configuration For Deployment" no longer fails with "Unable to continue with no project entrypoints found during inspection" when you pick an existing configuration. The project is inspected only if you choose to create a new configuration. (#3428)
 
 - Data files read by code in a Quarto or R Markdown document are now included in the deployment. Publisher scans fenced code chunks (`{r}`, `{python}`, `{ojs}`, and others) and inline code for referenced files, so a report that calls something like `read_csv("data/penguins.csv")` no longer fails to render on the server the first time it is deployed. Only paths that resolve to a file inside the project directory are added. (#4388)
 - When Publisher can't automatically determine the content type for an entrypoint, it prompts you to pick one from the list of valid content types. Picking a type fills in the same required fields (e.g. an empty `[python]` or `[r]` section) that automatic detection would have set. For a `.py` or `.R` entrypoint, the list now also offers a "Script" option that configures Connect to render it as a Quarto document, and ranks the choices most likely to match your entrypoint's file extension first. (#2833, #2666)

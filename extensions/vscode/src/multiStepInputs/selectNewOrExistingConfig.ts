@@ -227,6 +227,27 @@ export async function selectNewOrExistingConfig(
     }
   };
 
+  // Inspection is only needed when creating a new configuration, so it is
+  // deferred until then. That way, selecting an existing configuration still
+  // works when inspection can't find an entrypoint.
+  let inspectionsPromise: Promise<void> | undefined;
+  const ensureConfigurationInspections = async (): Promise<boolean> => {
+    if (!inspectionsPromise) {
+      inspectionsPromise = showProgress(
+        "Initializing::selectNewOrExistingConfig inspection",
+        viewId,
+        getConfigurationInspections,
+      );
+    }
+    try {
+      await inspectionsPromise;
+      return true;
+    } catch {
+      // errors have already been displayed by getConfigurationInspections
+      return false;
+    }
+  };
+
   // ***************************************************************
   // Order of all steps
   // NOTE: This multi-stepper is used for multiple commands
@@ -318,6 +339,11 @@ export async function selectNewOrExistingConfig(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
+    if (!(await ensureConfigurationInspections())) {
+      // Nothing to create a configuration from; end the flow. The missing
+      // entryPoint causes the caller to return without a configuration.
+      return;
+    }
     // skip if we only have one choice.
     if (hasMultipleEntryPoints()) {
       const pick = await input.showQuickPick({
@@ -405,8 +431,7 @@ export async function selectNewOrExistingConfig(
     await showProgress(
       "Initializing::selectNewOrExistingConfig",
       viewId,
-      async () =>
-        await Promise.all([getConfigurations(), getConfigurationInspections()]),
+      getConfigurations,
     );
   } catch {
     // errors have already been displayed by the underlying promises..
