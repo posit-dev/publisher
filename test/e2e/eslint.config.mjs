@@ -7,9 +7,6 @@ import eslintConfigPrettier from "eslint-config-prettier";
 
 export default defineConfig([
   js.configs.recommended,
-  pluginMocha.configs.recommended,
-  pluginCypress.configs.recommended,
-  { files: ["**/*.{js,mjs,cjs,ts}"] },
   {
     languageOptions: {
       globals: { ...globals.node },
@@ -18,6 +15,18 @@ export default defineConfig([
     },
     rules: {
       semi: "error",
+    },
+  },
+  {
+    files: ["tests/**/*.js", "support/**/*.js"],
+    extends: [
+      pluginMocha.configs.recommended,
+      pluginCypress.configs.recommended,
+    ],
+    rules: {
+      // Cypress commands are chainables, not Promises, so this rule misreads
+      // cy.*().then() inside synchronous tests and hooks.
+      "mocha/no-async-in-sync-tests": "off",
       "mocha/no-mocha-arrows": "off",
       "mocha/no-exclusive-tests": "error",
       "no-restricted-syntax": [
