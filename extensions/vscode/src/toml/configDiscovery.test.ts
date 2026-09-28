@@ -11,6 +11,7 @@ import {
   loadConfiguration,
   loadAllConfigurations,
   loadAllConfigurationsRecursive,
+  parseConfigPath,
 } from "./configDiscovery";
 import { isConfigurationError } from "../api/types/configurations";
 import { ConfigurationLoadError } from "./configErrors";
@@ -57,6 +58,54 @@ describe("getConfigPath", () => {
     expect(getConfigPath("/home/user/project", "myapp")).toBe(
       path.join("/home/user/project", ".posit", "publish", "myapp.toml"),
     );
+  });
+});
+
+describe("parseConfigPath", () => {
+  const root = path.resolve("/home/user/my workspace");
+
+  it("identifies a config file in the workspace root project", () => {
+    const configPath = getConfigPath(root, "my app-copy");
+    expect(parseConfigPath(configPath, root)).toEqual({
+      configName: "my app-copy",
+      projectDir: ".",
+    });
+  });
+
+  it("identifies a config file in a subdirectory project", () => {
+    const configPath = getConfigPath(path.join(root, "sub dir", "app"), "cfg");
+    expect(parseConfigPath(configPath, root)).toEqual({
+      configName: "cfg",
+      projectDir: path.join("sub dir", "app"),
+    });
+  });
+
+  it("rejects deployment records", () => {
+    const recordPath = path.join(
+      getConfigDir(root),
+      "deployments",
+      "record.toml",
+    );
+    expect(parseConfigPath(recordPath, root)).toBeUndefined();
+  });
+
+  it("rejects non-TOML files in the config directory", () => {
+    const filePath = path.join(getConfigDir(root), "notes.md");
+    expect(parseConfigPath(filePath, root)).toBeUndefined();
+  });
+
+  it("rejects TOML files outside of .posit/publish", () => {
+    expect(
+      parseConfigPath(path.join(root, "pyproject.toml"), root),
+    ).toBeUndefined();
+    expect(
+      parseConfigPath(path.join(root, "publish", "cfg.toml"), root),
+    ).toBeUndefined();
+  });
+
+  it("rejects config files for projects outside the root", () => {
+    const configPath = getConfigPath(path.resolve("/elsewhere"), "cfg");
+    expect(parseConfigPath(configPath, root)).toBeUndefined();
   });
 });
 
