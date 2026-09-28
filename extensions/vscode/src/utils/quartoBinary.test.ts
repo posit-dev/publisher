@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { resolveQuartoBinary, setQuartoAppRoot } from "./quartoBinary";
+import { configureQuartoLookup, resolveQuartoBinary } from "./quartoBinary";
 
 const exeName = process.platform === "win32" ? "quarto.exe" : "quarto";
 
@@ -21,15 +21,15 @@ describe("resolveQuartoBinary", () => {
   let originalPath: string | undefined;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "quarto-bin-"));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "quarto bin "));
     originalPath = process.env.PATH;
     process.env.PATH = path.join(tmpDir, "empty-path-dir");
-    setQuartoAppRoot(undefined);
+    configureQuartoLookup({});
   });
 
   afterEach(() => {
     process.env.PATH = originalPath;
-    setQuartoAppRoot(undefined);
+    configureQuartoLookup({});
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
@@ -40,7 +40,7 @@ describe("resolveQuartoBinary", () => {
     // Even with a bundled copy available, PATH wins.
     const appRoot = path.join(tmpDir, "app");
     makeExecutable(path.join(appRoot, "quarto", "bin"));
-    setQuartoAppRoot(appRoot);
+    configureQuartoLookup({ appRoot });
 
     expect(await resolveQuartoBinary()).toBe("quarto");
   });
@@ -48,14 +48,54 @@ describe("resolveQuartoBinary", () => {
   test("returns Positron's bundled quarto when not on PATH", async () => {
     const appRoot = path.join(tmpDir, "app");
     const bundled = makeExecutable(path.join(appRoot, "quarto", "bin"));
-    setQuartoAppRoot(appRoot);
+    configureQuartoLookup({ appRoot });
 
+    expect(await resolveQuartoBinary()).toBe(bundled);
+  });
+
+  test("prefers the Quarto extension's choice over PATH and bundled", async () => {
+    const pathDir = path.join(tmpDir, "bin");
+    makeExecutable(pathDir);
+    process.env.PATH = pathDir;
+    const appRoot = path.join(tmpDir, "app");
+    makeExecutable(path.join(appRoot, "quarto", "bin"));
+    const configured = makeExecutable(path.join(tmpDir, "my quarto", "bin"));
+    configureQuartoLookup({
+      appRoot,
+      quartoExtensionLookup: () =>
+        Promise.resolve(path.join(tmpDir, "my quarto", "bin")),
+    });
+
+    expect(await resolveQuartoBinary()).toBe(configured);
+  });
+
+  test("ignores the Quarto extension when it finds nothing or throws", async () => {
+    const appRoot = path.join(tmpDir, "app");
+    const bundled = makeExecutable(path.join(appRoot, "quarto", "bin"));
+
+    configureQuartoLookup({
+      appRoot,
+      quartoExtensionLookup: () => Promise.resolve(undefined),
+    });
+    expect(await resolveQuartoBinary()).toBe(bundled);
+
+    configureQuartoLookup({
+      appRoot,
+      quartoExtensionLookup: () => Promise.reject(new Error("boom")),
+    });
+    expect(await resolveQuartoBinary()).toBe(bundled);
+
+    // A bin dir that doesn't actually contain quarto
+    configureQuartoLookup({
+      appRoot,
+      quartoExtensionLookup: () => Promise.resolve(path.join(tmpDir, "nope")),
+    });
     expect(await resolveQuartoBinary()).toBe(bundled);
   });
 
   test("falls back to bare 'quarto' when nothing is found", async () => {
     // e.g. VS Code, whose appRoot has no bundled quarto
-    setQuartoAppRoot(path.join(tmpDir, "app"));
+    configureQuartoLookup({ appRoot: path.join(tmpDir, "app") });
 
     expect(await resolveQuartoBinary()).toBe("quarto");
   });

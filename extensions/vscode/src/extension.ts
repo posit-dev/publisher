@@ -19,7 +19,8 @@ import { DocumentTracker } from "./entrypointTracker";
 import { getXDGConfigProperty } from "src/utils/config";
 import { PublisherState } from "./state";
 import { configureSnowflakeSDK } from "src/snowflake/sdkConfig";
-import { setQuartoAppRoot } from "src/utils/quartoBinary";
+import { configureQuartoLookup } from "src/utils/quartoBinary";
+import { getQuartoExtensionBinDir } from "src/utils/quartoExtension";
 import { PublisherAuthProvider } from "./authProvider";
 import { logger } from "./logging";
 import { copySystemInfoCommand } from "src/commands";
@@ -173,7 +174,10 @@ function initializeExtension(context: ExtensionContext) {
 export function activate(context: ExtensionContext) {
   const now = new Date();
   console.log("Posit Publisher extension activated at %s", now.toString());
-  setQuartoAppRoot(env.appRoot);
+  configureQuartoLookup({
+    appRoot: env.appRoot,
+    quartoExtensionLookup: getQuartoExtensionBinDir,
+  });
   context.subscriptions.push(
     registerConnectContentFileSystem(publisherStateReady),
   );
