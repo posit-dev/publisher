@@ -4,6 +4,7 @@ import * as path from "path";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { fileExistsAt } from "./fsUtils";
+import { resolveQuartoBinary } from "./quartoBinary";
 import { runTerminalCommand } from "./window";
 
 const execFileAsync = promisify(execFile);
@@ -20,6 +21,12 @@ export class ErrorQuartoRender extends Error {
     super("Could not render Quarto project.");
     this.name = "ErrorQuartoRender";
   }
+}
+
+// Leave the bare "quarto" command alone; quote absolute paths (e.g.
+// Positron's bundled binary) in case they contain spaces.
+function shellQuoteBinary(quarto: string): string {
+  return path.isAbsolute(quarto) ? `"${quarto}"` : quarto;
 }
 
 export class QuartoProjectHelper {
@@ -39,12 +46,13 @@ export class QuartoProjectHelper {
       return Promise.reject(new ErrorNoQuarto());
     }
 
+    const quarto = await resolveQuartoBinary();
     const isProject = await this.isQuartoYmlPresent();
     try {
       if (isProject) {
-        await this.renderProject();
+        await this.renderProject(quarto);
       } else {
-        await this.renderDocument();
+        await this.renderDocument(quarto);
       }
     } catch {
       return Promise.reject(new ErrorQuartoRender());
@@ -61,21 +69,21 @@ export class QuartoProjectHelper {
 
   async isQuartoBinAvailable(): Promise<boolean> {
     try {
-      await execFileAsync("quarto", ["--version"]);
+      await execFileAsync(await resolveQuartoBinary(), ["--version"]);
       return true;
     } catch {
       return false;
     }
   }
 
-  renderProject() {
-    const command = `quarto render "${this.projectDir}"`;
+  renderProject(quarto = "quarto") {
+    const command = `${shellQuoteBinary(quarto)} render "${this.projectDir}"`;
     return runTerminalCommand(command);
   }
 
-  renderDocument() {
+  renderDocument(quarto = "quarto") {
     const fullEntryPath = path.join(this.projectDir, this.source);
-    const command = `quarto render "${fullEntryPath}"`;
+    const command = `${shellQuoteBinary(quarto)} render "${fullEntryPath}"`;
     return runTerminalCommand(command);
   }
 }

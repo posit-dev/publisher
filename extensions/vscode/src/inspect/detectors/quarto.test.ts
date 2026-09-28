@@ -1,6 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { QuartoDetector } from "./quarto";
 import { ContentType } from "src/api/types/configurations";
 import { logger } from "src/logging";
@@ -35,6 +35,18 @@ vi.mock("util", async (importOriginal) => {
     ...actual,
     promisify: () => mockExecFile,
   };
+});
+
+const { mockResolveQuartoBinary } = vi.hoisted(() => ({
+  mockResolveQuartoBinary: vi.fn(),
+}));
+
+vi.mock("src/utils/quartoBinary", () => ({
+  resolveQuartoBinary: mockResolveQuartoBinary,
+}));
+
+beforeEach(() => {
+  mockResolveQuartoBinary.mockResolvedValue("quarto");
 });
 
 afterEach(() => {
@@ -346,6 +358,91 @@ describe("QuartoDetector", () => {
     expect(configs[0]?.type).toBe(ContentType.QUARTO_STATIC);
     expect(configs[0]?.quarto?.version).toBe("1.7.34");
     expect(configs[0]?.files).toContain("/doc.qmd");
+  });
+
+  test("runs the resolved quarto binary (e.g. Positron's bundled one)", async () => {
+    setupGlobDir(["doc.qmd"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue("# Just markdown\n");
+    const bundled =
+      "/Applications/Positron.app/Contents/Resources/app/quarto/bin/quarto";
+    mockResolveQuartoBinary.mockResolvedValue(bundled);
+    mockExecFile.mockResolvedValue({
+      stdout: makeInspectOutput({
+        files: { input: ["/project/doc.qmd"], configResources: [] },
+      }),
+    });
+
+    const configs = await detector.inferType("/project", "doc.qmd");
+    expect(mockExecFile).toHaveBeenCalledWith(
+      bundled,
+      ["inspect", "/project/doc.qmd"],
+      expect.anything(),
+    );
+    expect(configs[0]?.quarto?.version).toBe("1.4.553");
+  });
+
+  test("fallback when quarto binary missing: .qmd with R chunk (#4410)", async () => {
+    setupGlobDir(["test-iris.qmd"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue(
+      '---\ntitle: "Untitled"\nformat: html\n---\n\n```{r}\nlibrary(ggplot2)\n```\n',
+    );
+    mockExecFile.mockRejectedValue(
+      Object.assign(new Error("spawn quarto ENOENT"), { code: "ENOENT" }),
+    );
+
+    const configs = await detector.inferType("/project", "test-iris.qmd");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.type).toBe(ContentType.QUARTO_STATIC);
+    expect(configs[0]?.r).toEqual({});
+    expect(configs[0]?.python).toBeUndefined();
+    expect(configs[0]?.quarto).toEqual({
+      version: "1.7.34",
+      engines: ["knitr"],
+    });
+  });
+
+  test("fallback when quarto binary missing: .qmd with Python chunk (#4410)", async () => {
+    setupGlobDir(["analysis.qmd"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue("```{python}\nimport yaml\n```\n");
+    mockExecFile.mockRejectedValue(
+      Object.assign(new Error("spawn quarto ENOENT"), { code: "ENOENT" }),
+    );
+
+    const configs = await detector.inferType("/project", "analysis.qmd");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.python).toEqual({});
+    expect(configs[0]?.r).toBeUndefined();
+    expect(configs[0]?.quarto).toEqual({
+      version: "1.7.34",
+      engines: ["jupyter"],
+    });
+  });
+
+  test("fallback for a Quarto project scans every .qmd for languages", async () => {
+    setupGlobDir(["index.qmd", "analysis.qmd"]);
+    mockAccess.mockImplementation((filePath: string) =>
+      filePath.endsWith("_quarto.yml")
+        ? Promise.resolve()
+        : Promise.reject(new Error("ENOENT")),
+    );
+    mockReadFile.mockImplementation((filePath: string) =>
+      Promise.resolve(
+        filePath.endsWith("analysis.qmd")
+          ? "```{r}\nsummary(cars)\n```\n"
+          : "# Home\n",
+      ),
+    );
+    mockExecFile.mockRejectedValue(
+      Object.assign(new Error("spawn quarto ENOENT"), { code: "ENOENT" }),
+    );
+
+    const configs = await detector.inferType("/project", "_quarto.yml");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.r).toEqual({});
+    expect(configs[0]?.quarto?.engines).toEqual(["knitr"]);
   });
 
   test("fallback when quarto binary missing: .ipynb", async () => {

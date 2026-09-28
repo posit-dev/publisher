@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deploying Python content that has no `requirements.txt` (and no `pylock.toml`, `uv.lock`, or `pyproject.toml` dependencies) no longer fails with a "Missing dependency file" error. Publisher now scans your project's imports, writes a `requirements.txt`, and adds it to your configuration's file list before deploying, as if you had clicked "Scan". (#2205)
 - Publisher no longer leaves a `snowflake.log` file in the directory the editor was launched from, which on Linux is usually your home directory. The Snowflake SDK now logs to Publisher's own log directory alongside its other logs, so a stray file can be deleted once and will not come back. (#4372)
 - A `.R` or `.py` script that already has the Quarto frontmatter Connect needs to render it is now detected automatically, even without a working `quarto` CLI or a `_quarto.yml` file. (#4017)
+- A Quarto document with `{r}` or `{python}` code chunks now gets an `[r]` or `[python]` section in its generated configuration, so it renders on Connect instead of failing with errors like "there is no package called 'rmarkdown'". In Positron, Publisher now also finds the Quarto that ships with Positron, even when `quarto` isn't on your `PATH`, and records its version instead of a default one. (#4410)
 - Choosing the "Script" option for a `.R` or `.py` entrypoint now inserts the required Quarto frontmatter into the file automatically, instead of leaving you to add it by hand before Connect can render it. (#3323)
 
 ## [2.12.0]

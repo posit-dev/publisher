@@ -1,6 +1,13 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import { ExtensionContext, Uri, commands, window, workspace } from "vscode";
+import {
+  ExtensionContext,
+  Uri,
+  commands,
+  env,
+  window,
+  workspace,
+} from "vscode";
 
 import { ProjectTreeDataProvider } from "src/views/project";
 import { LogsTreeDataProvider, LogsViewProvider } from "src/views/logs";
@@ -12,6 +19,7 @@ import { DocumentTracker } from "./entrypointTracker";
 import { getXDGConfigProperty } from "src/utils/config";
 import { PublisherState } from "./state";
 import { configureSnowflakeSDK } from "src/snowflake/sdkConfig";
+import { setQuartoAppRoot } from "src/utils/quartoBinary";
 import { PublisherAuthProvider } from "./authProvider";
 import { logger } from "./logging";
 import { copySystemInfoCommand } from "src/commands";
@@ -165,6 +173,7 @@ function initializeExtension(context: ExtensionContext) {
 export function activate(context: ExtensionContext) {
   const now = new Date();
   console.log("Posit Publisher extension activated at %s", now.toString());
+  setQuartoAppRoot(env.appRoot);
   context.subscriptions.push(
     registerConnectContentFileSystem(publisherStateReady),
   );
