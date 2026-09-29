@@ -75,6 +75,7 @@ import {
   loadAllDeployments,
   loadConfiguration,
   ConfigurationLoadError,
+  getConfigDir,
   getConfigPath,
   patchDeploymentRecord,
 } from "src/toml";
@@ -2110,7 +2111,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.refreshCredentials();
   };
 
-  public deleteDeployment = async () => {
+  public async deleteDeployment() {
     const contentRecord = await this.state.getSelectedContentRecord();
     if (!contentRecord) {
       return;
@@ -2150,7 +2151,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
       if (resolved.ok) {
         const candidate = getConfigPath(resolved.absPath, configName);
-        if (fs.existsSync(candidate)) {
+        // configuration_name comes from the (untrusted) deployment record;
+        // only delete a file that sits directly in the config directory.
+        const inConfigDir =
+          path.dirname(candidate) === getConfigDir(resolved.absPath);
+        if (inConfigDir && fs.existsSync(candidate)) {
           configPath = candidate;
         }
       }
@@ -2223,7 +2228,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.updateWebViewViewConfigurations();
     this.updateWebViewViewContentRecords(null);
     window.setStatusBarMessage(`Deployment '${name}' has been deleted.`, 5000);
-  };
+  }
 
   private async deleteContentOnServer(
     credential: Credential,
@@ -3103,6 +3108,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       commands.registerCommand(
         Commands.HomeView.DeleteDeployment,
         this.deleteDeployment,
+        this,
       ),
       commands.registerCommand(
         Commands.HomeView.CreateConfigForDeployment,
