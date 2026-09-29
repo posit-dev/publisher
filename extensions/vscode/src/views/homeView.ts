@@ -2156,26 +2156,22 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }
     }
 
-    const steps: string[] = [];
-    if (contentId) {
-      let server = contentRecord.serverUrl;
-      try {
-        server = new URL(server).host;
-      } catch {
-        // Fall back to the raw URL.
-      }
-      steps.push(`Delete the content from ${server}`);
-    }
-    steps.push("Remove the local deployment record");
+    // The native modal is narrow, so keep the detail short: no host names,
+    // file names, or bullet lists.
+    const targets = contentId
+      ? ["the content on the server", "its deployment record"]
+      : ["its deployment record"];
     if (configPath) {
-      steps.push(`Delete the configuration file ${configFile}`);
+      targets.push("its configuration file");
     }
-    let detail = `This will:\n${steps.map((s) => `• ${s}`).join("\n")}`;
+    const joined = new Intl.ListFormat("en", { type: "conjunction" }).format(
+      targets,
+    );
+    let detail = `This permanently deletes ${joined}.`;
     if (otherUsers.length > 0) {
-      const names = otherUsers.map((r) => r.deploymentName).join(", ");
-      detail += `\n\nThe configuration file ${configFile} is kept because it is also used by ${names}.`;
+      detail +=
+        " Its configuration file is kept because another deployment uses it.";
     }
-    detail += "\n\nThis cannot be undone.";
     const ok = await confirmDelete(`Delete deployment '${name}'?`, detail);
     if (!ok) {
       return;
