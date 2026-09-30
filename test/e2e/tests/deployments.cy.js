@@ -79,7 +79,10 @@ describe("Deployments Section", () => {
               cy.runCommandPaletteCommand("Posit Publisher: Delete Deployment");
               cy.get(".monaco-dialog-box")
                 .should("be.visible")
-                .and("contain.text", "Delete deployment 'static-delete'?");
+                .and(
+                  "contain.text",
+                  `Delete deployment '${filePaths.contentRecord.name.replace(/\.toml$/, "")}'?`,
+                );
               cy.get(".dialog-buttons")
                 .findByText("Delete")
                 .should("be.visible")
