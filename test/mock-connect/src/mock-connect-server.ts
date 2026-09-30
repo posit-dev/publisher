@@ -133,6 +133,7 @@ export class MockConnectServer {
         loadFixture("content-create.json"),
       ],
       ["PATCH", /^\/__api__\/v1\/content\/[^/]+$/, 204, null],
+      ["DELETE", /^\/__api__\/v1\/content\/[^/]+$/, 204, null],
       [
         "GET",
         /^\/__api__\/v1\/content\/[^/]+$/,

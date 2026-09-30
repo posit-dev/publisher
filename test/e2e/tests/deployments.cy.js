@@ -60,6 +60,68 @@ describe("Deployments Section", () => {
         ).should("exist");
       });
 
+      it("PCS Delete Deployment", () => {
+        // Deploys static content, then deletes it via "Delete Deployment".
+        // Asserts the deployment record and configuration file are removed
+        // locally and (against a real server) the content is gone from Connect.
+        cy.expectInitialPublisherState();
+
+        cy.createPCSDeployment(
+          "static",
+          "index.html",
+          "static-delete",
+          () => {},
+        ).deployCurrentlySelected();
+
+        cy.getPublisherTomlFilePaths("static").then((filePaths) => {
+          cy.loadTomlFile(filePaths.contentRecord.path).then(
+            (contentRecord) => {
+              cy.runCommandPaletteCommand("Posit Publisher: Delete Deployment");
+              cy.get(".monaco-dialog-box")
+                .should("be.visible")
+                .and("contain.text", "Delete deployment 'static-delete'?");
+              cy.get(".dialog-buttons")
+                .findByText("Delete")
+                .should("be.visible")
+                .click();
+              cy.get(".monaco-dialog-box").should("not.exist");
+
+              cy.waitUntil(
+                () =>
+                  cy
+                    .shell(
+                      `ls ${filePaths.contentRecord.path} ${filePaths.config.path}`,
+                      { failOnNonZeroExit: false },
+                    )
+                    .then((result) => result.stdout.trim() === ""),
+                { timeout: 15_000, interval: 500 },
+              );
+
+              cy.expectInitialPublisherState();
+
+              // The mock server doesn't track content, so only a real server
+              // can confirm the content is gone.
+              if (Cypress.expose("MOCK_CONNECT") !== "true") {
+                cy.env(["BOOTSTRAP_ADMIN_API_KEY"]).then(
+                  ({ BOOTSTRAP_ADMIN_API_KEY }) =>
+                    cy
+                      .request({
+                        method: "GET",
+                        url: `${Cypress.expose("CONNECT_SERVER_URL")}/__api__/v1/content/${contentRecord.id}`,
+                        headers: {
+                          Authorization: `Key ${BOOTSTRAP_ADMIN_API_KEY}`,
+                        },
+                        failOnStatusCode: false,
+                      })
+                      .its("status")
+                      .should("eq", 404),
+                );
+              }
+            },
+          );
+        });
+      });
+
       // Unable to run this,
       // as we will need to install the renv package - install.packages("renv")
       // as well as call renv::restore(), before we can deploy. This will use
