@@ -425,6 +425,14 @@ export class ConnectAPI {
     });
   }
 
+  /** Deletes a content item and all of its bundles from the server. */
+  async deleteContent(
+    contentId: ContentID,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    await this.client.delete(`/__api__/v1/content/${contentId}`, { signal });
+  }
+
   /** Retrieves environment variable names for a content item. */
   async getEnvVars(
     contentId: ContentID,

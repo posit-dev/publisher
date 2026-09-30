@@ -2,6 +2,7 @@
 
 import fs from "fs";
 import path from "path";
+import axios from "axios";
 import debounce from "debounce";
 
 import {
@@ -43,7 +44,12 @@ import {
   IntegrationRequest,
   UpdateConfigWithDefaults,
 } from "src/api";
-import { ConnectAPI, GUID, SessionExpiredError } from "@posit-dev/connect-api";
+import {
+  ConnectAPI,
+  ContentID as ConnectContentID,
+  GUID,
+  SessionExpiredError,
+} from "@posit-dev/connect-api";
 import type { Integration } from "@posit-dev/connect-api";
 import {
   ConnectOAuthActivator,
@@ -69,6 +75,8 @@ import {
   loadAllDeployments,
   loadConfiguration,
   ConfigurationLoadError,
+  getConfigDir,
+  getConfigPath,
   patchDeploymentRecord,
 } from "src/toml";
 import {
@@ -2103,6 +2111,157 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.refreshCredentials();
   };
 
+  public async deleteDeployment() {
+    const contentRecord = await this.state.getSelectedContentRecord();
+    if (!contentRecord) {
+      return;
+    }
+    const name = contentRecord.deploymentName;
+    // Pre-deployment records may not have content on the server yet.
+    const contentId = contentRecord.id;
+
+    let credential: Credential | undefined;
+    if (contentId) {
+      credential = this.state.findCredentialForContentRecord(contentRecord);
+      if (!credential) {
+        window.showErrorMessage(
+          `Unable to delete deployment '${name}': no credential found for ${contentRecord.serverUrl}. Add a credential for this server and try again.`,
+        );
+        return;
+      }
+    }
+
+    const configName = contentRecord.configurationName;
+    const configFile = `${configName}.toml`;
+    // A configuration can be referenced by more than one deployment record
+    // (e.g. via "Select Active Configuration For Deployment"). Only delete it
+    // when no other record in the project still uses it.
+    const otherRecordsUsingConfig = this.state.contentRecords.filter(
+      (r) =>
+        r.projectDir === contentRecord.projectDir &&
+        r.configurationName === configName &&
+        r.deploymentPath !== contentRecord.deploymentPath,
+    );
+    let configPath: string | undefined;
+    const root = workspaces.path();
+    if (root && otherRecordsUsingConfig.length === 0) {
+      const resolved = workspaces.resolveWithinWorkspace(
+        root,
+        contentRecord.projectDir,
+      );
+      if (resolved.ok) {
+        const candidate = getConfigPath(resolved.absPath, configName);
+        // configuration_name comes from the (untrusted) deployment record;
+        // only delete a file that sits directly in the config directory.
+        const inConfigDir =
+          path.dirname(candidate) === getConfigDir(resolved.absPath);
+        if (inConfigDir && fs.existsSync(candidate)) {
+          configPath = candidate;
+        }
+      }
+    }
+
+    // The native modal is narrow, so keep the detail short: no host names,
+    // file names, or bullet lists.
+    const targets = contentId
+      ? ["the content on the server", "its deployment record"]
+      : ["its deployment record"];
+    if (configPath) {
+      targets.push("its configuration file");
+    }
+    const joined = new Intl.ListFormat("en", { type: "conjunction" }).format(
+      targets,
+    );
+    let detail = `This permanently deletes ${joined}.`;
+    if (otherRecordsUsingConfig.length > 0) {
+      detail +=
+        " Its configuration file is kept because another deployment uses it.";
+    }
+    const ok = await confirmDelete(`Delete deployment '${name}'?`, detail);
+    if (!ok) {
+      return;
+    }
+
+    if (contentId && credential) {
+      try {
+        await this.deleteContentOnServer(credential, contentId);
+      } catch (error: unknown) {
+        // Content that is already gone from the server is fine; proceed to
+        // remove the local record.
+        if (!(axios.isAxiosError(error) && error.response?.status === 404)) {
+          const summary = getSummaryStringFromError(
+            "deployment::delete",
+            error,
+          );
+          window.showErrorMessage(
+            `Unable to delete deployment '${name}' from the server: ${summary}`,
+          );
+          return;
+        }
+      }
+    }
+
+    try {
+      await fs.promises.rm(contentRecord.deploymentPath, { force: true });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("deployment::delete", error);
+      window.showErrorMessage(
+        `Unable to remove the local deployment record for '${name}': ${summary}`,
+      );
+      return;
+    }
+
+    if (configPath) {
+      try {
+        await fs.promises.rm(configPath, { force: true });
+      } catch (error: unknown) {
+        const summary = getSummaryStringFromError("deployment::delete", error);
+        window.showErrorMessage(
+          `Deployment '${name}' was deleted, but the configuration file '${configFile}' could not be removed: ${summary}`,
+        );
+      }
+    }
+
+    await this.saveSelectionState(null);
+    await this.state.refreshContentRecords();
+    await this.state.refreshConfigurations();
+    this.updateWebViewViewConfigurations();
+    this.updateWebViewViewContentRecords(null);
+    window.setStatusBarMessage(`Deployment '${name}' has been deleted.`, 5000);
+  }
+
+  private async deleteContentOnServer(
+    credential: Credential,
+    contentId: string,
+  ) {
+    if (credential.serverType === ServerType.CONNECT_CLOUD) {
+      const cloudApi = new ConnectCloudAPI({
+        apiBaseUrl: cloudEnvironmentBaseUrls[CONNECT_CLOUD_ENVIRONMENT],
+        accessToken: credential.accessToken,
+        refreshToken: credential.refreshToken,
+        environment: CONNECT_CLOUD_ENVIRONMENT,
+        onTokenRefresh: async (tokens) => {
+          credential.accessToken = tokens.access_token;
+          credential.refreshToken = tokens.refresh_token;
+          await storeCredential(this.context.secrets, credential);
+        },
+        userAgent: getUserAgent(),
+      });
+      await cloudApi.deleteContent(ContentID(contentId));
+      return;
+    }
+    const connectApi = new ConnectAPI(
+      await connectAPIOptionsFromCredential(
+        this.state.credentialsService,
+        credential,
+        {
+          rejectUnauthorized: extensionSettings.verifyCertificates(),
+        },
+      ),
+    );
+    await connectApi.deleteContent(ConnectContentID(contentId));
+  }
+
   private showPublishingLog() {
     return commands.executeCommand(Commands.Logs.Focus);
   }
@@ -2944,6 +3103,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       commands.registerCommand(
         Commands.HomeView.AssociateDeployment,
         () => showAssociateGUID(this.state),
+        this,
+      ),
+      commands.registerCommand(
+        Commands.HomeView.DeleteDeployment,
+        this.deleteDeployment,
         this,
       ),
       commands.registerCommand(

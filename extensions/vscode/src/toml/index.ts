@@ -7,6 +7,8 @@ export {
   loadConfiguration,
   loadAllConfigurations,
   loadAllConfigurationsRecursive,
+  getConfigDir,
+  getConfigPath,
 } from "./configDiscovery";
 
 // Deployments

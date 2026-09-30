@@ -82,6 +82,7 @@ const homeViewCommands = {
   ShowSelectConfigForDeployment:
     "posit.publisher.homeView.showSelectConfigForDeployment",
   AssociateDeployment: "posit.publisher.homeView.associateDeployment",
+  DeleteDeployment: "posit.publisher.homeView.deleteDeployment",
   CreateConfigForDeployment:
     "posit.publisher.homeView.createConfigForDeployment",
   SelectDeployment: "posit.publisher.homeView.selectDeployment",

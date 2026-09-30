@@ -75,6 +75,7 @@ module.exports = defineConfig({
         CONNECT_SERVER_URL: "http://localhost:3939",
         CONNECT_CLOUD_ENV: process.env.CONNECT_CLOUD_ENV || "staging",
         WORKBENCH_URL: "http://localhost:8787",
+        MOCK_CONNECT: isMockMode ? "true" : "false",
         // When running in mock mode, run Connect Server and no-target tests only.
         // PCC and Positron tests are excluded — they require real services.
         ...(isMockMode && {
