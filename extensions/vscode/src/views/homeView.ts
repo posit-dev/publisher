@@ -2136,7 +2136,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     // A configuration can be referenced by more than one deployment record
     // (e.g. via "Select Active Configuration For Deployment"). Only delete it
     // when no other record in the project still uses it.
-    const otherUsers = this.state.contentRecords.filter(
+    const otherRecordsUsingConfig = this.state.contentRecords.filter(
       (r) =>
         r.projectDir === contentRecord.projectDir &&
         r.configurationName === configName &&
@@ -2144,7 +2144,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     );
     let configPath: string | undefined;
     const root = workspaces.path();
-    if (root && otherUsers.length === 0) {
+    if (root && otherRecordsUsingConfig.length === 0) {
       const resolved = workspaces.resolveWithinWorkspace(
         root,
         contentRecord.projectDir,
@@ -2173,7 +2173,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       targets,
     );
     let detail = `This permanently deletes ${joined}.`;
-    if (otherUsers.length > 0) {
+    if (otherRecordsUsingConfig.length > 0) {
       detail +=
         " Its configuration file is kept because another deployment uses it.";
     }
