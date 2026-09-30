@@ -445,6 +445,49 @@ describe("QuartoDetector", () => {
     expect(configs[0]?.quarto?.engines).toEqual(["knitr"]);
   });
 
+  test("fallback for a Quarto project scans .qmd files in subdirectories", async () => {
+    const tree: Record<string, string[]> = {
+      "/project": ["_quarto.yml", "index.qmd", "chapters", "_site", "renv"],
+      "/project/chapters": ["intro.qmd", "analysis.qmd"],
+      "/project/_site": ["stale.qmd"],
+      "/project/renv": ["lib.qmd"],
+    };
+    mockReaddir.mockImplementation((dir: string) =>
+      Promise.resolve(tree[dir] ?? []),
+    );
+    mockStat.mockImplementation((filePath: string) => {
+      const isDir = filePath in tree;
+      return Promise.resolve({
+        isFile: () => !isDir,
+        isDirectory: () => isDir,
+      });
+    });
+    mockAccess.mockImplementation((filePath: string) =>
+      filePath.endsWith("_quarto.yml")
+        ? Promise.resolve()
+        : Promise.reject(new Error("ENOENT")),
+    );
+    mockReadFile.mockImplementation((filePath: string) => {
+      if (filePath === "/project/chapters/analysis.qmd") {
+        return Promise.resolve("```{python}\nimport pandas\n```\n");
+      }
+      if (filePath.endsWith("stale.qmd") || filePath.endsWith("lib.qmd")) {
+        return Promise.resolve("```{r}\nsummary(cars)\n```\n");
+      }
+      return Promise.resolve("# Chapter\n");
+    });
+    mockExecFile.mockRejectedValue(
+      Object.assign(new Error("spawn quarto ENOENT"), { code: "ENOENT" }),
+    );
+
+    const configs = await detector.inferType("/project", "_quarto.yml");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.python).toEqual({});
+    // R chunks under skipped dirs (_site, renv) don't count
+    expect(configs[0]?.r).toBeUndefined();
+    expect(configs[0]?.quarto?.engines).toEqual(["jupyter"]);
+  });
+
   test("fallback when quarto binary missing: .ipynb", async () => {
     setupGlobDir(["notebook.ipynb"]);
     mockAccess.mockRejectedValue(new Error("ENOENT"));

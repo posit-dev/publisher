@@ -70,6 +70,51 @@ function isExpectedInspectFailure(err: unknown): boolean {
   return false;
 }
 
+// Directories Quarto doesn't render from: hidden and `_`-prefixed ones
+// (e.g. _site, _freeze, _extensions) are ignored by Quarto itself, and the
+// rest hold environments or dependencies rather than project content.
+const skippedQmdDirs = new Set(["node_modules", "renv", "venv", "env"]);
+
+function isSkippedQmdDir(name: string): boolean {
+  return (
+    name.startsWith(".") || name.startsWith("_") || skippedQmdDirs.has(name)
+  );
+}
+
+// Recursively find the .qmd files a Quarto project would render.
+async function findProjectQmdFiles(baseDir: string): Promise<string[]> {
+  const results: string[] = [];
+
+  async function walk(dir: string): Promise<void> {
+    let entries: string[];
+    try {
+      entries = await fs.readdir(dir);
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry);
+      let stat;
+      try {
+        stat = await fs.stat(fullPath);
+      } catch {
+        continue;
+      }
+      if (stat.isFile()) {
+        if (entry.toLowerCase().endsWith(".qmd")) {
+          results.push(fullPath.replace(/\\/g, "/"));
+        }
+      } else if (stat.isDirectory() && !isSkippedQmdDir(entry)) {
+        await walk(fullPath);
+      }
+    }
+  }
+
+  await walk(baseDir);
+  results.sort();
+  return results;
+}
+
 export class QuartoDetector implements ContentTypeDetector {
   async inferType(
     baseDir: string,
@@ -541,9 +586,10 @@ export class QuartoDetector implements ContentTypeDetector {
     }
 
     // Without `quarto inspect` there's no engine list, so infer R/Python
-    // needs from code chunks. A project renders every .qmd; a standalone
-    // document renders only the entrypoint.
-    const scanPaths = quartoYmlExists ? [...qmdFiles] : [];
+    // needs from code chunks. A project renders every .qmd, including those
+    // in subdirectories (e.g. book chapters); a standalone document renders
+    // only the entrypoint.
+    const scanPaths = quartoYmlExists ? await findProjectQmdFiles(baseDir) : [];
     if (inspectPath !== baseDir && !scanPaths.includes(inspectPath)) {
       scanPaths.push(inspectPath);
     }
