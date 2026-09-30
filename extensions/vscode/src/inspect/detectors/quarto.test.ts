@@ -1,5 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import * as path from "path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { QuartoDetector } from "./quarto";
 import { ContentType } from "src/api/types/configurations";
@@ -446,17 +447,22 @@ describe("QuartoDetector", () => {
   });
 
   test("fallback for a Quarto project scans .qmd files in subdirectories", async () => {
-    const tree: Record<string, string[]> = {
-      "/project": ["_quarto.yml", "index.qmd", "chapters", "_site", "renv"],
-      "/project/chapters": ["intro.qmd", "analysis.qmd"],
-      "/project/_site": ["stale.qmd"],
-      "/project/renv": ["lib.qmd"],
-    };
+    // Paths with a space, keyed by path.normalize so lookups match whatever
+    // separator the detector uses on this platform.
+    const baseDir = path.join(path.sep, "my project");
+    const chaptersDir = path.join(baseDir, "chapters");
+    const tree = new Map<string, string[]>([
+      [baseDir, ["_quarto.yml", "index.qmd", "chapters", "_site", "renv"]],
+      [chaptersDir, ["intro.qmd", "analysis.qmd"]],
+      [path.join(baseDir, "_site"), ["stale.qmd"]],
+      [path.join(baseDir, "renv"), ["lib.qmd"]],
+    ]);
+    const analysisPath = path.join(chaptersDir, "analysis.qmd");
     mockReaddir.mockImplementation((dir: string) =>
-      Promise.resolve(tree[dir] ?? []),
+      Promise.resolve(tree.get(path.normalize(dir)) ?? []),
     );
     mockStat.mockImplementation((filePath: string) => {
-      const isDir = filePath in tree;
+      const isDir = tree.has(path.normalize(filePath));
       return Promise.resolve({
         isFile: () => !isDir,
         isDirectory: () => isDir,
@@ -468,7 +474,7 @@ describe("QuartoDetector", () => {
         : Promise.reject(new Error("ENOENT")),
     );
     mockReadFile.mockImplementation((filePath: string) => {
-      if (filePath === "/project/chapters/analysis.qmd") {
+      if (path.normalize(filePath) === analysisPath) {
         return Promise.resolve("```{python}\nimport pandas\n```\n");
       }
       if (filePath.endsWith("stale.qmd") || filePath.endsWith("lib.qmd")) {
@@ -480,7 +486,7 @@ describe("QuartoDetector", () => {
       Object.assign(new Error("spawn quarto ENOENT"), { code: "ENOENT" }),
     );
 
-    const configs = await detector.inferType("/project", "_quarto.yml");
+    const configs = await detector.inferType(baseDir, "_quarto.yml");
     expect(configs).toHaveLength(1);
     expect(configs[0]?.python).toEqual({});
     // R chunks under skipped dirs (_site, renv) don't count
