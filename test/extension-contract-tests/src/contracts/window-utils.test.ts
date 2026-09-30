@@ -9,6 +9,7 @@ import {
   taskWithProgressMsg,
   openTerminalCommand,
   runTerminalCommand,
+  runTerminalProcess,
 } from "src/utils/window";
 
 function createMockTerminal() {
@@ -103,6 +104,19 @@ describe("window-utils contract", () => {
     it("listens to window.onDidCloseTerminal for terminal exit", () => {
       createMockTerminal();
       runTerminalCommand("test");
+      expect(window.onDidCloseTerminal).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("runTerminalProcess", () => {
+    it("creates a terminal running the executable directly", () => {
+      const terminal = createMockTerminal();
+      runTerminalProcess("quarto", ["render", "doc.qmd"]);
+      expect(window.createTerminal).toHaveBeenCalledWith({
+        shellPath: "quarto",
+        shellArgs: ["render", "doc.qmd"],
+      });
+      expect(terminal.sendText).not.toHaveBeenCalled();
       expect(window.onDidCloseTerminal).toHaveBeenCalledTimes(1);
     });
   });

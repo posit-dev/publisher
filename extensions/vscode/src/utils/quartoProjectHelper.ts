@@ -4,7 +4,8 @@ import * as path from "path";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { fileExistsAt } from "./fsUtils";
-import { runTerminalCommand } from "./window";
+import { resolveQuartoBinary } from "./quartoBinary";
+import { runTerminalProcess } from "./window";
 
 const execFileAsync = promisify(execFile);
 
@@ -39,12 +40,13 @@ export class QuartoProjectHelper {
       return Promise.reject(new ErrorNoQuarto());
     }
 
+    const quarto = await resolveQuartoBinary();
     const isProject = await this.isQuartoYmlPresent();
     try {
       if (isProject) {
-        await this.renderProject();
+        await this.renderProject(quarto);
       } else {
-        await this.renderDocument();
+        await this.renderDocument(quarto);
       }
     } catch {
       return Promise.reject(new ErrorQuartoRender());
@@ -61,21 +63,19 @@ export class QuartoProjectHelper {
 
   async isQuartoBinAvailable(): Promise<boolean> {
     try {
-      await execFileAsync("quarto", ["--version"]);
+      await execFileAsync(await resolveQuartoBinary(), ["--version"]);
       return true;
     } catch {
       return false;
     }
   }
 
-  renderProject() {
-    const command = `quarto render "${this.projectDir}"`;
-    return runTerminalCommand(command);
+  renderProject(quarto = "quarto") {
+    return runTerminalProcess(quarto, ["render", this.projectDir]);
   }
 
-  renderDocument() {
+  renderDocument(quarto = "quarto") {
     const fullEntryPath = path.join(this.projectDir, this.source);
-    const command = `quarto render "${fullEntryPath}"`;
-    return runTerminalCommand(command);
+    return runTerminalProcess(quarto, ["render", fullEntryPath]);
   }
 }

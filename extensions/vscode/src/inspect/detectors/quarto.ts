@@ -14,6 +14,7 @@ import {
   ScriptLanguage,
 } from "../helpers/quartoScriptFrontmatter";
 import { findLinkedResources } from "../helpers/resourceFinder";
+import { resolveQuartoBinary } from "src/utils/quartoBinary";
 import { QuartoInspectOutput } from "./quartoInspectOutput";
 
 const execFileAsync = promisify(execFile);
@@ -69,6 +70,51 @@ function isExpectedInspectFailure(err: unknown): boolean {
   return false;
 }
 
+// Directories Quarto doesn't render from: hidden and `_`-prefixed ones
+// (e.g. _site, _freeze, _extensions) are ignored by Quarto itself, and the
+// rest hold environments or dependencies rather than project content.
+const skippedQmdDirs = new Set(["node_modules", "renv", "venv", "env"]);
+
+function isSkippedQmdDir(name: string): boolean {
+  return (
+    name.startsWith(".") || name.startsWith("_") || skippedQmdDirs.has(name)
+  );
+}
+
+// Recursively find the .qmd files a Quarto project would render.
+async function findProjectQmdFiles(baseDir: string): Promise<string[]> {
+  const results: string[] = [];
+
+  async function walk(dir: string): Promise<void> {
+    let entries: string[];
+    try {
+      entries = await fs.readdir(dir);
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry);
+      let stat;
+      try {
+        stat = await fs.stat(fullPath);
+      } catch {
+        continue;
+      }
+      if (stat.isFile()) {
+        if (entry.toLowerCase().endsWith(".qmd")) {
+          results.push(fullPath.replace(/\\/g, "/"));
+        }
+      } else if (stat.isDirectory() && !isSkippedQmdDir(entry)) {
+        await walk(fullPath);
+      }
+    }
+  }
+
+  await walk(baseDir);
+  results.sort();
+  return results;
+}
+
 export class QuartoDetector implements ContentTypeDetector {
   async inferType(
     baseDir: string,
@@ -111,7 +157,8 @@ export class QuartoDetector implements ContentTypeDetector {
   private async quartoInspect(
     inspectPath: string,
   ): Promise<QuartoInspectOutput> {
-    const { stdout } = await execFileAsync("quarto", ["inspect", inspectPath], {
+    const quarto = await resolveQuartoBinary();
+    const { stdout } = await execFileAsync(quarto, ["inspect", inspectPath], {
       timeout: 30_000,
     });
     return new QuartoInspectOutput(stdout);
@@ -538,6 +585,28 @@ export class QuartoDetector implements ContentTypeDetector {
       files.push(`/${relPath}`);
     }
 
+    // Without `quarto inspect` there's no engine list, so infer R/Python
+    // needs from code chunks. A project renders every .qmd, including those
+    // in subdirectories (e.g. book chapters); a standalone document renders
+    // only the entrypoint.
+    const scanPaths = quartoYmlExists ? await findProjectQmdFiles(baseDir) : [];
+    if (inspectPath !== baseDir && !scanPaths.includes(inspectPath)) {
+      scanPaths.push(inspectPath);
+    }
+    const langs = await this.detectLanguagesInFiles(scanPaths);
+    const engines: string[] = [];
+    if (langs.needsPython) {
+      cfg.python = {};
+      engines.push("jupyter");
+    }
+    if (langs.needsR) {
+      cfg.r = {};
+      engines.push("knitr");
+    }
+    if (engines.length > 0) {
+      cfg.quarto = { version: defaultQuartoVersion, engines: engines.sort() };
+    }
+
     // Include special yml files
     await this.includeSpecialYmlFiles(baseDir, files, cfg);
 
@@ -545,6 +614,26 @@ export class QuartoDetector implements ContentTypeDetector {
     files.push(...assets);
 
     return cfg;
+  }
+
+  private async detectLanguagesInFiles(
+    filePaths: string[],
+  ): Promise<{ needsR: boolean; needsPython: boolean }> {
+    let needsR = false;
+    let needsPython = false;
+    for (const filePath of filePaths) {
+      try {
+        const content = await fs.readFile(filePath, "utf-8");
+        const langs = detectMarkdownLanguagesInContent(content);
+        needsR = needsR || langs.needsR;
+        needsPython = needsPython || langs.needsPython;
+      } catch (err: unknown) {
+        logger.debug(
+          `[quarto] could not read file for language detection: ${filePath}: ${err}`,
+        );
+      }
+    }
+    return { needsR, needsPython };
   }
 
   // Fallback detection for a bare .R/.py script (no _quarto.yml, so it's not
