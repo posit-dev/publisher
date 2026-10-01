@@ -95,6 +95,6 @@ jobs:
           allowed_bots: posit-connect-projects[bot]
           prompt: /code-review --comment
           claude_args: |
-            --model us.anthropic.claude-opus-4-5-20251101-v1:0
-            --fallback-model us.anthropic.claude-haiku-4-5-20251001-v1:0
+            --model opus
+            --fallback-model haiku
             --allowedTools Bash,mcp__github_inline_comment__create_inline_comment

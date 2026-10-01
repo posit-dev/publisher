@@ -128,8 +128,8 @@ jobs:
 
             Remember: Your final output MUST be ONLY the JSON object as specified in the agent file.
           claude_args: |
-            --model us.anthropic.claude-opus-4-5-20251101-v1:0
-            --fallback-model us.anthropic.claude-sonnet-4-5-20241022-v2:0
+            --model opus
+            --fallback-model sonnet
             --allowedTools Read,Bash
             --json-schema '{"type":"object","required":["category","confidence","summary","details","recommendation","affected_component"],"properties":{"category":{"type":"string","enum":["infrastructure","flaky_test","code_issue","unknown"]},"confidence":{"type":"string","enum":["high","medium","low"]},"summary":{"type":"string"},"details":{"type":"string"},"recommendation":{"type":"string","enum":["retry","investigate","fix_required"]},"affected_component":{"type":"string"}}}'
 
