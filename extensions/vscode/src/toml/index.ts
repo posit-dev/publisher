@@ -9,6 +9,7 @@ export {
   loadAllConfigurationsRecursive,
   getConfigDir,
   getConfigPath,
+  parseConfigPath,
 } from "./configDiscovery";
 
 // Deployments
