@@ -13,7 +13,6 @@ export function connectContentFromConfig(
   const k8s = cfg.connect?.kubernetes;
 
   return {
-    name: "",
     title: cfg.title || undefined,
     description: cfg.description || undefined,
 

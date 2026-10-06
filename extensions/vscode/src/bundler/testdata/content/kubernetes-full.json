@@ -1,5 +1,4 @@
 {
-  "name": "",
   "memory_request": 1024,
   "memory_limit": 2048,
   "cpu_request": 0.5,

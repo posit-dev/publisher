@@ -558,6 +558,8 @@ describe("connectPublish", () => {
     // Should still upload, update, deploy
     expect(opts.api.uploadBundle).toHaveBeenCalledOnce();
     expect(opts.api.updateDeployment).toHaveBeenCalledOnce();
+    const updateBody = vi.mocked(opts.api.updateDeployment).mock.calls[0]?.[1];
+    expect(JSON.parse(JSON.stringify(updateBody))).toEqual({});
     expect(opts.api.deployBundle).toHaveBeenCalledOnce();
   });
 

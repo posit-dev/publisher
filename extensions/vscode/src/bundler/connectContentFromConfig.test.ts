@@ -18,7 +18,7 @@ function cfg(overrides: Partial<ConfigurationDetails>): ConfigurationDetails {
 describe("connectContentFromConfig", () => {
   it("minimal config with no connect block", () => {
     const result = connectContentFromConfig(cfg({}));
-    expect(result).toEqual({ name: "" });
+    expect(JSON.parse(JSON.stringify(result))).toEqual({});
   });
 
   it("maps title and description", () => {
@@ -26,7 +26,6 @@ describe("connectContentFromConfig", () => {
       cfg({ title: "My App", description: "A great app" }),
     );
     expect(result).toEqual({
-      name: "",
       title: "My App",
       description: "A great app",
     });
@@ -36,7 +35,7 @@ describe("connectContentFromConfig", () => {
     const result = connectContentFromConfig(
       cfg({ title: "", description: "" }),
     );
-    expect(result).toEqual({ name: "" });
+    expect(JSON.parse(JSON.stringify(result))).toEqual({});
   });
 
   it("maps runtime fields", () => {
@@ -57,7 +56,6 @@ describe("connectContentFromConfig", () => {
       }),
     );
     expect(result).toEqual({
-      name: "",
       connection_timeout: 10,
       read_timeout: 20,
       init_timeout: 30,
@@ -81,7 +79,6 @@ describe("connectContentFromConfig", () => {
       }),
     );
     expect(result).toEqual({
-      name: "",
       run_as: "rstudio-connect",
       run_as_current_user: true,
     });
@@ -107,7 +104,6 @@ describe("connectContentFromConfig", () => {
       }),
     );
     expect(result).toEqual({
-      name: "",
       memory_request: 1024,
       memory_limit: 2048,
       cpu_request: 0.5,
@@ -199,7 +195,6 @@ describe("connectContentFromConfig", () => {
       }),
     );
     expect(result).toEqual({
-      name: "",
       title: "Partial",
       init_timeout: 60,
     });
