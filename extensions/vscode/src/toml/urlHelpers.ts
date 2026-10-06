@@ -2,8 +2,12 @@
 
 // Connect URL helpers.
 
+function serverRoot(serverUrl: string): string {
+  return serverUrl.replace(/\/+$/, "");
+}
+
 export function getDashboardUrl(serverUrl: string, contentId: string): string {
-  return `${serverUrl}/connect/#/apps/${contentId}`;
+  return `${serverRoot(serverUrl)}/connect/#/apps/${contentId}`;
 }
 
 export function getLogsUrl(serverUrl: string, contentId: string): string {
@@ -11,5 +15,5 @@ export function getLogsUrl(serverUrl: string, contentId: string): string {
 }
 
 export function getDirectUrl(serverUrl: string, contentId: string): string {
-  return `${serverUrl}/content/${contentId}/`;
+  return `${serverRoot(serverUrl)}/content/${contentId}/`;
 }

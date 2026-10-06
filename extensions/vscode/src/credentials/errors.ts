@@ -7,6 +7,13 @@ export class CredentialNotFoundError extends Error {
   }
 }
 
+export class CredentialIsReadOnlyError extends Error {
+  constructor() {
+    super("The Posit Connect session credential cannot be changed.");
+    this.name = "CredentialIsReadOnlyError";
+  }
+}
+
 export class CredentialNameCollisionError extends Error {
   constructor(existingName: string, existingUrl: string) {
     super(

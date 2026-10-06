@@ -6,7 +6,11 @@ import { GUID, ConnectAPIOptions } from "@posit-dev/connect-api";
 import { Mutex } from "async-mutex";
 import snowflake from "snowflake-sdk";
 
-import { Credential } from "src/api/types/credentials";
+import {
+  CONNECT_SESSION_CREDENTIAL_GUID,
+  CONNECT_SESSION_CREDENTIAL_NAME,
+  Credential,
+} from "src/api/types/credentials";
 import { ServerType } from "src/api/types/contentRecords";
 import type { SnowflakeConnectionConfig } from "src/snowflake/types";
 import {
@@ -20,6 +24,7 @@ import { listConnections } from "src/snowflake/connections";
 import { normalizeServerURL, isConnectLike } from "src/utils/serverUrl";
 import {
   CredentialNotFoundError,
+  CredentialIsReadOnlyError,
   CredentialNameCollisionError,
   CredentialIdentityCollisionError,
   IncompleteCredentialError,
@@ -42,6 +47,45 @@ import {
 // its callback; without a bound it would hold the connection-cache mutex
 // indefinitely and stall every other token fetch.
 export const SNOWFLAKE_DESTROY_TIMEOUT_MS = 5_000;
+
+function connectSessionEnvironment():
+  { url: string; apiKey: string } | undefined {
+  const server = process.env.CONNECT_SERVER?.trim();
+  const apiKey = process.env.CONNECT_API_KEY;
+  if (process.env.POSIT_PRODUCT !== "CONNECT" || !server || !apiKey?.trim()) {
+    return undefined;
+  }
+
+  try {
+    return { url: normalizeServerURL(server), apiKey };
+  } catch {
+    return undefined;
+  }
+}
+
+function connectSessionCredential(): Credential | undefined {
+  const session = connectSessionEnvironment();
+  if (!session) {
+    return undefined;
+  }
+  return {
+    guid: CONNECT_SESSION_CREDENTIAL_GUID,
+    name: CONNECT_SESSION_CREDENTIAL_NAME,
+    url: session.url,
+    apiKey: "",
+    snowflakeConnection: "",
+    accountId: "",
+    accountName: "",
+    refreshToken: "",
+    accessToken: "",
+    cloudEnvironment: "",
+    token: "",
+    privateKey: "",
+    oauthClientId: "",
+    tokenExpiresAt: "",
+    serverType: ServerType.CONNECT,
+  };
+}
 
 export interface CreateCredentialInput {
   name: string;
@@ -85,6 +129,13 @@ export async function connectAPIOptionsFromCredential(
   extra?: Pick<ConnectAPIOptions, "rejectUnauthorized" | "timeout">,
 ): Promise<ConnectAPIOptions> {
   const userAgent = getUserAgent();
+
+  if (credential.guid === CONNECT_SESSION_CREDENTIAL_GUID) {
+    const session = connectSessionEnvironment();
+    return session
+      ? { url: session.url, apiKey: session.apiKey, userAgent, ...extra }
+      : { url: credential.url, userAgent, ...extra };
+  }
 
   if (
     credential.serverType === ServerType.SNOWFLAKE &&
@@ -149,11 +200,21 @@ export class CredentialsService {
 
   constructor(private readonly secrets: SecretStorage) {}
 
-  list(): Promise<Credential[]> {
-    return getAllCredentials(this.secrets);
+  async list(): Promise<Credential[]> {
+    const credentials = await getAllCredentials(this.secrets);
+    const session = connectSessionCredential();
+    return session ? [session, ...credentials] : credentials;
   }
 
   async get(guid: GUID): Promise<Credential> {
+    if (guid === CONNECT_SESSION_CREDENTIAL_GUID) {
+      const session = connectSessionCredential();
+      if (session) {
+        return session;
+      }
+      throw new CredentialNotFoundError(guid);
+    }
+
     const cred = await getCredential(this.secrets, guid);
     if (!cred) {
       throw new CredentialNotFoundError(guid);
@@ -235,6 +296,12 @@ export class CredentialsService {
     if (!input.name) {
       throw new IncompleteCredentialError("Credential requires a name");
     }
+    if (input.name === CONNECT_SESSION_CREDENTIAL_NAME) {
+      throw new CredentialNameCollisionError(
+        CONNECT_SESSION_CREDENTIAL_NAME,
+        input.url ?? "",
+      );
+    }
 
     const normalizedUrl = normalizeServerURL(url);
 
@@ -269,6 +336,9 @@ export class CredentialsService {
   }
 
   async delete(guid: GUID): Promise<void> {
+    if (guid === CONNECT_SESSION_CREDENTIAL_GUID) {
+      throw new CredentialIsReadOnlyError();
+    }
     const cred = await getCredential(this.secrets, guid);
     if (!cred) {
       throw new CredentialNotFoundError(guid);
@@ -285,9 +355,18 @@ export class CredentialsService {
     guid: GUID,
     patch: Partial<Omit<Credential, "guid" | "serverType">>,
   ): Promise<Credential> {
+    if (guid === CONNECT_SESSION_CREDENTIAL_GUID) {
+      throw new CredentialIsReadOnlyError();
+    }
     const cred = await getCredential(this.secrets, guid);
     if (!cred) {
       throw new CredentialNotFoundError(guid);
+    }
+    if (patch.name === CONNECT_SESSION_CREDENTIAL_NAME) {
+      throw new CredentialNameCollisionError(
+        CONNECT_SESSION_CREDENTIAL_NAME,
+        cred.url,
+      );
     }
     const updated: Credential = { ...cred, ...patch, guid: cred.guid };
     await storeCredential(this.secrets, updated);

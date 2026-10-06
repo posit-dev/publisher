@@ -7,6 +7,37 @@
 
 import { vi } from "vitest";
 
+type BootstrappedDeployment = {
+  deploymentName: string;
+  deploymentPath: string;
+  projectDir: string;
+};
+
+export const connectSessionMocks = {
+  bootstrapConnectSession: vi.fn(
+    (
+      _root: string,
+      _version: string,
+    ): Promise<BootstrappedDeployment | undefined> =>
+      Promise.resolve(undefined),
+  ),
+};
+
+export const publisherStateMocks = {
+  updateSelection: vi.fn(() => Promise.resolve()),
+  refreshContentRecords: vi.fn(() => Promise.resolve()),
+  refreshConfigurations: vi.fn(() => Promise.resolve()),
+};
+
+export const providerRegistrationMocks = {
+  project: vi.fn(),
+  logs: vi.fn(),
+  home: vi.fn(),
+  logsView: vi.fn(),
+};
+
+vi.mock("src/connectSession", () => connectSessionMocks);
+
 vi.mock("src/ports", () => ({
   acquire: vi.fn(() => Promise.resolve(9999)),
 }));
@@ -23,17 +54,17 @@ vi.mock("src/services", () => ({
 
 vi.mock("src/views/project", () => ({
   ProjectTreeDataProvider: vi.fn(function () {
-    return { register: vi.fn() };
+    return { register: providerRegistrationMocks.project };
   }),
 }));
 
 vi.mock("src/views/logs", () => ({
   LogsTreeDataProvider: vi.fn(function () {
-    return { register: vi.fn() };
+    return { register: providerRegistrationMocks.logs };
   }),
   LogsViewProvider: Object.assign(
     vi.fn(function () {
-      return { register: vi.fn() };
+      return { register: providerRegistrationMocks.logsView };
     }),
     { openRawLogFileView: vi.fn(), copyLogs: vi.fn() },
   ),
@@ -48,7 +79,7 @@ vi.mock("src/events", () => ({
 vi.mock("src/views/homeView", () => ({
   HomeViewProvider: vi.fn(function () {
     return {
-      register: vi.fn(),
+      register: providerRegistrationMocks.home,
       showNewDeploymentMultiStep: vi.fn(() => Promise.resolve()),
       handleFileInitiatedDeploymentSelection: vi.fn(),
       dispose: vi.fn(),
@@ -78,6 +109,7 @@ vi.mock("src/state", () => ({
       credentials: [],
       refreshCredentials: vi.fn(() => Promise.resolve()),
       onDidRefreshCredentials: vi.fn(() => ({ dispose: vi.fn() })),
+      ...publisherStateMocks,
     };
   }),
 }));

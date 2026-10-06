@@ -5,6 +5,11 @@ import { GUID } from "@posit-dev/connect-api";
 import { AgentError } from "./error";
 import { ServerType } from "./contentRecords";
 
+export const CONNECT_SESSION_CREDENTIAL_GUID = GUID(
+  "00000000-0000-4000-8000-000000000001",
+);
+export const CONNECT_SESSION_CREDENTIAL_NAME = "Posit Connect (session)";
+
 // NOTE: If you add or remove fields here, also update the field lists in
 // credentials/storage.ts (REQUIRED_CREDENTIAL_FIELDS and, for fields added after
 // v1 shipped, OPTIONAL_CREDENTIAL_FIELDS so older stored records still parse).

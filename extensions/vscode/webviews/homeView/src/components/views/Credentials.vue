@@ -15,20 +15,24 @@
       :description="getDescription(credential)"
       :data-automation="`${credential.name}-list`"
       codicon="posit-publisher-icons-posit-logo"
-      :actions="[
-        {
-          label: 'Delete Credential',
-          codicon: 'codicon-trash',
-          fn: () =>
-            sendMsg({
-              kind: WebviewToHostMessageType.DELETE_CREDENTIAL,
-              content: {
-                credentialGUID: credential.guid,
-                credentialName: credential.name,
+      :actions="
+        credential.guid === CONNECT_SESSION_CREDENTIAL_GUID
+          ? []
+          : [
+              {
+                label: 'Delete Credential',
+                codicon: 'codicon-trash',
+                fn: () =>
+                  sendMsg({
+                    kind: WebviewToHostMessageType.DELETE_CREDENTIAL,
+                    content: {
+                      credentialGUID: credential.guid,
+                      credentialName: credential.name,
+                    },
+                  }),
               },
-            }),
-        },
-      ]"
+            ]
+      "
       align-icon-with-twisty
     />
   </TreeSection>
@@ -43,7 +47,11 @@ import WelcomeView from "src/components/WelcomeView.vue";
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 
-import { Credential, ProductName } from "../../../../../src/api";
+import {
+  CONNECT_SESSION_CREDENTIAL_GUID,
+  Credential,
+  ProductName,
+} from "../../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
 import { isConnectCloud } from "../../../../../src/utils/multiStepHelpers";
 

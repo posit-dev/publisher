@@ -37,6 +37,7 @@ vi.mock("axios", () => ({
 vi.mock("@posit-dev/connect-api", () => ({
   ConnectAPI: vi.fn(),
   ContentID: vi.fn((id: string) => id),
+  GUID: vi.fn((id: string) => id),
   BundleID: vi.fn((id: string) => id),
 }));
 

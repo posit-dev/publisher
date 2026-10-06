@@ -12,6 +12,7 @@ vi.mock("@posit-dev/connect-api", () => ({
     downloadBundle = mockDownloadBundle;
   },
   ContentID: (id: string) => id,
+  GUID: (id: string) => id,
   BundleID: (id: string) => id,
 }));
 

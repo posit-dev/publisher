@@ -298,9 +298,16 @@ const deploymentTitle = computed(() => {
     return "";
   }
 
+  const linkedSourceTitle = home.linkedSourceTitle;
+  const sourceTitle =
+    linkedSourceTitle &&
+    linkedSourceTitle.contentId === home.selectedContentRecord.id
+      ? linkedSourceTitle.title
+      : undefined;
   const result = calculateTitle(
     home.selectedContentRecord,
     home.selectedConfiguration,
+    sourceTitle,
   );
   return result.title;
 });

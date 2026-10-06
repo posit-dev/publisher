@@ -12,7 +12,7 @@ import {
   EventEmitter,
   window,
 } from "vscode";
-import { Credential } from "./api";
+import { CONNECT_SESSION_CREDENTIAL_GUID, Credential } from "./api";
 import { logger } from "./logging";
 import { PublisherState } from "./state";
 import { getSummaryStringFromError } from "./utils/errors";
@@ -36,8 +36,17 @@ class ConnectAuthSession implements AuthenticationSession {
 
   constructor(credential: Credential) {
     this.id = credential.guid;
-    this.account = { id: credential.url, label: credential.name };
-    this.accessToken = credential.apiKey;
+    this.account = {
+      id:
+        credential.guid === CONNECT_SESSION_CREDENTIAL_GUID
+          ? credential.guid
+          : credential.url,
+      label: credential.name,
+    };
+    this.accessToken =
+      credential.guid === CONNECT_SESSION_CREDENTIAL_GUID
+        ? process.env.CONNECT_API_KEY || ""
+        : credential.apiKey;
   }
 }
 
@@ -80,14 +89,14 @@ export class PublisherAuthProvider
     _scopes?: string[],
     options?: AuthenticationProviderSessionOptions,
   ): Promise<AuthenticationSession[]> {
-    let creds = this.state.credentials;
+    let sessions = this.state.credentials.map((x) => new ConnectAuthSession(x));
     if (options?.account) {
-      creds = creds.filter((x) => x.url === options?.account?.id);
+      sessions = sessions.filter((x) => x.account.id === options.account?.id);
     }
     logger.debug(
-      `Got a request for Connect auth sessions, count=${creds.length} url=${options?.account?.id ?? "<any>"}`,
+      `Got a request for Connect auth sessions, count=${sessions.length} account=${options?.account?.id ?? "<any>"}`,
     );
-    return Promise.resolve(creds.map((x) => new ConnectAuthSession(x)));
+    return Promise.resolve(sessions);
   }
 
   // Called by other extensions via authentication.getSessions() with

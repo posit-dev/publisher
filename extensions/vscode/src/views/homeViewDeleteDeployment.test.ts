@@ -3,6 +3,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { ContentID } from "@posit-dev/connect-api";
 import { AxiosError, AxiosHeaders } from "axios";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
@@ -91,6 +92,7 @@ import {
   credentialFactory,
   preContentRecordFactory,
 } from "src/test/unit-test-utils/factories";
+import { CONNECT_SESSION_CREDENTIAL_GUID } from "src/api/types/credentials";
 import type {
   ContentRecord,
   PreContentRecord,
@@ -170,6 +172,7 @@ describe("HomeViewProvider.deleteDeployment", () => {
 
   afterEach(() => {
     fs.rmSync(root, { recursive: true, force: true });
+    vi.unstubAllEnvs();
   });
 
   test("deletes server content, the record, and an unshared config", async () => {
@@ -285,5 +288,50 @@ describe("HomeViewProvider.deleteDeployment", () => {
 
     expect(deleteContentOnServer).not.toHaveBeenCalled();
     expect(fs.existsSync(record.deploymentPath)).toBe(true);
+  });
+
+  test("does not delete a linked source or its local files", async () => {
+    const record = makeRecord({
+      id: ContentID("source-guid"),
+      serverUrl: "https://connect.example.com",
+    });
+    const configPath = writeFile(
+      path.join(".posit", "publish", "my config.toml"),
+    );
+    const { provider, state, deleteContentOnServer } = makeProvider(record);
+    vi.stubEnv("POSIT_PRODUCT", "CONNECT");
+    vi.stubEnv("CONNECT_SERVER", undefined);
+    vi.stubEnv("CONNECT_DEPLOY_TARGET_GUID", "source-guid");
+
+    await provider.deleteDeployment();
+
+    expect(state.findCredentialForContentRecord).not.toHaveBeenCalled();
+    expect(confirmDelete).not.toHaveBeenCalled();
+    expect(deleteContentOnServer).not.toHaveBeenCalled();
+    expect(fs.existsSync(record.deploymentPath)).toBe(true);
+    expect(fs.existsSync(configPath)).toBe(true);
+  });
+
+  test("does not delete content with the session credential when no source is linked", async () => {
+    const record = makeRecord({
+      serverUrl: "https://connect.example.com",
+    });
+    const configPath = writeFile(
+      path.join(".posit", "publish", "my config.toml"),
+    );
+    const { provider, state, deleteContentOnServer } = makeProvider(record);
+    state.findCredentialForContentRecord.mockReturnValue(
+      credentialFactory.build({ guid: CONNECT_SESSION_CREDENTIAL_GUID }),
+    );
+    vi.stubEnv("POSIT_PRODUCT", "CONNECT");
+    vi.stubEnv("CONNECT_SERVER", "https://connect.example.com");
+    vi.stubEnv("CONNECT_DEPLOY_TARGET_GUID", undefined);
+
+    await provider.deleteDeployment();
+
+    expect(confirmDelete).not.toHaveBeenCalled();
+    expect(deleteContentOnServer).not.toHaveBeenCalled();
+    expect(fs.existsSync(record.deploymentPath)).toBe(true);
+    expect(fs.existsSync(configPath)).toBe(true);
   });
 });

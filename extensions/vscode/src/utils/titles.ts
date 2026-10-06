@@ -11,6 +11,7 @@ import {
 export const calculateTitle = (
   contentRecord: ContentRecord | PreContentRecord,
   config?: Configuration | ConfigurationError,
+  sourceTitle?: string,
 ): {
   title: string;
   problem: boolean;
@@ -25,6 +26,12 @@ export const calculateTitle = (
     title += configCode;
     return {
       title,
+      problem: false,
+    };
+  }
+  if (sourceTitle) {
+    return {
+      title: sourceTitle,
       problem: false,
     };
   }

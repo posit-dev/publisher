@@ -30,6 +30,8 @@ import {
   registerConnectContentFileSystem,
 } from "./connect_content_fs";
 import { handleConnectUri, promptOpenConnectContent } from "./open_connect";
+import { bootstrapConnectSession } from "./connectSession";
+import * as workspaces from "./workspaces";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -91,7 +93,39 @@ export function setSelectionIsPreContentRecord(
   );
 }
 
-function initializeExtension(context: ExtensionContext) {
+async function initializeConnectSession(
+  context: ExtensionContext,
+  state: PublisherState,
+) {
+  const root = workspaces.path();
+  if (root) {
+    try {
+      const deployment = await bootstrapConnectSession(
+        root,
+        context.extension.packageJSON.version || "unknown",
+      );
+      if (deployment) {
+        await state.updateSelection({
+          version: "v1",
+          deploymentName: deployment.deploymentName,
+          deploymentPath: deployment.deploymentPath,
+          projectDir: deployment.projectDir,
+        });
+        await Promise.all([
+          state.refreshContentRecords(),
+          state.refreshConfigurations(),
+        ]);
+      }
+    } catch (error: unknown) {
+      logger.error(`Unable to initialize Connect session deployment: ${error}`);
+      window.showErrorMessage(
+        `Unable to initialize the linked Connect deployment: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+}
+
+async function initializeExtension(context: ExtensionContext) {
   setStateContext(PositPublishState.uninitialized);
   setInitializationInProgressContext(InitializationInProgress.false);
 
@@ -104,6 +138,7 @@ function initializeExtension(context: ExtensionContext) {
   configureSnowflakeSDK(context.secrets, context.logUri);
 
   const state = new PublisherState(context);
+  await initializeConnectSession(context, state);
   resolvePublisherState(state);
 
   // First the construction of the data providers
@@ -171,7 +206,7 @@ function initializeExtension(context: ExtensionContext) {
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
-export function activate(context: ExtensionContext) {
+export async function activate(context: ExtensionContext) {
   const now = new Date();
   console.log("Posit Publisher extension activated at %s", now.toString());
   configureQuartoLookup({
@@ -193,7 +228,7 @@ export function activate(context: ExtensionContext) {
   // Is our workspace trusted?
   if (workspace.isTrusted) {
     console.log("initializing extension within a trusted workspace");
-    initializeExtension(context);
+    await initializeExtension(context);
     return;
   }
   console.log(
@@ -207,7 +242,7 @@ export function activate(context: ExtensionContext) {
       console.log(
         "Proceeding forward with initializion for extension within a trusted workspace",
       );
-      initializeExtension(context);
+      return initializeExtension(context);
     }),
   );
 }

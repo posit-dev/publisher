@@ -95,12 +95,20 @@ import {
   getSummaryStringFromError,
   getMessageFromError,
 } from "src/utils/errors";
-import type { Credential } from "src/api/types/credentials";
+import {
+  CONNECT_SESSION_CREDENTIAL_GUID,
+  type Credential,
+} from "src/api/types/credentials";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
 import { getUserAgent } from "src/utils/userAgent";
 import { runDeployWithProgress, DeployOutcome } from "src/views/deployProgress";
 import { connectPublish } from "src/publish/connectPublish";
+import {
+  fetchConnectSessionTitle,
+  isConnectSessionTarget,
+  validateConnectSessionDeploy,
+} from "src/connectSessionDeployment";
 import { connectCloudPublish } from "src/publish/connectCloudPublish";
 import { renderQuartoContent } from "src/views/renders";
 import { WebviewConduit } from "src/utils/webviewConduit";
@@ -191,6 +199,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private webviewView?: WebviewView;
   private extensionUri: Uri;
   private webviewConduit: WebviewConduit;
+  private linkedSourceTitle: { contentId: string; title: string } | undefined;
   private initCompleteResolver: (() => void) | undefined = undefined;
 
   // Promise that methods can wait on, which will be resolved when
@@ -606,6 +615,17 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             },
           ),
         );
+
+        if (
+          existingContentId &&
+          isConnectSessionTarget(credential.url, existingContentId) &&
+          !(await validateConnectSessionDeploy(connectApi, existingContentId))
+        ) {
+          return {
+            status: "failed",
+            message: "Linked source cannot be redeployed.",
+          };
+        }
 
         return await runDeployWithProgress({
           deploy: (onProgress, signal) =>
@@ -1039,8 +1059,45 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       content: {
         contentRecords: this.state.contentRecords,
         deploymentSelected: deploymentSelector,
+        linkedSourceTitle: this.linkedSourceTitle,
       },
     });
+  }
+
+  private async refreshLinkedSourceTitle() {
+    const sourceRecord = this.state.contentRecords.find(
+      (record) =>
+        record.id && isConnectSessionTarget(record.serverUrl, record.id),
+    );
+    if (!sourceRecord?.id) {
+      this.linkedSourceTitle = undefined;
+      return;
+    }
+
+    const credential = this.state.findCredentialForContentRecord(sourceRecord);
+    if (!credential) {
+      this.linkedSourceTitle = undefined;
+      return;
+    }
+
+    try {
+      const api = new ConnectAPI(
+        await connectAPIOptionsFromCredential(
+          this.state.credentialsService,
+          credential,
+          { rejectUnauthorized: extensionSettings.verifyCertificates() },
+        ),
+      );
+      const title = await fetchConnectSessionTitle(api, sourceRecord.id);
+      this.linkedSourceTitle = title
+        ? { contentId: sourceRecord.id, title }
+        : undefined;
+    } catch (error: unknown) {
+      this.linkedSourceTitle = undefined;
+      logger.debug(
+        `Unable to fetch linked Connect source title: ${getMessageFromError(error)}`,
+      );
+    }
   }
 
   private updateWebViewViewConfigurations() {
@@ -1200,7 +1257,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         let integrations: Integration[] = [];
         if (
           credential?.url &&
-          (credential?.apiKey || (credential?.token && credential?.privateKey))
+          (credential.guid === CONNECT_SESSION_CREDENTIAL_GUID ||
+            credential.apiKey ||
+            (credential.token && credential.privateKey))
         ) {
           const connectApi = new ConnectAPI(
             await connectAPIOptionsFromCredential(
@@ -2093,6 +2152,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     credentialGUID: string;
     credentialName: string;
   }) => {
+    if (context.credentialGUID === CONNECT_SESSION_CREDENTIAL_GUID) {
+      window.showInformationMessage(
+        "The Connect session credential is managed by Connect and cannot be deleted.",
+      );
+      return;
+    }
     const ok = await confirmDelete(
       `Are you sure you want to delete the credential '${context.credentialName}'?`,
     );
@@ -2120,12 +2185,25 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     // Pre-deployment records may not have content on the server yet.
     const contentId = contentRecord.id;
 
+    if (isConnectSessionTarget(contentRecord.serverUrl, contentId)) {
+      window.showInformationMessage(
+        "The linked source app cannot be deleted from a Connect project session. Manage it in the Connect dashboard.",
+      );
+      return;
+    }
+
     let credential: Credential | undefined;
     if (contentId) {
       credential = this.state.findCredentialForContentRecord(contentRecord);
       if (!credential) {
         window.showErrorMessage(
           `Unable to delete deployment '${name}': no credential found for ${contentRecord.serverUrl}. Add a credential for this server and try again.`,
+        );
+        return;
+      }
+      if (credential.guid === CONNECT_SESSION_CREDENTIAL_GUID) {
+        window.showInformationMessage(
+          "Content cannot be deleted using the Connect session credential. Manage it in the Connect dashboard.",
         );
         return;
       }
@@ -2703,6 +2781,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
+    await this.refreshLinkedSourceTitle();
     const selectedContentRecord = await this.state.getSelectedContentRecord();
     const selectedConfig = await this.state.getSelectedConfiguration();
     const selectionState = includeSavedState

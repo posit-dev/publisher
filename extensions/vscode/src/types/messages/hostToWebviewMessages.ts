@@ -109,6 +109,7 @@ export type RefreshContentRecordDataMsg = AnyHostToWebviewMessage<
   {
     contentRecords: (ContentRecord | PreContentRecord)[];
     deploymentSelected?: DeploymentSelector | null;
+    linkedSourceTitle?: { contentId: string; title: string };
   }
 >;
 export type RefreshConfigDataMsg = AnyHostToWebviewMessage<

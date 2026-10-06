@@ -134,6 +134,7 @@ const onHideDisableOverlayMsg = () => {
 const onRefreshContentRecordDataMsg = (msg: RefreshContentRecordDataMsg) => {
   const home = useHomeStore();
   home.contentRecords = msg.content.contentRecords;
+  home.linkedSourceTitle = msg.content.linkedSourceTitle;
 
   const selector = msg.content.deploymentSelected;
   if (selector === null) {

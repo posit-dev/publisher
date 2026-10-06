@@ -39,6 +39,7 @@ export const useHomeStore = defineStore("home", () => {
   const contentRenderError = ref<string | undefined>(undefined);
 
   const contentRecords = ref<(ContentRecord | PreContentRecord)[]>([]);
+  const linkedSourceTitle = ref<{ contentId: string; title: string }>();
   const configurations = ref<Configuration[]>([]);
   const configurationsInError = ref<ConfigurationError[]>([]);
   const credentials = ref<Credential[]>([]);
@@ -465,6 +466,7 @@ export const useHomeStore = defineStore("home", () => {
     contentRenderSuccess,
     contentRenderError,
     contentRecords,
+    linkedSourceTitle,
     configurations,
     configurationsInError,
     credentials,

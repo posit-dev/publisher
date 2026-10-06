@@ -1,10 +1,14 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { beforeEach, describe, expect, it, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest";
 import { GUID } from "@posit-dev/connect-api";
 
 import { credentialFactory } from "src/test/unit-test-utils/factories";
 import { mockSecretStorage } from "src/test/unit-test-utils/vscode-mocks";
+import {
+  CONNECT_SESSION_CREDENTIAL_GUID,
+  CONNECT_SESSION_CREDENTIAL_NAME,
+} from "src/api/types/credentials";
 import { ServerType } from "src/api/types/contentRecords";
 import { listConnections } from "src/snowflake/connections";
 import type { SnowflakeConnectionConfig } from "src/snowflake/types";
@@ -17,6 +21,7 @@ import {
 } from "./service";
 import {
   CredentialNotFoundError,
+  CredentialIsReadOnlyError,
   CredentialNameCollisionError,
   CredentialIdentityCollisionError,
   IncompleteCredentialError,
@@ -71,6 +76,16 @@ vi.mock("src/auth/oauth", () => ({
 
 import { OAuthError } from "src/auth/oauth";
 
+beforeEach(() => {
+  vi.stubEnv("POSIT_PRODUCT", "");
+  vi.stubEnv("CONNECT_SERVER", "");
+  vi.stubEnv("CONNECT_API_KEY", "");
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe("CredentialsService", () => {
   let secrets: mockSecretStorage;
   let service: CredentialsService;
@@ -95,6 +110,55 @@ describe("CredentialsService", () => {
       const result = await service.list();
       expect(result).toEqual([]);
     });
+
+    test("includes an in-memory Connect session credential without its API key", async () => {
+      vi.stubEnv("POSIT_PRODUCT", "CONNECT");
+      vi.stubEnv("CONNECT_SERVER", "https://connect.example.com/");
+      vi.stubEnv("CONNECT_API_KEY", "temporary-key");
+
+      const [credential] = await service.list();
+
+      expect(credential).toMatchObject({
+        guid: CONNECT_SESSION_CREDENTIAL_GUID,
+        name: CONNECT_SESSION_CREDENTIAL_NAME,
+        url: "https://connect.example.com",
+        apiKey: "",
+        serverType: ServerType.CONNECT,
+      });
+      expect(await service.get(CONNECT_SESSION_CREDENTIAL_GUID)).toEqual(
+        credential,
+      );
+      expect(await secrets.keys()).toEqual([]);
+    });
+
+    test("prefers the session credential over saved credentials for the same server", async () => {
+      const saved = credentialFactory.build({
+        url: "https://connect.example.com",
+      });
+      await storeCredential(secrets, saved);
+      vi.stubEnv("POSIT_PRODUCT", "CONNECT");
+      vi.stubEnv("CONNECT_SERVER", saved.url);
+      vi.stubEnv("CONNECT_API_KEY", "temporary-key");
+      const credentials = await service.list();
+      expect(credentials[0]?.guid).toBe(CONNECT_SESSION_CREDENTIAL_GUID);
+      expect(credentials[1]).toEqual(saved);
+      expect(await secrets.get(`credential:${saved.guid}`)).not.toContain(
+        "temporary-key",
+      );
+    });
+
+    test.each([
+      ["the product is not Connect", "POSIT_PRODUCT", "VSCODE"],
+      ["the server is missing", "CONNECT_SERVER", ""],
+      ["the API key is missing", "CONNECT_API_KEY", ""],
+    ])("omits the session credential when %s", async (_reason, key, value) => {
+      vi.stubEnv("POSIT_PRODUCT", "CONNECT");
+      vi.stubEnv("CONNECT_SERVER", "https://connect.example.com");
+      vi.stubEnv("CONNECT_API_KEY", "temporary-key");
+      vi.stubEnv(key, value);
+
+      expect(await service.list()).toEqual([]);
+    });
   });
 
   describe("get", () => {
@@ -112,6 +176,12 @@ describe("CredentialsService", () => {
       await expect(service.get(GUID("nonexistent"))).rejects.toThrow(
         CredentialNotFoundError,
       );
+    });
+
+    test("does not resolve the reserved session GUID without session environment", async () => {
+      await expect(
+        service.get(CONNECT_SESSION_CREDENTIAL_GUID),
+      ).rejects.toThrow(CredentialNotFoundError);
     });
   });
 
@@ -263,6 +333,17 @@ describe("CredentialsService", () => {
       );
     });
 
+    test("reserves the session credential name even outside a Connect session", async () => {
+      await expect(
+        service.create({
+          name: CONNECT_SESSION_CREDENTIAL_NAME,
+          url: "https://connect.example.com",
+          serverType: ServerType.CONNECT,
+          apiKey: "key",
+        }),
+      ).rejects.toThrow(CredentialNameCollisionError);
+    });
+
     test("throws CredentialIdentityCollisionError on duplicate URL for Connect", async () => {
       const existing = credentialFactory.build({
         url: "https://connect.example.com",
@@ -364,6 +445,32 @@ describe("CredentialsService", () => {
         CredentialNotFoundError,
       );
     });
+
+    test("prevents deleting or updating the session credential", async () => {
+      vi.stubEnv("POSIT_PRODUCT", "CONNECT");
+      vi.stubEnv("CONNECT_SERVER", "https://connect.example.com");
+      vi.stubEnv("CONNECT_API_KEY", "temporary-key");
+
+      await expect(
+        service.delete(CONNECT_SESSION_CREDENTIAL_GUID),
+      ).rejects.toThrow(CredentialIsReadOnlyError);
+      await expect(
+        service.update(CONNECT_SESSION_CREDENTIAL_GUID, { name: "Changed" }),
+      ).rejects.toThrow(CredentialIsReadOnlyError);
+      expect(await secrets.keys()).toEqual([]);
+    });
+
+    test("prevents renaming a saved credential to the reserved session name", async () => {
+      const existing = credentialFactory.build();
+      await storeCredential(secrets, existing);
+
+      await expect(
+        service.update(existing.guid, {
+          name: CONNECT_SESSION_CREDENTIAL_NAME,
+        }),
+      ).rejects.toThrow(CredentialNameCollisionError);
+      expect(await service.get(existing.guid)).toEqual(existing);
+    });
   });
 
   describe("reset", () => {
@@ -387,6 +494,40 @@ describe("connectAPIOptionsFromCredential", () => {
   beforeEach(() => {
     const secrets = new mockSecretStorage();
     service = new CredentialsService(secrets);
+  });
+
+  test("reads the session API key from the current environment on every call", async () => {
+    vi.stubEnv("POSIT_PRODUCT", "CONNECT");
+    vi.stubEnv("CONNECT_SERVER", "https://connect.example.com");
+    vi.stubEnv("CONNECT_API_KEY", "first-key");
+    const credential = await service.get(CONNECT_SESSION_CREDENTIAL_GUID);
+
+    const first = await connectAPIOptionsFromCredential(service, credential);
+    vi.stubEnv("CONNECT_API_KEY", "rotated-key");
+    const second = await connectAPIOptionsFromCredential(service, credential);
+
+    expect(first).toMatchObject({ apiKey: "first-key" });
+    expect(second).toMatchObject({ apiKey: "rotated-key" });
+  });
+
+  test("falls back to unauthenticated options when the session environment is absent", async () => {
+    const result = await connectAPIOptionsFromCredential(service, {
+      guid: CONNECT_SESSION_CREDENTIAL_GUID,
+      url: "https://connect.example.com",
+      apiKey: "stale-key",
+      token: "",
+      privateKey: "",
+      serverType: ServerType.CONNECT,
+      snowflakeConnection: "",
+      refreshToken: "",
+      accessToken: "",
+      oauthClientId: "",
+    });
+
+    expect(result).toEqual({
+      url: "https://connect.example.com",
+      userAgent: "PositPublisher/unknown",
+    });
   });
 
   describe("API key auth", () => {

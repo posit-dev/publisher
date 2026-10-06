@@ -3,10 +3,20 @@
 // Contract: extension.ts activate() → trust checks, URI handler, command registration, setContext
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { commands, workspace, window, ExtensionMode } from "vscode";
+import {
+  commands,
+  workspace,
+  window,
+  ExtensionMode,
+  _testEmitters,
+} from "vscode";
 
 // Mock all transitive dependencies of src/extension.ts
-import "../helpers/extension-mocks";
+import {
+  connectSessionMocks,
+  providerRegistrationMocks,
+  publisherStateMocks,
+} from "../helpers/extension-mocks";
 
 const { activate, deactivate } = await import("src/extension");
 
@@ -15,6 +25,7 @@ describe("activation contract", () => {
     return {
       subscriptions: [] as any[],
       extensionMode: ExtensionMode.Production,
+      extension: { packageJSON: { version: "9.8.7" } },
       extensionUri: { fsPath: "/ext", path: "/ext" },
       extensionPath: "/ext",
       globalState: {
@@ -42,48 +53,48 @@ describe("activation contract", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    _testEmitters.onDidGrantWorkspaceTrust.dispose();
     workspace.isTrusted = true;
   });
-
-  // Helper: activate() calls initializeExtension() which is async.
-  // We need to flush microtasks to let it complete.
-  async function activateAndFlush(context: any) {
-    activate(context);
-    await vi.waitFor(() => {});
-  }
 
   describe("workspace trust", () => {
     it("checks workspace.isTrusted before initialization", async () => {
       const context = createMockContext();
       workspace.isTrusted = true;
 
-      await activateAndFlush(context);
+      await activate(context);
 
       // When trusted, commands are registered (initializeExtension runs)
       expect(commands.registerCommand).toHaveBeenCalled();
     });
 
-    it("defers initialization when workspace is untrusted", () => {
+    it("waits for workspace trust before bootstrapping Connect session files", async () => {
       const context = createMockContext();
       workspace.isTrusted = false;
 
-      activate(context);
+      await activate(context);
 
       // onDidGrantWorkspaceTrust should be subscribed
       expect(workspace.onDidGrantWorkspaceTrust).toHaveBeenCalledTimes(1);
-      // registerCommand should NOT have been called for internal commands
-      // (only registerConnectContentFileSystem and registerUriHandler run immediately)
-      const registerCalls = vi.mocked(commands.registerCommand).mock.calls;
-      const internalCommands = registerCalls.filter((c) => c[0] !== undefined);
-      // No commands should be registered yet (they happen in initializeExtension)
-      expect(internalCommands).toHaveLength(0);
+      expect(
+        connectSessionMocks.bootstrapConnectSession,
+      ).not.toHaveBeenCalled();
+      expect(providerRegistrationMocks.home).not.toHaveBeenCalled();
+
+      _testEmitters.onDidGrantWorkspaceTrust.fire();
+      await vi.waitFor(() =>
+        expect(providerRegistrationMocks.home).toHaveBeenCalledOnce(),
+      );
+      expect(
+        connectSessionMocks.bootstrapConnectSession,
+      ).toHaveBeenCalledOnce();
     });
   });
 
   describe("URI handler", () => {
-    it("registers a URI handler via window.registerUriHandler", () => {
+    it("registers a URI handler via window.registerUriHandler", async () => {
       const context = createMockContext();
-      activate(context);
+      await activate(context);
 
       expect(window.registerUriHandler).toHaveBeenCalledTimes(1);
       expect(window.registerUriHandler).toHaveBeenCalledWith(
@@ -97,7 +108,7 @@ describe("activation contract", () => {
       const { registerConnectContentFileSystem } =
         await import("src/connect_content_fs");
       const context = createMockContext();
-      activate(context);
+      await activate(context);
 
       expect(registerConnectContentFileSystem).toHaveBeenCalledTimes(1);
     });
@@ -108,7 +119,7 @@ describe("activation contract", () => {
       const context = createMockContext();
       workspace.isTrusted = true;
 
-      await activateAndFlush(context);
+      await activate(context);
 
       const registeredIds = vi
         .mocked(commands.registerCommand)
@@ -128,12 +139,93 @@ describe("activation contract", () => {
     });
   });
 
+  describe("Connect session bootstrap", () => {
+    it("selects the bootstrapped deployment and refreshes state before registering providers", async () => {
+      const context = createMockContext();
+      const deployment = {
+        deploymentName: "linked app",
+        deploymentPath: "/workspace/.posit/publish/deployments/target.toml",
+        projectDir: ".",
+      };
+      connectSessionMocks.bootstrapConnectSession.mockResolvedValueOnce(
+        deployment,
+      );
+
+      let finishRefresh!: () => void;
+      publisherStateMocks.refreshContentRecords.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            finishRefresh = resolve;
+          }),
+      );
+
+      const activation = activate(context);
+      await vi.waitFor(() =>
+        expect(
+          publisherStateMocks.refreshContentRecords,
+        ).toHaveBeenCalledOnce(),
+      );
+
+      expect(providerRegistrationMocks.home).not.toHaveBeenCalled();
+      finishRefresh();
+      await activation;
+
+      expect(connectSessionMocks.bootstrapConnectSession).toHaveBeenCalledWith(
+        "/workspace",
+        "9.8.7",
+      );
+      expect(publisherStateMocks.updateSelection).toHaveBeenCalledWith({
+        version: "v1",
+        ...deployment,
+      });
+      expect(publisherStateMocks.refreshConfigurations).toHaveBeenCalledOnce();
+
+      for (const registerProvider of Object.values(providerRegistrationMocks)) {
+        expect(registerProvider.mock.invocationCallOrder[0]).toBeGreaterThan(
+          publisherStateMocks.refreshContentRecords.mock.invocationCallOrder[0],
+        );
+        expect(registerProvider.mock.invocationCallOrder[0]).toBeGreaterThan(
+          publisherStateMocks.refreshConfigurations.mock.invocationCallOrder[0],
+        );
+      }
+    });
+
+    it("preserves the saved selection when bootstrap finds no deployment", async () => {
+      const context = createMockContext();
+      connectSessionMocks.bootstrapConnectSession.mockResolvedValueOnce(
+        undefined,
+      );
+
+      await activate(context);
+
+      expect(publisherStateMocks.updateSelection).not.toHaveBeenCalled();
+      expect(publisherStateMocks.refreshContentRecords).not.toHaveBeenCalled();
+      expect(publisherStateMocks.refreshConfigurations).not.toHaveBeenCalled();
+      expect(providerRegistrationMocks.home).toHaveBeenCalledOnce();
+    });
+
+    it("shows bootstrap errors and continues registering the extension", async () => {
+      const context = createMockContext();
+      connectSessionMocks.bootstrapConnectSession.mockRejectedValueOnce(
+        new Error("could not read bundle"),
+      );
+
+      await activate(context);
+
+      expect(window.showErrorMessage).toHaveBeenCalledWith(
+        expect.stringContaining("could not read bundle"),
+      );
+      expect(providerRegistrationMocks.home).toHaveBeenCalledOnce();
+      expect(commands.registerCommand).toHaveBeenCalled();
+    });
+  });
+
   describe("setContext calls", () => {
     it("sets posit.publish.state context to 'initialized' after setup", async () => {
       const context = createMockContext();
       workspace.isTrusted = true;
 
-      await activateAndFlush(context);
+      await activate(context);
 
       const setContextCalls = vi
         .mocked(commands.executeCommand)
@@ -151,7 +243,7 @@ describe("activation contract", () => {
       const context = createMockContext();
       workspace.isTrusted = true;
 
-      await activateAndFlush(context);
+      await activate(context);
 
       const setContextCalls = vi
         .mocked(commands.executeCommand)
@@ -169,7 +261,7 @@ describe("activation contract", () => {
       const context = createMockContext();
       workspace.isTrusted = true;
 
-      await activateAndFlush(context);
+      await activate(context);
 
       expect(workspace.onDidChangeWorkspaceFolders).toHaveBeenCalledTimes(1);
     });
@@ -180,7 +272,7 @@ describe("activation contract", () => {
       const context = createMockContext();
       workspace.isTrusted = true;
 
-      await activateAndFlush(context);
+      await activate(context);
 
       expect(context.subscriptions.length).toBeGreaterThan(0);
     });
