@@ -19,14 +19,7 @@
         {
           label: 'Delete Credential',
           codicon: 'codicon-trash',
-          fn: () =>
-            sendMsg({
-              kind: WebviewToHostMessageType.DELETE_CREDENTIAL,
-              content: {
-                credentialGUID: credential.guid,
-                credentialName: credential.name,
-              },
-            }),
+          fn: () => deleteCredential(credential),
         },
       ]"
       align-icon-with-twisty
@@ -71,6 +64,16 @@ const sectionActions = computed(() => {
     },
   ];
 });
+
+const deleteCredential = (credential: Credential) => {
+  sendMsg({
+    kind: WebviewToHostMessageType.DELETE_CREDENTIAL,
+    content: {
+      credentialGUID: credential.guid,
+      credentialName: credential.name,
+    },
+  });
+};
 
 const getDescription = (credential: Credential) => {
   return isConnectCloud(credential.serverType)
