@@ -7,6 +7,17 @@ const executeCommand = vi.fn();
 
 vi.mock("src/logging");
 
+const forServer = vi.fn();
+vi.mock("src/auth/oauth", () => {
+  class OAuthTransportUnavailableError extends Error {}
+  return {
+    ConnectOAuthActivator: {
+      forServer: (...args: unknown[]) => forServer(...args),
+    },
+    OAuthTransportUnavailableError,
+  };
+});
+
 vi.mock("vscode", () => {
   class EventEmitter<T> {
     private listeners: Array<(e: T) => void> = [];
@@ -73,6 +84,12 @@ function mockState(stored: Credential[]) {
       return Promise.resolve();
     }),
     credentialsService: {
+      update: vi.fn((guid: string, patch: Partial<Credential>) => {
+        state.stored = state.stored.map((x) =>
+          x.guid === guid ? { ...x, ...patch } : x,
+        );
+        return Promise.resolve();
+      }),
       delete: vi.fn((guid: string) => {
         state.stored = state.stored.filter((x) => x.guid !== guid);
         return Promise.resolve();
@@ -112,6 +129,7 @@ function makeProvider(stored: Credential[]) {
 
 beforeEach(() => {
   executeCommand.mockReset();
+  forServer.mockReset();
 });
 
 describe("sessionFromCredential", () => {
@@ -413,6 +431,126 @@ describe("PublisherAuthProvider.createSession", () => {
     await expect(provider.createSession([])).rejects.toThrow(
       "cannot be shared",
     );
+  });
+});
+
+describe("PublisherAuthProvider.createSession for an existing credential", () => {
+  const signIn = {
+    oauthClientId: "new-client",
+    accessToken: "new-access",
+    refreshToken: "new-refresh",
+    tokenExpiresAt: new Date(Date.now() + 60 * 60_000).toISOString(),
+    userName: "me",
+  };
+
+  test("signs in again in place (forceNewSession)", async () => {
+    const cred = oauthCredential({ url: "https://connect.example.com" });
+    const { state, provider, events } = makeProvider([cred]);
+    forServer.mockResolvedValue({
+      authenticate: () => Promise.resolve(signIn),
+    });
+
+    const session = await provider.createSession([], {
+      account: { id: cred.url, label: cred.name },
+    });
+
+    expect(executeCommand).not.toHaveBeenCalled();
+    expect(forServer).toHaveBeenCalledWith(cred.url, "", false);
+    expect(session.id).toBe(cred.guid);
+    expect(session.accessToken).toBe("new-access");
+    expect(state.stored[0]).toMatchObject({
+      guid: cred.guid,
+      name: cred.name,
+      oauthClientId: "new-client",
+      refreshToken: "new-refresh",
+    });
+    expect(events.at(-1)?.changed?.map((s) => s.id)).toEqual([cred.guid]);
+  });
+
+  test("matches the server from a URL scope", async () => {
+    const cred = credentialFactory.build({
+      url: "https://connect.example.com",
+    });
+    const { provider } = makeProvider([cred]);
+    forServer.mockResolvedValue({
+      authenticate: () => Promise.resolve(signIn),
+    });
+    const session = await provider.createSession([
+      "https://CONNECT.example.com/",
+    ]);
+    expect(session.id).toBe(cred.guid);
+    expect(executeCommand).not.toHaveBeenCalled();
+  });
+
+  test("upgrades a credential that couldn't be shared", async () => {
+    const cred = credentialFactory.build({
+      url: "https://connect.example.com",
+      apiKey: "",
+      token: "tok",
+      privateKey: "key",
+    });
+    const { state, provider, events } = makeProvider([cred]);
+    forServer.mockResolvedValue({
+      authenticate: () => Promise.resolve(signIn),
+    });
+
+    const session = await provider.createSession([cred.url]);
+
+    expect(session.scopes).toContain(AUTH_SCHEME_BEARER);
+    expect(state.stored[0]).toMatchObject({ token: "", privateKey: "" });
+    expect(events.at(-1)?.added?.map((s) => s.id)).toEqual([cred.guid]);
+  });
+
+  test("replaces an API key with OAuth tokens", async () => {
+    const cred = credentialFactory.build({
+      url: "https://connect.example.com",
+    });
+    const { state, provider } = makeProvider([cred]);
+    forServer.mockResolvedValue({
+      authenticate: () => Promise.resolve(signIn),
+    });
+    await provider.createSession([cred.url]);
+    expect(state.stored[0]).toMatchObject({
+      apiKey: "",
+      accessToken: "new-access",
+    });
+  });
+
+  test("rejects, leaving the credential alone, when the server has no OAuth", async () => {
+    const cred = credentialFactory.build({
+      url: "https://connect.example.com",
+    });
+    const { state, provider } = makeProvider([cred]);
+    forServer.mockResolvedValue(undefined);
+    await expect(provider.createSession([cred.url])).rejects.toThrow(
+      "does not support browser sign-in",
+    );
+    expect(state.credentialsService.update).not.toHaveBeenCalled();
+  });
+
+  test("rejects when the user cancels sign-in", async () => {
+    const cred = oauthCredential({ url: "https://connect.example.com" });
+    const { state, provider } = makeProvider([cred]);
+    forServer.mockResolvedValue({
+      authenticate: () => Promise.reject(new Error("canceled")),
+    });
+    await expect(provider.createSession([cred.url])).rejects.toThrow(
+      "canceled",
+    );
+    expect(state.credentialsService.update).not.toHaveBeenCalled();
+  });
+
+  test("rejects for a Snowflake credential", async () => {
+    const cred = credentialFactory.build({
+      url: "https://connect.example.com",
+      serverType: ServerType.SNOWFLAKE,
+    });
+    const { provider } = makeProvider([cred]);
+    await expect(provider.createSession([cred.url])).rejects.toThrow(
+      "Snowflake",
+    );
+    expect(forServer).not.toHaveBeenCalled();
+    expect(executeCommand).not.toHaveBeenCalled();
   });
 });
 

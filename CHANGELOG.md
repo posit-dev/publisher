@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - You can now delete a deployment from the "..." menu in the Deployment section. After you confirm, Publisher deletes the content from the Connect or Connect Cloud server and removes the local deployment record. Its configuration file is deleted too, unless another deployment still uses it. (#2881)
-- You can now sign in to a Posit Connect server from the Accounts menu in VS Code and Positron. Other extensions can also ask you to sign in through Publisher, and then use your Posit Connect credentials without you entering them again. See [Using Publisher Credentials from Other Extensions](https://posit-dev.github.io/publisher/authentication.html). (#4435)
+- You can now sign in to a Posit Connect server from the Accounts menu in VS Code and Positron. Other extensions can also ask you to sign in through Publisher, and then use your Posit Connect credentials without you entering them again. When an extension asks you to sign in again to a server you already have a credential for, Publisher signs you in with your browser and updates that credential, so deployments that use it keep working. See [Using Publisher Credentials from Other Extensions](https://posit-dev.github.io/publisher/authentication.html). (#4435)
 
 ### Fixed
 
