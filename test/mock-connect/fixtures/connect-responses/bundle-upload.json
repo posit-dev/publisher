@@ -13,6 +13,8 @@
   "py_version": "3.11.6",
   "py_environment_management": true,
   "quarto_version": null,
+  "node_version": null,
+  "deploy_failed_time": null,
   "active": false,
   "size": 4096,
   "metadata": {

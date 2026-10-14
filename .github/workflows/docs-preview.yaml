@@ -32,6 +32,8 @@ jobs:
       - name: Check links
         uses: lycheeverse/lychee-action@v2
         with:
+          # Pin lychee itself so a new release can't silently break docs/lychee.toml.
+          lycheeVersion: v0.24.2
           args: --config docs/lychee.toml docs/_site
           token: ${{ secrets.GITHUB_TOKEN }}
           fail: true
