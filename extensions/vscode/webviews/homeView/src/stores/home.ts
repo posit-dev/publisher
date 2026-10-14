@@ -44,7 +44,9 @@ export const useHomeStore = defineStore("home", () => {
   const configurationsInError = ref<ConfigurationError[]>([]);
   const credentials = ref<Credential[]>([]);
   const sortedCredentials = computed(() => {
-    return credentials.value.sort((a, b) => a.name.localeCompare(b.name));
+    return credentials.value
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name));
   });
 
   const serverSettings = ref<ServerSettings | undefined>(undefined);
