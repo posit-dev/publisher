@@ -16,11 +16,16 @@ import {
 } from "vscode";
 import { Credential } from "./api";
 import { ServerType } from "./api/types/contentRecords";
+import {
+  ConnectOAuthActivator,
+  OAuthTransportUnavailableError,
+} from "./auth/oauth";
 import { Commands } from "./constants";
 import { isAccessTokenExpiring } from "./credentials/service";
 import { logger } from "./logging";
 import { PublisherState } from "./state";
 import { getSummaryStringFromError } from "./utils/errors";
+import { isConnectLike } from "./utils/serverUrl";
 import type { AddCredentialOutcome } from "./views/homeView";
 
 // AuthenticationProvider identifiers. The main identifier is exposed to other
@@ -79,6 +84,16 @@ export function sessionFromCredential(
     accessToken,
     scopes: [PUBLISHER_SCOPE, scheme],
   };
+}
+
+// Mirrors extensionSettings.verifyCertificates(), which isn't imported here to
+// avoid pulling in the whole extension entry point.
+function isInsecure(): boolean {
+  return !(
+    workspace
+      .getConfiguration("positPublisher")
+      .get<boolean>("verifyCertificates") ?? true
+  );
 }
 
 function isUrlScope(scope: string): boolean {
@@ -187,13 +202,29 @@ export class PublisherAuthProvider
 
   // Called by other extensions via authentication.getSession() with
   // createIfNone or forceNewSession set, and by the Accounts UI "Sign in"
-  // entry. Runs the regular New Credential flow (browser sign-in), pre-filling
-  // the server URL when the caller targeted one.
+  // entry.
+  //
+  // If the caller targeted a server that already has a credential (at most
+  // one per server is allowed), signs in to it again and updates it in place:
+  // that's what forceNewSession asks for, and it's also how a credential that
+  // can't be shared (token + private key) gets upgraded. Otherwise runs the
+  // regular New Credential flow (browser sign-in), pre-filling the server URL
+  // when the caller targeted one.
   async createSession(
     scopes: readonly string[],
     options?: AuthenticationProviderSessionOptions,
   ): Promise<AuthenticationSession> {
     const serverUrl = this.targetServerUrl(scopes, options);
+    if (serverUrl) {
+      await this.ensureLoaded();
+      const existing = this.state.credentials.find(
+        (x) => isConnectLike(x.serverType) && sameServer(x.url, serverUrl),
+      );
+      if (existing) {
+        return this.reauthenticate(existing);
+      }
+    }
+
     logger.info(
       `Creating Connect auth session, url=${serverUrl ?? "<user input>"}`,
     );
@@ -222,6 +253,64 @@ export class PublisherAuthProvider
       throw new Error(
         `The credential "${outcome.credentialName}" was created, but it cannot be shared with other extensions. Sign in with a browser (OAuth) or an API key instead.`,
       );
+    }
+    return session;
+  }
+
+  // Runs browser (OAuth) sign-in for an existing credential and stores the new
+  // tokens on it, keeping its GUID and name so deployments that use it keep
+  // working. Any API key or token + private key on it is replaced, since
+  // OAuth takes precedence and keeping both would be confusing.
+  private async reauthenticate(
+    cred: Credential,
+  ): Promise<AuthenticationSession> {
+    if (cred.serverType !== ServerType.CONNECT) {
+      throw new Error(
+        `The credential "${cred.name}" for ${cred.url} uses Snowflake and cannot be shared with other extensions.`,
+      );
+    }
+    logger.info(
+      `Signing in again for Connect auth session, name=${cred.name} url=${cred.url}`,
+    );
+
+    const unsupported = `${cred.url} does not support browser sign-in (OAuth), so Publisher cannot sign in to it again. To use a different API key, delete the credential "${cred.name}" in Publisher and add it again.`;
+    // An empty view id shows progress in the window status bar; the Publisher
+    // view may not be visible.
+    const activator = await ConnectOAuthActivator.forServer(
+      cred.url,
+      "",
+      isInsecure(),
+    );
+    if (!activator) {
+      throw new Error(unsupported);
+    }
+    let result;
+    try {
+      result = await activator.authenticate();
+    } catch (error: unknown) {
+      if (error instanceof OAuthTransportUnavailableError) {
+        throw new Error(unsupported, { cause: error });
+      }
+      throw error;
+    }
+
+    await this.state.credentialsService.update(cred.guid, {
+      oauthClientId: result.oauthClientId,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      tokenExpiresAt: result.tokenExpiresAt,
+      apiKey: "",
+      token: "",
+      privateKey: "",
+    });
+    // Fires "changed" (or "added", if the credential couldn't be shared
+    // before).
+    await this.state.refreshCredentials({ silent: true });
+
+    const updated = this.state.credentials.find((x) => x.guid === cred.guid);
+    const session = updated ? sessionFromCredential(updated) : undefined;
+    if (!session) {
+      throw new Error(`Sign in to ${cred.url} failed.`);
     }
     return session;
   }
@@ -288,11 +377,6 @@ export class PublisherAuthProvider
   // Concurrent refreshes of the same credential (including ConnectAPI's 401
   // retry) are merged by CredentialsService.refreshOAuthToken.
   private refreshToken(cred: Credential): Promise<boolean> {
-    const insecure = !(
-      workspace
-        .getConfiguration("positPublisher")
-        .get<boolean>("verifyCertificates") ?? true
-    );
     return this.state.credentialsService
       .refreshOAuthToken(
         {
@@ -301,7 +385,7 @@ export class PublisherAuthProvider
           oauthClientId: cred.oauthClientId,
           refreshToken: cred.refreshToken,
         },
-        insecure,
+        isInsecure(),
       )
       .then(() => {
         this.lastRefreshFailure.delete(cred.guid);
