@@ -468,6 +468,34 @@ describe("PublisherState", () => {
     });
   });
 
+  describe("credential changes from other windows", () => {
+    test("reloads credentials when a credential secret changes", async () => {
+      vi.useFakeTimers();
+      try {
+        const fakeCreds = credentialFactory.buildList(2);
+        mockCredentialsServiceList.mockResolvedValue(fakeCreds);
+
+        const { mockContext, mockSecrets } = mkExtensionContextStateMock({});
+        const publisherState = new PublisherState(mockContext);
+        const listener = mockSecrets.onDidChange.mock.calls[0]![0];
+
+        // Unrelated secrets are ignored.
+        listener({ key: "snowflake:something" });
+        await vi.runAllTimersAsync();
+        expect(mockCredentialsServiceList).not.toHaveBeenCalled();
+
+        // A burst of credential changes reloads once.
+        listener({ key: "credential:a" });
+        listener({ key: "credential:b" });
+        await vi.runAllTimersAsync();
+        expect(mockCredentialsServiceList).toHaveBeenCalledTimes(1);
+        expect(publisherState.credentials).toEqual(fakeCreds);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
   describe("resetCredentials", () => {
     test("clears credentials and shows a warning", async () => {
       mockCredentialsServiceReset.mockResolvedValue(undefined);
