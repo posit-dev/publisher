@@ -25,7 +25,7 @@
     "href": "authentication.html#signing-in",
     "title": "Using Publisher Credentials from Other Extensions",
     "section": "Signing in",
-    "text": "Signing in\nWhen no matching credential exists and you pass createIfNone: true (or forceNewSession), Publisher opens its New Credential flow, pre-filled with the server URL from options.account or the URL scope. The user signs in with their browser. If the user cancels, getSession rejects.\nThe same flow runs when the user chooses Sign in with Posit Connect from the Accounts menu."
+    "text": "Signing in\nWhen you pass createIfNone: true and no matching session exists, or pass forceNewSession: true, Publisher asks the user to sign in:\n\nIf you targeted a server (with options.account or a URL scope) and Publisher already has a credential for it, the user signs in again with their browser and Publisher updates that credential in place. Its name stays the same, so deployments that use it keep working. If the credential used an API key, or a token and a private key, it now uses browser sign-in instead.\nOtherwise, Publisher opens its New Credential flow, pre-filled with the server URL if you gave one, and the user signs in with their browser.\n\nSigning in again needs browser (OAuth) sign-in, which requires Posit Connect 2026.02.0 or later. On older servers, getSession rejects and the user needs to delete and re-add the credential in Publisher. getSession also rejects if the user cancels.\nThe New Credential flow also runs when the user chooses Sign in with Posit Connect from the Accounts menu."
   },
   {
     "objectID": "authentication.html#token-lifetime",
@@ -39,7 +39,7 @@
     "href": "authentication.html#which-credentials-are-shared",
     "title": "Using Publisher Credentials from Other Extensions",
     "section": "Which credentials are shared",
-    "text": "Which credentials are shared\nOnly Posit Connect credentials that use an API key or browser (OAuth) sign-in become sessions. These credentials are not shared:\n\nCredentials created with the older browser sign-in that uses a token and a private key. Each request is signed, so there is no token to share. Re-create the credential with an API key, or with browser sign-in on Posit Connect 2026.02.0 or later, to share it.\nPosit Connect Cloud credentials.\nPosit Connect credentials for Snowflake."
+    "text": "Which credentials are shared\nOnly Posit Connect credentials that use an API key or browser (OAuth) sign-in become sessions. These credentials are not shared:\n\nCredentials created with the older browser sign-in that uses a token and a private key. Each request is signed, so there is no token to share. On Posit Connect 2026.02.0 or later, requesting a session for that server with createIfNone: true asks the user to sign in again, which switches the credential to browser (OAuth) sign-in so it can be shared.\nPosit Connect Cloud credentials.\nPosit Connect credentials for Snowflake."
   },
   {
     "objectID": "authentication.html#signing-out",
