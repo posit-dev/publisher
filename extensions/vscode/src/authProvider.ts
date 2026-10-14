@@ -7,15 +7,20 @@ import {
   AuthenticationProviderSessionOptions,
   AuthenticationSession,
   AuthenticationSessionAccountInformation,
+  commands,
   Disposable,
   Event,
   EventEmitter,
   window,
+  workspace,
 } from "vscode";
 import { Credential } from "./api";
+import { ServerType } from "./api/types/contentRecords";
+import { Commands } from "./constants";
 import { logger } from "./logging";
 import { PublisherState } from "./state";
 import { getSummaryStringFromError } from "./utils/errors";
+import type { AddCredentialOutcome } from "./views/homeView";
 
 // AuthenticationProvider identifiers. The main identifier is exposed to other
 // extensions for lookup purposes, while the "label" controls what is shown in
@@ -25,20 +30,96 @@ import { getSummaryStringFromError } from "./utils/errors";
 const CONNECT_AUTH_PROVIDER_ID = "posit-connect";
 const CONNECT_AUTH_PROVIDER_LABEL = "Posit Connect";
 
-class ConnectAuthSession implements AuthenticationSession {
-  readonly id: string;
-  readonly account: AuthenticationSessionAccountInformation;
-  readonly accessToken: string;
+// Every session carries this scope, plus one of the AUTH_SCHEME_* scopes that
+// tells the consumer which Authorization header scheme the accessToken needs:
+// API keys are sent as `Authorization: Key <token>`, OAuth access tokens as
+// `Authorization: Bearer <token>`.
+const PUBLISHER_SCOPE = "Publisher";
+export const AUTH_SCHEME_KEY = "auth-scheme:Key";
+export const AUTH_SCHEME_BEARER = "auth-scheme:Bearer";
 
-  // Note: Connect doesn't really have a notion of "scopes", but we can
-  // equivocate to the role here, instead.
-  readonly scopes = ["Publisher"];
+// Refresh OAuth access tokens that expire within this window, so that
+// consumers don't receive a token that dies before they get to use it.
+const TOKEN_EXPIRY_SKEW_MS = 60_000;
 
-  constructor(credential: Credential) {
-    this.id = credential.guid;
-    this.account = { id: credential.url, label: credential.name };
-    this.accessToken = credential.apiKey;
+// After a failed OAuth refresh (offline, revoked, ...), don't retry for the
+// same credential for this long; getSessions() is called often.
+const REFRESH_RETRY_BACKOFF_MS = 60_000;
+
+/**
+ * Maps a credential to an authentication session, or undefined when the
+ * credential has no static token another extension could use:
+ *
+ * - Connect Cloud and Snowflake credentials target a different API (or need
+ *   extra headers), so they are not Connect sessions.
+ * - Token + private key credentials sign each request; there is nothing to
+ *   hand out.
+ */
+export function sessionFromCredential(
+  credential: Credential,
+): AuthenticationSession | undefined {
+  if (credential.serverType !== ServerType.CONNECT) {
+    return undefined;
   }
+  let accessToken: string;
+  let scheme: string;
+  if (credential.oauthClientId && credential.accessToken) {
+    accessToken = credential.accessToken;
+    scheme = AUTH_SCHEME_BEARER;
+  } else if (credential.apiKey) {
+    accessToken = credential.apiKey;
+    scheme = AUTH_SCHEME_KEY;
+  } else {
+    return undefined;
+  }
+  const account: AuthenticationSessionAccountInformation = {
+    id: credential.url,
+    label: credential.name,
+  };
+  return {
+    id: credential.guid,
+    account,
+    accessToken,
+    scopes: [PUBLISHER_SCOPE, scheme],
+  };
+}
+
+function isUrlScope(scope: string): boolean {
+  return /^https?:\/\//i.test(scope);
+}
+
+// Compares server URLs the same way PublisherState matches credentials to
+// deployments: case-insensitive, ignoring a trailing slash.
+function sameServer(a: string, b: string): boolean {
+  const norm = (u: string) => u.replace(/\/+$/, "").toLowerCase();
+  return norm(a) === norm(b);
+}
+
+function isTokenExpiring(credential: Credential, now: number): boolean {
+  if (!credential.oauthClientId || !credential.refreshToken) {
+    return false;
+  }
+  if (!credential.tokenExpiresAt) {
+    // Unknown expiry; rely on the consumer getting a 401 and asking again.
+    return false;
+  }
+  const expiresAt = Date.parse(credential.tokenExpiresAt);
+  if (Number.isNaN(expiresAt)) {
+    return false;
+  }
+  return expiresAt - now <= TOKEN_EXPIRY_SKEW_MS;
+}
+
+function sessionsDiffer(
+  a: AuthenticationSession,
+  b: AuthenticationSession,
+): boolean {
+  return (
+    a.account.id !== b.account.id ||
+    a.account.label !== b.account.label ||
+    a.accessToken !== b.accessToken ||
+    a.scopes.join(" ") !== b.scopes.join(" ")
+  );
 }
 
 export class PublisherAuthProvider
@@ -47,6 +128,15 @@ export class PublisherAuthProvider
   private disposable: Disposable;
   private emitter =
     new EventEmitter<AuthenticationProviderAuthenticationSessionsChangeEvent>();
+
+  // Set on the first request, so that credentials are loaded even if the
+  // Publisher Home view (which normally loads them) was never opened.
+  private initialLoad: Promise<void> | undefined;
+
+  // In-flight OAuth refreshes, keyed by credential GUID. Connect refresh
+  // tokens are single-use, so concurrent refreshes must be collapsed.
+  private refreshing = new Map<string, Promise<boolean>>();
+  private lastRefreshFailure = new Map<string, number>();
 
   constructor(private readonly state: PublisherState) {
     this.disposable = Disposable.from(
@@ -72,38 +162,84 @@ export class PublisherAuthProvider
   }
 
   // Called by other extensions via authentication.getSession(), and by the
-  // editor itself to populate the Accounts UI. Also called several times during
-  // editor startup, when credentials have not yet been refreshed. It seems
-  // harmless to delay until we show the Publisher home view (which loads
-  // credentials for the first time), though.
-  getSessions(
-    _scopes?: string[],
+  // editor itself to populate the Accounts UI.
+  //
+  // Targeting: options.account (whose id is the server URL) wins; otherwise a
+  // URL-shaped scope restricts the result to that server; otherwise all
+  // Connect sessions are returned.
+  async getSessions(
+    scopes?: readonly string[],
     options?: AuthenticationProviderSessionOptions,
   ): Promise<AuthenticationSession[]> {
-    let creds = this.state.credentials;
-    if (options?.account) {
-      creds = creds.filter((x) => x.url === options?.account?.id);
-    }
-    logger.debug(
-      `Got a request for Connect auth sessions, count=${creds.length} url=${options?.account?.id ?? "<any>"}`,
+    await this.ensureLoaded();
+
+    const serverUrl = this.targetServerUrl(scopes, options);
+    let creds = this.state.credentials.filter(
+      (x) => sessionFromCredential(x) !== undefined,
     );
-    return Promise.resolve(creds.map((x) => new ConnectAuthSession(x)));
+    if (serverUrl) {
+      creds = creds.filter((x) => sameServer(x.url, serverUrl));
+    }
+
+    if (await this.refreshExpiringTokens(creds)) {
+      // Pick up the rotated tokens (this also fires onDidChangeSessions).
+      await this.state.refreshCredentials({ silent: true });
+      const guids = new Set(creds.map((x) => x.guid));
+      creds = this.state.credentials.filter((x) => guids.has(x.guid));
+    }
+
+    logger.debug(
+      `Got a request for Connect auth sessions, count=${creds.length} url=${serverUrl ?? "<any>"}`,
+    );
+    return creds
+      .map(sessionFromCredential)
+      .filter((x): x is AuthenticationSession => x !== undefined);
   }
 
-  // Called by other extensions via authentication.getSessions() with
-  // createIfNone or forceNewSession set to true.
-  //
-  // It's unclear whether we should support creating Publisher credentials this
-  // way.
-  createSession(
-    _scopes: string[],
-    _options: AuthenticationProviderSessionOptions,
+  // Called by other extensions via authentication.getSession() with
+  // createIfNone or forceNewSession set, and by the Accounts UI "Sign in"
+  // entry. Runs the regular New Credential flow (browser sign-in), pre-filling
+  // the server URL when the caller targeted one.
+  async createSession(
+    scopes: readonly string[],
+    options?: AuthenticationProviderSessionOptions,
   ): Promise<AuthenticationSession> {
-    throw new Error("Not supported");
+    const serverUrl = this.targetServerUrl(scopes, options);
+    logger.info(
+      `Creating Connect auth session, url=${serverUrl ?? "<user input>"}`,
+    );
+    const outcome = await commands.executeCommand<
+      AddCredentialOutcome | undefined
+    >(
+      Commands.HomeView.AddCredential,
+      serverUrl,
+      ServerType.CONNECT,
+      "browser",
+    );
+    if (outcome?.status === "unavailable") {
+      throw new Error(outcome.reason);
+    }
+    if (outcome?.status !== "added") {
+      throw new Error("Sign in to Posit Connect was canceled.");
+    }
+
+    // The New Credential flow refreshes state.credentials on success, which
+    // also fires the "added" change event.
+    const cred = this.state.credentials.find(
+      (x) => x.guid === outcome.credentialGuid,
+    );
+    const session = cred ? sessionFromCredential(cred) : undefined;
+    if (!session) {
+      throw new Error(
+        `The credential "${outcome.credentialName}" was created, but it cannot be shared with other extensions. Sign in with a browser (OAuth) or an API key instead.`,
+      );
+    }
+    return session;
   }
 
   // Called when the user selects "Sign Out" in the Accounts UI.
   async removeSession(sessionId: string): Promise<void> {
+    await this.ensureLoaded();
     const cred = this.state.credentials.find((x) => x.guid === sessionId);
     if (!cred) {
       logger.warn(
@@ -125,45 +261,123 @@ export class PublisherAuthProvider
       );
       throw error;
     }
-    await this.state.refreshCredentials();
+    await this.state.refreshCredentials({ silent: true });
+  }
+
+  private ensureLoaded(): Promise<void> {
+    if (!this.initialLoad) {
+      this.initialLoad = this.state.refreshCredentials({ silent: true });
+    }
+    return this.initialLoad;
+  }
+
+  private targetServerUrl(
+    scopes?: readonly string[],
+    options?: AuthenticationProviderSessionOptions,
+  ): string | undefined {
+    return options?.account?.id ?? scopes?.find(isUrlScope);
+  }
+
+  // Refreshes OAuth access tokens that have expired (or are about to) and
+  // persists them. Returns true if any token was rotated. Failures are logged
+  // and the stale session is returned anyway; the consumer will get a 401 and
+  // can ask for a new session.
+  private async refreshExpiringTokens(creds: Credential[]): Promise<boolean> {
+    const now = Date.now();
+    const results = await Promise.all(
+      creds
+        .filter((x) => isTokenExpiring(x, now))
+        .filter((x) => {
+          const failedAt = this.lastRefreshFailure.get(x.guid);
+          return !failedAt || now - failedAt >= REFRESH_RETRY_BACKOFF_MS;
+        })
+        .map((x) => this.refreshToken(x)),
+    );
+    return results.some(Boolean);
+  }
+
+  private refreshToken(cred: Credential): Promise<boolean> {
+    let pending = this.refreshing.get(cred.guid);
+    if (pending) {
+      return pending;
+    }
+    const insecure = !(
+      workspace
+        .getConfiguration("positPublisher")
+        .get<boolean>("verifyCertificates") ?? true
+    );
+    pending = this.state.credentialsService
+      .refreshOAuthToken(
+        {
+          guid: cred.guid,
+          url: cred.url,
+          oauthClientId: cred.oauthClientId,
+          refreshToken: cred.refreshToken,
+        },
+        insecure,
+      )
+      .then(() => {
+        this.lastRefreshFailure.delete(cred.guid);
+        logger.info(
+          `Refreshed OAuth token for Connect auth session, name=${cred.name} url=${cred.url}`,
+        );
+        return true;
+      })
+      .catch((error: unknown) => {
+        this.lastRefreshFailure.set(cred.guid, Date.now());
+        logger.warn(
+          `Failed to refresh OAuth token for Connect auth session, name=${cred.name} url=${cred.url} error="${error}"`,
+        );
+        return false;
+      })
+      .finally(() => this.refreshing.delete(cred.guid));
+    this.refreshing.set(cred.guid, pending);
+    return pending;
   }
 
   private onRefresh(oldCredentials: Credential[]) {
+    const toSessions = (creds: Credential[]) => {
+      const sessions = new Map<string, AuthenticationSession>();
+      for (const cred of creds) {
+        const session = sessionFromCredential(cred);
+        if (session) {
+          sessions.set(session.id, session);
+        }
+      }
+      return sessions;
+    };
+    const prevSessions = toSessions(oldCredentials);
+    const nextSessions = toSessions(this.state.credentials);
+
     const added: AuthenticationSession[] = [];
     const removed: AuthenticationSession[] = [];
     const changed: AuthenticationSession[] = [];
 
-    // Find credentials that have been removed.
-    for (const prev of oldCredentials) {
-      if (!this.state.credentials.find((x) => x.guid === prev.guid)) {
-        removed.push(new ConnectAuthSession(prev));
+    for (const [id, prev] of prevSessions) {
+      if (!nextSessions.has(id)) {
+        removed.push(prev);
         logger.info(
-          `Removed Connect auth session, name=${prev.name} url=${prev.url}`,
+          `Removed Connect auth session, name=${prev.account.label} url=${prev.account.id}`,
         );
       }
     }
-
-    // Find credentials that have been added or modified.
-    for (const cred of this.state.credentials) {
-      const prev = oldCredentials.find((x) => x.guid === cred.guid);
+    for (const [id, next] of nextSessions) {
+      const prev = prevSessions.get(id);
       if (!prev) {
-        added.push(new ConnectAuthSession(cred));
+        added.push(next);
         logger.info(
-          `Added Connect auth session, name=${cred.name} url=${cred.url}`,
+          `Added Connect auth session, name=${next.account.label} url=${next.account.id}`,
         );
-      } else if (
-        // Check all mutable fields manually.
-        prev.name !== cred.name ||
-        prev.url !== cred.url ||
-        prev.apiKey !== cred.apiKey
-      ) {
-        changed.push(new ConnectAuthSession(cred));
+      } else if (sessionsDiffer(prev, next)) {
+        changed.push(next);
         logger.info(
-          `Updated Connect auth session, name=${cred.name} url=${cred.url}`,
+          `Updated Connect auth session, name=${next.account.label} url=${next.account.id}`,
         );
       }
     }
 
-    this.emitter.fire({ added: added, removed: removed, changed: changed });
+    if (added.length || removed.length || changed.length) {
+      this.emitter.fire({ added, removed, changed });
+    }
   }
 }

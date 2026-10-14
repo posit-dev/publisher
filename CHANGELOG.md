@@ -10,9 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - You can now delete a deployment from the "..." menu in the Deployment section. After you confirm, Publisher deletes the content from the Connect or Connect Cloud server and removes the local deployment record. Its configuration file is deleted too, unless another deployment still uses it. (#2881)
+- You can now sign in to a Posit Connect server from the Accounts menu in VS Code and Positron. Other extensions can also ask you to sign in through Publisher, and then use your Posit Connect credentials without you entering them again. See [Using Publisher Credentials from Other Extensions](https://posit-dev.github.io/publisher/authentication.html). (#4435)
 
 ### Fixed
 
+- Posit Connect credentials created with browser sign-in now work in other extensions that use them through the Accounts menu (the `posit-connect` authentication provider). Previously those extensions received an empty token. Publisher also refreshes the token when it has expired, and your credentials are available to other extensions without first opening the Publisher sidebar. Posit Connect Cloud and Snowflake credentials, which didn't work there, are no longer listed. (#4435)
 - Data files read by code in a Quarto or R Markdown document are now included in the deployment. Publisher scans fenced code chunks (`{r}`, `{python}`, `{ojs}`, and others) and inline code for referenced files, so a report that calls something like `read_csv("data/penguins.csv")` no longer fails to render on the server the first time it is deployed. Only paths that resolve to a file inside the project directory are added. (#4388)
 - When Publisher can't automatically determine the content type for an entrypoint, it prompts you to pick one from the list of valid content types. Picking a type fills in the same required fields (e.g. an empty `[python]` or `[r]` section) that automatic detection would have set. For a `.py` or `.R` entrypoint, the list now also offers a "Script" option that configures Connect to render it as a Quarto document, and ranks the choices most likely to match your entrypoint's file extension first. (#2833, #2666)
 - Clicking "Scan" to generate a Python requirements file, or "Set up renv" to create an R lockfile now also adds that file to your configuration's file list. (#4400)

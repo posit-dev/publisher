@@ -394,12 +394,20 @@ export class PublisherState implements Disposable {
     return this.credentialRefresh.event;
   }
 
-  async refreshCredentials() {
+  // Pass `silent` when refreshing on behalf of something other than the Home
+  // view (e.g. the authentication provider), so that no progress indicator is
+  // shown in a view that may not even be visible.
+  async refreshCredentials({ silent = false }: { silent?: boolean } = {}) {
     const oldCredentials = this.credentials;
+    const load = async () => {
+      this.credentials = await this.credentialsService.list();
+    };
     try {
-      await showProgress("Refreshing Credentials", Views.HomeView, async () => {
-        this.credentials = await this.credentialsService.list();
-      });
+      if (silent) {
+        await load();
+      } else {
+        await showProgress("Refreshing Credentials", Views.HomeView, load);
+      }
       this.credentialRefresh.fire({ oldCredentials: oldCredentials });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("refreshCredentials", error);

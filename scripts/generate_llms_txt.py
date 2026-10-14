@@ -36,6 +36,11 @@ PAGES = [
         "Troubleshooting",
         "Common issues and solutions for Posit Publisher, including schema errors, network issues, renv problems, and deployment type mismatches.",
     ),
+    (
+        "authentication.md",
+        "Using Publisher Credentials from Other Extensions",
+        "Guide for extension authors on using the posit-connect authentication provider to get Posit Connect API credentials, sign users in, and handle token refresh.",
+    ),
 ]
 
 
