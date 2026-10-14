@@ -17,6 +17,7 @@ import {
 import { Credential } from "./api";
 import { ServerType } from "./api/types/contentRecords";
 import { Commands } from "./constants";
+import { isAccessTokenExpiring } from "./credentials/service";
 import { logger } from "./logging";
 import { PublisherState } from "./state";
 import { getSummaryStringFromError } from "./utils/errors";
@@ -37,10 +38,6 @@ const CONNECT_AUTH_PROVIDER_LABEL = "Posit Connect";
 const PUBLISHER_SCOPE = "Publisher";
 export const AUTH_SCHEME_KEY = "auth-scheme:Key";
 export const AUTH_SCHEME_BEARER = "auth-scheme:Bearer";
-
-// Refresh OAuth access tokens that expire within this window, so that
-// consumers don't receive a token that dies before they get to use it.
-const TOKEN_EXPIRY_SKEW_MS = 60_000;
 
 // After a failed OAuth refresh (offline, revoked, ...), don't retry for the
 // same credential for this long; getSessions() is called often.
@@ -95,19 +92,14 @@ function sameServer(a: string, b: string): boolean {
   return norm(a) === norm(b);
 }
 
+// An unknown expiry counts as not expiring; the consumer will get a 401 and
+// can ask again.
 function isTokenExpiring(credential: Credential, now: number): boolean {
-  if (!credential.oauthClientId || !credential.refreshToken) {
-    return false;
-  }
-  if (!credential.tokenExpiresAt) {
-    // Unknown expiry; rely on the consumer getting a 401 and asking again.
-    return false;
-  }
-  const expiresAt = Date.parse(credential.tokenExpiresAt);
-  if (Number.isNaN(expiresAt)) {
-    return false;
-  }
-  return expiresAt - now <= TOKEN_EXPIRY_SKEW_MS;
+  return (
+    !!credential.oauthClientId &&
+    !!credential.refreshToken &&
+    isAccessTokenExpiring(credential.tokenExpiresAt, now)
+  );
 }
 
 function sessionsDiffer(
@@ -133,9 +125,6 @@ export class PublisherAuthProvider
   // Publisher Home view (which normally loads them) was never opened.
   private initialLoad: Promise<void> | undefined;
 
-  // In-flight OAuth refreshes, keyed by credential GUID. Connect refresh
-  // tokens are single-use, so concurrent refreshes must be collapsed.
-  private refreshing = new Map<string, Promise<boolean>>();
   private lastRefreshFailure = new Map<string, number>();
 
   constructor(private readonly state: PublisherState) {
@@ -296,17 +285,15 @@ export class PublisherAuthProvider
     return results.some(Boolean);
   }
 
+  // Concurrent refreshes of the same credential (including ConnectAPI's 401
+  // retry) are merged by CredentialsService.refreshOAuthToken.
   private refreshToken(cred: Credential): Promise<boolean> {
-    let pending = this.refreshing.get(cred.guid);
-    if (pending) {
-      return pending;
-    }
     const insecure = !(
       workspace
         .getConfiguration("positPublisher")
         .get<boolean>("verifyCertificates") ?? true
     );
-    pending = this.state.credentialsService
+    return this.state.credentialsService
       .refreshOAuthToken(
         {
           guid: cred.guid,
@@ -329,10 +316,7 @@ export class PublisherAuthProvider
           `Failed to refresh OAuth token for Connect auth session, name=${cred.name} url=${cred.url} error="${error}"`,
         );
         return false;
-      })
-      .finally(() => this.refreshing.delete(cred.guid));
-    this.refreshing.set(cred.guid, pending);
-    return pending;
+      });
   }
 
   private onRefresh(oldCredentials: Credential[]) {

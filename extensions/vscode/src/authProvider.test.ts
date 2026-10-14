@@ -257,28 +257,6 @@ describe("PublisherAuthProvider.getSessions", () => {
     expect(sessions[0]?.accessToken).toBe("fresh-token");
   });
 
-  test("collapses concurrent refreshes of the same credential", async () => {
-    const cred = oauthCredential({
-      tokenExpiresAt: new Date(Date.now() - 1000).toISOString(),
-    });
-    const { state, provider } = makeProvider([cred]);
-    let finish: (token: string) => void = () => {};
-    state.credentialsService.refreshOAuthToken.mockImplementation(
-      () => new Promise<string>((resolve) => (finish = resolve)),
-    );
-
-    const pending = Promise.all([
-      provider.getSessions(),
-      provider.getSessions(),
-    ]);
-    await vi.waitFor(() =>
-      expect(state.credentialsService.refreshOAuthToken).toHaveBeenCalled(),
-    );
-    finish("fresh-token");
-    await pending;
-    expect(state.credentialsService.refreshOAuthToken).toHaveBeenCalledTimes(1);
-  });
-
   test("returns the stale session when the refresh fails, and backs off", async () => {
     const cred = oauthCredential({
       tokenExpiresAt: new Date(Date.now() - 1000).toISOString(),
