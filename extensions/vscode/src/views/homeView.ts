@@ -180,7 +180,7 @@ enum HomeViewInitialized {
 }
 
 export type AddCredentialOutcome =
-  | { status: "added"; credentialName: string }
+  | { status: "added"; credentialName: string; credentialGuid: string }
   | { status: "canceled" }
   | { status: "unavailable"; reason: string };
 
@@ -2076,7 +2076,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return { status: "canceled" };
       }
       await this.refreshCredentials();
-      return { status: "added", credentialName: credential.name };
+      return {
+        status: "added",
+        credentialName: credential.name,
+        credentialGuid: credential.guid,
+      };
     } catch (error) {
       if (error instanceof UnavailablePlatformError) {
         return { status: "unavailable", reason: error.message };
