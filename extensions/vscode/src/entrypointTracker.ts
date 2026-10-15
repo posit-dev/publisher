@@ -23,6 +23,7 @@ import { hasKnownContentType } from "src/utils/inspect";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { getFileUriFromTab } from "src/utils/getUri";
 import { inspectProject } from "src/inspect";
+import { loadConfiguration, parseConfigPath } from "src/toml";
 import { logger } from "src/logging";
 
 function isTextEditor(
@@ -32,7 +33,8 @@ function isTextEditor(
 }
 
 /**
- * Determines if a URI points to an entrypoint file.
+ * Determines if a URI points to an entrypoint file or a valid
+ * configuration file.
  *
  * @param uri The URI to inspect
  * @returns Whether the URI is an entrypoint
@@ -53,6 +55,18 @@ async function isEntrypoint(uri: Uri): Promise<boolean> {
     if (!workspaceFolder) {
       return false;
     }
+
+    // A valid configuration file can be deployed directly
+    const configFile = parseConfigPath(uri.fsPath, workspaceFolder.uri.fsPath);
+    if (configFile) {
+      await loadConfiguration(
+        configFile.configName,
+        configFile.projectDir,
+        workspaceFolder.uri.fsPath,
+      );
+      return true;
+    }
+
     const absoluteDir =
       dir === "."
         ? workspaceFolder.uri.fsPath

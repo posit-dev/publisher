@@ -77,6 +77,7 @@ import {
   ConfigurationLoadError,
   getConfigDir,
   getConfigPath,
+  parseConfigPath,
   patchDeploymentRecord,
 } from "src/toml";
 import {
@@ -1648,6 +1649,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     viewId: string,
     projectDir?: string,
     entryPointFile?: string,
+    existingConfig?: Configuration,
   ): Promise<PublishProcessParams | undefined> {
     // We need the initial queries to finish, before we can
     // use them (contentRecords, credentials and configs)
@@ -1662,6 +1664,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         this.state.credentialsService,
         projectDir,
         entryPointFile,
+        existingConfig,
       );
       const { contentRecord, configuration, credential } = deploymentObjects;
       // a new deployment is considered successful, only if all objects below are present
@@ -2312,6 +2315,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     contentRecordsSubset?: AllContentRecordTypes[],
     projectDir?: string,
     entrypointFile?: string,
+    existingConfig?: Configuration,
   ): Promise<PublishProcessParams | undefined> {
     try {
       // disable our home view, we are initiating a multi-step sequence
@@ -2499,6 +2503,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           Views.HomeView,
           projectDir,
           entrypointFile,
+          existingConfig,
         );
       }
 
@@ -2842,12 +2847,17 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     // With multiple, if a compatible one is already active, then do nothing.
     // Otherwise, prompt for selection between multiple compatible deployments
 
-    const entrypointDir = relativeDir(uri);
+    // The file may be a configuration file rather than an entrypoint, in
+    // which case we look for deployments using that configuration.
+    const root = workspaces.path();
+    const configFile = root ? parseConfigPath(uri.fsPath, root) : undefined;
+
+    const entrypointDir = configFile ? configFile.projectDir : relativeDir(uri);
     // If the file is outside the workspace, it cannot be an entrypoint
     if (entrypointDir === undefined) {
       return undefined;
     }
-    const entrypointFile = uriUtils.basename(uri);
+    const entrypointFile = configFile ? undefined : uriUtils.basename(uri);
 
     await this.refreshAll(true, true);
 
@@ -2898,7 +2908,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         allConfigs.forEach((cfg) => {
           if (
             !isConfigurationError(cfg) &&
-            cfg.configuration.entrypoint === entrypointFile
+            (configFile
+              ? cfg.configurationName === configFile.configName
+              : cfg.configuration.entrypoint === entrypointFile)
           ) {
             configMap.set(cfg.configurationName, cfg);
           }
@@ -2936,6 +2948,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }
     });
 
+    const existingConfig = configFile
+      ? configMap.get(configFile.configName)
+      : undefined;
+    if (configFile && !existingConfig) {
+      window.showErrorMessage(
+        `Unable to deploy with configuration ${configFile.configName}. Please correct any errors in the file.`,
+      );
+      return undefined;
+    }
+
     // if no deployments, create one
     if (!compatibleContentRecords.length) {
       // call new deployment
@@ -2943,6 +2965,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         Views.HomeView,
         entrypointDir,
         entrypointFile,
+        existingConfig,
       );
       return selected;
     }
@@ -3009,6 +3032,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         compatibleContentRecords,
         entrypointDir,
         entrypointFile,
+        existingConfig,
       );
       return selected;
     }
