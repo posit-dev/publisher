@@ -257,7 +257,7 @@ minor version number is odd.
 
 - Merge any "Update licenses" PRs to `main`
 - Merge any Dependabot PRs to `main`
-- Wait for the `main.yaml` workflows to complete
+- Ensure CI is green on `main` (the tag-on-release-merge workflow will verify this automatically)
 
 ### Instructions
 
