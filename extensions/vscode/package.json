@@ -1004,7 +1004,7 @@
     "debounce": "^3.0.0",
     "entities": "^8.1.0",
     "filenamify": "^7.0.3",
-    "js-yaml": "^5.4.2",
+    "js-yaml": "^5.4.3",
     "jsonwebtoken": "^9.0.3",
     "picomatch": "^4.0.5",
     "retry": "^0.13.1",
