@@ -87,6 +87,10 @@ export async function newDeployment(
   credentialsService: CredentialsService,
   projectDir = ".",
   entryPointFile?: string,
+  // When provided, the deployment is created for this existing configuration:
+  // the entrypoint, content type and title steps are skipped and no new
+  // configuration file is written.
+  existingConfig?: Configuration,
 ): Promise<DeploymentObjects> {
   // ***************************************************************
   // API Calls and results
@@ -516,8 +520,23 @@ export async function newDeployment(
     };
 
     let currentStep: InputStep;
-    // we were passed in a specific file so retrieve the inspections
-    if (entryPointFile) {
+    if (existingConfig) {
+      // the configuration already exists, so only a credential is needed
+      if (newCredentialForced()) {
+        currentStep = {
+          step: () => inputNewCredential(),
+          skipStepHistory: true,
+        };
+      } else {
+        currentStep = {
+          name: step.PICK_CREDENTIALS,
+          step: (input: MultiStepInput) =>
+            steps[step.PICK_CREDENTIALS](input, state),
+        };
+        stepHistory.push(currentStep);
+      }
+    } else if (entryPointFile) {
+      // we were passed in a specific file so retrieve the inspections
       currentStep = {
         name: step.RETRIEVE_CONTENT_TYPES,
         step: (input: MultiStepInput) =>
@@ -899,7 +918,7 @@ export async function newDeployment(
   // ***************************************************************
   // Create a new credential to be used
   // ***************************************************************
-  async function inputNewCredential() {
+  async function inputNewCredential(): Promise<void> {
     try {
       newOrSelectedCredential = await newCredential(
         viewId,
@@ -913,6 +932,103 @@ export async function newDeployment(
     }
 
     // last step to create a new deployment
+  }
+
+  // ***************************************************************
+  // Create the configuration file from the collected inputs
+  // ***************************************************************
+  async function createNewConfig(
+    credential: Credential,
+    root: string,
+  ): Promise<Configuration | undefined> {
+    const inspectionResult = newDeploymentData.entrypoint.inspectionResult;
+    const title = newDeploymentData.title;
+    if (!inspectionResult || !title) {
+      return undefined;
+    }
+
+    let configName: string | undefined;
+    let configCreateResponse: Configuration | undefined;
+
+    inspectionResult.configuration.title = title;
+
+    const scriptLanguage = newDeploymentData.entrypoint.scriptLanguage;
+    if (scriptLanguage && lastInspectionContext) {
+      const { absoluteDir, relEntryPointFile } = lastInspectionContext;
+      const entrypointPath = path.join(absoluteDir, relEntryPointFile);
+      try {
+        const content = await fs.readFile(entrypointPath, "utf-8");
+        if (!hasQuartoScriptFrontmatter(content, scriptLanguage)) {
+          const newContent = insertQuartoScriptFrontmatter(
+            content,
+            scriptLanguage,
+            title,
+          );
+          await fs.writeFile(entrypointPath, newContent, "utf-8");
+          await commands.executeCommand(
+            "vscode.open",
+            Uri.file(entrypointPath),
+          );
+        }
+      } catch (error: unknown) {
+        const summary = getSummaryStringFromError(
+          "newDeployment, insert Quarto frontmatter",
+          error,
+        );
+        window.showErrorMessage(
+          `Unable to insert Quarto frontmatter into ${relEntryPointFile}. ${summary}`,
+        );
+      }
+    }
+
+    try {
+      const relProjectDir = inspectionResult.projectDir;
+
+      const allConfigs = await loadAllConfigurations(relProjectDir, root);
+      const existingNames = allConfigs.map(
+        (config) => config.configurationName,
+      );
+
+      configName = newConfigFileNameFromTitle(title, existingNames);
+
+      inspectionResult.configuration.productType = getProductType(
+        credential.serverType,
+      );
+
+      configCreateResponse = await writeConfigToFile(
+        configName,
+        relProjectDir,
+        root,
+        inspectionResult.configuration,
+      );
+      const fileUri = Uri.file(configCreateResponse.configurationPath);
+      await commands.executeCommand("vscode.open", fileUri);
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "newDeployment, writeConfigToFile",
+        error,
+      );
+      window.showErrorMessage(`Failed to create config file. ${summary}`);
+      return undefined;
+    }
+
+    try {
+      // Attempt to add the Config file to the files for deployment
+      // If the configuration is invalid, for example 'unknown', this will fail
+      await updateFileList(
+        configName,
+        getRelPathForConfig(configCreateResponse.configurationPath),
+        FileAction.INCLUDE,
+        inspectionResult.projectDir,
+        root,
+      );
+    } catch (_error: unknown) {
+      // continue on as it is not necessary to include .posit files for deployment
+      console.debug(
+        `Failed to add the configuration file '${configName}' to \`files\`.`,
+      );
+    }
+    return configCreateResponse;
   }
 
   // ***************************************************************
@@ -951,12 +1067,18 @@ export async function newDeployment(
 
   // make sure user has not hit escape or moved away from the window
   // before completing the steps
-  if (
-    !newDeploymentData.entrypoint.filePath ||
-    !newDeploymentData.entrypoint.inspectionResult ||
-    !newDeploymentData.title ||
-    isMissingCredentialData()
-  ) {
+  const isMissingConfigData = () => {
+    if (existingConfig) {
+      return false;
+    }
+    return (
+      !newDeploymentData.entrypoint.filePath ||
+      !newDeploymentData.entrypoint.inspectionResult ||
+      !newDeploymentData.title
+    );
+  };
+
+  if (isMissingConfigData() || isMissingCredentialData()) {
     console.log("User has dismissed the New Deployment flow. Exiting.");
     return getDeploymentObjects();
   }
@@ -980,99 +1102,25 @@ export async function newDeployment(
     return getDeploymentObjects();
   }
 
-  // Create the Config File
-  let configName: string | undefined;
-  let configCreateResponse: Configuration | undefined;
-
-  newDeploymentData.entrypoint.inspectionResult.configuration.title =
-    newDeploymentData.title;
-
-  const scriptLanguage = newDeploymentData.entrypoint.scriptLanguage;
-  if (scriptLanguage && lastInspectionContext) {
-    const { absoluteDir, relEntryPointFile } = lastInspectionContext;
-    const entrypointPath = path.join(absoluteDir, relEntryPointFile);
-    try {
-      const content = await fs.readFile(entrypointPath, "utf-8");
-      if (!hasQuartoScriptFrontmatter(content, scriptLanguage)) {
-        const newContent = insertQuartoScriptFrontmatter(
-          content,
-          scriptLanguage,
-          newDeploymentData.title,
-        );
-        await fs.writeFile(entrypointPath, newContent, "utf-8");
-        await commands.executeCommand("vscode.open", Uri.file(entrypointPath));
-      }
-    } catch (error: unknown) {
-      const summary = getSummaryStringFromError(
-        "newDeployment, insert Quarto frontmatter",
-        error,
-      );
-      window.showErrorMessage(
-        `Unable to insert Quarto frontmatter into ${relEntryPointFile}. ${summary}`,
-      );
-    }
-  }
-
   const root = workspaces.path();
   if (!root) {
     return getDeploymentObjects();
   }
 
-  try {
-    const relProjectDir =
-      newDeploymentData.entrypoint.inspectionResult.projectDir;
-
-    const allConfigs = await loadAllConfigurations(relProjectDir, root);
-    const existingNames = allConfigs.map((config) => config.configurationName);
-
-    configName = newConfigFileNameFromTitle(
-      newDeploymentData.title,
-      existingNames,
-    );
-
-    newDeploymentData.entrypoint.inspectionResult.configuration.productType =
-      getProductType(newOrSelectedCredential.serverType);
-
-    configCreateResponse = await writeConfigToFile(
-      configName,
-      relProjectDir,
-      root,
-      newDeploymentData.entrypoint.inspectionResult.configuration,
-    );
-    const fileUri = Uri.file(configCreateResponse.configurationPath);
-    newConfig = configCreateResponse;
-    await commands.executeCommand("vscode.open", fileUri);
-  } catch (error: unknown) {
-    const summary = getSummaryStringFromError(
-      "newDeployment, writeConfigToFile",
-      error,
-    );
-    window.showErrorMessage(`Failed to create config file. ${summary}`);
-    return getDeploymentObjects();
+  if (existingConfig) {
+    newConfig = existingConfig;
+  } else {
+    newConfig = await createNewConfig(newOrSelectedCredential, root);
+    if (!newConfig) {
+      return getDeploymentObjects();
+    }
   }
-
-  try {
-    // Attempt to add the Config file to the files for deployment
-    // If the configuration is invalid, for example 'unknown', this will fail
-    await updateFileList(
-      configName,
-      getRelPathForConfig(configCreateResponse.configurationPath),
-      FileAction.INCLUDE,
-      newDeploymentData.entrypoint.inspectionResult.projectDir,
-      root,
-    );
-  } catch (_error: unknown) {
-    // continue on as it is not necessary to include .posit files for deployment
-    console.debug(
-      `Failed to add the configuration file '${configName}' to \`files\`.`,
-    );
-  }
+  const configName = newConfig.configurationName;
+  const relProjectDir = newConfig.projectDir;
 
   // Create the PreContentRecord File
   try {
-    let existingNames = contentRecordNames.get(
-      newDeploymentData.entrypoint.inspectionResult.projectDir,
-    );
+    let existingNames = contentRecordNames.get(relProjectDir);
     if (!existingNames) {
       existingNames = [];
     }
@@ -1080,7 +1128,7 @@ export async function newDeployment(
     const clientVersion = getExtensionVersion();
     newContentRecord = await createDeploymentRecord({
       saveName: contentRecordName,
-      projectDir: newDeploymentData.entrypoint.inspectionResult.projectDir,
+      projectDir: relProjectDir,
       rootDir: root,
       serverUrl: newOrSelectedCredential.url,
       serverType: newOrSelectedCredential.serverType,
@@ -1112,7 +1160,7 @@ export async function newDeployment(
       configName,
       getRelPathForContentRecord(contentRecordPath),
       FileAction.INCLUDE,
-      newDeploymentData.entrypoint.inspectionResult.projectDir,
+      relProjectDir,
       root,
     );
   } catch (_error: unknown) {

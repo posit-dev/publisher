@@ -19,6 +19,37 @@ export function getConfigPath(projectDir: string, configName: string): string {
 }
 
 /**
+ * Identify a configuration file from its path.
+ *
+ * @param configPath - Absolute path to a file
+ * @param rootDir - Absolute workspace root directory
+ * @returns The configuration name and relative project directory if the path
+ *   is a config file (<projectDir>/.posit/publish/<name>.toml) within rootDir,
+ *   otherwise undefined.
+ */
+export function parseConfigPath(
+  configPath: string,
+  rootDir: string,
+): { configName: string; projectDir: string } | undefined {
+  if (path.extname(configPath) !== ".toml") {
+    return undefined;
+  }
+  const configDir = path.dirname(configPath);
+  const absProjectDir = path.dirname(path.dirname(configDir));
+  if (getConfigDir(absProjectDir) !== configDir) {
+    return undefined;
+  }
+  const rel = path.relative(rootDir, absProjectDir);
+  if (rel === ".." || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel)) {
+    return undefined;
+  }
+  return {
+    configName: path.basename(configPath, ".toml"),
+    projectDir: relativeProjectDir(absProjectDir, rootDir),
+  };
+}
+
+/**
  * List TOML config file paths in a project's .posit/publish/ directory.
  * Returns an empty array if the directory doesn't exist.
  */
