@@ -37,7 +37,7 @@ function isTextEditor(
  * configuration file.
  *
  * @param uri The URI to inspect
- * @returns Whether the URI is an entrypoint
+ * @returns Whether the URI is an entrypoint or a configuration file
  */
 async function isEntrypoint(uri: Uri): Promise<boolean> {
   const dir = relativeDir(uri);
@@ -47,9 +47,6 @@ async function isEntrypoint(uri: Uri): Promise<boolean> {
   }
 
   try {
-    const python = await getPythonInterpreterPath();
-    const r = await getRInterpreterPath();
-
     // Resolve the relative dir to an absolute path
     const workspaceFolder = workspace.getWorkspaceFolder(uri);
     if (!workspaceFolder) {
@@ -66,6 +63,9 @@ async function isEntrypoint(uri: Uri): Promise<boolean> {
       );
       return true;
     }
+
+    const python = await getPythonInterpreterPath();
+    const r = await getRInterpreterPath();
 
     const absoluteDir =
       dir === "."
