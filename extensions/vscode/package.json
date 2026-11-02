@@ -1002,7 +1002,7 @@
     "async-mutex": "^0.5.0",
     "axios": "^1.20.0",
     "debounce": "^3.0.0",
-    "entities": "^8.1.0",
+    "entities": "^9.0.0",
     "filenamify": "^7.0.3",
     "js-yaml": "^5.5.0",
     "jsonwebtoken": "^9.0.3",
