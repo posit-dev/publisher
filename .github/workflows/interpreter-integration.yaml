@@ -9,7 +9,9 @@ jobs:
       matrix:
         include:
           # Python-only configurations
-          - runner: ubuntu-latest
+          # actions/python-versions publishes no Python 3.9 build for
+          # Ubuntu 26.04, so this entry stays on 24.04.
+          - runner: ubuntu-24.04
             python-version: "3.9"
             r-version: ""
           - runner: ubuntu-latest
