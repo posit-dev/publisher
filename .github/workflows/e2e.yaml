@@ -19,8 +19,6 @@ on:
         required: true
       WORKBENCH_LICENSE:
         required: true
-      GH_DOWNLOAD_TOKEN:
-        required: false
       PCC_USER_CCQA3:
         required: false
 permissions:
@@ -134,8 +132,8 @@ jobs:
           tags: e2ebase:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            GH_DOWNLOAD_TOKEN=${{ secrets.GH_DOWNLOAD_TOKEN }}
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: false
 
       - name: Build code-server Docker image
         working-directory: test/e2e
