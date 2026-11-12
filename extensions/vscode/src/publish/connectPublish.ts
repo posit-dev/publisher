@@ -904,12 +904,13 @@ function vanityWarning(err: unknown): string {
     : err instanceof ConnectAPIError
       ? err.httpStatus
       : undefined;
-  const reason =
+  const reason = (
     isAxiosError(err) && err.response
       ? (connectErrorText(err.response.data) ?? `HTTP ${status}`)
       : err instanceof Error
         ? err.message
-        : String(err);
+        : String(err)
+  ).replace(/\.$/, "");
   const prefix = `The content deployed, but Publisher could not set the vanity URL (${reason}). `;
   switch (status) {
     case 400:

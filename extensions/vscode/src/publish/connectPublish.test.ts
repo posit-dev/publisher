@@ -930,13 +930,13 @@ describe("connectPublish", () => {
       });
       const opts = makeOptions({ config, onProgress });
       vi.mocked(opts.api.setVanityURL).mockRejectedValue(
-        axiosError(status, { code: 0, error: "connect reason" }),
+        axiosError(status, { code: 0, error: "connect reason." }),
       );
 
       const result = await connectPublish(opts);
 
       expect(result.warning).toContain("The content deployed");
-      expect(result.warning).toContain("connect reason");
+      expect(result.warning).toContain("(connect reason)");
       expect(result.warning).toContain(advice);
       expect(failureEvent(onProgress)).toBeUndefined();
       const vanityEvents = onProgress.mock.calls
