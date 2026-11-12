@@ -94,7 +94,7 @@ const RestoringEnvironmentLabel = "Restoring Environment";
 
 // Factory function to create fresh stage objects on each call.
 // This prevents event accumulation across deployments.
-const createStagesMap = (): Map<string, LogStage> =>
+export const createStagesMap = (): Map<string, LogStage> =>
   new Map([
     [
       "publish/getRPackageDescriptions",
@@ -165,6 +165,12 @@ const createStagesMap = (): Map<string, LogStage> =>
         "Validating Deployment Record",
         [ProductType.CONNECT],
       ),
+    ],
+    [
+      "publish/setVanityURL",
+      createLogStage("Set Vanity URL", "Setting Vanity URL", [
+        ProductType.CONNECT,
+      ]),
     ],
   ]);
 

@@ -111,6 +111,12 @@
           "additionalProperties": false,
           "description": "Setting specific to Posit Connect deployments.",
           "properties": {
+            "vanity_url": {
+              "type": "string",
+              "pattern": "^/(?!__)([A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+/?$",
+              "description": "The custom path for this content on the Connect server. For example, '/my-app/' makes the content available at https://connect.example.com/my-app/. Start the path with a slash. Use letters, numbers, hyphens, underscores, and slashes. Publisher sets this path after each successful deployment, and replaces a path that was changed in the Connect dashboard. If you remove this setting, the content keeps its current vanity URL.",
+              "examples": ["/my-app/"]
+            },
             "runtime": {},
             "kubernetes": {
               "type": "object",

@@ -1,6 +1,7 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
 export type ConnectConfig = {
+  vanityUrl?: string;
   access?: ConnectAccess;
   runtime?: ConnectRuntime;
   kubernetes?: ConnectKubernetes;

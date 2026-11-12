@@ -10,6 +10,8 @@ export const Method = {
   UpdateDeployment: "UpdateDeployment",
   GetEnvVars: "GetEnvVars",
   SetEnvVars: "SetEnvVars",
+  GetVanityURL: "GetVanityURL",
+  SetVanityURL: "SetVanityURL",
   UploadBundle: "UploadBundle",
   LatestBundleID: "LatestBundleID",
   DownloadBundle: "DownloadBundle",

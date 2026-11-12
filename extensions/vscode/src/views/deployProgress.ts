@@ -57,6 +57,7 @@ const stepLabels: Record<AnyPublishStep, string> = {
   uploadBundle: "Uploading bundle…",
   updateContent: "Updating content settings…",
   setEnvVars: "Setting environment variables…",
+  setVanityURL: "Setting vanity URL…",
   deployBundle: "Deploying bundle…",
   waitForTask: "Waiting for server…",
   validateDeployment: "Validating deployment…",
@@ -68,7 +69,7 @@ const stepLabels: Record<AnyPublishStep, string> = {
 };
 
 // Maps orchestrator steps to SSE event path prefixes.
-const stepToEventPrefix = {
+export const stepToEventPrefix = {
   // Standard Connect steps
   // Creates a tree node even for Python-only deploys.
   // TODO: Consider suppressing the tree node for non-R deploys, or renaming
@@ -87,6 +88,7 @@ const stepToEventPrefix = {
   // redeploy content updates.
   updateContent: "publish/createDeployment",
   setEnvVars: "publish/setEnvVars",
+  setVanityURL: "publish/setVanityURL",
   deployBundle: "publish/deployBundle",
   waitForTask: "publish/restoreEnv",
   validateDeployment: "publish/validateDeployment",

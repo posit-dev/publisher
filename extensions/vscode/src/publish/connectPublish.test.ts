@@ -411,6 +411,8 @@ function makeMockApi(): ConnectAPI {
     waitForTask: vi.fn().mockResolvedValue(TEST_TASK),
     validateDeployment: vi.fn().mockResolvedValue(undefined),
     setEnvVars: vi.fn().mockResolvedValue(undefined),
+    getVanityURL: vi.fn().mockResolvedValue(undefined),
+    setVanityURL: vi.fn().mockResolvedValue(undefined),
     getEnvVars: vi.fn(),
     contentDetails: vi.fn().mockResolvedValue({ data: TEST_CONTENT }),
     getCurrentUser: vi.fn(),
@@ -455,6 +457,30 @@ function progressSteps(
     const evt = args[0] as PublishEvent;
     return { step: evt.step, status: evt.status };
   });
+}
+
+function failureEvent(
+  onProgress: ReturnType<typeof vi.fn>,
+): PublishEvent | undefined {
+  return onProgress.mock.calls
+    .map((args: unknown[]) => args[0] as PublishEvent)
+    .find((e) => e.status === "failure");
+}
+
+function axiosError(status: number, data: unknown): AxiosError {
+  return new AxiosError(
+    `Request failed with status code ${status}`,
+    "ERR_BAD_REQUEST",
+    undefined,
+    undefined,
+    {
+      status,
+      statusText: "",
+      data,
+      headers: {},
+      config: { headers: new AxiosHeaders() },
+    },
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -809,6 +835,162 @@ describe("connectPublish", () => {
     const steps = progressSteps(onProgress);
     expect(steps.find((s) => s.step === "setEnvVars")).toBeUndefined();
     expect(opts.api.setEnvVars).not.toHaveBeenCalled();
+  });
+
+  test("vanity URL step runs last, after validation", async () => {
+    const onProgress = vi.fn();
+    const config = makeConfig({
+      validate: true,
+      connect: { vanityUrl: "/my-app/" },
+    });
+    const opts = makeOptions({ config, onProgress });
+
+    await connectPublish(opts);
+
+    expect(opts.api.setVanityURL).toHaveBeenCalledWith(
+      expect.anything(),
+      "/my-app/",
+      undefined, // signal
+    );
+    const steps = progressSteps(onProgress).map((s) => s.step);
+    expect(steps.indexOf("setVanityURL")).toBeGreaterThan(
+      steps.lastIndexOf("validateDeployment"),
+    );
+  });
+
+  test("vanity URL step skipped when vanity_url is not set", async () => {
+    const opts = makeOptions();
+
+    await connectPublish(opts);
+
+    expect(opts.api.getVanityURL).not.toHaveBeenCalled();
+    expect(opts.api.setVanityURL).not.toHaveBeenCalled();
+  });
+
+  test("vanity URL is sent with a leading and a trailing slash", async () => {
+    const config = makeConfig({ connect: { vanityUrl: "/my-app" } });
+    const opts = makeOptions({ config });
+
+    await connectPublish(opts);
+
+    expect(opts.api.setVanityURL).toHaveBeenCalledWith(
+      expect.anything(),
+      "/my-app/",
+      undefined, // signal
+    );
+  });
+
+  test.each(["/my-app/", "/my-app", "my-app/"])(
+    "vanity URL is not re-sent when Connect already has it (%s)",
+    async (vanityUrl) => {
+      const onProgress = vi.fn();
+      const config = makeConfig({ connect: { vanityUrl } });
+      const opts = makeOptions({ config, onProgress });
+      (opts.api.getVanityURL as ReturnType<typeof vi.fn>).mockResolvedValue(
+        "/my-app/",
+      );
+
+      await connectPublish(opts);
+
+      expect(opts.api.setVanityURL).not.toHaveBeenCalled();
+      const statuses = progressSteps(onProgress)
+        .filter((s) => s.step === "setVanityURL")
+        .map((s) => s.status);
+      expect(statuses).toEqual(["start", "log", "success"]);
+    },
+  );
+
+  test("vanity URL is sent when Connect has a different path", async () => {
+    const config = makeConfig({ connect: { vanityUrl: "/new/" } });
+    const opts = makeOptions({ config });
+    (opts.api.getVanityURL as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "/old/",
+    );
+
+    await connectPublish(opts);
+
+    expect(opts.api.setVanityURL).toHaveBeenCalledWith(
+      expect.anything(),
+      "/new/",
+      undefined, // signal
+    );
+  });
+
+  test.each([
+    [
+      400,
+      "vanity path is prohibited",
+      "vanityURLNotAvailableErr",
+      "Change vanity_url",
+    ],
+    [
+      409,
+      "vanity path is already in use",
+      "vanityURLNotAvailableErr",
+      "Change vanity_url",
+    ],
+    [403, "you do not have permission", "permissionErr", "administrator"],
+    [404, "not found", "unknown", "does not support vanity URLs"],
+  ])(
+    "vanity URL rejected with %i fails after the content deployed",
+    async (status, error, errCode, advice) => {
+      const onProgress = vi.fn();
+      const config = makeConfig({
+        validate: true,
+        connect: { vanityUrl: "/taken/" },
+      });
+      const opts = makeOptions({ config, onProgress });
+      (opts.api.setVanityURL as ReturnType<typeof vi.fn>).mockRejectedValue(
+        axiosError(status, { code: 0, error }),
+      );
+
+      await expect(connectPublish(opts)).rejects.toThrow();
+
+      const failure = failureEvent(onProgress);
+      expect(failure?.step).toBe("setVanityURL");
+      expect(failure?.errCode).toBe(errCode);
+      expect(failure?.message).toContain("The content deployed");
+      expect(failure?.message).toContain(error);
+      expect(failure?.message).toContain(advice);
+      expect(opts.api.deployBundle).toHaveBeenCalled();
+      expect(opts.api.validateDeployment).toHaveBeenCalled();
+      const tomlContent = mockWriteFile.mock.calls.at(-1)![1] as string;
+      expect(tomlContent).toContain(errCode);
+      expect(tomlContent).toContain("could not set the vanity URL");
+    },
+  );
+
+  test("vanity URL server error (500) still says the content deployed", async () => {
+    const onProgress = vi.fn();
+    const config = makeConfig({ connect: { vanityUrl: "/my-app/" } });
+    const opts = makeOptions({ config, onProgress });
+    vi.mocked(opts.api.setVanityURL).mockRejectedValue(
+      axiosError(500, { code: 0, error: "internal error" }),
+    );
+
+    await expect(connectPublish(opts)).rejects.toThrow();
+
+    const failure = failureEvent(onProgress);
+    expect(failure?.step).toBe("setVanityURL");
+    expect(failure?.errCode).toBe("unknown");
+    expect(failure?.message).toContain("The content deployed");
+    expect(failure?.message).toContain("internal error");
+  });
+
+  test("vanity URL network error still says the content deployed", async () => {
+    const onProgress = vi.fn();
+    const config = makeConfig({ connect: { vanityUrl: "/my-app/" } });
+    const opts = makeOptions({ config, onProgress });
+    vi.mocked(opts.api.getVanityURL).mockRejectedValue(
+      new AxiosError("getaddrinfo ENOTFOUND", "ENOTFOUND"),
+    );
+
+    await expect(connectPublish(opts)).rejects.toThrow();
+
+    const failure = failureEvent(onProgress);
+    expect(failure?.step).toBe("setVanityURL");
+    expect(failure?.errCode).toBe("connectionFailed");
+    expect(failure?.message).toContain("The content deployed");
   });
 
   test("validate step included when config.validate is true", async () => {

@@ -458,6 +458,34 @@ export class ConnectAPI {
   }
 
   /**
+   * Retrieves the vanity URL path of a content item.
+   * Returns undefined when the content has no vanity URL (Connect sends 404).
+   */
+  async getVanityURL(
+    contentId: ContentID,
+    signal?: AbortSignal,
+  ): Promise<string | undefined> {
+    const { status, data } = await this.client.get<{ path?: string }>(
+      `/__api__/v1/content/${contentId}/vanity`,
+      { signal, validateStatus: (s: number) => s < 300 || s === 404 },
+    );
+    return status === 404 ? undefined : data.path;
+  }
+
+  /** Sets the vanity URL path (for example, "/my-app/") of a content item. */
+  async setVanityURL(
+    contentId: ContentID,
+    path: string,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    await this.client.put(
+      `/__api__/v1/content/${contentId}/vanity`,
+      { path },
+      { signal },
+    );
+  }
+
+  /**
    * Uploads a bundle archive (gzip) for a content item.
    *
    * The body is streamed from the staged bundle file so uploads of arbitrary

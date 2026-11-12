@@ -761,6 +761,37 @@ export async function connectPublish({
       onProgress({ step: "validateDeployment", status: "success" });
     }
 
+    await throwIfCanceled();
+
+    // Step 11: Set the vanity URL (if any). Last, so a failed deploy never
+    // changes the URL and a rejected path never skips validation.
+    if (config.connect?.vanityUrl) {
+      const vanityPath = normalizeVanityPath(config.connect.vanityUrl);
+      lastStep = "setVanityURL";
+      onProgress({ step: "setVanityURL", status: "start" });
+      // Skip the write when unchanged, so a user without vanity permission
+      // can still redeploy.
+      const currentVanity = await api.getVanityURL(
+        ContentID(contentId),
+        signal,
+      );
+      const alreadySet =
+        currentVanity !== undefined &&
+        normalizeVanityPath(currentVanity) === vanityPath;
+      onProgress({
+        step: "setVanityURL",
+        status: "log",
+        message: alreadySet
+          ? "Vanity URL is already set"
+          : "Setting vanity URL",
+        data: { path: vanityPath },
+      });
+      if (!alreadySet) {
+        await api.setVanityURL(ContentID(contentId), vanityPath, signal);
+      }
+      onProgress({ step: "setVanityURL", status: "success" });
+    }
+
     // Write completed record (deployedAt is set by writePublishRecord)
     await writePublishRecord(deploymentPath, record);
 
@@ -844,6 +875,15 @@ export async function connectPublish({
 // Error classification
 // ---------------------------------------------------------------------------
 
+function connectErrorText(data: unknown): string | undefined {
+  return typeof data === "object" &&
+    data !== null &&
+    "error" in data &&
+    typeof data.error === "string"
+    ? data.error
+    : undefined;
+}
+
 /**
  * Maps a caught error to a deployment record error code and user-facing message.
  */
@@ -871,6 +911,46 @@ function classifyDeploymentError(
       message:
         "Certificate verification failed. " +
         "Check the server's TLS certificate or disable verification.",
+    };
+  }
+
+  // Vanity URL step: the bundle is already live, so every message says so.
+  if (lastStep === "setVanityURL" && isAxiosError(err)) {
+    const status = err.response?.status;
+    const reason = err.response
+      ? (connectErrorText(err.response.data) ?? `HTTP ${status}`)
+      : "the server did not respond";
+    const prefix = `The content deployed, but Publisher could not set the vanity URL (${reason}). `;
+    if (status === 400 || status === 409) {
+      return {
+        code: "vanityURLNotAvailableErr",
+        message: prefix + "Change vanity_url in the configuration file.",
+      };
+    }
+    if (status === 403) {
+      return {
+        code: "permissionErr",
+        message:
+          prefix +
+          "You do not have permission to set vanity URLs on this server. " +
+          "Ask a Connect administrator to set it.",
+      };
+    }
+    if (status === 404) {
+      return {
+        code: "unknown",
+        message:
+          prefix +
+          "This Connect server does not support vanity URLs through its API.",
+      };
+    }
+    return {
+      code: !err.response
+        ? "connectionFailed"
+        : status === 401
+          ? "authFailedErr"
+          : "unknown",
+      message: prefix + "Deploy again to set the vanity URL.",
     };
   }
 
@@ -1205,6 +1285,10 @@ function checkMinMax(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function normalizeVanityPath(p: string): string {
+  return `/${p.replace(/^\/+|\/+$/g, "")}/`;
+}
 
 function logsUrlFrom(dashboardUrl: string): string {
   return dashboardUrl.replace(/\/+$/, "") + "/logs";

@@ -114,6 +114,18 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         );
         return undefined;
 
+      case Method.GetVanityURL:
+        return {
+          path: await c.getVanityURL(ContentID(params.contentId as string)),
+        };
+
+      case Method.SetVanityURL:
+        await c.setVanityURL(
+          ContentID(params.contentId as string),
+          params.path as string,
+        );
+        return undefined;
+
       case Method.UploadBundle: {
         const bundleData = params.bundleData as Uint8Array;
         const checksum = crypto

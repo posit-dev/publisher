@@ -101,6 +101,32 @@ describe("schema validates Node.js configs", () => {
   });
 });
 
+describe("schema validates connect.vanity_url", () => {
+  it.each(["/my-app/", "/my-app", "/sales/north/", "/a_b-c1"])(
+    "accepts %s",
+    (vanityUrl) => {
+      const data = baseConfig("connect");
+      setNested(data, ["connect"], "vanity_url", vanityUrl);
+      expectValid(data);
+    },
+  );
+
+  it.each(["/", "", "my-app", "/a//b/", "/my app/", "/__api__/", "/app!/"])(
+    "rejects %s",
+    (vanityUrl) => {
+      const data = baseConfig("connect");
+      setNested(data, ["connect"], "vanity_url", vanityUrl);
+      expectInvalid(data);
+    },
+  );
+
+  it("rejects vanity_url for Connect Cloud", () => {
+    const data = baseConfig("connect_cloud");
+    setNested(data, ["connect"], "vanity_url", "/my-app/");
+    expectInvalid(data);
+  });
+});
+
 describe("schema rejects unknown property at root", () => {
   it("rejects unknown root property", () => {
     const data = baseConfig("connect");

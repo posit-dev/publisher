@@ -25,7 +25,7 @@ The mock exposes control endpoints for tests:
 
 ## What's tested
 
-All 15 entries in the `Method` constant have corresponding test files, mock routes, and fixtures.
+All 17 entries in the `Method` constant have corresponding test files, mock routes, and fixtures.
 
 | Method               | Connect Path                                        |
 | -------------------- | --------------------------------------------------- |
@@ -36,6 +36,8 @@ All 15 entries in the `Method` constant have corresponding test files, mock rout
 | `UpdateDeployment`   | `PATCH /__api__/v1/content/:id`                     |
 | `GetEnvVars`         | `GET /__api__/v1/content/:id/environment`           |
 | `SetEnvVars`         | `PATCH /__api__/v1/content/:id/environment`         |
+| `GetVanityURL`       | `GET /__api__/v1/content/:id/vanity`                |
+| `SetVanityURL`       | `PUT /__api__/v1/content/:id/vanity`                |
 | `UploadBundle`       | `POST /__api__/v1/content/:id/bundles`              |
 | `DeployBundle`       | `POST /__api__/v1/content/:id/deploy`               |
 | `WaitForTask`        | `GET /__api__/v1/tasks/:id?first=N`                 |

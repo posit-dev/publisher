@@ -50,6 +50,9 @@ guid = "8b4fde3e-f995-4894-bc02-ae47538262ff"
 name = "Data Science Team"
 permissions = "editor"
 
+[connect]
+vanity_url = "/my-app/"
+
 [connect.access]
 run_as = "rstudio-connect"
 run_as_current_user = false

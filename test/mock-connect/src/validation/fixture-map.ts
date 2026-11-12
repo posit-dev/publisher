@@ -109,6 +109,22 @@ export const fixtureMappings: FixtureMapping[] = [
     description: "GET /content/{guid}/environment — environment variable names",
   },
 
+  // Vanity URL endpoint
+  {
+    fixture: "vanity.json",
+    path: "/v1/content/{guid}/vanity",
+    method: "get",
+    status: 200,
+    description: "GET /content/{guid}/vanity — current vanity path",
+  },
+  {
+    fixture: "vanity.json",
+    path: "/v1/content/{guid}/vanity",
+    method: "put",
+    status: 200,
+    description: "PUT /content/{guid}/vanity — set vanity path",
+  },
+
   // Server settings (documented endpoints only)
   {
     fixture: "server-settings-python.json",

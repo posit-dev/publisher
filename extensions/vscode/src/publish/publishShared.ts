@@ -62,6 +62,7 @@ export type PublishStep =
   | "uploadBundle"
   | "updateContent"
   | "setEnvVars"
+  | "setVanityURL"
   | "deployBundle"
   | "waitForTask"
   | "validateDeployment";
