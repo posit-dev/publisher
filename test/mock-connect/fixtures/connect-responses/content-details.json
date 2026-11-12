@@ -24,6 +24,7 @@
   "default_r_environment_management": null,
   "default_py_environment_management": null,
   "created_time": "2023-06-15T10:30:00Z",
+  "first_bundle_time": "2023-06-15T11:55:00Z",
   "last_deployed_time": "2023-06-15T12:00:00Z",
   "bundle_id": "101",
   "app_mode": "python-fastapi",
