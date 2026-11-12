@@ -62,6 +62,7 @@ export type PublishStep =
   | "uploadBundle"
   | "updateContent"
   | "setEnvVars"
+  | "setVanityURL"
   | "deployBundle"
   | "waitForTask"
   | "validateDeployment";
@@ -82,6 +83,8 @@ export type PublishResult = {
   directUrl: string;
   logsUrl: string;
   bundleId: string;
+  /** Set when the deploy succeeded but a final step (vanity URL) did not. */
+  warning?: string;
 };
 
 // ---------------------------------------------------------------------------

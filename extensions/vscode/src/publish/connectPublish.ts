@@ -6,6 +6,7 @@ import { isAxiosError } from "axios";
 
 import {
   ConnectAPI,
+  ConnectAPIError,
   ContentID,
   BundleID,
   TaskID,
@@ -761,6 +762,48 @@ export async function connectPublish({
       onProgress({ step: "validateDeployment", status: "success" });
     }
 
+    await throwIfCanceled();
+
+    // Step 11: Set the vanity URL (if any). Last, so a failed deploy never
+    // changes the URL. The content is live by now, so a failure here is a
+    // warning, not a failed deployment.
+    let warning: string | undefined;
+    if (config.connect?.vanityUrl) {
+      const vanityPath = normalizeVanityPath(config.connect.vanityUrl);
+      lastStep = "setVanityURL";
+      onProgress({ step: "setVanityURL", status: "start" });
+      try {
+        // Skip the write when unchanged, so a user without vanity permission
+        // can still redeploy.
+        const currentVanity = await api.getVanityURL(
+          ContentID(contentId),
+          signal,
+        );
+        const alreadySet =
+          currentVanity !== undefined &&
+          normalizeVanityPath(currentVanity) === vanityPath;
+        onProgress({
+          step: "setVanityURL",
+          status: "log",
+          message: alreadySet
+            ? "Vanity URL is already set"
+            : "Setting vanity URL",
+          data: { path: vanityPath },
+        });
+        if (!alreadySet) {
+          await api.setVanityURL(ContentID(contentId), vanityPath, signal);
+        }
+      } catch (err) {
+        if (signal?.aborted) {
+          throw err;
+        }
+        warning = vanityWarning(err);
+        logger.warn(warning);
+        onProgress({ step: "setVanityURL", status: "log", message: warning });
+      }
+      onProgress({ step: "setVanityURL", status: "success" });
+    }
+
     // Write completed record (deployedAt is set by writePublishRecord)
     await writePublishRecord(deploymentPath, record);
 
@@ -770,6 +813,7 @@ export async function connectPublish({
       directUrl: contentUrls.directUrl,
       logsUrl: contentUrls.logsUrl,
       bundleId: bundleDTO.id,
+      warning,
     };
   } catch (err) {
     // Cancellation is not an error — dismissedAt was already written by throwIfCanceled
@@ -843,6 +887,54 @@ export async function connectPublish({
 // ---------------------------------------------------------------------------
 // Error classification
 // ---------------------------------------------------------------------------
+
+function connectErrorText(data: unknown): string | undefined {
+  return typeof data === "object" &&
+    data !== null &&
+    "error" in data &&
+    typeof data.error === "string"
+    ? data.error
+    : undefined;
+}
+
+/** Builds the warning shown when the vanity URL step fails. */
+function vanityWarning(err: unknown): string {
+  const status = isAxiosError(err)
+    ? err.response?.status
+    : err instanceof ConnectAPIError
+      ? err.httpStatus
+      : undefined;
+  const reason = (
+    isAxiosError(err) && err.response
+      ? (connectErrorText(err.response.data) ?? `HTTP ${status}`)
+      : err instanceof Error
+        ? err.message
+        : String(err)
+  ).replace(/\.$/, "");
+  const prefix = `The content deployed, but Publisher could not set the vanity URL (${reason}). `;
+  switch (status) {
+    case 400:
+    case 409:
+      return prefix + "Change vanity_url in the configuration file.";
+    case 401:
+      return prefix + "Check your credentials.";
+    case 403:
+      return (
+        prefix +
+        "You do not have permission to set vanity URLs on this server. " +
+        "Ask a Connect administrator to set it."
+      );
+    case 404:
+      return (
+        prefix +
+        "This Connect server does not support vanity URLs through its API."
+      );
+    default:
+      return (
+        prefix + "Deploy again, or set the vanity URL in the Connect dashboard."
+      );
+  }
+}
 
 /**
  * Maps a caught error to a deployment record error code and user-facing message.
@@ -1205,6 +1297,12 @@ function checkMinMax(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+// The schema requires a leading slash. Connect stores the path with a
+// trailing slash and keeps its case, so only the trailing slash is added.
+function normalizeVanityPath(p: string): string {
+  return p.endsWith("/") ? p : `${p}/`;
+}
 
 function logsUrlFrom(dashboardUrl: string): string {
   return dashboardUrl.replace(/\/+$/, "") + "/logs";

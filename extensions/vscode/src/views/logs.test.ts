@@ -3,7 +3,12 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { EventStreamMessage, ProductType } from "src/api";
 import { EventStream, UnregisterCallback } from "src/events";
-import { LogsTreeDataProvider, LogsTreeStageItem } from "./logs";
+import {
+  createStagesMap,
+  LogsTreeDataProvider,
+  LogsTreeStageItem,
+} from "./logs";
+import { stepToEventPrefix } from "./deployProgress";
 import { ExtensionContext, TreeItemCollapsibleState, window } from "vscode";
 
 // Mock vscode module
@@ -81,6 +86,9 @@ vi.mock("vscode", () => {
 });
 
 // Mock the extension settings
+// deployProgress.ts (imported for stepToEventPrefix) creates a logger on load.
+vi.mock("src/logging");
+
 vi.mock("src/extension", () => ({
   extensionSettings: {
     autoOpenLogsOnFailure: vi.fn().mockReturnValue(false),
@@ -854,4 +862,22 @@ describe("LogsTreeDataProvider", () => {
       expect(mockTreeView.reveal).not.toHaveBeenCalled();
     });
   });
+});
+
+describe("log stages cover every publish step", () => {
+  // Steps that deliberately have no node in the logs tree.
+  const noTreeNode = new Set([
+    "publish/createNewDeployment", // raw log only, see stepToEventPrefix
+    "publish/setEnvVars", // has never had a stage
+  ]);
+
+  test.each(Object.entries(stepToEventPrefix))(
+    "%s (%s) has a log stage",
+    (_step, prefix) => {
+      expect(
+        createStagesMap().has(prefix) || noTreeNode.has(prefix),
+        `No log stage for "${prefix}". Add it to createStagesMap in logs.ts.`,
+      ).toBe(true);
+    },
+  );
 });

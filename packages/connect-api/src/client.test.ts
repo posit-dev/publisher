@@ -117,6 +117,11 @@ vi.mock("axios", () => {
             data?: unknown,
             config?: Record<string, unknown>,
           ) => request({ method: "PATCH", url, data, ...config }),
+          put: (
+            url: string,
+            data?: unknown,
+            config?: Record<string, unknown>,
+          ) => request({ method: "PUT", url, data, ...config }),
           delete: (url: string, config?: Record<string, unknown>) =>
             request({ method: "DELETE", url, ...config }),
           interceptors: {
@@ -921,6 +926,67 @@ describe("setEnvVars", () => {
     await expect(
       client.setEnvVars(contentId, { KEY: "val" }),
     ).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getVanityURL
+// ---------------------------------------------------------------------------
+
+describe("getVanityURL", () => {
+  const contentId = ContentID("content-123");
+
+  it("returns the path of the vanity URL", async () => {
+    mockRequest.mockResolvedValue(
+      jsonResponse({ content_guid: contentId, path: "/my-app/" }),
+    );
+
+    const client = createClient();
+    expect(await client.getVanityURL(contentId)).toBe("/my-app/");
+
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.url).toBe(`/__api__/v1/content/${contentId}/vanity`);
+    expect(call.method).toBe("GET");
+  });
+
+  it("returns undefined on 404", async () => {
+    mockRequest.mockResolvedValue(
+      jsonResponse(
+        { code: 4, error: "The requested object does not exist." },
+        404,
+        "Not Found",
+      ),
+    );
+
+    const client = createClient();
+    expect(await client.getVanityURL(contentId)).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// setVanityURL
+// ---------------------------------------------------------------------------
+
+describe("setVanityURL", () => {
+  const contentId = ContentID("content-123");
+
+  it("PUTs the path to the vanity endpoint", async () => {
+    mockRequest.mockResolvedValue(jsonResponse({}));
+
+    const client = createClient();
+    await client.setVanityURL(contentId, "/my-app/");
+
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.url).toBe(`/__api__/v1/content/${contentId}/vanity`);
+    expect(call.method).toBe("PUT");
+    expect(call.data).toEqual({ path: "/my-app/" });
+  });
+
+  it("throws on non-2xx", async () => {
+    mockRequest.mockResolvedValue(textResponse("conflict", 409, "Conflict"));
+
+    const client = createClient();
+    await expect(client.setVanityURL(contentId, "/taken/")).rejects.toThrow();
   });
 });
 

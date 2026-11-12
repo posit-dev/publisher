@@ -57,6 +57,7 @@ const stepLabels: Record<AnyPublishStep, string> = {
   uploadBundle: "Uploading bundle…",
   updateContent: "Updating content settings…",
   setEnvVars: "Setting environment variables…",
+  setVanityURL: "Setting vanity URL…",
   deployBundle: "Deploying bundle…",
   waitForTask: "Waiting for server…",
   validateDeployment: "Validating deployment…",
@@ -68,7 +69,7 @@ const stepLabels: Record<AnyPublishStep, string> = {
 };
 
 // Maps orchestrator steps to SSE event path prefixes.
-const stepToEventPrefix = {
+export const stepToEventPrefix = {
   // Standard Connect steps
   // Creates a tree node even for Python-only deploys.
   // TODO: Consider suppressing the tree node for non-R deploys, or renaming
@@ -87,6 +88,7 @@ const stepToEventPrefix = {
   // redeploy content updates.
   updateContent: "publish/createDeployment",
   setEnvVars: "publish/setEnvVars",
+  setVanityURL: "publish/setVanityURL",
   deployBundle: "publish/deployBundle",
   waitForTask: "publish/restoreEnv",
   validateDeployment: "publish/validateDeployment",
@@ -367,7 +369,7 @@ export async function runDeployWithProgress(
 
         // Show the "View" prompt without awaiting — let the progress
         // notification close immediately.
-        showSuccessNotification(result.dashboardUrl);
+        showSuccessNotification(result.dashboardUrl, result.warning);
 
         return { status: "success", result } as const;
       } catch (err) {
@@ -481,12 +483,17 @@ function packageEventFromLogLine(
   return undefined;
 }
 
-async function showSuccessNotification(dashboardUrl: string): Promise<void> {
+async function showSuccessNotification(
+  dashboardUrl: string,
+  warning?: string,
+): Promise<void> {
   const visitOption = "View";
-  const selection = await window.showInformationMessage(
-    "Deployment was successful",
-    visitOption,
-  );
+  const selection = warning
+    ? await window.showWarningMessage(warning, visitOption)
+    : await window.showInformationMessage(
+        "Deployment was successful",
+        visitOption,
+      );
   if (selection === visitOption && dashboardUrl) {
     const uri = Uri.parse(dashboardUrl, true);
     await env.openExternal(uri);

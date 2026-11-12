@@ -249,6 +249,26 @@ files = ["*.js", "package.json", "package-lock.json"]
 
 ## Connect-specific settings
 
+### vanity_url
+
+_Only valid when `product_type` is `connect`_
+
+The custom path for this content on the Connect server. For example, `vanity_url = "/my-app/"` makes the content available at `https://connect.example.com/my-app/`.
+
+```toml
+[connect]
+vanity_url = "/my-app/"
+```
+
+The path must start with a slash, and can contain only letters, numbers, hyphens, underscores, and slashes. Connect also rejects reserved paths, such as paths that start with `/connect`, `/content`, or `/__`, and paths that overlap another vanity URL. You must have permission to set vanity URLs on the server.
+
+Publisher sets the path at the end of each successful deployment:
+
+- If the content already has this vanity URL, Publisher does not change it.
+- If the vanity URL was changed in the Connect dashboard, Publisher replaces it with the value in this file.
+- If you remove this setting, the content keeps its current vanity URL. To remove the vanity URL, use the Connect dashboard.
+- If Connect rejects the path, the deployment still succeeds. Publisher shows a warning with the reason from Connect.
+
 ### Access settings
 
 _Only valid when `product_type` is `connect`_

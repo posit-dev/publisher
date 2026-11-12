@@ -120,6 +120,18 @@ export class MockConnectServer {
       ],
       ["PATCH", /^\/__api__\/v1\/content\/[^/]+\/environment$/, 204, null],
       [
+        "GET",
+        /^\/__api__\/v1\/content\/[^/]+\/vanity$/,
+        200,
+        loadFixture("vanity.json"),
+      ],
+      [
+        "PUT",
+        /^\/__api__\/v1\/content\/[^/]+\/vanity$/,
+        200,
+        loadFixture("vanity.json"),
+      ],
+      [
         "POST",
         /^\/__api__\/v1\/content\/[^/]+\/deploy$/,
         200,

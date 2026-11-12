@@ -31,6 +31,9 @@ version = "1.4"
 [environment]
 API_URL = "https://example.com/api"
 
+[connect]
+vanity_url = "/my-app/"
+
 [connect.access]
 run_as = "rstudio-connect"
 run_as_current_user = false
