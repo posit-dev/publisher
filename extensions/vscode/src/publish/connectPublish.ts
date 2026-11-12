@@ -6,6 +6,7 @@ import { isAxiosError } from "axios";
 
 import {
   ConnectAPI,
+  ConnectAPIError,
   ContentID,
   BundleID,
   TaskID,
@@ -764,30 +765,41 @@ export async function connectPublish({
     await throwIfCanceled();
 
     // Step 11: Set the vanity URL (if any). Last, so a failed deploy never
-    // changes the URL and a rejected path never skips validation.
+    // changes the URL. The content is live by now, so a failure here is a
+    // warning, not a failed deployment.
+    let warning: string | undefined;
     if (config.connect?.vanityUrl) {
       const vanityPath = normalizeVanityPath(config.connect.vanityUrl);
       lastStep = "setVanityURL";
       onProgress({ step: "setVanityURL", status: "start" });
-      // Skip the write when unchanged, so a user without vanity permission
-      // can still redeploy.
-      const currentVanity = await api.getVanityURL(
-        ContentID(contentId),
-        signal,
-      );
-      const alreadySet =
-        currentVanity !== undefined &&
-        normalizeVanityPath(currentVanity) === vanityPath;
-      onProgress({
-        step: "setVanityURL",
-        status: "log",
-        message: alreadySet
-          ? "Vanity URL is already set"
-          : "Setting vanity URL",
-        data: { path: vanityPath },
-      });
-      if (!alreadySet) {
-        await api.setVanityURL(ContentID(contentId), vanityPath, signal);
+      try {
+        // Skip the write when unchanged, so a user without vanity permission
+        // can still redeploy.
+        const currentVanity = await api.getVanityURL(
+          ContentID(contentId),
+          signal,
+        );
+        const alreadySet =
+          currentVanity !== undefined &&
+          normalizeVanityPath(currentVanity) === vanityPath;
+        onProgress({
+          step: "setVanityURL",
+          status: "log",
+          message: alreadySet
+            ? "Vanity URL is already set"
+            : "Setting vanity URL",
+          data: { path: vanityPath },
+        });
+        if (!alreadySet) {
+          await api.setVanityURL(ContentID(contentId), vanityPath, signal);
+        }
+      } catch (err) {
+        if (signal?.aborted) {
+          throw err;
+        }
+        warning = vanityWarning(err);
+        logger.warn(warning);
+        onProgress({ step: "setVanityURL", status: "log", message: warning });
       }
       onProgress({ step: "setVanityURL", status: "success" });
     }
@@ -801,6 +813,7 @@ export async function connectPublish({
       directUrl: contentUrls.directUrl,
       logsUrl: contentUrls.logsUrl,
       bundleId: bundleDTO.id,
+      warning,
     };
   } catch (err) {
     // Cancellation is not an error — dismissedAt was already written by throwIfCanceled
@@ -884,6 +897,44 @@ function connectErrorText(data: unknown): string | undefined {
     : undefined;
 }
 
+/** Builds the warning shown when the vanity URL step fails. */
+function vanityWarning(err: unknown): string {
+  const status = isAxiosError(err)
+    ? err.response?.status
+    : err instanceof ConnectAPIError
+      ? err.httpStatus
+      : undefined;
+  const reason =
+    isAxiosError(err) && err.response
+      ? (connectErrorText(err.response.data) ?? `HTTP ${status}`)
+      : err instanceof Error
+        ? err.message
+        : String(err);
+  const prefix = `The content deployed, but Publisher could not set the vanity URL (${reason}). `;
+  switch (status) {
+    case 400:
+    case 409:
+      return prefix + "Change vanity_url in the configuration file.";
+    case 401:
+      return prefix + "Check your credentials.";
+    case 403:
+      return (
+        prefix +
+        "You do not have permission to set vanity URLs on this server. " +
+        "Ask a Connect administrator to set it."
+      );
+    case 404:
+      return (
+        prefix +
+        "This Connect server does not support vanity URLs through its API."
+      );
+    default:
+      return (
+        prefix + "Deploy again, or set the vanity URL in the Connect dashboard."
+      );
+  }
+}
+
 /**
  * Maps a caught error to a deployment record error code and user-facing message.
  */
@@ -911,46 +962,6 @@ function classifyDeploymentError(
       message:
         "Certificate verification failed. " +
         "Check the server's TLS certificate or disable verification.",
-    };
-  }
-
-  // Vanity URL step: the bundle is already live, so every message says so.
-  if (lastStep === "setVanityURL" && isAxiosError(err)) {
-    const status = err.response?.status;
-    const reason = err.response
-      ? (connectErrorText(err.response.data) ?? `HTTP ${status}`)
-      : "the server did not respond";
-    const prefix = `The content deployed, but Publisher could not set the vanity URL (${reason}). `;
-    if (status === 400 || status === 409) {
-      return {
-        code: "vanityURLNotAvailableErr",
-        message: prefix + "Change vanity_url in the configuration file.",
-      };
-    }
-    if (status === 403) {
-      return {
-        code: "permissionErr",
-        message:
-          prefix +
-          "You do not have permission to set vanity URLs on this server. " +
-          "Ask a Connect administrator to set it.",
-      };
-    }
-    if (status === 404) {
-      return {
-        code: "unknown",
-        message:
-          prefix +
-          "This Connect server does not support vanity URLs through its API.",
-      };
-    }
-    return {
-      code: !err.response
-        ? "connectionFailed"
-        : status === 401
-          ? "authFailedErr"
-          : "unknown",
-      message: prefix + "Deploy again to set the vanity URL.",
     };
   }
 
@@ -1286,8 +1297,10 @@ function checkMinMax(
 // Helpers
 // ---------------------------------------------------------------------------
 
+// The schema requires a leading slash. Connect stores the path with a
+// trailing slash and keeps its case, so only the trailing slash is added.
 function normalizeVanityPath(p: string): string {
-  return `/${p.replace(/^\/+|\/+$/g, "")}/`;
+  return p.endsWith("/") ? p : `${p}/`;
 }
 
 function logsUrlFrom(dashboardUrl: string): string {

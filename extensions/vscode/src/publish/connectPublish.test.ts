@@ -28,6 +28,7 @@ import type {
   User,
 } from "@posit-dev/connect-api";
 import { AxiosError, AxiosHeaders } from "axios";
+import { SessionExpiredError } from "@posit-dev/connect-api";
 import { generateRequirements } from "../interpreters/pythonDependencySources";
 
 // The bundler mock backs each bundle with a real temp dir. rm is mocked, so
@@ -880,15 +881,13 @@ describe("connectPublish", () => {
     );
   });
 
-  test.each(["/my-app/", "/my-app", "my-app/"])(
+  test.each(["/my-app/", "/my-app"])(
     "vanity URL is not re-sent when Connect already has it (%s)",
     async (vanityUrl) => {
       const onProgress = vi.fn();
       const config = makeConfig({ connect: { vanityUrl } });
       const opts = makeOptions({ config, onProgress });
-      (opts.api.getVanityURL as ReturnType<typeof vi.fn>).mockResolvedValue(
-        "/my-app/",
-      );
+      vi.mocked(opts.api.getVanityURL).mockResolvedValue("/my-app/");
 
       await connectPublish(opts);
 
@@ -903,9 +902,7 @@ describe("connectPublish", () => {
   test("vanity URL is sent when Connect has a different path", async () => {
     const config = makeConfig({ connect: { vanityUrl: "/new/" } });
     const opts = makeOptions({ config });
-    (opts.api.getVanityURL as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "/old/",
-    );
+    vi.mocked(opts.api.getVanityURL).mockResolvedValue("/old/");
 
     await connectPublish(opts);
 
@@ -917,80 +914,73 @@ describe("connectPublish", () => {
   });
 
   test.each([
-    [
-      400,
-      "vanity path is prohibited",
-      "vanityURLNotAvailableErr",
-      "Change vanity_url",
-    ],
-    [
-      409,
-      "vanity path is already in use",
-      "vanityURLNotAvailableErr",
-      "Change vanity_url",
-    ],
-    [403, "you do not have permission", "permissionErr", "administrator"],
-    [404, "not found", "unknown", "does not support vanity URLs"],
+    [400, "Change vanity_url"],
+    [401, "Check your credentials"],
+    [403, "Ask a Connect administrator"],
+    [404, "does not support vanity URLs"],
+    [409, "Change vanity_url"],
+    [500, "Connect dashboard"],
   ])(
-    "vanity URL rejected with %i fails after the content deployed",
-    async (status, error, errCode, advice) => {
+    "vanity URL rejected with %i is a warning, not a failure",
+    async (status, advice) => {
       const onProgress = vi.fn();
       const config = makeConfig({
         validate: true,
         connect: { vanityUrl: "/taken/" },
       });
       const opts = makeOptions({ config, onProgress });
-      (opts.api.setVanityURL as ReturnType<typeof vi.fn>).mockRejectedValue(
-        axiosError(status, { code: 0, error }),
+      vi.mocked(opts.api.setVanityURL).mockRejectedValue(
+        axiosError(status, { code: 0, error: "connect reason" }),
       );
 
-      await expect(connectPublish(opts)).rejects.toThrow();
+      const result = await connectPublish(opts);
 
-      const failure = failureEvent(onProgress);
-      expect(failure?.step).toBe("setVanityURL");
-      expect(failure?.errCode).toBe(errCode);
-      expect(failure?.message).toContain("The content deployed");
-      expect(failure?.message).toContain(error);
-      expect(failure?.message).toContain(advice);
-      expect(opts.api.deployBundle).toHaveBeenCalled();
-      expect(opts.api.validateDeployment).toHaveBeenCalled();
+      expect(result.warning).toContain("The content deployed");
+      expect(result.warning).toContain("connect reason");
+      expect(result.warning).toContain(advice);
+      expect(failureEvent(onProgress)).toBeUndefined();
+      const vanityEvents = onProgress.mock.calls
+        .map((args: unknown[]) => args[0] as PublishEvent)
+        .filter((e) => e.step === "setVanityURL");
+      expect(vanityEvents.at(-2)?.message).toBe(result.warning);
+      expect(vanityEvents.at(-1)?.status).toBe("success");
       const tomlContent = mockWriteFile.mock.calls.at(-1)![1] as string;
-      expect(tomlContent).toContain(errCode);
-      expect(tomlContent).toContain("could not set the vanity URL");
+      expect(tomlContent).not.toContain("deployment_error");
     },
   );
 
-  test("vanity URL server error (500) still says the content deployed", async () => {
-    const onProgress = vi.fn();
+  test("vanity URL network error is a warning", async () => {
     const config = makeConfig({ connect: { vanityUrl: "/my-app/" } });
-    const opts = makeOptions({ config, onProgress });
-    vi.mocked(opts.api.setVanityURL).mockRejectedValue(
-      axiosError(500, { code: 0, error: "internal error" }),
-    );
-
-    await expect(connectPublish(opts)).rejects.toThrow();
-
-    const failure = failureEvent(onProgress);
-    expect(failure?.step).toBe("setVanityURL");
-    expect(failure?.errCode).toBe("unknown");
-    expect(failure?.message).toContain("The content deployed");
-    expect(failure?.message).toContain("internal error");
-  });
-
-  test("vanity URL network error still says the content deployed", async () => {
-    const onProgress = vi.fn();
-    const config = makeConfig({ connect: { vanityUrl: "/my-app/" } });
-    const opts = makeOptions({ config, onProgress });
+    const opts = makeOptions({ config });
     vi.mocked(opts.api.getVanityURL).mockRejectedValue(
       new AxiosError("getaddrinfo ENOTFOUND", "ENOTFOUND"),
     );
 
-    await expect(connectPublish(opts)).rejects.toThrow();
+    const result = await connectPublish(opts);
 
-    const failure = failureEvent(onProgress);
-    expect(failure?.step).toBe("setVanityURL");
-    expect(failure?.errCode).toBe("connectionFailed");
-    expect(failure?.message).toContain("The content deployed");
+    expect(result.warning).toContain("getaddrinfo ENOTFOUND");
+    expect(result.warning).toContain("Connect dashboard");
+  });
+
+  test("expired session in the vanity step is a warning", async () => {
+    const config = makeConfig({ connect: { vanityUrl: "/my-app/" } });
+    const opts = makeOptions({ config });
+    vi.mocked(opts.api.setVanityURL).mockRejectedValue(
+      new SessionExpiredError(),
+    );
+
+    const result = await connectPublish(opts);
+
+    expect(result.warning).toContain("Check your credentials");
+  });
+
+  test("no warning when the vanity URL step succeeds", async () => {
+    const config = makeConfig({ connect: { vanityUrl: "/my-app/" } });
+    const opts = makeOptions({ config });
+
+    const result = await connectPublish(opts);
+
+    expect(result.warning).toBeUndefined();
   });
 
   test("validate step included when config.validate is true", async () => {

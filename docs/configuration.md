@@ -267,7 +267,7 @@ Publisher sets the path at the end of each successful deployment:
 - If the content already has this vanity URL, Publisher does not change it.
 - If the vanity URL was changed in the Connect dashboard, Publisher replaces it with the value in this file.
 - If you remove this setting, the content keeps its current vanity URL. To remove the vanity URL, use the Connect dashboard.
-- If Connect rejects the path, the content is still deployed, and Publisher shows the error from Connect.
+- If Connect rejects the path, the deployment still succeeds. Publisher shows a warning with the reason from Connect.
 
 ### Access settings
 

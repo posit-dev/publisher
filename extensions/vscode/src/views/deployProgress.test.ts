@@ -11,6 +11,7 @@ vi.mock("src/logging");
 const mockReport = vi.fn();
 const mockShowInformationMessage = vi.fn().mockResolvedValue(undefined);
 const mockShowErrorMessage = vi.fn();
+const mockShowWarningMessage = vi.fn().mockResolvedValue(undefined);
 const mockOpenExternal = vi.fn();
 
 let capturedCancellationHandler: (() => void) | undefined;
@@ -39,6 +40,7 @@ vi.mock("vscode", () => ({
     showInformationMessage: (...args: unknown[]) =>
       mockShowInformationMessage(...args),
     showErrorMessage: (...args: unknown[]) => mockShowErrorMessage(...args),
+    showWarningMessage: (...args: unknown[]) => mockShowWarningMessage(...args),
   },
 }));
 
@@ -202,6 +204,20 @@ describe("runDeployWithProgress", () => {
       );
       expect(mockOpenExternal).toHaveBeenCalled();
     });
+  });
+
+  it("shows a warning instead of the success message when the result has one", async () => {
+    run(() =>
+      Promise.resolve({ ...successResult, warning: "vanity URL not set" }),
+    );
+
+    await vi.waitFor(() => {
+      expect(mockShowWarningMessage).toHaveBeenCalledWith(
+        "vanity URL not set",
+        "View",
+      );
+    });
+    expect(mockShowInformationMessage).not.toHaveBeenCalled();
   });
 
   // --- Event stream injection tests ---

@@ -369,7 +369,7 @@ export async function runDeployWithProgress(
 
         // Show the "View" prompt without awaiting — let the progress
         // notification close immediately.
-        showSuccessNotification(result.dashboardUrl);
+        showSuccessNotification(result.dashboardUrl, result.warning);
 
         return { status: "success", result } as const;
       } catch (err) {
@@ -483,12 +483,17 @@ function packageEventFromLogLine(
   return undefined;
 }
 
-async function showSuccessNotification(dashboardUrl: string): Promise<void> {
+async function showSuccessNotification(
+  dashboardUrl: string,
+  warning?: string,
+): Promise<void> {
   const visitOption = "View";
-  const selection = await window.showInformationMessage(
-    "Deployment was successful",
-    visitOption,
-  );
+  const selection = warning
+    ? await window.showWarningMessage(warning, visitOption)
+    : await window.showInformationMessage(
+        "Deployment was successful",
+        visitOption,
+      );
   if (selection === visitOption && dashboardUrl) {
     const uri = Uri.parse(dashboardUrl, true);
     await env.openExternal(uri);

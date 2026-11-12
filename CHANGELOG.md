@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- You can now set a vanity URL for content that you deploy to Connect. Add `vanity_url = "/my-app/"` to the `[connect]` section of your configuration file, and Publisher sets this path after each successful deployment. If Connect rejects the path, Publisher shows Connect's reason, for example that the path is reserved or is already in use. (#4474)
+- You can now set a vanity URL for content that you deploy to Connect. Add `vanity_url = "/my-app/"` to the `[connect]` section of your configuration file, and Publisher sets this path after each successful deployment. If Connect rejects the path, the deployment still succeeds and Publisher shows a warning with Connect's reason, for example that the path is reserved or is already in use. (#4474)
 - You can now delete a deployment from the "..." menu in the Deployment section. After you confirm, Publisher deletes the content from the Connect or Connect Cloud server and removes the local deployment record. Its configuration file is deleted too, unless another deployment still uses it. (#2881)
 - You can now start a deployment from a configuration file. When a configuration file in `.posit/publish/` is open, the "Deploy with Posit Publisher" button appears in the editor title bar. Clicking it selects a deployment that uses that configuration or, if none exists yet, creates one. You only choose a credential; you don't choose an entrypoint or have to regenerate the configuration. This makes it easy to copy an existing configuration, tweak it, and deploy it separately. (#3428)
 
