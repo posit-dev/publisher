@@ -77,7 +77,9 @@ export class mockSecretStorage {
     return Promise.resolve(Array.from(this.storage.keys()));
   });
 
-  readonly onDidChange = vi.fn();
+  readonly onDidChange = vi.fn((_listener: (e: { key: string }) => void) => ({
+    dispose: vi.fn(),
+  }));
 }
 
 export class mockExtensionContext {

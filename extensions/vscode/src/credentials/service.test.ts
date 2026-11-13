@@ -14,6 +14,7 @@ import {
   CreateCredentialInput,
   connectAPIOptionsFromCredential,
   SNOWFLAKE_DESTROY_TIMEOUT_MS,
+  isAccessTokenExpiring,
 } from "./service";
 import {
   CredentialNotFoundError,
@@ -1523,6 +1524,105 @@ describe("CredentialsService OAuth", () => {
       expect(reloaded.oauthClientId).toBe("new-client");
     });
 
+    test("shares one refresh between concurrent callers", async () => {
+      const created = await service.create({
+        name: "OAuth Cred",
+        url: "https://connect.example.com",
+        serverType: ServerType.CONNECT,
+        oauthClientId: "client-abc",
+        accessToken: "at",
+        refreshToken: "rt",
+      });
+      oauthMocks.discoverOAuthMetadata.mockResolvedValue(metadata);
+      oauthMocks.refreshToken.mockResolvedValue({
+        access_token: "at2",
+        token_type: "Bearer",
+        refresh_token: "rt2",
+      });
+      const input = {
+        guid: created.guid,
+        url: created.url,
+        oauthClientId: created.oauthClientId,
+        refreshToken: created.refreshToken,
+      };
+
+      const tokens = await Promise.all([
+        service.refreshOAuthToken(input, false),
+        service.refreshOAuthToken(input, false),
+      ]);
+
+      expect(tokens).toEqual(["at2", "at2"]);
+      expect(oauthMocks.refreshToken).toHaveBeenCalledTimes(1);
+    });
+
+    test("uses the stored token when it was already refreshed elsewhere", async () => {
+      const created = await service.create({
+        name: "OAuth Cred",
+        url: "https://connect.example.com",
+        serverType: ServerType.CONNECT,
+        oauthClientId: "client-abc",
+        accessToken: "at",
+        refreshToken: "rt",
+      });
+      // Another window rotated the tokens after this caller read "rt".
+      await service.update(created.guid, {
+        accessToken: "at-other",
+        refreshToken: "rt-other",
+        tokenExpiresAt: new Date(Date.now() + 60 * 60_000).toISOString(),
+      });
+
+      const token = await service.refreshOAuthToken(
+        {
+          guid: created.guid,
+          url: created.url,
+          oauthClientId: created.oauthClientId,
+          refreshToken: "rt",
+        },
+        false,
+      );
+
+      expect(token).toBe("at-other");
+      expect(oauthMocks.refreshToken).not.toHaveBeenCalled();
+    });
+
+    test("refreshes with the stored refresh token when the caller's is stale", async () => {
+      const created = await service.create({
+        name: "OAuth Cred",
+        url: "https://connect.example.com",
+        serverType: ServerType.CONNECT,
+        oauthClientId: "client-abc",
+        accessToken: "at",
+        refreshToken: "rt",
+      });
+      await service.update(created.guid, {
+        accessToken: "at-other",
+        refreshToken: "rt-other",
+        tokenExpiresAt: new Date(Date.now() - 1000).toISOString(),
+      });
+      oauthMocks.discoverOAuthMetadata.mockResolvedValue(metadata);
+      oauthMocks.refreshToken.mockResolvedValue({
+        access_token: "at3",
+        token_type: "Bearer",
+        refresh_token: "rt3",
+      });
+
+      const token = await service.refreshOAuthToken(
+        {
+          guid: created.guid,
+          url: created.url,
+          oauthClientId: created.oauthClientId,
+          refreshToken: "rt",
+        },
+        false,
+      );
+
+      expect(token).toBe("at3");
+      expect(oauthMocks.refreshToken).toHaveBeenCalledWith(metadata, {
+        clientId: "client-abc",
+        refreshToken: "rt-other",
+      });
+    });
+
     test("throws when discovery fails", async () => {
       oauthMocks.discoverOAuthMetadata.mockResolvedValue(null);
       await expect(
@@ -1536,6 +1636,26 @@ describe("CredentialsService OAuth", () => {
           false,
         ),
       ).rejects.toThrow();
+    });
+  });
+
+  describe("isAccessTokenExpiring", () => {
+    const now = Date.parse("2026-01-01T00:00:00.000Z");
+
+    test("is true for expired tokens and tokens expiring within a minute", () => {
+      expect(isAccessTokenExpiring("2025-12-31T23:59:00.000Z", now)).toBe(true);
+      expect(isAccessTokenExpiring("2026-01-01T00:00:30.000Z", now)).toBe(true);
+    });
+
+    test("is false for tokens valid for longer", () => {
+      expect(isAccessTokenExpiring("2026-01-01T01:00:00.000Z", now)).toBe(
+        false,
+      );
+    });
+
+    test("is false for unknown expiries", () => {
+      expect(isAccessTokenExpiring("", now)).toBe(false);
+      expect(isAccessTokenExpiring("not a date", now)).toBe(false);
     });
   });
 });

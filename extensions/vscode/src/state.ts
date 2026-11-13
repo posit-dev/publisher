@@ -29,6 +29,7 @@ import { getInterpreterDefaults } from "src/interpreters";
 import { showProgress } from "src/utils/progress";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { CredentialsService } from "src/credentials/service";
+import { isCredentialKey } from "src/credentials/storage";
 import {
   loadConfiguration,
   loadAllConfigurationsRecursive,
@@ -109,6 +110,8 @@ export interface CredentialRefreshEvent {
   readonly oldCredentials: Credential[];
 }
 
+const SECRETS_REFRESH_DEBOUNCE_MS = 250;
+
 export class PublisherState implements Disposable {
   private readonly context: extensionContext;
   private credentialRefresh = new EventEmitter<CredentialRefreshEvent>();
@@ -120,12 +123,32 @@ export class PublisherState implements Disposable {
   credentials: Credential[] = [];
   readonly credentialsService: CredentialsService;
 
+  private secretsListener: Disposable;
+  private secretsRefreshTimer: ReturnType<typeof setTimeout> | undefined;
+
   constructor(context: extensionContext) {
     this.context = context;
     this.credentialsService = new CredentialsService(context.secrets);
+
+    // SecretStorage is shared by every window, so reload credentials when one
+    // changes: a credential may have been added or deleted, or its OAuth
+    // tokens rotated (refresh tokens are single-use), in another window.
+    // Debounced, since bulk operations (e.g. reset) touch many keys.
+    this.secretsListener = context.secrets.onDidChange((e) => {
+      if (!isCredentialKey(e.key)) {
+        return;
+      }
+      clearTimeout(this.secretsRefreshTimer);
+      this.secretsRefreshTimer = setTimeout(() => {
+        this.secretsRefreshTimer = undefined;
+        void this.refreshCredentials({ silent: true });
+      }, SECRETS_REFRESH_DEBOUNCE_MS);
+    });
   }
 
   dispose() {
+    this.secretsListener.dispose();
+    clearTimeout(this.secretsRefreshTimer);
     this.contentRecords.splice(0, this.contentRecords.length);
     this.credentials.splice(0, this.contentRecords.length);
     this.configurations.splice(0, this.contentRecords.length);
@@ -394,12 +417,20 @@ export class PublisherState implements Disposable {
     return this.credentialRefresh.event;
   }
 
-  async refreshCredentials() {
+  // Pass `silent` when refreshing on behalf of something other than the Home
+  // view (e.g. the authentication provider), so that no progress indicator is
+  // shown in a view that may not even be visible.
+  async refreshCredentials({ silent = false }: { silent?: boolean } = {}) {
     const oldCredentials = this.credentials;
+    const load = async () => {
+      this.credentials = await this.credentialsService.list();
+    };
     try {
-      await showProgress("Refreshing Credentials", Views.HomeView, async () => {
-        this.credentials = await this.credentialsService.list();
-      });
+      if (silent) {
+        await load();
+      } else {
+        await showProgress("Refreshing Credentials", Views.HomeView, load);
+      }
       this.credentialRefresh.fire({ oldCredentials: oldCredentials });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("refreshCredentials", error);
