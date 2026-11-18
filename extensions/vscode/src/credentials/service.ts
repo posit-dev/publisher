@@ -43,6 +43,29 @@ import {
 // indefinitely and stall every other token fetch.
 export const SNOWFLAKE_DESTROY_TIMEOUT_MS = 5_000;
 
+// Treat OAuth access tokens that expire within this window as already expired,
+// so callers don't get a token that dies before they get to use it.
+const ACCESS_TOKEN_EXPIRY_SKEW_MS = 60_000;
+
+/**
+ * Whether a Connect OAuth access token with the given ISO-8601 expiry has
+ * expired or is about to. An empty or unparseable expiry is unknown, and is
+ * treated as not expired.
+ */
+export function isAccessTokenExpiring(
+  tokenExpiresAt: string,
+  now = Date.now(),
+): boolean {
+  if (!tokenExpiresAt) {
+    return false;
+  }
+  const expiresAt = Date.parse(tokenExpiresAt);
+  if (Number.isNaN(expiresAt)) {
+    return false;
+  }
+  return expiresAt - now <= ACCESS_TOKEN_EXPIRY_SKEW_MS;
+}
+
 export interface CreateCredentialInput {
   name: string;
   url?: string;
@@ -146,6 +169,11 @@ export async function connectAPIOptionsFromCredential(
 export class CredentialsService {
   private snowflakeConnectionCache = new Map<string, snowflake.Connection>();
   private snowflakeConnectionCacheMutex = new Mutex();
+
+  // In-flight OAuth refreshes, keyed by credential GUID. Connect refresh
+  // tokens are single-use, so concurrent refreshes (e.g. the auth provider
+  // and a ConnectAPI 401 retry) must share one request.
+  private oauthRefreshes = new Map<GUID, Promise<string>>();
 
   constructor(private readonly secrets: SecretStorage) {}
 
@@ -302,13 +330,53 @@ export class CredentialsService {
    * — its id is deterministic — and the refresh is retried. Returns the fresh
    * access token. Throws when discovery or refresh ultimately fails; the caller
    * (the ConnectAPI client) surfaces that as a re-authentication prompt.
+   *
+   * Concurrent calls for the same credential share one refresh. If the stored
+   * credential already has a different refresh token than the one passed in
+   * (another window, or an earlier call, refreshed it since the caller read
+   * it), the stored tokens are used instead: the caller's refresh token has
+   * already been spent.
    */
-  async refreshOAuthToken(
+  refreshOAuthToken(
     credential: Pick<Credential, "guid" | "url" | "oauthClientId"> & {
       refreshToken: string;
     },
     insecure: boolean,
   ): Promise<string> {
+    let pending = this.oauthRefreshes.get(credential.guid);
+    if (!pending) {
+      pending = this.refreshOAuthTokenOnce(credential, insecure).finally(() =>
+        this.oauthRefreshes.delete(credential.guid),
+      );
+      this.oauthRefreshes.set(credential.guid, pending);
+    }
+    return pending;
+  }
+
+  private async refreshOAuthTokenOnce(
+    credential: Pick<Credential, "guid" | "url" | "oauthClientId"> & {
+      refreshToken: string;
+    },
+    insecure: boolean,
+  ): Promise<string> {
+    const stored = await getCredential(this.secrets, credential.guid);
+    if (
+      stored?.refreshToken &&
+      stored.refreshToken !== credential.refreshToken
+    ) {
+      if (stored.accessToken && !isAccessTokenExpiring(stored.tokenExpiresAt)) {
+        logger.debug(
+          `OAuth token for ${credential.url} was already refreshed elsewhere; using the stored token`,
+        );
+        return stored.accessToken;
+      }
+      credential = {
+        ...credential,
+        oauthClientId: stored.oauthClientId || credential.oauthClientId,
+        refreshToken: stored.refreshToken,
+      };
+    }
+
     const metadata = await discoverOAuthMetadata(credential.url, insecure);
     if (!metadata) {
       throw new Error(

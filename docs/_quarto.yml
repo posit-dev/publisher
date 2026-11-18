@@ -22,6 +22,8 @@ website:
         href: collaboration.md
       - text: "Troubleshooting"
         href: troubleshooting.md
+      - text: "Extension Authors"
+        href: authentication.md
       - text: "Changelog"
         href: changelog.md
     tools:
