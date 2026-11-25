@@ -8,6 +8,11 @@ import { logger } from "src/logging";
 const KEY_PREFIX = "credential:";
 const CURRENT_VERSION = 1;
 
+/** Whether a SecretStorage key holds a credential record. */
+export function isCredentialKey(key: string): boolean {
+  return key.startsWith(KEY_PREFIX);
+}
+
 interface CredentialEnvelope {
   version: number;
   credential: Credential;

@@ -30,10 +30,13 @@ include_mail = false
 # llms*.txt are plain-text dumps of the same content as the HTML pages — checking
 # them duplicates coverage and loses backtick context (URLs in code samples get
 # flagged because the .txt has no <code> wrapper to signal "example, don't fetch").
+# sitemap.xml lists every page by its published URL, so a PR that adds a page would
+# fail on a 404 until it is merged and deployed. The pages themselves are checked.
 exclude_path = [
   "_site/site_libs",
   "_site/llms.txt",
   "_site/llms-full.txt",
+  "_site/sitemap.xml",
 ]
 
 # URL exclusions (regex). Keep this list short and commented — each entry is a
