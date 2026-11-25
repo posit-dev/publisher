@@ -1001,7 +1001,7 @@
     "ajv-formats": "^3.0.1",
     "async-mutex": "^0.5.0",
     "axios": "^1.21.1",
-    "debounce": "^3.0.0",
+    "debounce": "^4.0.0",
     "filenamify": "^7.0.3",
     "js-yaml": "^5.5.0",
     "jsonwebtoken": "^9.0.3",
