@@ -14,6 +14,7 @@ export const renderQuartoContent = async (
   projectDir: string,
   sourceEntrypoint: string,
   renderedEntrypoint: string,
+  rootDir?: string,
 ) => {
   try {
     await window.withProgress(
@@ -26,6 +27,7 @@ export const renderQuartoContent = async (
           sourceEntrypoint,
           renderedEntrypoint,
           projectDir,
+          rootDir,
         );
         await quartoHelper.render();
       },
